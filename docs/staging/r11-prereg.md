@@ -1291,9 +1291,70 @@ baseline adds 24 to 39 minutes on whichever night it runs.
 - `docs/staging/r8-wording-numbers.md` is not in this checkout, so the tables here print W1 and R8's two figures
   as "not read"; a checkout that holds it (or `R11_WORDING`) prints them.
 
+### 13.4 The independent check of §13 (a fourth agent, 11 October 2026, 15:49 to 16:16 EDT; head 4a15101, tree clean)
+
+Nothing trained, no model on the GPU, one process at a time. Every count is from this check's own scripts or from a
+step's own output. No code, no file of the stage and no mark was changed; two corrections to the launch notes are
+at the end.
+
+- **Order.** The amendment (commit e238866, 15:07:29) holds this document alone: 101 lines added, none removed. On
+  disk the changed code files were last written from 15:10 on and the three new ones were created from 15:12 on; the
+  code was committed at 15:25 and P5a's files were written at 15:29 (P5b's still carry 04:17). §1 to §12 were not
+  edited afterwards.
+- **P5a is strict on every record on file.** A plain `python3` script that uses none of the project's code and keeps
+  the order of the lines and the text of every number: a P5a row is the P5b row with the members `lately` and `last`
+  deleted from its packet and the token estimate replaced, byte for byte, in 3,120 of 3,120 training rows and 300 of
+  300 development rows (the same ids in the same order; labels, options and every other field equal). In the
+  held-out file: 2,000 of 2,000 packets, 1,340 of 1,340 without `doing`, 1,080 of 1,080 probes. Records that break
+  it: 0. P5b has no `last` line in 112 training rows, 8 development rows and 88 held-out rows; a `memories` line
+  stands in 1,272 training rows, 132 development rows and 761 held-out rows, the same line in both arms each time.
+  The trainer reads `id`, `packet`, `pick` and `soft`; it never reads the estimate.
+- **P5b did not move, shown a second way.** The assembler of head 0e0cfde was run again from an export of that head
+  into a scratch folder. Every file it wrote has the hash of the manifest at 0e0cfde, so it is the state before the
+  change. Against it, on disk now: P5b's training and development files the same; P5b's 2,000, 1,340 and 1,080
+  packets in the held-out file byte-identical; the held-out rows equal but for the token estimates (which differ in
+  1,496 rows; P5b's estimate is the same in 2,000); the probes file the same. The P5a of that head carried a memory
+  line in every row, not P5b's in 2,318 training rows and 210 development rows, as §13.1 says. The manifest's hash
+  per packet name was recomputed from the file's raw text and agrees.
+- **Packet 5 for every other caller.** `tests/r8-packet.test.ts` 21 of 21 (with the default-off hashes),
+  `tests/r2-packet.test.ts` 19 of 19, `tests/sim-track-e.test.ts` 2 of 2 (the field pin), `tests/sim-params.test.ts`
+  11 of 11 (the golden hashes). Nothing under `src/`, `data/`, `server/` or `tests/fixtures` differs from 0e0cfde.
+- **Run again.** `tests/r11.test.ts` 13 of 13. `tsc --noEmit` clean, and the stage's scripts and test clean under the
+  same options (two errors planted in a scratch file were caught). `scripts/r11-run.sh dry`: 6 of 6 replays, all ten
+  verdicts, and its numbers table is the published one but for the heading. The tokenizer alone on all 21,680
+  packets gives the rows on file, byte for byte (P5a training 287 / 404 / 487; the largest packet 679; none over
+  1,280). `scripts/r11-run.sh parity p5a` printed `PARITY OK` on 12 packets of 175 to 403 tokens, on the CPU, with
+  `R11_ALLOW_OTHER_MODEL=1` because the population run's worker was alive; without it the step refused, as it must.
+- **The baseline step.** Read, and run against a stand-in interpreter on a scratch copy of the data. An unassembled
+  folder and a missing adapter are refused at once (exit 2). With another model process alive it refuses (exit 3)
+  after its five-second rendering and before any load. Its line reaches `em_score.py` with the two packet names, the
+  first adapter's folder and a `.part` output; 3,000 rows came back; a second call does not score again. It writes
+  under the data folder, the tables folder and the logs folder only, all ignored by git, and Python writes no cache.
+  Its 1,500 rows were checked in plain `python3` against the P5b packets: options and instruction equal in 1,500,
+  the state equal but for `urgent` in 1,500. The marks table and `scripts/r11-report.ts` never read it. The scratch
+  copy is deleted and the stage's own folder holds no score file.
+
+**Two corrections to the launch notes.**
+
+1. **A frozen checkout needs the link to `data/raw` too.** `scripts/r11-run.sh dry` makes the Taï anchor
+   (`scripts/r7-card.ts tai`) when its own folder holds none, and that reads `data/raw`. A new checkout has no
+   `data/raw`: the dry run would stop at that step, after its arms and replays (the step was tried alone in a tree
+   without the folder, and failed). Step 0 now makes the link, as AGENTS.md says for worktrees; git ignores it.
+   Every dry run of §10 to §13 ran in this worktree, which has the link.
+2. **`track-e` has moved since §13.3.** It stands at 97be5bf (15:51, the merge of stage RW2's wild records). What
+   it gained since 7f9ec5b is RW2's own files, none that this stage reads, and the merge with this branch is still
+   without conflict (in memory). What was checked here is this branch's head: a checkout frozen after a merge must
+   pass `tests/r11.test.ts` and the dry run there first.
+
+The wording table for W1 is at `/Volumes/Drive/chimpbench/MGOGO/docs/staging/r8-wording-numbers.md` (the main
+checkout, on `track-e`); this stage's reader takes 954 draws, 0.609 and 0.386 from it. Step 0 now names it.
+
+Not done: no model on the GPU, so the baseline step has still not met the real model or the real first adapter;
+the whole test suite and the build were not run.
+
 ## For the integrator
 
-*(Rewritten by the reviewer on 11 October 2026 after §11; the builder's notes are kept where they still hold. The times were replaced on 11 October at 14:56 by the measurements of §12.6, after a smoke run on the real model. Brought up to date on 11 October at 15:47 after §13: P5a was reassembled strict, the baseline step was added, and **the frozen checkout must hold head 9dc9b76 or later** (the head that holds this text is later still). An earlier head builds the P5a first registered in the loop, which is not what the P5a adapters are now trained on.)*
+*(Rewritten by the reviewer on 11 October 2026 after §11; the builder's notes are kept where they still hold. The times were replaced on 11 October at 14:56 by the measurements of §12.6, after a smoke run on the real model. Brought up to date on 11 October at 15:47 after §13: P5a was reassembled strict, the baseline step was added, and **the frozen checkout must hold head 9dc9b76 or later** (the head that holds this text is later still). An earlier head builds the P5a first registered in the loop, which is not what the P5a adapters are now trained on. Checked independently on 11 October at 16:16 (§13.4): step 0 now also links `data/raw`, which the dry run needs, and names stage R8's wording table.)*
 
 **Read first.** (1) Nothing here is a result about an engine: the stage delivers data, a trainer, a loop arm, the
 control arms and the reports. No adapter of this stage exists; the trainer has run only as a smoke test on the real
@@ -1331,8 +1392,10 @@ swap in use is above 6 GB, and writes a log under `artifacts/r11/logs` of the ch
 # 0. the frozen checkout and the files on hand (a minute). The head: 9dc9b76 or later (§13: P5a strict, the baseline step)
 git -C /Volumes/Drive/chimpbench/MGOGO worktree add --detach .claude/worktrees/bench-r11 <the head>
 cd /Volumes/Drive/chimpbench/MGOGO/.claude/worktrees/bench-r11 && ln -s /Volumes/Drive/chimpbench/MGOGO/node_modules node_modules
+ln -s /Volumes/Drive/chimpbench/MGOGO/data/raw data/raw   # §13.4: the dry run's Taï anchor reads it; without the link `dry` stops at that step (git ignores both links)
 export R11_FT_ROOT=/Volumes/Drive/chimpbench/MGOGO/.claude/worktrees/r11-honest-retrain/artifacts/decide-ft/r11
 export R11_OUT=/Volumes/Drive/chimpbench/MGOGO/.claude/worktrees/r11-honest-retrain/artifacts/r11/loop
+export R11_WORDING=/Volumes/Drive/chimpbench/MGOGO/docs/staging/r8-wording-numbers.md   # from the unmerged branch head only: stage R8's wording table, without which W1 prints "not read"
 
 # 1. before any load (starts nothing; a minute): must end with "no other model process" and "the tree is clean"
 scripts/r11-run.sh check            # also prints the P5a adapters as "not trained yet" and the baseline as "packets rendered; not scored"
