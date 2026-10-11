@@ -5,7 +5,7 @@
 // pitches spine/head forward). Poses are sampled every frame (or less often
 // for distant animals) and crossfaded by the animator.
 import type { CallKind, LifeStage, Mood } from '../../types';
-import { B, PI, LIMB, type Pose } from './rig';
+import { B, PI, LIMB, bodyMass, type Pose } from './rig';
 import { hyp2 } from '../fastmath';
 import { Listen, PatrolRole } from './patrol';
 
@@ -219,6 +219,8 @@ function groomSite(c: PoseCtx, n: number, role: number): readonly [number, numbe
   const k = Math.abs((n * 7919 + Math.round(c.seed * 977)) % (role === 0 ? 7 : 3));
   return GROOM_SITES[role === 1 ? 7 + k : role === GROOM_LAP ? 10 + k : k];
 }
+/** Head size for the body as rig.ts computeMorph sets it: 1 in adults, up to 1.75 in infants. */
+function headScale(age: number, male: boolean) { return Math.min(1.75, Math.pow(Math.cbrt(bodyMass(Math.max(0, age), male ? 'male' : 'female') / 45), -0.5)); }
 /** The seated receiver's slow lean (a step of 0.12 rad, five positions by bout number and individual). */
 function groomeeLean(k: number, seed: number) { return (((k * 7919 + Math.round(seed * 1000)) % 5) - 2) * 0.12; }
 /**
@@ -501,9 +503,12 @@ export const CLIPS: Record<string, Clip> = {
       const lean = groomeeLean(n - 1, c.seed) + (groomeeLean(n, c.seed) - groomeeLean(n - 1, c.seed)) * u;
       w.a(B.spine, 0, lean, lean * 0.4).a(B.chest, lean * 0.5, lean * 0.6, 0); }
     if (c.role === GROOMEE.present) {
-      // One arm raised, the hand resting on the head: the flank and underarm are open to the groomer.
-      const side: 0 | 1 = c.seed > 0.5 ? 1 : 0, sx = side ? -1 : 1;
-      reach(w, side, sx * 0.1, 0.98, 0.02, -2.6, 0, sx * 0.3, 0.2);
+      // One arm raised and folded, the hand on the back of the head: the flank and underarm are open to the groomer
+      // (stylization, no source). The hand's place is an offset from the seated head bone (about 0.03, 0.58, 0.07) that
+      // grows with the head: an infant's head is up to 1.75 times an adult's for its body (rig.ts computeMorph).
+      // As brought from the prototype the hand was held 0.4 body lengths above the head on a straight arm.
+      const side: 0 | 1 = c.seed > 0.5 ? 1 : 0, sx = side ? -1 : 1, hs = headScale(c.age, c.male);
+      reach(w, side, sx * (0.03 + 0.06 * hs), 0.58 + 0.11 * hs, 0.07 - 0.07 * hs, -2.6, 0, sx * 0.3, 0.2);
       grip(w, side, 0.4);
       w.a(B.chest, 0, 0, -sx * 0.12).a(B.head, 0, 0, -sx * 0.18);
     }

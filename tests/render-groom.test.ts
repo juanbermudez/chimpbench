@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { B, LIMB, PI, createFK, createMorph, createPose, solveFK } from '../src/render/creatures/rig';
+import type { Chimp } from '../src/types';
+import { B, LIMB, PI, computeMorph, createFK, createMorph, createPose, solveFK } from '../src/render/creatures/rig';
 import { CLIPS, GROOMEE, GROOM_LAP, Pw, groomeePosture, type PoseCtx } from '../src/render/creatures/poses';
 
 // Stage W5 (docs/staging/w5-grooming.md): the grooming choreography is a stylization, so these tests hold its
@@ -97,3 +98,27 @@ test('receiver posture rule: shares, the ground, and the two exclusions', () => 
   assert.equal(groomeePosture(0.1, true, true, false, GROOMEE.prone), GROOMEE.present);
   assert.equal(groomeePosture(0.1, false, false, false, GROOMEE.side), GROOMEE.present);
 });
+
+test('arm raised: the hand is at the head on a folded arm, at every age', () => {
+  // As brought from the prototype the arm stood straight up with the wrist 0.4 body lengths above the head bone (the
+  // review of 10 October listed arms held straight up as a fault). The hand's place grows with the head, which is up
+  // to 1.75 times an adult's for the body in an infant.
+  const m = createMorph(), fk = createFK();
+  const at = (bone: number) => [fk.p[bone * 3], fk.p[bone * 3 + 1], fk.p[bone * 3 + 2]];
+  const gap = (p: number[], q: number[]) => Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
+  for (const [age, male] of [[1.3, false], [2.5, true], [3.5, false], [7, true], [12, false], [24, true], [40, false]] as const) for (const seed of [0.1, 0.45, 0.9]) for (const pairT of [10, 777, 2600]) {
+    computeMorph({ age, sex: male ? 'male' : 'female' } as Chimp, m);
+    run('groomee', ctx({ role: GROOMEE.present, seed, age, male, stage: age < 5 ? 'infant' : 'adult', pairT, time: 55 }));
+    solveFK(pose, m, fk);
+    const right = seed > 0.5, head = at(B.head), wrist = at(right ? B.handR : B.handL), elbow = at(right ? B.farmR : B.farmL), shoulder = at(right ? B.uarmR : B.uarmL);
+    const where = `age ${age} seed ${seed} pairT ${pairT}`, hs = m.headScale, d = gap(wrist, head) / m.size;
+    assert.ok(d < 0.24 * hs, `${where}: the wrist is at the head (${d.toFixed(2)} body lengths from the head bone, head ${hs.toFixed(2)})`);
+    assert.ok(d > 0.1 * hs, `${where}: the wrist is not inside the head (${d.toFixed(2)})`);
+    assert.ok(wrist[1] > shoulder[1], `${where}: the hand is above the shoulder`);
+    const fold = gap(shoulder, wrist) / (gap(shoulder, elbow) + gap(elbow, wrist));
+    assert.ok(fold < 0.85, `${where}: the elbow is bent (${fold.toFixed(2)} of the arm's length from shoulder to wrist)`);
+    // The other arm keeps the seated rest.
+    assert.ok(at(right ? B.handL : B.handR)[1] < shoulder[1]);
+  }
+});
+
