@@ -282,7 +282,9 @@ export function createOverview(world: World, river: RiverInfo, uniforms: SharedU
     if (colourKey !== w.troops || colourLen !== w.troops.length) { colourKey = w.troops; colourLen = w.troops.length; colours.clear(); for (const t of w.troops) colours.set(t.id, new THREE.Color(t.color)); }
     partyLines.uniforms.uPx.value = callArcs.uniforms.uPx.value = pixelWorld.value;
     partyLines.uniforms.uLift.value = callArcs.uniforms.uLift.value = lift;
-    partyLines.uniforms.uA.value = 0.7 + 0.3 * lift;   // quieter among the animals of the strategy view than on the map
+    // Quieter among the animals of the strategy view than on the map: 0.4 at a frame of 60 m, 0.7 at 260 m, 1 on the map.
+    const hfNow = pixelWorld.value * Math.max(1, f.viewH), near = Math.min(1, Math.max(0, (hfNow - 60) / 200));
+    partyLines.uniforms.uA.value = 0.4 + 0.3 * near * near * (3 - 2 * near) + 0.3 * lift;
     if (ortho && (linesVersion !== partyMap.version || linesHighlight !== f.highlightTroopId)) { linesVersion = partyMap.version; linesHighlight = f.highlightTroopId; partyLines.rebuild(partyMap, w.time, colourOf, f.highlightTroopId); }
     partyLines.mesh.visible = ortho && partyLines.segments > 0;
     if (ortho) callArcs.update(partyMap.calls, now); else callArcs.mesh.visible = false;
