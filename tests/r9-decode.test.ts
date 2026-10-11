@@ -230,6 +230,15 @@ test('the harness\'s epochs: an act epoch opens when the act is replaced, at an 
   a = ask(both); rec = settle(both, a);
   assert.deepEqual([rec.open, rec.also], ['interrupt', 'replaced']);
 
+  // a run that stops and resumes: the decoder's notes are plain data, and a decoder rebuilt from them goes on as the first would
+  const one = newDecoder({ mode: 'held', salt: 3, hold: 'act' });
+  a = ask(one); settle(one, a); doing(a.r.options[a.i]); c.decisionVersion++;
+  const saved = JSON.parse(JSON.stringify(one.snapshot())) as ReturnType<typeof one.snapshot>, two = newDecoder({ mode: 'held', salt: 3, hold: 'act' }, saved);
+  assert.deepEqual(saved[c.id], { key: optionKey(a.r.options[a.i]), at: w.time, epoch: c.decisionVersion - 1, pending: false });
+  const x1 = ask(one), r1 = settle(one, x1), x2 = ask(two), r2 = settle(two, x2);
+  assert.deepEqual(r2, r1); assert.equal(r1.open, ''); assert.deepEqual(two.snapshot(), one.snapshot());
+  assert.equal(settle(newDecoder({ mode: 'held', salt: 3, hold: 'act' }), ask(newDecoder({ mode: 'held', salt: 3, hold: 'act' }))), null, 'a result no decode step saw has no record');
+
   // the block hold: the half hour of the world's clock, whatever the animal does
   const blk = newDecoder({ mode: 'held', salt: 1, hold: 'block' });
   w.time = 100 * BLOCK_H + 0.01; ix(c).lastIntrAt = 0;

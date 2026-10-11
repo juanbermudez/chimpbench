@@ -7,6 +7,7 @@
 //   tickWorld(world);
 //   const results = await answerWaiting(world, kernelOf, { decode: dec.step(world) });
 //   for (const r of results) { const record = dec.settle(world, r); /* goes into the receipt */ }
+//   checkpoint: save dec.snapshot() beside the world; resume: newDecoder(spec, savedSnapshot)
 //
 // `settle` must be called for every result of the pass, in order: it is how the decoder learns which choice was applied.
 import { decode, optionKey, type DecodeMode, type DecodeSpec } from '../../src/kernel/decode';
@@ -53,7 +54,10 @@ export interface DecodeRecord {
 /** The option keys of a request. An entry of a kinds-first request (activityFirst; not used in stage R9) stands for a kind, so it is keyed apart from the option that represents it. */
 export const requestKeys = (request: KernelRequest): string[] => request.options.map(o => (request.groups ? 'kind/' : '') + optionKey(o));
 
-interface Last { key: string | null; at: number; epoch: number; pending: boolean }
+/** What the decoder remembers of an animal: the key of the option it applied last (null: the rules settled the last ask), when, in which epoch, and whether an interrupt arrived right after. */
+export interface Last { key: string | null; at: number; epoch: number; pending: boolean }
+/** A decoder's notes by animal id, as plain data (JSON-lossless). */
+export type DecoderState = Record<number, Last>;
 
 export interface Decoder {
   spec: HarnessDecode;
@@ -61,10 +65,15 @@ export interface Decoder {
   step(world: World): DecodeStep;
   /** Called for every result of a pass: notes what was applied, and returns the record of that ask (null when the kernel was never asked or its answer failed the answer check). */
   settle(world: World, result: StepResult): DecodeRecord | null;
+  /**
+   * The decoder's notes, as plain data. A run that stops and resumes (a checkpoint taken between passes) saves them
+   * beside the world and passes them back to `newDecoder`: the resumed run then decodes as the uninterrupted one would.
+   */
+  snapshot(): DecoderState;
 }
 
-export function newDecoder(spec: HarnessDecode): Decoder {
-  const last = new Map<number, Last>(), open = new Map<number, { record: DecodeRecord; keys: string[] }>();
+export function newDecoder(spec: HarnessDecode, from?: DecoderState): Decoder {
+  const last = new Map<number, Last>(Object.entries(from ?? {}).map(([id, v]) => [Number(id), { ...v }])), open = new Map<number, { record: DecodeRecord; keys: string[] }>();
   /** The epoch of this ask and why it opened, from the animal as it is now and what the decode applied last. */
   const epochOf = (world: World, c: Chimp, version: number, s: Last | undefined): { epoch: number; open: Opened; also?: 'replaced' } => {
     if (spec.hold === 'block') { const b = Math.floor(world.time / BLOCK_H); return { epoch: b, open: !s ? 'first' : s.epoch !== b ? 'block' : '' }; }
@@ -100,6 +109,7 @@ export function newDecoder(spec: HarnessDecode): Decoder {
       else last.set(result.chimpId, { key: null, at: world.time, epoch, pending: false });
       return o?.record ?? null;
     },
+    snapshot: () => Object.fromEntries([...last].map(([id, v]) => [id, { ...v }])),
   };
 }
 
