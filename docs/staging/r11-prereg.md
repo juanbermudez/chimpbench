@@ -442,7 +442,8 @@ Every number in §10.4 to §10.8 is copied from the generated tables named above
 - **The mechanism, measured** ([r11-data.md](r11-data.md) §2): the jitter is uniform on ±0.12 before the menu is cut,
   but the trip that reached the menu was scored with a mean jitter of +0.065 and a positive one on 0.904 of menus
   (5,056 trip options); a drink +0.037 (0.733), a feeding option +0.017 (0.599); rest, a nest, a greeting or a call
-  0.000 to +0.001 (0.50). The more targets a kind of act is chosen from, the more its place on the menu says.
+  within 0.001 of zero (0.50 to 0.51). The more targets a kind of act is chosen from, the more its place on the menu
+  says.
 - **How noisy the rules' choice really is, given what the model is shown.** The label's top option is the one the
   rules took at 0.838 of training draws; the mean of the label's top mass is 0.834 (held out 0.837). So no reader of
   the state and the menu, however good, can agree with the rules' realised pick more than about 0.84 of the time, and
