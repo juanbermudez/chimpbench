@@ -286,8 +286,237 @@ a world with the record. `tests/r2-packet.test.ts`, `tests/kernel.test.ts`, the 
 
 ## 10. Iteration log and results
 
-(Filled in after the build.)
+Built on 10 October 2026, 19:45 to 20:43 EDT, on branch `r8-packet5`. No model was loaded. Every number below was
+printed by a script; the tables are in `docs/staging/r8-wording-probe.md`, `r8-tokens-smoke.md`, `r8-tokens-day2.md` and
+`r8-tokens-r4.md`.
+
+### 10.1 What changed against the registration
+
+1. **Packet 5 is tied to the animal's own fields.** The request check accepts `packet: 5` only on a context that carries
+   `own`, and `own` only with `packet: 5`. Stage R2's test, which must stay unchanged, sets `packet: 5` on a v4 context
+   and expects a refusal; it still gets one.
+2. **`at` holds the step of each drive's word, not the drive's value.** A rounded value could land on the other side
+   of a word's threshold and miss a change the gate saw. Found by the test (a need-bucket decision with no felt change).
+3. **The act's end is said once.** With `doing` shown ("was feeding … ; I have eaten my fill"), `asked because` says
+   "my act ended". Without the `doing` line it tells the end itself.
+4. **Fear can move at a timer.** Fear is on the packet's `feeling` line but is not one of the gate's four need buckets.
+   So at a decision the loop reopened on its 30 minute limit, the line can read "my fear has eased": a true change
+   that happens to coincide. It never names the timer. Seen 2 times in 145 such decisions.
+5. **"Leaving" at the moment of setting off.** An animal that has just started a trip to a tree has not turned yet, so
+   its direction is the way to that tree until it has taken a step. The simulation's animals already see where a
+   companion is going (they count who is heading to which crown).
+6. **Eating now against the start** is kept for feeding in a crown only, not for leaves and pith.
+7. **Real token counts were possible without the model** (§10.5), so they are reported beside the estimate.
+8. **`ownKeep`** is one number for the three lists, as registered. No other parameter was added.
+
+### 10.2 The switch, the record, the tests
+
+- With `observeV5` 0 the requests and both text packets hash as at dea2643: all eight rows of §1. On saved data too:
+  today's state-only packet rebuilt from each of stage R4's 1,500 saved held-out contexts equals the saved packet,
+  1,500 of 1,500.
+- The record never changes the world. With it removed, the world run with the switch on hashes as the world of
+  dea2643 at 12:30 and at dusk of day 2 (seed 48, 11cc8f4360cf6cd6 and 8e5fa7068c1d4ba7), and as the world run without
+  it on seed 7 (12 hours) and on the small map (seeds 48 and 7). The sampler's `--check` on the smoke day agrees.
+- `tests/r8-packet.test.ts`: 18 tests, all pass. With `tests/r2-packet.test.ts`, `tests/kernel.test.ts`,
+  `tests/r4-packet.test.ts`, `tests/r4b.test.ts`, `tests/r5-pilot.test.ts`, `tests/sim-track-e.test.ts` (the field pin),
+  `tests/persist-envelope.test.ts` and `tests/em-observe.test.ts`: 96 tests, 96 pass. Type-check clean.
+  `gen-params --check`: valid, 1,048 entries, lint clean.
+- **One test fails on this branch by design:** `tests/sim-params.test.ts` asks that every registry id be named in
+  `docs/simulation.md` §17, a shared file this stage may not edit. With the row proposed below inserted, it passes
+  (11 of 11, goldens included); the file was restored afterwards.
+
+### 10.3 Why it is being asked
+
+Every rules decision of an animal aged 8 or over on the test's built world (seed 48, day 2 from 09:30 to dusk, 2,572
+decision points):
+
+| The animal's line | Decision points |
+| --- | --- |
+| a perceived event | 769 |
+| its act ended | 652 |
+| a feeling moved to another word | 192 |
+| the light changed phase | 18 |
+| none | 941 |
+
+Against the loop's own reason: an interrupt gave the event 714 times of 714. The 30 minute limit gave no line 135
+times, an ended act 8 times and the fear case 2 times. A clock period gave no line 39 times, a change of light 18
+times, an ended act 14 times, fear once. A need bucket gave a felt change 164 times and an ended act 111 times. An act
+the gate kept (never an ask) gave no line 715 times of 775.
+
+### 10.4 The sampler's smoke day
+
+`scripts/r8-contexts.ts --seed 48 --base W50 --burn-in 0 --days 1 --p 0.5 --check`: one simulated day, 6 seconds.
+1,467 records of 38 animals. Labels: 882 fresh draws, 512 kept acts, 73 arrivals: 40% are not fresh draws (the review
+found 35% in R4's files). The rules' decision is on the menu in 1,453. Every record carries each option's score with the
+hash jitter removed. The animal's own reason: an event 238, its act ended 368, a felt change or the light 197, none
+664. Nothing was skipped.
+
+A real packet from it (record 48-W50-1670-12; the rules chose c0). Packet 5, full, 412 real tokens:
+
+```
+me: Nkeru, adult female, 33 y, West community; rank 3 of 7 females; mother of a dependent infant; mood calm; playful
+doing: feeding in the Chrysophyllum albidum, 11 min
+asked because: Ugazi gave a travel hoo
+body: body reserves at my usual store; severe energy shortfall: about 390 kcal still to find, about to sleep; stomach full; well watered; warm; slightly sleepy; body clock at its daytime high; settled
+now: daytime (full daylight); cloudy, 23 °C; party of 4 with 0 adult males
+nearby: [Ugazi: my offspring, juvenile female, 3 m, close bond, travelling east; Dembiri: my offspring, adolescent male, 2 m, close bond, resting; Wakiro: my offspring, infant male, 1 m, close bond, following me]
+lately: eating as fast as when I began; my last trip gave less than I expected; 4 of my last 8 trips ended in a feed; fed in 4 crowns since leaving my nest
+last: [groomed Ugazi 12 min ago; groomed by Ugazi 12 min ago; groomed Dembiri 5 h ago; groomed by Dembiri 5 h ago]
+history: [This month: groomed with Ugazi 51 min; groomed with Dembiri 41 min]
+instructions: Choose what this wild chimpanzee does next, from what it perceives, feels and remembers.
+c0: Rest here
+c1: Feed in the Chrysophyllum albidum, 3 m (2,300 kcal of fruit there)
+c2: Go with Ugazi to the Pterygota mildbraedii, 80 m southeast (250 kcal of fruit there when I saw it 6 h ago, may have changed; 1 other going there)
+c3: Groom Dembiri
+c4: Play with Ugazi
+```
+
+The short variant of the same moment (362 real tokens) differs in three lines and has no `history`:
+
+```
+me: Nkeru, adult female, 33 y; rank 3 of 7 females; mother of a dependent infant; playful
+body: severe energy shortfall: about 390 kcal still to find, about to sleep; stomach full; warm; slightly sleepy
+now: full daylight; cloudy, 23 °C; party of 4 with 0 adult males
+```
+
+Today's state-only packet of the same moment (453 real tokens) has no `doing`, `asked because`, `lately` or `last`
+line, names no companion's act, and words the options so:
+
+```
+c0: Sit and digest after feeding (a pause: cools the body, digests, favours wounds)
+c1: Feed on ripe star apples in the Chrysophyllum albidum 3 m away (crop 57%) (food, eases hunger; 2,300 kcal of fruit there)
+c2: Travel 79 m southeast to a Pterygota mildbraedii I remember with ripe fruit (food, eases hunger; 250 kcal of fruit there when I saw it 6 h ago, may have changed; 1 other going there)
+c3: Groom my son Dembiri (eases loneliness, strengthens the bond)
+c4: Play with my daughter Ugazi (fun and practice for young chimpanzees)
+```
+
+### 10.5 Length
+
+Real counts are the model's own, taken by its tokenizer alone (`training/decide_ft/r8_tokens.py`: the processor the
+model builds, without the weights). The route was checked first on packets counted before: all 5,754 real counts
+stage R4 saved came out the same.
+
+Real tokens, median (95th percentile, largest):
+
+| Contexts | Today's state-only | Neutral options | Packet 5, full | Packet 5, short |
+| --- | --- | --- | --- | --- |
+| Stage R4's saved held-out records (1,500; days 6 to 10, seed 21; no new lines possible) | 452 (583, 646) | 340 (448, 513) | | |
+| The smoke day (1,467; day 1, seed 48) | 385 (493, 558) | 281 (367, 409) | 314 (415, 497) | 270 (352, 428) |
+| The test's built world (2,572; day 2, 09:30 to dusk, seed 48) | 476 (591, 659) | 353 (453, 524) | 392 (520, 624) | 330 (442, 530) |
+
+- **The target of about 350 is met by the short variant** on both worlds that carry the new lines (270 and 330), with
+  every new line kept. The full variant meets it on the first day (314) and not on the busier second (392).
+- Neutral options alone take 112 tokens off the saved R4 packets (452 to 340). Packets over 512 tokens, the browser's
+  limit: 25% today on those records, 0.1% with neutral options; on day 2, 34% today, 6% for packet 5 full, 0.1% short.
+- What the new lines cost on the smoke day, in real tokens per packet on average: `lately` 26, `doing` 11,
+  companions' acts 4, `asked because` 2, `last` minus 3 (it replaces the grooming and greeting memories).
+- By the project's estimate the medians are 430, 321, 382 and 322 on the smoke day and 532, 399, 470 and 387 on day 2.
+  The estimate runs high: real over estimate is 0.90 for today's packet and 0.82 to 0.86 for packet 5.
+- Seconds per decision, projected from the review's speed measurement (a power law of exponent 1.48 through 0.34 s at
+  396 tokens and 0.54 s at 541; not measured on these packets): 0.45 for today's packet on day 2, 0.33 for packet 5
+  full, 0.26 for short.
+- No packet is near the hard limit of 1,280 (largest 624 real, 736 estimated).
+
+### 10.6 The rules' pick by wording alone (no model)
+
+On stage R4's saved records, fresh draws only (`docs/staging/r8-wording-probe.md`):
+
+- **The reviewer's rest figures are reproduced exactly.** Training records: the rules took rest in 8 of 517 draws
+  where they had worded it "Sit and rest nearby" (0.015) and in 280 of 773 where they had worded it "Sit and digest
+  after feeding" (0.362). Held-out records: 2 of 212 (0.009) against 148 of 351 (0.422).
+- **The groom figure is reproduced in part.** "Groom my ally … to keep his support": 10 of 30 (0.333), as claimed.
+  The reviewer's 0.085 for "a plain groom line" has no single definition: the bare "Groom *name*" line is 30 of 657
+  (0.046), and every other groom sentence together 134 of 1,436 (0.093). On the held-out records the ally sentence is
+  2 of 15 (0.133) against 0.114 for the others, so that one does not hold up there.
+- **A predictor that reads only the options' sentences** picks the rules' decision at 0.516 of the 954 held-out fresh
+  draws. Given only the neutral label it gets 0.425. Chance is 0.186. For scale, the trained adapter reads the whole
+  state and gets 0.61.
+- So the rules' wording can add at most 0.09 beyond naming the act. It is an upper bound, because some of those
+  sentences state a fact the state also holds ("who is inviting me with a play face", "displaying"): packet 5 moves
+  such facts to the `nearby` line ("playing with me", "DISPLAYING"). The larger part, 0.43 against 0.19, is how often
+  each kind of act is taken at all.
+- The spread is widest for play (0.000 to 0.786 across its sentences), pant-grunt (0.152 to 0.833) and rest.
+
+### 10.7 The wording test, ready for the integrator
+
+`scripts/r8-rerender.ts` wrote `artifacts/r8/rerender/` (gitignored): `all.jsonl` and `test.jsonl`, 1,500 held-out
+records (954 fresh draws), each as `state` (today's packet, rebuilt and equal to the saved one in 1,500 of 1,500) and
+`neutral` (8,728 of 8,728 options reworded, the `urgent` line removed from 537, none of the rules' wording left).
+`scripts/r8-wording-report.ts` reads the score file and prints agreement on the fresh draws for both, by kind, with
+the paired difference over animals. Not run: it needs the model.
+
+### 10.8 Not done
+
+- No model run: the wording test, and any measure of the lock-in of §6, are the integrator's.
+- No harness is switched to packet 5. `scripts/r5-pilot.ts` and `scripts/em-loop.ts` still send the state-only packet.
+- The app serves packet 5 full for a world created with `observeV5` 1; nothing in the interface chooses the short one.
+- Jev's packet 5 is the same lines under Jev's option keys; it was built and tested for wording, never sent.
+- A context saved before this stage cannot name the leader of a joined trip ("a companion") or the distance of
+  stranger calls heard; 210 of 7,256 option labels in the parser's test differ in that way and no other.
+- When the gate reopens a choice because the light is rising in the nest, or because the act is simply no longer on
+  the list at a scheduled end, the animal's line is absent (33 and 18 cases on the smoke day).
 
 ## For the integrator
 
-(Filled in after the build.)
+**Merge notes.**
+
+- Likely conflicts: the `OPTIONAL_X` list in `src/sim/state.ts`; the first lines of `decisionPoint` in
+  `src/sim/decide.ts`; `src/types.ts` (additions beside `Candidate`, `SocialPercept`, `DecisionContext`);
+  `data/params.json` and `src/sim/params.gen.ts` (after the merge: `pnpm exec tsx scripts/gen-params.ts`, then
+  `--check`).
+- `tests/sim-params.test.ts` fails until the §17 row below is in `docs/simulation.md`.
+- `scripts/lib/packet-state.ts` gained two lines: a packet 5 context is first taken back to the v4 observation, so
+  `buildStateOnlyQuestion` still returns stage R4's packet.
+
+**Run next, with the model (one model process at a time).**
+
+```sh
+pnpm exec tsx scripts/r8-rerender.ts                      # writes artifacts/r8/rerender (seconds; no model)
+MGOGO_FT_ROOT=<folder holding adapters/r4-rules-state> training/decide_ft/r4_py.sh em_score.py \
+  --in "$PWD/artifacts/r8/rerender/all.jsonl" --packets state,neutral --provider r4-rules-state \
+  --out "$PWD/artifacts/r8/rerender/all.r4-rules-state.jsonl"
+pnpm exec tsx scripts/r8-wording-report.ts --dir artifacts/r8/rerender --provider r4-rules-state \
+  --saved <stage R4's eval folder>/all.r4-rules-state.jsonl --md docs/staging/r8-wording-numbers.md
+```
+
+Read it this way: the `state` scores should equal the saved ones (the report prints the largest difference). If
+agreement on the neutral rendering falls well below 0.61, earlier "state-only" results leaned on the rules'
+sentences; the no-model bound says the fall cannot be explained by wording beyond about 0.09 unless the adapter also
+lost the act's motive facts.
+
+**Lines proposed for the shared files.**
+
+`IMPLEMENTATION_PLAN.md`, Stage R8, in place of its Status line:
+
+> **Status**: Built on branch `r8-packet5` (10 October 2026; agent-reported, awaiting the integrator's review and merge; no model run; `docs/staging/r8-prereg.md` §10, tables in `docs/staging/r8-wording-probe.md`, `r8-tokens-smoke.md`, `r8-tokens-day2.md`, `r8-tokens-r4.md`). One switch, `observeV5`, 0 by default (0 = today: requests and both text packets hash as at dea2643, and today's state-only packet is rebuilt exactly from all 1,500 saved R4 contexts). At 1 the observation and the packet carry what the animal is doing and for how long, why it is asked when that is a perception or a felt change (never a timer), companions' routine acts, its own foraging returns and its social timing; options are the act, its target and the animal's belief words, with none of the rules' wording (a test derives the banned phrases from the builder's own tables). The loop keeps one optional record per animal that nothing in the valuation reads: with it removed the world hashes as before. Real tokens, counted by the tokenizer alone (the route reproduces all 5,754 saved R4 counts): on a second simulated day, median 476 for today's packet, 392 for packet 5 in full and 330 for the registered short variant; neutral options alone take the saved R4 packets from 452 to 340. Without a model, the reviewer's figures are reproduced (the rest option is taken at 0.015 under one sentence and 0.362 under another), and a predictor reading only the options' sentences picks the rules' decision at 0.52 of held-out fresh draws against 0.43 for the neutral label and 0.19 by chance, so the wording can add at most 0.09. The wording test's files are written; the adapter's re-scoring is the integrator's. `tests/r8-packet.test.ts` 18 tests; goldens and the field pin unchanged. Open for the user: whether the mechanism outputs left in the state line are state or valuation; the comparison of a trip with the meal expected; a feeling that eased as a reason; naming an absent animal in the last aggression.
+
+`AGENTS.md`, Commands, after the `r4-contexts.ts` line:
+
+```sh
+pnpm exec tsx scripts/r8-contexts.ts --seed 48 --base W50 [--burn-in 0] [--days 1] [--p 0.1] [--check]   # stage R8 (docs/staging/r8-prereg.md): decision points of a rules-driven world with the animal's own experience on (observeV5 1, menuParity 1): the packet 5 context, whether the label is a fresh draw, a kept act or an arrival, the rules' scores with and without the hash jitter, the loop's reason and the animal's own reason for being asked, and four text packets (today's state-only, the same with neutral options, packet 5 full and short); then scripts/r8-tokens.ts --source r8|r4|rows (length by block; real counts by training/decide_ft/r4_py.sh r8_tokens.py, the tokenizer alone, no model load), scripts/r8-wording-probe.ts (the rules' pick by wording alone, no model), scripts/r8-rerender.ts and scripts/r8-wording-report.ts (the wording test: R4's held-out records as today's packet and with neutral options, for the existing adapter)
+```
+
+`AGENTS.md`, Architecture, at the end of the "Kernel contract (stage R1)" row:
+
+> Stage R8 (`docs/staging/r8-prereg.md`; `src/sim/own.ts`, `src/kernel/packet-own.ts`; 0 by default): `observeV5` (the animal's own experience in the observation and the packet: what it is doing, why it is asked when it perceived or felt the reason, companions' acts, its foraging returns and social timing; neutral option labels and none of the rules' wording; packet marker 5; the loop keeps `chimp.sim.own`, which nothing but `observe()` reads).
+
+`AGENTS.md`, Gotchas, one line:
+
+> - Packet 5 (`observeV5` 1): the packet builder never reads an option's `reason` or `score`; do not add words to an option from either. `buildLocalQuestion(ctx, { own: { variant: 'short' } })` gives the registered short variant, `{ without: [...] }` leaves a new line out. Real token counts need no model: `training/decide_ft/r4_py.sh r8_tokens.py`.
+
+`docs/simulation.md` §17, one row after "What a kernel sees and the menu it faces (R2; off by default)" (checked: with it `tests/sim-params.test.ts` passes):
+
+```
+| The animal's own experience in the packet (R8; off by default) | `observeV5` 1: `observe()` returns the `observeV4` observation plus what the animal is doing, for how long and how the act ended (`own.doing`); why it is being asked when that is a perception or a felt change, never a loop timer (`own.asked`); its own foraging returns (`own.lately`: eating now against the start of the bout, what its last trips gave against the meal it set out for, crowns fed in since it left its nest); its last aggression given or received; on each perceived animal the direction it moves in, whether it is leaving or acting on the focal animal, and the hours since the focal groomed it, was groomed by it and greeted it; on each option what it is in the animal's own terms (`about`: the form of the act, the tree's species, a companion's name, distance and direction; never the motive); and the marker `packet: 5`, for which the packet builder writes neutral option labels and none of the rules' wording. The loop then keeps `chimp.sim.own` (written at decision points, at the start of an act, while feeding and grooming); `ownKeep` is how many closed trips, crowns and grooming partners it keeps. Nothing in the valuation, the gate or a mechanism reads the record: a world with the switch on is the world with it off plus that key. 0 = today, bit for bit | switch (0–1); records | `observeV5`, `ownKeep` | design (switch; a memory size) | [staging/r8-prereg.md](staging/r8-prereg.md); [own.ts](../src/sim/own.ts), [observe.ts](../src/sim/observe.ts), [src/kernel/packet-own.ts](../src/kernel/packet-own.ts), [src/providers/packet.ts](../src/providers/packet.ts); §8 |
+```
+
+`docs/simulation.md` §8, one paragraph after the R2 paragraph "Packet v4, one menu, activity first":
+
+> **Packet 5: the animal's own experience (stage R8, Track R; [staging/r8-prereg.md](staging/r8-prereg.md); switch `observeV5`, off by default).** With 1, `observe()` adds `own` (what the animal is doing and how its act ended; why it is asked, only when it perceived or felt the reason; its foraging returns; its last aggression), the percepts' own fields (the direction a companion moves in, whether it is leaving or acting on the focal animal, hours since grooming and greeting) and each option's `about`, with `packet: 5`. The packet builder then writes neutral option labels (the act, its target, the animal's belief words) and none of the rules' wording. The loop keeps `chimp.sim.own` ([own.ts](../src/sim/own.ts)); nothing but `observe()` reads it.
+
+`HANDOFF.md`, one line under the current state of Track R:
+
+> - R8 (branch `r8-packet5`): packet 5 is built behind `observeV5`; the wording test's files are in `artifacts/r8/rerender` after `scripts/r8-rerender.ts`, and the adapter's re-scoring on them has not been run.
+
+**Decisions that are the user's** (§9): the four questions there. A fifth for the integrator: which length to serve.
+The short variant is the one that meets the 350 token target on a second day.
