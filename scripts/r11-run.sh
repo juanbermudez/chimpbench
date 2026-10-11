@@ -6,7 +6,9 @@
 # (re-checked every minute for up to 30 minutes, then it goes ahead and says so; after a hold it looks for another
 # model process again). The output of every model step is also written to a log under artifacts/r11/logs (R11_LOGS).
 # A simulation step waits while the 1-minute load is 8 or more. It stops at the first failed step; a replay that does
-# not reproduce its run is a failed step. An arm or a score file on file is never run again.
+# not reproduce its run is a failed step. An arm or a score file on file is never run again. An adapter is on file once
+# its training has ended (manifest.json, the trainer's last write): weights without a manifest are a training cut short
+# (an early epoch's), which is never scored, never sent into the loop and never trained over.
 #
 #   no model:
 #   scripts/r11-run.sh sample                 the six sampling worlds (seeds 48, 7, 21; both bases), then `assemble`
@@ -20,6 +22,7 @@
 #   scripts/r11-run.sh check                  the pre-flight of a model step, starting nothing: folders, files, adapters, swap, other model processes
 #   model (the integrator):
 #   scripts/r11-run.sh train <p5b|p5a> <7|11> one adapter (r11-<arm>-s<seed>): soft labels, R4's settings; training seeds 7 and 11 only; refuses to overwrite an adapter
+#                                             (after a training cut short: delete its folder under adapters/, then run the step again)
 #   scripts/r11-run.sh train-hard <arm> <seed>  the one-hot comparison on the same rows (r11-<arm>-s<seed>-hard); offline only
 #   scripts/r11-run.sh parity <p5b|p5a>       training inputs against the serving path on 12 development packets (CPU)
 #   scripts/r11-run.sh tokens                 real token counts of the held-out packets by the tokenizer alone (CPU; no weights are loaded)
@@ -58,9 +61,12 @@ load1() { uptime | sed -E 's/.*load averages?: ([0-9]+).*/\1/'; }
 hold_load() { n=0; while [ "$(load1)" -ge 8 ] && [ "$n" -lt 60 ]; do echo "R11 hold: 1-minute load $(load1), 8 or more ($n min waited)"; sleep 60; n=$((n + 1)); done; }
 # Another model process of this project: anything run by the model runtime's interpreter, and, because that interpreter
 # shows in the process list under the framework's own path once it has started (seen on this machine: a running scorer
-# is not matched by the interpreter's path), anything running one of this folder's model scripts.
+# is not matched by the interpreter's path), anything running one of this folder's model scripts or the app's resident
+# worker. The interpreter's path counts only at the start of a command line: a shell or a monitor whose text merely
+# names the path (an `export`, a `ps | grep`) is not a model process and must not make a night's step refuse.
 model_procs() {
-  { pgrep -fl "$MGOGO_DECIDE_PYTHON"; pgrep -fl -- '-B (worker|server|em_score|score_contexts|eval_offline|eval_ab|parity|r8_tokens|token_audit|train|train_r4|train_r11|distill|bench_batch|bench_train)\.py'; } 2>/dev/null | grep -v pgrep | grep -v fake-worker.mjs | sort -u
+  { pgrep -fl "^$MGOGO_DECIDE_PYTHON( |\$)"; pgrep -fl -- '-B (worker|server|em_score|score_contexts|eval_offline|eval_ab|parity|r8_tokens|token_audit|train|train_r4|train_r11|distill|bench_batch|bench_train)\.py'
+    pgrep -fl -- '-m experiments\.active_perception\.decide_provider'; } 2>/dev/null | grep -v pgrep | grep -v fake-worker.mjs | sort -u
 }
 refuse_other_model() { # <what>
   others="$(model_procs)"
@@ -86,7 +92,8 @@ logged() { # <log name> <command…>
 }
 seed_ok() { case "$1" in 4111|4222) ;; *) echo "seed 4111 or 4222 (docs/staging/r11-prereg.md §5); 4333 and 4444 stay sealed"; exit 2 ;; esac; }
 arm_ok() { case "$1" in p5a|p5b) ;; *) echo "arm p5b or p5a (docs/staging/r11-prereg.md §1)"; exit 2 ;; esac; }
-have() { [ -e "$1/adapters/$2/adapter_model.safetensors" ]; }
+have() { [ -e "$1/adapters/$2/adapter_model.safetensors" ] && [ -e "$1/adapters/$2/manifest.json" ]; }   # trained to the end: the manifest is the trainer's last write
+cut_short() { [ -e "$1/adapters/$2/adapter_model.safetensors" ] && [ ! -e "$1/adapters/$2/manifest.json" ]; }   # weights of an early epoch, the training never ended
 assembled() { [ -f "$FT/manifest.json" ] && [ -f "$FT/p5b/contexts/train.jsonl" ] && [ -f "$FT/eval/all.jsonl" ] || { echo "R11: no assembled files under $FT ('$0 sample')"; exit 2; }; }
 model_arms() { # <seed> <arms> <adapters root> <adapters>
   export MGOGO_FT_ROOT="$3" MGOGO_FT_ADAPTERS="$4"
@@ -136,7 +143,7 @@ case "$1" in
     else echo "R11 dry: no held-out packets under $FT yet; the offline report's dry run is skipped ('$0 sample' first)"; fi ;;
   check)
     echo "data and adapters: $FT"; ls "$FT/manifest.json" "$FT"/p5b/contexts/train.jsonl "$FT"/p5a/contexts/train.jsonl "$FT"/eval/all.jsonl 2>&1
-    for a in $NEW; do if have "$FT" "$a"; then shasum -a 256 "$FT/adapters/$a/adapter_model.safetensors"; else echo "not trained yet: $a"; fi; done
+    for a in $NEW; do if have "$FT" "$a"; then shasum -a 256 "$FT/adapters/$a/adapter_model.safetensors"; elif cut_short "$FT" "$a"; then echo "CUT SHORT (weights, no manifest.json; it is not used): $a - delete $FT/adapters/$a and train it again"; else echo "not trained yet: $a"; fi; done
     echo "the first adapter: $OLD_FT"; if have "$OLD_FT" r4-rules-state; then shasum -a 256 "$OLD_FT/adapters/r4-rules-state/adapter_model.safetensors"; else echo "MISSING: r4-rules-state under $OLD_FT/adapters"; fi
     echo "control arms on file: $(ls "$LOOP"/F/s4111/rules-1.json "$LOOP"/F/s4222/rules-1.json 2>/dev/null | wc -l | tr -d ' ') of 2 seeds; decode: the top pick, a draw arm beside it (stage R9 named no standard; prereg §11.1)"
     echo "model runtime: $MGOGO_DECIDE_PYTHON ($([ -x "$MGOGO_DECIDE_PYTHON" ] && echo found || echo MISSING))"
@@ -152,6 +159,7 @@ case "$1" in
     case "$3" in 7|11) ;; *) echo "usage: $0 $1 <p5b|p5a> <training seed: 7 or 11> (the registered training seeds, docs/staging/r11-prereg.md §4)"; exit 2 ;; esac
     NAME="r11-$2-s$3"; LABELS=soft; [ "$1" = train-hard ] && { NAME="$NAME-hard"; LABELS=hard; }
     have "$FT" "$NAME" && { echo "R11: $FT/adapters/$NAME exists already; it is not overwritten"; exit 2; }
+    cut_short "$FT" "$NAME" && { echo "R11: $FT/adapters/$NAME holds a training cut short (weights, no manifest.json); delete the folder, then run this step again"; exit 2; }
     before_model "train $NAME (labels $LABELS, training seed $3)"
     export MGOGO_FT_ROOT="$FT"
     logged "train-$NAME" $KEEP "$PY" train_r11.py --name "$NAME" --train "$2/contexts/train.jsonl" --dev "$2/contexts/dev.jsonl" --extra "$2/contexts/manifest.json" --epochs 3 --seed "$3" --labels "$LABELS" ;;
@@ -171,6 +179,7 @@ case "$1" in
     # the untuned model on every packet; each adapter on its own arm's packets
     for p in base $NEW r11-p5b-s7-hard r11-p5b-s11-hard r11-p5a-s7-hard r11-p5a-s11-hard; do
       case "$p" in base) P=p5b,p5bNoDoing,p5bProbe,p5a,p5aNoDoing,p5aProbe ;; *p5b*) P=p5b,p5bNoDoing,p5bProbe ;; *) P=p5a,p5aNoDoing,p5aProbe ;; esac
+      [ "$p" = base ] || ! cut_short "$FT" "$p" || { echo "R11 offline: $p is a training cut short (weights, no manifest.json); NOT scored. Delete $FT/adapters/$p and train it again"; continue; }
       [ "$p" = base ] || have "$FT" "$p" || { echo "R11 offline: no adapter $p; skipped"; continue; }
       [ -s "$FT/eval/all.$p.jsonl" ] && { echo "R11 offline: $FT/eval/all.$p.jsonl is on file; not scored again"; continue; }
       before_model "score the held-out packets with $p"
@@ -189,6 +198,7 @@ case "$1" in
     for a in $(echo "$3" | tr ',' ' '); do key="r11-$(echo "$a" | cut -d- -f1-2)"
       if [ -f "$LOOP/F/s$2/$a.json" ]; then echo "R11 loop: arm $a of seed $2 is on file; it is not run again"; [ -f "$LOOP/F/s$2/$a.replay.json" ] || REPLAY="$REPLAY${REPLAY:+,}$a"
       elif have "$FT" "$key"; then FRESH="$FRESH${FRESH:+,}$a"; case ",$ADAPTERS," in *",$key,"*) ;; *) ADAPTERS="$ADAPTERS${ADAPTERS:+,}$key" ;; esac
+      elif cut_short "$FT" "$key"; then echo "R11 loop: $key is a training cut short (weights, no manifest.json); arm $a is left out. Delete $FT/adapters/$key and train it again"
       else echo "R11 loop: no adapter $key yet; arm $a is left out"; fi
     done
     for a in $(echo "$4" | tr ',' ' '); do
@@ -207,7 +217,10 @@ case "$1" in
       if [ -f "$LOOP/F/s$2/$a.json" ] && [ -z "$R11_RERUN" ]; then echo "R11 refused: arm $a of seed $2 is on file; it is not run again (a second run is a second draw of its result: log the reason in the stage document first, then R11_RERUN=1)"; exit 2; fi
     done
     case "$3" in old-*) AROOT="$OLD_FT" ;; *) AROOT="$FT" ;; esac
-    for k in $NEED; do have "$AROOT" "$k" || { echo "R11 refused: no adapter $k under $AROOT/adapters (this stage's arms and the old adapter's go in separate calls)"; exit 2; }; done
+    for k in $NEED; do
+      cut_short "$AROOT" "$k" && { echo "R11 refused: $AROOT/adapters/$k is a training cut short (weights, no manifest.json); delete the folder and train it again"; exit 2; }
+      have "$AROOT" "$k" || { echo "R11 refused: no adapter $k under $AROOT/adapters (this stage's arms and the old adapter's go in separate calls)"; exit 2; }
+    done
     model_arms "$2" "$3" "$AROOT" "$(echo $NEED | tr ' ' '\n' | sort -u | tr '\n' ',' | sed 's/,$//')" ;;
   replay) seed_ok "$2"; [ -n "$3" ] || { echo "usage: $0 replay <seed> <a,b,…>"; exit 2; }; step $TSX scripts/r11-loop.ts engine --seed "$2" --arms "$3" --out "$LOOP" --replay ;;
   report)
