@@ -5,6 +5,14 @@
 // scoring rule for later stages with this run's numbers in it.
 //
 //   pnpm exec tsx scripts/r7-report.ts [--dir artifacts/r7] [--seeds 48,7] [--md docs/staging/r7-numbers.md] [--bridge <r5 pilot dir>] [--same-as <an earlier unit-F dir>]
+//       [--units F,P] [--engine "label=arm[,arm…][;label=arm…]"]
+//
+// --units F (or P): a test at one unit only (a ten-animal test reads unit F alone); the sections that need the other
+// unit are left out and say so. --engine: arms beside the control arms, with no edit of the arm list: each label is one
+// engine and each arm one realization of it, read from <dir>/<unit>/s<seed>/<arm>.json like a control arm's file (the
+// shape of scripts/r7-card.ts ArmFile; scripts/r7-card.ts armReaders attaches the card and the row readers to any
+// loop). An engine arm gets a column in every table of the control arms and its own section 12: the registered scoring
+// rule read row by row. With neither flag the output is the registered report, unchanged.
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -65,6 +73,10 @@ const ANCHORS: Record<string, { lo: number; hi: number; what: string }> = {
 if (process.argv[1]?.endsWith('r7-report.ts')) {
   const arg = (k: string, d: string) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
   const dir = resolve(arg('dir', 'artifacts/r7')), seeds = arg('seeds', '48,7').split(',').map(Number), md = arg('md', 'docs/staging/r7-numbers.md'), bridge = arg('bridge', '');
+  // the units read (both by default) and the engine arms put beside the control arms (none by default)
+  const UNITS = arg('units', 'F,P').split(',').filter(Boolean) as Unit[], has = (u: Unit) => UNITS.includes(u), units = (order: Unit[]) => order.filter(has);
+  if (!UNITS.length || UNITS.some(u => u !== 'F' && u !== 'P') || new Set(UNITS).size !== UNITS.length) throw new Error('--units F | P | F,P');
+  const ENGINE: [string, string[]][] = arg('engine', '').split(';').filter(Boolean).map(e => { const i = e.indexOf('='), label = e.slice(0, i).trim(), arms = e.slice(i + 1).split(',').map(a => a.trim()).filter(Boolean); if (i < 1 || !label || !arms.length) throw new Error(`--engine "${e}": label=arm[,arm…]`); return [label, arms]; });
   const targets = (JSON.parse(readFileSync(resolve('data/targets.json'), 'utf8')) as { targets: Target[] }).targets;
   const T = (id: string) => targets.find(t => t.id === id)!;
   ANCHORS.treesPerDay = { lo: T('T-FOOD-4').accept.lo!, hi: T('T-FOOD-4').accept.hi!, what: `feeding trees per day: T-FOOD-4's band (${(T('T-FOOD-4').sources ?? []).join(', ')}; Taï; the row is marked compromised in the registry)` };
@@ -72,8 +84,17 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
   const taiValue: Values = { sameHalfHour: TAI.same, sameFromRest: TAI.fromRest, sameFromTravel: TAI.fromTravel, sameFromFeed: TAI.fromFeed };
   const load = (unit: Unit, arm: string) => seeds.map(s => JSON.parse(readFileSync(resolve(dir, unit, `s${s}`, `${arm}.json`), 'utf8')) as ArmFile);
   const armNames = Object.keys(ARMS), rulesArms = armNames.filter(a => ARMS[a].share === null);
-  const GROUPS: [string, string[]][] = [['random', ['random-a', 'random-b']], ['mix10', ['mix10-a', 'mix10-b']], ['mix20', ['mix20-a', 'mix20-b']], ['mix30', ['mix30-a', 'mix30-b']]];
-  const LABEL: Record<string, string> = { random: 'random choice', mix10: '10% random', mix20: '20% random', mix30: '30% random' };
+  /** The control arms' groups (the rules-plus-random family the scoring rule measures an engine against), then the engines. */
+  const CONTROL: [string, string[]][] = [['random', ['random-a', 'random-b']], ['mix10', ['mix10-a', 'mix10-b']], ['mix20', ['mix20-a', 'mix20-b']], ['mix30', ['mix30-a', 'mix30-b']]];
+  const GROUPS: [string, string[]][] = [...CONTROL, ...ENGINE];
+  const engineArms = ENGINE.flatMap(([, g]) => g), allArms = [...armNames, ...engineArms];
+  for (const [label, g] of ENGINE) { if (CONTROL.some(([n]) => n === label) || ENGINE.filter(([n]) => n === label).length > 1) throw new Error(`--engine: the label "${label}" is taken`); for (const a of g) if (armNames.includes(a) || engineArms.filter(x => x === a).length > 1) throw new Error(`--engine: "${a}" is a control arm's name or is named twice`); }
+  const LABEL: Record<string, string> = { random: 'random choice', mix10: '10% random', mix20: '20% random', mix30: '30% random', ...Object.fromEntries(ENGINE.map(([n]) => [n, n])) };
+  const isEngine = (name: string) => ENGINE.some(([n]) => n === name), salts = (g: string[]) => (g.length === 1 ? 'one realization' : g.length === 2 ? 'two salts' : `${g.length} realizations`);
+  /** A group's column heading: with its number of realizations, plain, and in the list of distances. */
+  const headLong = (name: string, g: string[]) => (name === 'random' ? 'Random choice (two salts)' : isEngine(name) ? `${name} (${salts(g)})` : LABEL[name]);
+  const headShort = (name: string) => (name === 'random' ? 'Random choice' : LABEL[name]);
+  const distName = (name: string) => (name === 'random' ? 'random' : isEngine(name) ? name : LABEL[name].replace(' random', ''));
 
   const L: string[] = [], p = (s = '') => L.push(s);
   const f = (v: number | null | undefined, d = 2) => (v === null || v === undefined || !Number.isFinite(v) ? 'no value' : Math.abs(v) >= 1000 ? Math.round(v).toLocaleString('en-US') : v.toFixed(d));
@@ -84,44 +105,46 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
   // load everything
   // ------------------------------------------------------------------------------------------------------------------
   const U: Record<Unit, { files: Record<string, ArmFile[]>; vals: Record<string, Values>; perSeed: Record<string, Values[]>; spread: Record<string, Spread> }> = { F: { files: {}, vals: {}, perSeed: {}, spread: {} }, P: { files: {}, vals: {}, perSeed: {}, spread: {} } };
-  for (const unit of ['F', 'P'] as Unit[]) {
+  for (const unit of UNITS) {
     const u = U[unit];
-    for (const a of armNames) { u.files[a] = load(unit, a); u.vals[a] = realization(unit, u.files[a]); u.perSeed[a] = u.files[a].map(x => realization(unit, [x])); }
+    for (const a of allArms) { u.files[a] = load(unit, a); u.vals[a] = realization(unit, u.files[a]); u.perSeed[a] = u.files[a].map(x => realization(unit, [x])); }
     const keys = new Set(rulesArms.flatMap(a => Object.keys(u.vals[a])));
     for (const k of keys) u.spread[k] = spreadOf(rulesArms.map(a => u.vals[a][k]));
   }
   // every arm continues one burned-in world per seed, over one window per unit: a file from another burn-in (a saved burn-in
   // re-made after the simulation changed) or another length would be pooled silently, so it is refused here
   seeds.forEach((seed, i) => {
-    const hashes = [...new Set((['F', 'P'] as Unit[]).flatMap(u => armNames.map(a => U[u].files[a][i].burnInHash)))];
+    const hashes = [...new Set(UNITS.flatMap(u => allArms.map(a => U[u].files[a][i].burnInHash)))];
     if (hashes.length !== 1) throw new Error(`seed ${seed}: the arm files continue ${hashes.length} different burn-ins (${hashes.join(', ')}); re-run every arm of this seed from one burn-in`);
   });
-  for (const unit of ['F', 'P'] as Unit[]) {
-    const windows = [...new Set(armNames.flatMap(a => U[unit].files[a].map(x => x.days)))];
+  for (const unit of UNITS) {
+    const windows = [...new Set(allArms.flatMap(a => U[unit].files[a].map(x => x.days)))];
     if (windows.length !== 1) throw new Error(`unit ${unit}: the arm files cover windows of ${windows.join(' and ')} days; they must be one`);
   }
   const armVals = (unit: Unit, g: string[], k: string) => g.map(a => U[unit].vals[a][k] ?? null);
-  const any = U.F.files[armNames[0]][0];
-  const heads = [...new Set((['F', 'P'] as Unit[]).flatMap(u => armNames.flatMap(a => U[u].files[a].map(x => `${x.head}${x.dirty ? ' (dirty)' : ''}`))))];
+  const any = U[UNITS[0]].files[armNames[0]][0];
+  const heads = [...new Set(UNITS.flatMap(u => allArms.flatMap(a => U[u].files[a].map(x => `${x.head}${x.dirty ? ' (dirty)' : ''}`))))];
   const git = (cmd: string) => { try { return execSync(`git ${cmd}`, { encoding: 'utf8' }).trim(); } catch { return ''; } };
 
   p('# Stage R7, first half: the timing card, the noise floor and the control arms (numbers)');
   p();
   p(`Generated by \`scripts/r7-report.ts\` at head ${git('rev-parse --short HEAD')} on ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC from the JSON under \`artifacts/r7/\` (runs at head ${heads.join(', ')}). Registration: [r7-prereg.md](r7-prereg.md). No model was loaded. No number here is typed.`);
   p();
-  p(`Base \`${any.paramsFile}\` with \`observeV4\` 1 and \`menuParity\` 1, field profile; seeds ${seeds.join(' and ')}; ${any.burnIn} days of burn-in on the rules, then ${U.F.files[armNames[0]][0].days} days (unit F: the focal animals) or ${U.P.files[armNames[0]][0].days} days (unit P: the population). Animals under ${any.rgMinAge} stay on the rules in every arm. A **realization** is one arm with one salt, its two seeds pooled.`);
+  if (UNITS.length < 2) { p(`**Unit ${UNITS[0]} only** (\`--units ${UNITS[0]}\`): ${UNITS[0] === 'F' ? 'a ten-animal test' : 'a population test'}. The sections that need the other unit are left out.`); p(); }
+  if (ENGINE.length) { p(`**Engine arms beside the control arms** (\`--engine\`): ${ENGINE.map(([n, g]) => `${n} (${g.map(a => '\`' + a + '\`').join(', ')})`).join('; ')}. Each has a column in the tables below and is scored in section 12. An engine arm decides between ticks and a control arm inside the tick: the card reads both after the tick's acts are set.`); p(); }
+  p(`Base \`${any.paramsFile}\` with \`observeV4\` 1 and \`menuParity\` 1, field profile; seeds ${seeds.join(' and ')}; ${any.burnIn} days of burn-in on the rules, then ${units(['F', 'P']).map(u => `${U[u].files[armNames[0]][0].days} days (unit ${u}: ${u === 'F' ? 'the focal animals' : 'the population'})`).join(' or ')}. Animals under ${any.rgMinAge} stay on the rules in every arm. A **realization** is one arm with one salt, its two seeds pooled.`);
   p();
   p('| Seed | Burn-in hash | Focal animals (unit F) | Living at the fork | Animals a control arm drives at unit P |');
   p('| --- | --- | --- | --- | --- |');
-  seeds.forEach((s, i) => { const x = U.F.files['random-a'][i], y = U.P.files['random-a'][i]; p(`| ${s} | ${x.burnInHash} | ${x.focal.map(q => `${x.card.animals.find(a => a.id === q.id)?.name ?? q.id} (${q.cls})`).join(', ')} | ${x.living.start} | ${y.living.driven} |`); });
+  seeds.forEach((s, i) => { const x = U[UNITS[0]].files['random-a'][i], y = has('P') ? U.P.files['random-a'][i] : null; p(`| ${s} | ${x.burnInHash} | ${x.focal.map(q => `${x.card.animals.find(a => a.id === q.id)?.name ?? q.id} (${q.cls})`).join(', ')} | ${x.living.start} | ${y ? y.living.driven : 'unit P not read'} |`); });
   p();
-  const deathLine = (unit: Unit) => armNames.map(a => { const n = U[unit].files[a].reduce((s, x) => s + x.deaths.length, 0), nf = U[unit].files[a].reduce((s, x) => s + x.deaths.filter(d => d.focal).length, 0); return n ? `${a} ${n}${unit === 'F' && nf ? ` (${nf} focal)` : ''}` : ''; }).filter(Boolean).join(', ') || 'none';
-  p(`Deaths in the window, by arm (both seeds): unit F ${deathLine('F')}; unit P ${deathLine('P')}.`);
-  const secs = (unit: Unit) => armNames.reduce((s, a) => s + U[unit].files[a].reduce((q, x) => q + x.seconds, 0), 0);
-  p(`Processor time: ${secs('F')} s for the ${armNames.length * seeds.length} runs of unit F, ${secs('P')} s for those of unit P.`);
+  const deathLine = (unit: Unit) => allArms.map(a => { const n = U[unit].files[a].reduce((s, x) => s + x.deaths.length, 0), nf = U[unit].files[a].reduce((s, x) => s + x.deaths.filter(d => d.focal).length, 0); return n ? `${a} ${n}${unit === 'F' && nf ? ` (${nf} focal)` : ''}` : ''; }).filter(Boolean).join(', ') || 'none';
+  p(`Deaths in the window, by arm (${seeds.length === 2 ? 'both seeds' : seeds.length === 1 ? 'one seed' : `${seeds.length} seeds`}): ${units(['F', 'P']).map(u => `unit ${u} ${deathLine(u)}`).join('; ')}.`);
+  const secs = (unit: Unit) => allArms.reduce((s, a) => s + U[unit].files[a].reduce((q, x) => q + x.seconds, 0), 0);
+  p(`Processor time: ${units(['F', 'P']).map((u, k) => (k === 0 ? `${secs(u)} s for the ${allArms.length * seeds.length} runs of unit ${u}` : `${secs(u)} s for those of unit ${u}`)).join(', ')}.`);
   // --same-as <dir>: an earlier launch of unit F (prereg §12, iteration 1): the card reads only, so each arm must end on the same world
   const sameAs = arg('same-as', '');
-  if (sameAs) {
+  if (sameAs && has('F')) {
     let n = 0, same = 0;
     for (const a of armNames) seeds.forEach((s, i) => { const file = resolve(sameAs, `s${s}`, `${a}.json`); if (!existsSync(file)) return; n++; if ((JSON.parse(readFileSync(file, 'utf8')) as ArmFile).endHash === U.F.files[a][i].endHash) same++; });
     p(`Against the first launch of unit F (iteration 1, stopped before unit P finished): ${same} of ${n} runs end on the same world hash.`);
@@ -157,14 +180,14 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
   const mark = (b: boolean | null) => (b === null ? 'no value' : b ? '**yes**' : 'no');
   const pair = (unit: Unit, g: string[], k: string, d: number) => armVals(unit, g, k).map(v => f(v, d)).join(' / ');
   function cardTable(unit: Unit, keys: readonly string[]): void {
-    p('| Readout | Rules: mean | SD | lowest to highest | D | Random choice (two salts) | told | 10% random | told | 20% random | told | 30% random | told |');
-    p('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+    p(`| Readout | Rules: mean | SD | lowest to highest | D | ${GROUPS.map(([n, g]) => `${headLong(n, g)} | told`).join(' | ')} |`);
+    p(`| --- | --- | --- | --- | --- | ${GROUPS.map(() => '--- | ---').join(' | ')} |`);
     for (const k of keys) {
       const s = U[unit].spread[k], d = digitsOf(k);
       p(`| ${labelOf(k)} | ${f(s?.mean, d)} | ${f(s?.sd, d)} | ${f(s?.min, d)} to ${f(s?.max, d)} | ${f(s?.D, d)} | ${GROUPS.map(([, g]) => `${pair(unit, g, k, d)} | ${mark(told(s, armVals(unit, g, k)))}`).join(' | ')} |`);
     }
   }
-  for (const unit of ['F', 'P'] as Unit[]) {
+  for (const unit of units(['F', 'P'])) {
     const n = cardCounts(U[unit].files['rules-1'].map(x => x.card)), nT = unit === 'P' ? cardCounts(U[unit].files['rules-1'].map(x => x.card), taiAdult) : n;
     p();
     p(`## ${unit === 'F' ? '2' : '3'}. The timing card at unit ${unit}: ${unit === 'F' ? 'ten focal animals for five days (a control arm drives the focal animals only)' : 'the population for 30 days (a control arm drives every animal aged 8 and over)'}`);
@@ -189,6 +212,7 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
   }
 
   // the smallest difference each unit can show, side by side
+  if (UNITS.length === 2) {
   p();
   p('### The smallest difference each unit can show, side by side');
   p();
@@ -199,6 +223,7 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
   const rel = (s: Spread | undefined) => (s && s.mean !== null && s.D !== null && Math.abs(s.mean) > 0.05 ? `${f(100 * s.D / Math.abs(s.mean), 0)}%` : '');
   for (const k of [...TIMING_ROWS, 'reservePctPerDay', 'kmFixPerDay', 'nightsInNest', 'kcalEatenPerDay']) { const a = U.F.spread[k], b = U.P.spread[k], d = digitsOf(k); p(`| ${labelOf(k)} | ${f(a?.mean, d)} | ${f(a?.D, d)} | ${rel(a)} | ${f(b?.mean, d)} | ${f(b?.D, d)} | ${rel(b)} |`); }
   for (const id of SHORT_ROWS) { const a = U.F.spread[id], b = U.P.spread[id], d = rowDigits(id), noF = (POPULATION_ONLY as readonly string[]).includes(id); p(`| ${id} ${T(id).metric} | ${noF ? 'not read at unit F' : f(a?.mean, d)} | ${noF ? '' : f(a?.D, d)} | ${rel(a)} | ${f(b?.mean, d)} | ${f(b?.D, d)} | ${rel(b)} |`); }
+  }
 
   // ------------------------------------------------------------------------------------------------------------------
   // 4. which timing rows tell the rules from the control arms
@@ -209,14 +234,15 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
   p('| Unit | Arm | Told from the rules on (of the 14 registered rows) | Not told on |');
   p('| --- | --- | --- | --- |');
   const toldRows: Record<string, string[]> = {};
-  for (const unit of ['F', 'P'] as Unit[]) for (const [name, g] of GROUPS) {
+  for (const unit of units(['F', 'P'])) for (const [name, g] of GROUPS) {
     const yes = TIMING_ROWS.filter(k => told(U[unit].spread[k], armVals(unit, g, k)) === true), no = TIMING_ROWS.filter(k => told(U[unit].spread[k], armVals(unit, g, k)) !== true);
     toldRows[`${unit}:${name}`] = [...yes];
     p(`| ${unit} | ${LABEL[name]} | ${yes.length ? yes.map(k => labelOf(k).replace(/^C\d+b? /, '')).join('; ') : 'none'} | ${no.length ? no.map(k => labelOf(k).replace(/^C\d+b? /, '')).join('; ') : 'none'} |`);
   }
-  const nF = toldRows['F:random'].length;
+  const nF = has('F') ? toldRows['F:random'].length : null;
   p();
-  p(`**The stage's pass mark** (registered: at unit F, random choice told from the rules on at least three of the 14 timing rows): random choice is told from the rules on ${nF} of the 14 rows at unit F and on ${toldRows['P:random'].length} at unit P. ${nF >= 3 ? 'The mark is met: the card is kept as registered.' : 'The mark is NOT met: the card must be redesigned before it is used.'}`);
+  if (nF !== null) p(`**The stage's pass mark** (registered: at unit F, random choice told from the rules on at least three of the 14 timing rows): random choice is told from the rules on ${nF} of the 14 rows at unit F${has('P') ? ` and on ${toldRows['P:random'].length} at unit P` : ''}. ${nF >= 3 ? 'The mark is met: the card is kept as registered.' : 'The mark is NOT met: the card must be redesigned before it is used.'}`);
+  else p(`The stage's pass mark is read at unit F, which is not read here; at unit P random choice is told from the rules on ${toldRows['P:random'].length} of the 14 rows.`);
 
   // ------------------------------------------------------------------------------------------------------------------
   // 5. guards
@@ -227,15 +253,15 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
   p('## 5. The guards, and which of them the control arms fail');
   p();
   p('A guard fails for a realization when: reserve change or nights in a nest lie below the rules\' mean by more than D; distance, act changes or trips completed lie outside the rules\' mean ± D. "both" = both realizations of the arm fail it, "one" = one of the two, "neither" = it passes. Energy eaten is printed for the record and is not a guard.');
-  for (const unit of ['F', 'P'] as Unit[]) {
+  for (const unit of units(['F', 'P'])) {
     p();
     p(`**Unit ${unit}.**`);
     p();
-    p('| Guard | Rules: mean ± SD | D | Random choice | 10% random | 20% random | 30% random |');
-    p('| --- | --- | --- | --- | --- | --- | --- |');
+    p(`| Guard | Rules: mean ± SD | D | ${GROUPS.map(([n]) => headShort(n)).join(' | ')} |`);
+    p(`| --- | --- | --- | ${GROUPS.map(() => '---').join(' | ')} |`);
     for (const k of [...GUARDS, 'kcalEatenPerDay']) {
       const s = U[unit].spread[k], d = digitsOf(k);
-      const cell = (g: string[]) => { const v = armVals(unit, g, k), fl = v.map(x => guardFails(k, s, x)); return `${v.map(x => f(x, d)).join(' / ')}${k === 'kcalEatenPerDay' ? '' : `: ${fl.every(x => x) ? 'both' : fl.some(x => x) ? 'one' : 'neither'}`}`; };
+      const cell = (g: string[]) => { const v = armVals(unit, g, k), fl = v.map(x => guardFails(k, s, x)); return `${v.map(x => f(x, d)).join(' / ')}${k === 'kcalEatenPerDay' ? '' : `: ${g.length !== 2 ? `${fl.filter(x => x).length} of ${g.length} fail` : fl.every(x => x) ? 'both' : fl.some(x => x) ? 'one' : 'neither'}`}`; };
       p(`| ${labelOf(k)} | ${f(s.mean, d)} ± ${f(s.sd, d)} | ${f(s.D, d)} | ${GROUPS.map(([, g]) => cell(g)).join(' | ')} |`);
     }
     const all = (g: string[]) => g.map(a => GUARDS.every(k => guardFails(k, U[unit].spread[k], U[unit].vals[a][k] ?? null) === false));
@@ -255,11 +281,11 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
   p();
   p(`The part of each row and its flags are read from \`data/targets.json\`: **${held.length} rows held out** and **${fitted.length} rows fitted to field values or tuned** (the fitted rows were available when the rules were built). Unit P is the existing observer code unchanged; unit F is the same code on views of the world that hold the focal animals (the observer rows on the focal adults; T-ENE-3 from the ledger of the lactating focal females; the three community rows are not read at unit F). Distances are from the middle of the field band, in half-widths of the band (1.00 = on the band's edge). No count and no sum over rows.`);
   function scoreTable(unit: Unit, ids: readonly string[]): void {
-    p('| Row | Field band | Rules: mean ± SD (lowest to highest) | D | Random choice (two salts) | 10% random | 20% random | 30% random | Distance: rules / random / 10% / 20% / 30% |');
-    p('| --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+    p(`| Row | Field band | Rules: mean ± SD (lowest to highest) | D | ${GROUPS.map(([n, g]) => headLong(n, g)).join(' | ')} | Distance: rules / ${GROUPS.map(([n]) => distName(n)).join(' / ')} |`);
+    p(`| --- | --- | --- | --- | ${GROUPS.map(() => '---').join(' | ')} | --- |`);
     for (const id of ids) {
       const t = T(id), s = U[unit].spread[id], d = rowDigits(id);
-      if (!s || s.n === 0) { p(`| ${id} ${t.metric} | ${t.accept.lo} to ${t.accept.hi} ${t.accept.units} | ${unit === 'F' && (POPULATION_ONLY as readonly string[]).includes(id) ? 'not read at this unit (a community row)' : 'no value in any re-draw'} | | | | | | |`); continue; }
+      if (!s || s.n === 0) { p(`| ${id} ${t.metric} | ${t.accept.lo} to ${t.accept.hi} ${t.accept.units} | ${unit === 'F' && (POPULATION_ONLY as readonly string[]).includes(id) ? 'not read at this unit (a community row)' : 'no value in any re-draw'} | |${GROUPS.map(() => ' |').join('')} |`); continue; }
       const means = GROUPS.map(([, g]) => meanOf(armVals(unit, g, id)));
       p(`| ${id} ${t.metric} | ${t.accept.lo} to ${t.accept.hi} ${t.accept.units} | ${f(s.mean, d)} ± ${f(s.sd, d)} (${f(s.min, d)} to ${f(s.max, d)})${s.n < 8 ? `; a value in ${s.n} of 8 re-draws` : ''} | ${f(s.D, d)} | ${GROUPS.map(([, g]) => pair(unit, g, id, d)).join(' | ')} | ${[s.mean, ...means].map(v => f(dist(t, v), 2)).join(' / ')} |`);
     }
@@ -269,12 +295,12 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
     p(`### ${title}`);
     p();
     for (const id of ids) p(`- ${id}: ${flags(T(id))}.`);
-    for (const unit of ['P', 'F'] as Unit[]) { p(); p(`**Unit ${unit}.**`); p(); scoreTable(unit, ids); }
+    for (const unit of units(['P', 'F'])) { p(); p(`**Unit ${unit}.**`); p(); scoreTable(unit, ids); }
   }
   p();
   p('**Where a control arm sits nearer the field\'s central value than the rules do, by more than the row\'s D** (both realizations nearer the middle of the band than the rules\' mean, and told from the rules):');
   p();
-  for (const unit of ['P', 'F'] as Unit[]) for (const [name, g] of GROUPS) {
+  for (const unit of units(['P', 'F'])) for (const [name, g] of GROUPS) {
     const rows = SHORT_ROWS.filter(id => { const s = U[unit].spread[id], t = T(id); if (!s || s.mean === null) return false; const v = armVals(unit, g, id); return told(s, v) === true && v.every(x => dist(t, x)! < dist(t, s.mean)!); });
     const away = SHORT_ROWS.filter(id => { const s = U[unit].spread[id], t = T(id); if (!s || s.mean === null) return false; const v = armVals(unit, g, id); return told(s, v) === true && v.every(x => dist(t, x)! > dist(t, s.mean)!); });
     p(`- Unit ${unit}, ${LABEL[name]}: nearer on ${rows.length ? rows.join(', ') : 'no row'}; farther on ${away.length ? away.join(', ') : 'no row'}.`);
@@ -286,9 +312,9 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
   p();
   p('## 7. The card beside its field anchors (yardsticks only)');
   p();
-  p('| Readout | Field anchor | Unit | Rules: mean ± SD | Random choice | 10% random | 20% random | 30% random |');
-  p('| --- | --- | --- | --- | --- | --- | --- | --- |');
-  for (const unit of ['F', 'P'] as Unit[]) {
+  p(`| Readout | Field anchor | Unit | Rules: mean ± SD | ${GROUPS.map(([n]) => headShort(n)).join(' | ')} |`);
+  p(`| --- | --- | --- | --- | ${GROUPS.map(() => '---').join(' | ')} |`);
+  for (const unit of units(['F', 'P'])) {
     for (const k of ['visitMean', 'treesPerDay']) { const s = U[unit].spread[k], d = digitsOf(k), a = ANCHORS[k]; p(`| ${labelOf(k)} | ${a.lo} to ${a.hi}: ${a.what} | ${unit} | ${f(s.mean, d)} ± ${f(s.sd, d)} | ${GROUPS.map(([, g]) => pair(unit, g, k, d)).join(' | ')} |`); }
     for (const k of HALF_HOUR) { const s = U[unit].spread[k]; p(`| ${labelOf(k)} | Taï ${f(taiValue[k], 3)} (lemoine2023; western subspecies) | ${unit} | ${f(s.mean, 3)} ± ${f(s.sd, 3)} | ${GROUPS.map(([, g]) => pair(unit, g, k, 3)).join(' | ')} |`); }
     { const k = 'bout3Mean', s = U[unit].spread[k]; p(`| ${labelOf(k)} | about 15 min, by implication only (lemoine2023: 30 min is "twice the average lengths of activity bouts") | ${unit} | ${f(s.mean, 2)} ± ${f(s.sd, 2)} | ${GROUPS.map(([, g]) => pair(unit, g, k, 2)).join(' | ')} |`); }
@@ -306,7 +332,7 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
   p();
   p('| Row | Unit | Middle of the band | Best of the family: arm, mean, distance | D | An engine counts as closer only with a value between |');
   p('| --- | --- | --- | --- | --- | --- |');
-  const family: [string, string[] | null][] = [['the rules', null], ...GROUPS.map(([name, g]) => [LABEL[name], g] as [string, string[]])];
+  const family: [string, string[] | null][] = [['the rules', null], ...CONTROL.map(([name, g]) => [LABEL[name], g] as [string, string[]])];
   function ruleLine(label: string, unit: Unit, key: string, c: number, h: number, d: number, own = false): void {
     const s = U[unit].spread[key];
     if (!s || s.mean === null || s.D === null) { p(`| ${label} | ${unit} | ${f(c, d)} | no value | | not readable at this unit |`); return; }
@@ -314,14 +340,14 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
     const best = fam.reduce((a, b) => (b.d < a.d ? b : a)), room = best.d - s.D;
     p(`| ${label} | ${unit} | ${f(c, d)} | ${best.name}, ${f(best.mean, d)}, ${own ? `${f(best.d, d)} away` : `${f(best.d / h, 2)} half-widths`} | ${f(s.D, d)}${own ? '' : ` (${f(s.D / h, 2)} half-widths)`} | ${room > 0 ? `${f(c - room, d)} and ${f(c + room, d)}` : 'nothing: the family\'s best arm is already within D of the field value, so this unit cannot show an engine to be closer on this row'} |`);
   }
-  for (const id of SHORT_ROWS) for (const unit of ['P', 'F'] as Unit[]) { if (unit === 'F' && (POPULATION_ONLY as readonly string[]).includes(id)) continue; const t = T(id); ruleLine(`${id} ${t.metric}`, unit, id, centre(t), half(t), rowDigits(id)); }
-  for (const k of ['visitMean', 'treesPerDay']) for (const unit of ['P', 'F'] as Unit[]) ruleLine(labelOf(k), unit, k, (ANCHORS[k].lo + ANCHORS[k].hi) / 2, (ANCHORS[k].hi - ANCHORS[k].lo) / 2, digitsOf(k));
+  for (const id of SHORT_ROWS) for (const unit of units(['P', 'F'])) { if (unit === 'F' && (POPULATION_ONLY as readonly string[]).includes(id)) continue; const t = T(id); ruleLine(`${id} ${t.metric}`, unit, id, centre(t), half(t), rowDigits(id)); }
+  for (const k of ['visitMean', 'treesPerDay']) for (const unit of units(['P', 'F'])) ruleLine(labelOf(k), unit, k, (ANCHORS[k].lo + ANCHORS[k].hi) / 2, (ANCHORS[k].hi - ANCHORS[k].lo) / 2, digitsOf(k));
   p();
   p('For the Taï half-hour shares the anchor is one value without a band; the same rule applies with the distance in the share\'s own units:');
   p();
   p('| Readout | Unit | Taï | Best of the family: arm, mean, distance | D | An engine counts as closer only with a value between |');
   p('| --- | --- | --- | --- | --- | --- |');
-  for (const k of HALF_HOUR) for (const unit of ['P', 'F'] as Unit[]) ruleLine(labelOf(k), unit, k, taiValue[k]!, 1, 3, true);
+  for (const k of HALF_HOUR) for (const unit of units(['P', 'F'])) ruleLine(labelOf(k), unit, k, taiValue[k]!, 1, 3, true);
 
   // ------------------------------------------------------------------------------------------------------------------
   // 9. seeds one by one; the bridge to the engine tests
@@ -329,6 +355,8 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
   p();
   p('## 9. The seeds one by one (unit F, the 14 timing rows and the guards)');
   p();
+  if (!has('F')) p('Unit F is not read here.');
+  else {
   p(`| Readout | ${seeds.map(s => `Seed ${s}: rules mean ± SD | Seed ${s}: random choice (two salts)`).join(' | ')} |`);
   p(`| --- | ${seeds.map(() => '--- | ---').join(' | ')} |`);
   for (const k of [...TIMING_ROWS, 'reservePctPerDay', 'kmFixPerDay', 'nightsInNest', 'kcalEatenPerDay']) {
@@ -361,21 +389,27 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
       }
     });
   }
+  }
   // ------------------------------------------------------------------------------------------------------------------
   // 10. what the unit-F observers followed
   // ------------------------------------------------------------------------------------------------------------------
   p();
   p('## 10. What the pinned observers of unit F followed');
   p();
+  if (!has('F')) { p('Unit F is not read here.'); p(); }
+  else {
   const fol = armNames.map(a => U.F.files[a].flatMap(x => Object.values(x.follows ?? {})));
   const tot = (g: (x: { follows: number; complete: number; lost: number; hours: number; focalOk: boolean }) => number) => fol.reduce((s, l) => s + l.reduce((q, x) => q + g(x), 0), 0);
   p(`Over the ${armNames.length} arms and ${seeds.length} seeds, the ${fol[0].length} observers of an arm (one per focal adult) recorded ${tot(x => x.follows)} follows, ${tot(x => x.complete)} complete (nest to nest) and ${tot(x => x.lost)} lost by the observer's own loss hazard, ${f(tot(x => x.hours), 0)} follow hours in all; every follow was of the observer's own animal: ${fol.every(l => l.every(x => x.focalOk)) ? 'yes' : 'NO'}. The adolescent of each seed has no observer (the observer follows adults of 15 and over).`);
   p();
+  }
   // ------------------------------------------------------------------------------------------------------------------
   // 11. checks added by the review of 10 October 2026: read from the same files, no new run
   // ------------------------------------------------------------------------------------------------------------------
   p('## 11. Checks added by the review of 10 October (read from the same files; no new run)');
   p();
+  if (UNITS.length < 2) { p(`These checks set unit F beside unit P, or read unit P; with unit ${UNITS[0]} alone ${has('P') ? 'only the last two are printed' : 'they are left out'}.`); p(); }
+  if (UNITS.length === 2) {
   p('### The ten focal animals inside the population runs');
   p();
   const fDays = U.F.files[armNames[0]][0].days;
@@ -390,9 +424,11 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
   for (const k of ['actChanges', 'switchesPerWakingHour', 'tripsBegun', 'tripsDone', 'kmFixPerDay']) for (const unit of ['F', 'P'] as Unit[]) {
     const d = digitsOf(k), sp = spreadOf(rulesArms.map(a => cut[unit][a][k] ?? null));
     const cell = (g: string[]) => { const v = g.map(a => cut[unit][a][k] ?? null), m = meanOf(v); return `${v.map(x => f(x, d)).join(' / ')} (${m !== null && sp.mean ? `${m >= sp.mean ? '+' : ''}${f(100 * (m / sp.mean - 1), 0)}%` : 'no value'})`; };
-    p(`| ${labelOf(k)} | ${unit === 'F' ? 'the ten focal animals only (unit F)' : `every animal aged ${any.rgMinAge} and over (unit P, its first ${fDays} days)`} | ${f(sp.mean, d)} ± ${f(sp.sd, d)} | ${f(sp.D, d)} | ${GROUPS.map(([, g]) => cell(g)).join(' | ')} |`);
+    p(`| ${labelOf(k)} | ${unit === 'F' ? 'the ten focal animals only (unit F)' : `every animal aged ${any.rgMinAge} and over (unit P, its first ${fDays} days)`} | ${f(sp.mean, d)} ± ${f(sp.sd, d)} | ${f(sp.D, d)} | ${CONTROL.map(([, g]) => cell(g)).join(' | ')} |`);
   }
   p();
+  }
+  if (has('P')) {
   p('### The half-hour share at unit P: on the animals adult by the Taï paper\'s rule, and on every animal read');
   p();
   p('The registration reads the card at unit P on every animal aged 8 and over. Sections 3 to 8 print the four half-hour rows on the animals adult by the Taï paper\'s rule (males over 12, females over 10): a choice written into this script after the registration and before the first unit-P run had finished. Both readings, so that the choice can be seen to change no call:');
@@ -402,7 +438,7 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
   const everyone: Record<string, Values> = Object.fromEntries(armNames.map(a => [a, cardSummary(U.P.files[a].map(x => x.card))]));
   for (const k of HALF_HOUR) for (const who of ['adult by the Taï rule', 'all aged 8 and over']) {
     const get = (a: string) => (who === 'all aged 8 and over' ? everyone[a][k] : U.P.vals[a][k]) ?? null, sp = spreadOf(rulesArms.map(get));
-    p(`| ${labelOf(k)} | ${who} | ${f(sp.mean, 3)} ± ${f(sp.sd, 3)} | ${f(sp.D, 3)} | ${GROUPS.map(([, g]) => `${g.map(a => f(get(a), 3)).join(' / ')} | ${mark(told(sp, g.map(get)))}`).join(' | ')} |`);
+    p(`| ${labelOf(k)} | ${who} | ${f(sp.mean, 3)} ± ${f(sp.sd, 3)} | ${f(sp.D, 3)} | ${CONTROL.map(([, g]) => `${g.map(a => f(get(a), 3)).join(' / ')} | ${mark(told(sp, g.map(get)))}`).join(' | ')} |`);
   }
   p();
   p('### How far beyond D each "nearer" call of section 6 lies (unit P)');
@@ -411,7 +447,7 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
   p();
   p('| Arm | Row | Rules: mean | D | The arm (two salts) | Margin beyond D | Margin ÷ D | The rules\' mean is inside the band |');
   p('| --- | --- | --- | --- | --- | --- | --- | --- |');
-  for (const [name, g] of GROUPS) for (const id of SHORT_ROWS) {
+  for (const [name, g] of CONTROL) for (const id of SHORT_ROWS) {
     const sp = U.P.spread[id], t = T(id);
     if (!sp || sp.mean === null || sp.D === null) continue;
     const v = armVals('P', g, id);
@@ -420,6 +456,44 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
     p(`| ${LABEL[name]} | ${id} | ${f(sp.mean, d)} | ${f(sp.D, d)} | ${v.map(x => f(x, d)).join(' / ')} | ${f(margin, d + 1)} | ${f(margin / sp.D, 2)} | ${sp.mean >= t.accept.lo! && sp.mean <= t.accept.hi! ? 'yes' : 'no'} |`);
   }
   p();
+  }
+  // ------------------------------------------------------------------------------------------------------------------
+  // 12. engine arms (only with --engine): the registered scoring rule, row by row
+  // ------------------------------------------------------------------------------------------------------------------
+  if (ENGINE.length) {
+    p('## 12. The engine arms, read by the registered rule');
+    p();
+    p('Each engine arm against the control arms of the same unit, by the rule of r7-prereg.md §8 as registered (distance to the middle of the field band; the review of 10 October put the alternative, distance outside the band, to the user, and it is not applied here). **Told from the rules**: every realization of the engine lies outside the rules\' mean ± D on the same side. **Closer**: every realization is nearer the field\'s central value than the best arm of the rules-plus-random family by more than the row\'s D, and all five guards hold for it. Rows without a band or an anchor are given by value only. No count over rows and no sum.');
+    for (const unit of units(['F', 'P'])) for (const [name, g] of ENGINE) {
+      const guards = g.map(a => GUARDS.map(k => ({ k, fails: guardFails(k, U[unit].spread[k], U[unit].vals[a][k] ?? null) })));
+      const holds = guards.map(x => x.every(y => y.fails === false));
+      p();
+      p(`### ${name}, unit ${unit} (${salts(g)}: ${g.map(a => `\`${a}\``).join(', ')})`);
+      p();
+      p(`Guards: ${g.map((a, i) => `\`${a}\` ${holds[i] ? 'all five hold' : `fails ${guards[i].filter(y => y.fails !== false).map(y => `${labelOf(y.k)}${y.fails === null ? ' (no value)' : ''}`).join('; ')}`}`).join('. ')}. Told from the rules on ${toldRows[`${unit}:${name}`].length} of the 14 timing rows.`);
+      p();
+      p('| Readout or row | Rules: mean | D | The engine | Told from the rules | Direction | Middle of the band or anchor | Best of the family: arm, distance | The engine\'s distance | Closer by the registered rule |');
+      p('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+      const line = (label: string, key: string, d: number, c: number | null, h: number, own: boolean): void => {
+        const s = U[unit].spread[key], v = armVals(unit, g, key), tl = s ? told(s, v) : null;
+        const dir = !s || s.mean === null || v.some(x => x === null) ? '' : v.every(x => x! > s.mean!) ? 'above' : v.every(x => x! < s.mean!) ? 'below' : 'mixed';
+        let fam = '', mine = '', closer = '';
+        if (c !== null && s && s.mean !== null && s.D !== null) {
+          const all = family.map(([n, fg]) => ({ n, mean: fg ? meanOf(armVals(unit, fg, key)) : s.mean })).filter(x => x.mean !== null).map(x => ({ ...x, d: Math.abs(x.mean! - c) })), best = all.reduce((a, b) => (b.d < a.d ? b : a));
+          const ds = v.map(x => (x === null ? null : Math.abs(x - c)));
+          fam = `${best.n}, ${own ? f(best.d, d) : `${f(best.d / h, 2)} half-widths`}`;
+          mine = ds.map(x => (x === null ? 'no value' : own ? f(x, d) : f(x / h, 2))).join(' / ');
+          closer = ds.some(x => x === null) ? 'no value' : ds.every(x => x! < best.d - s.D!) ? (holds.every(Boolean) ? '**yes**' : 'no: a guard fails') : 'no';
+        }
+        p(`| ${label} | ${f(s?.mean, d)} | ${f(s?.D, d)} | ${v.map(x => f(x, d)).join(' / ')} | ${mark(tl)} | ${dir} | ${c === null ? '' : f(c, d)} | ${fam} | ${mine} | ${closer} |`);
+      };
+      for (const k of TIMING_ROWS) { const a = ANCHORS[k], tai = taiValue[k]; line(labelOf(k), k, digitsOf(k), a ? (a.lo + a.hi) / 2 : tai ?? null, a ? (a.hi - a.lo) / 2 : 1, !a); }
+      for (const k of ['reservePctPerDay', 'kmFixPerDay', 'nightsInNest', 'kcalEatenPerDay']) line(labelOf(k), k, digitsOf(k), null, 1, true);
+      for (const id of SHORT_ROWS) { if (unit === 'F' && (POPULATION_ONLY as readonly string[]).includes(id)) continue; const t = T(id); line(`${id} ${t.metric}`, id, rowDigits(id), centre(t), half(t), false); }
+    }
+    p();
+  }
   writeFileSync(resolve(md), L.join('\n'));
-  console.log(`wrote ${md} (${L.length} lines); pass mark: random told from the rules on ${nF} of 14 timing rows at unit F`);
+  console.log(`wrote ${md} (${L.length} lines); pass mark: random told from the rules on ${nF === null ? 'no value (unit F not read)' : nF} of 14 timing rows at unit F`);
+
 }

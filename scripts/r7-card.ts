@@ -86,8 +86,13 @@ export function armWorld(base: World, spec: ArmSpec, unit: Unit, focalIds: numbe
   return w;
 }
 
+/**
+ * An arm's file. A control arm's `spec` is its share and salt; an engine arm put beside them (scripts/r7-report.ts
+ * --engine) writes the same file from its own loop, with whatever describes it under `spec` (the kernel, the adapter,
+ * the decode) and the card and rows from `armReaders`.
+ */
 export interface ArmFile {
-  stage: 'r7-card'; unit: Unit; seed: number; arm: string; spec: ArmSpec; burnIn: number; days: number; paramsFile: string; head: string; dirty: boolean;
+  stage: 'r7-card'; unit: Unit; seed: number; arm: string; spec: ArmSpec | Record<string, unknown>; burnIn: number; days: number; paramsFile: string; head: string; dirty: boolean;
   burnInHash: string; startHash: string; endHash: string; seconds: number;
   focal: { id: number; cls: string }[]; focalTroop: number; rgMinAge: number; living: { start: number; end: number; driven: number };
   deaths: { id: number; cause: string | null; focal: boolean }[];
@@ -119,6 +124,24 @@ export function runArm(base: World, spec: ArmSpec, unit: Unit, days: number, foc
   const focalSetIds = new Set(focalIds);
   const deaths = w.chimps.filter(c => !c.alive && c.deathTime !== null && c.deathTime >= base.time).map(c => ({ id: c.id, cause: c.causeOfDeath, focal: focalSetIds.has(c.id) }));
   return { startHash, endHash: worldHash(w), seconds: Math.round((Date.now() - t0) / 1000), rgMinAge: P.rgMinAge, living: { start: alive0.length, end: w.chimps.filter(c => c.alive).length, driven }, deaths, card: cardFinish(card), ...out };
+}
+
+/**
+ * The card and the row readers of one arm at one unit, for any loop: what runArm attaches to a control arm, so that an
+ * engine arm (a kernel answering between ticks: scripts/r5-pilot.ts, scripts/r9-loop.ts) is read by the same code and
+ * its file can stand beside the control arms in scripts/r7-report.ts --engine. Call `before` before each tick and
+ * `after` once the tick's acts are set (for a between-tick kernel: after its answers were applied), then `finish`.
+ * At unit F the card and the rows are read on `focalIds`; at unit P on every animal aged rgMinAge and over at the start.
+ * The readers only read; at unit P `finish` (or `stop`, if the loop ends early) takes the simulation's taps off again.
+ */
+export function armReaders(w: World, unit: Unit, days: number, focalIds: number[]): { before(): void; after(): void; stop(): void; finish(params: Record<string, number>): Pick<ArmFile, 'card' | 'rows' | 'perAnimal' | 'follows' | 'counts'> } {
+  const P = paramsOf(w), tracked = unit === 'F' ? focalIds : w.chimps.filter(c => c.alive && c.age >= P.rgMinAge).map(c => c.id), card = cardStart(w, tracked);
+  if (unit === 'P') {
+    const r = popStart(w, w.seed, days);
+    return { before: () => popBefore(r, w), after: () => { popAfter(r, w); cardStep(card, w); }, stop: () => popStop(), finish: params => { popStop(); return { card: cardFinish(card), ...popFinish(r, w, params) }; } };
+  }
+  const r = focalStart(w, w.seed, days, focalIds);
+  return { before: () => {}, after: () => { focalAfter(r, w); cardStep(card, w); }, stop: () => {}, finish: params => { const f = focalFinish(r, params); return { card: cardFinish(card), rows: f.truth, perAnimal: f.perAnimal, follows: f.follows }; } };
 }
 
 const git = (cmd: string) => { try { return execSync(`git ${cmd}`, { encoding: 'utf8' }).trim(); } catch { return ''; } };
