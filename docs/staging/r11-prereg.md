@@ -841,6 +841,109 @@ touched. The amendments (commit a9e17bf, 12:03:12) came before the script repair
 | `training/decide_ft/test_soft_loss.py`, the loss by hand | ff21849 | 12:00; 12:10 | 9 of 9; §11.5 |
 | `tsc --noEmit`, the stage's scripts under the same strict check, `gen-params --check` | ff21849 | 12:10 | clean; 1,050 entries, none added; `git diff a11c45c -- src data` is empty |
 
+## 12. The last check before the training nights (a second agent, 11 October 2026, from 12:12 EDT)
+
+The trainer and the soft labels had never met the model runtime. This section looks for anything that would waste a
+night: what was read again, what was repaired, a smoke run (logged in §12.3 before it runs) and the measured costs. It
+changes no label, packet, training file, setting, mark or statement. A whole-population run on the real model held the
+GPU until about 14:40; §12.1 and §12.2 were done while it ran, with no model (the tokenizer alone, on the CPU).
+
+### 12.1 What was read again (no model)
+
+`training/decide_ft/train_r11.py` against `train_r4.py`, `common.py`, `parity.py`, `em_score.py`, `adapters.py`,
+`worker.py`, `r4_py.sh` and `scripts/r11-run.sh`, for faults that only show at run time.
+
+- **Paths.** Every Python path is `MGOGO_FT_ROOT` joined to the checkout's root, and an absolute `MGOGO_FT_ROOT`
+  replaces the root, so the launch order's absolute `R11_FT_ROOT` reaches the same files from a frozen checkout.
+  `train` writes to `<root>/adapters/r11-<arm>-s<seed>`, `offline` reads `<root>/eval/all.jsonl` and writes
+  `all.<adapter>.jsonl` beside it, `parity` reads `<root>/<arm>/contexts/dev.jsonl`. The first adapter is found under
+  the worktree `r4b-retrain` and has its manifest.
+- **Runtime variables** (HANDOFF.md §3 item 3). The run script exports `MGOGO_GHN_ROOT`, `MGOGO_DECIDE_PYTHON`,
+  `HF_HOME`, `HF_HUB_CACHE` and the two offline flags; `r4_py.sh` adds the MPS memory lines (0.6 and 0.4) and
+  unbuffered output; the loop's worker gets the same from `scripts/ft-society.ts`. Nothing is read from the internal disk.
+- **Names.** The run script, the loop (`ADAPTERS` in `scripts/r11-loop.ts`) and the offline step agree on
+  `r11-p5b-s7`, `r11-p5a-s7`, `r11-p5b-s11`, `r11-p5a-s11`; an adapter is read on its own arm's packets by its name.
+- **Overwrite and resume.** The trainer has no resume: a training cut short starts again from the first step. The
+  trainer alone would write over a folder; the run script refuses to. One fault was here (§12.2, repair 1).
+- **Out of memory on MPS.** As stage R4: the batch is shown again one example at a time after the cache is emptied.
+  If one example alone still does not fit, the run stops. The cap on this machine is 7.1 GiB; stage R4 trained under
+  it with longer packets (its table T2: a median of 452 real tokens, the largest 646); this stage's longest training
+  packet has 548.
+- **The saved epoch** is chosen as stage R4 chose it: the epoch with the lowest development loss, the first on a tie;
+  the loss is the one trained on (the soft cross-entropy, as registered in §4).
+- **The training seed** reaches the adapter's starting weights and the dropout (the library's generators, CPU and
+  MPS), the order of the examples and which of the two option orders each is shown in. As in stage R4, the shuffled
+  order of a row is fixed by the row's id, not by the training seed, so both trainings see the same two orders.
+- **The files once more** (plain `python3`): in all 6,840 training and development rows the label names exactly the
+  options offered, no mass is negative, the realised pick has mass, and no row carries an `epoch` field (which would
+  hide it from two of three epochs); the sums differ from 1 by at most 0.000002 (the trainer renormalises). Both
+  arms hold the same rows, order, options and labels. On all 6,240 training rows the shuffle keeps each option's
+  mass with its text.
+
+**Real token counts of every packet a model will read** (the tokenizer alone, `r8_tokens.py`'s counter; 12:14 EDT;
+95th percentile as `token_audit.py` takes it). 15,680 packets; the largest has 562 tokens; none is over 1,280. A
+shuffled training packet has the same count as its own order on 6,240 of 6,240.
+
+| Packets | Median | 95th percentile | Largest | Over 1,280 |
+| --- | --- | --- | --- | --- |
+| P5b, training (3,120) | 340 | 467 | 548 | 0 |
+| P5b, development (300) | 321 | 461 | 529 | 0 |
+| P5b, held-out fresh draws (1,500) | 337 | 462 | 562 | 0 |
+| P5b, every held-out row (2,000) | 328 | 458 | 562 | 0 |
+| P5b without `doing` (1,340) | 315 | 443 | 541 | 0 |
+| P5b probes (1,080) | 338 | 476 | 561 | 0 |
+| P5a, training (3,120) | 295 | 408 | 488 | 0 |
+| P5a, development (300) | 285 | 404 | 466 | 0 |
+| P5a, held-out fresh draws (1,500) | 292 | 405 | 484 | 0 |
+| P5a, every held-out row (2,000) | 285 | 400 | 484 | 0 |
+| P5a without `doing` (1,340) | 275 | 388 | 472 | 0 |
+| P5a probes (1,080) | 297 | 413 | 491 | 0 |
+
+### 12.2 Three repairs, made before the smoke run
+
+1. **A training cut short could have been read as a trained adapter** (major). The trainer saves the weights of the
+   best epoch so far and writes `manifest.json` last. The run script took the weights alone as "trained". Had a
+   training died in its second or third epoch, `offline` and `loop` would have scored the first epoch's weights and
+   run its arms as if they were the result, and with the launch order pasted line by line nothing would have stopped
+   them. Now an adapter is on file only with its manifest; weights without one are named a training cut short by
+   `check`, never scored, never sent into the loop, and `train` refuses until the folder is deleted. Tried on a
+   scratch folder with one such adapter: `train`, `offline`, `loop`, `arms` and `check` each say so and start nothing.
+2. **The model-process guard could refuse a night's step for a shell that only names the interpreter** (minor). It
+   matched the interpreter's path anywhere in a command line. A started interpreter is listed under the framework's
+   path (the script names catch it), so in practice the path matched only shells and monitors whose text holds it
+   (an `export`, a `ps | grep`): seen at 12:22, when the old line listed this agent's own shell. The path now counts
+   only at the start of a command line, and the app's resident worker (`-m …decide_provider`) is looked for as well.
+   The new line still lists the population run's worker.
+3. **The trainer** (two additions; the loss, the settings and the random draws are untouched). A missing `--extra`
+   file now stops it before the model loads, not after the last epoch, where it would have cost the manifest. The
+   self-check runs on the first example and again on the first example whose label is spread over options, and each
+   prints its logits, target and pick, so the loss can be redone by hand from any training's log.
+
+### 12.3 The smoke run, logged before it runs (12:25 EDT)
+
+After the population run has ended and no model process is alive; one model process at a time; about 12 minutes of
+model time in all. It is a check of the machinery, never a result: no number from it enters a table.
+
+- **Parity** (CPU): `scripts/r11-run.sh parity p5b`, then `parity p5a`: training inputs against the serving path on
+  12 development packets each. Each must print `PARITY OK`.
+- **Smoke training** (MPS): the run script's own `train` line with another root, name and number of epochs:
+  `MGOGO_FT_ROOT=<worktree>/artifacts/r11/smoke training/decide_ft/r4_py.sh train_r11.py --name smoke-p5b-s7 --train
+  p5b/contexts/train.jsonl --dev p5b/contexts/dev.jsonl --extra p5b/contexts/manifest.json --epochs 2 --seed 7
+  --labels soft`. The scratch root holds 164 rows of the real P5b training file (every 20th row and the 8 longest:
+  mean 355 real tokens against the file's 347, so the longest batch a night can meet is in it), 34 rows of the real
+  development file (every 9th) and a copy of the arm's manifest. 42 optimiser steps. Read from its log and files:
+  the two self-checks; the loss of the logged examples redone by hand; every loss finite; the running loss and the
+  development loss against the untuned model's; peak memory against stage R4's 6.8 GiB; seconds per example; the
+  manifest and its fields; no out-of-memory retry.
+- **The saved adapter loaded again** (MPS): `em_score.py` on the 34 development packets (the development loss
+  redone from the loaded adapter's answers must be the saved epoch's, within the difference between serving
+  precision and training precision) and on 125 held-out fresh draws of seed 21 (every 12th), read for shape and
+  for seconds per packet only: one probability per option, summing to 1. No agreement is read from held-out draws.
+- **The loop's ask path** (MPS): `worker.py` started as the loop starts it, with the smoke adapter named: its ready
+  line must carry the adapter with the file's hash; 25 held-out packets asked one at a time (shape, seconds per
+  ask), 8 of them also of the untuned model (the answers must differ: the adapter is in use).
+- Afterwards `artifacts/r11/smoke` is deleted. Nothing is written under `artifacts/decide-ft/r11`.
+
 ## For the integrator
 
 *(Rewritten by the reviewer on 11 October 2026 after §11; the builder's notes are kept where they still hold.)*
