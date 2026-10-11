@@ -229,15 +229,47 @@ JSON stay under `artifacts/` (not committed); the numbers file is generated from
    had misclassed (a community id used as a table index, a conditional that returns an animal, numbers that test a
    registry switch). These are judgement calls about classing; nothing was adjusted toward a count.
 
+**Amendments of the review** (10 October 2026, 20:45 EDT; a second agent read the diff, re-ran every part and repaired
+what it confirmed; each item is a defect of the first version, with a test, and the numbers file was generated again).
+The four lines of the reference configuration did not move.
+
+8. **A dead animal's window ends at its last receipt.** On training seed 48 the first adapter's gate arm lost a focal
+   animal to illness on the fourth day. A dead animal makes no decision, so its receipts stop, and the first version
+   credited the 47 hours to the window's end to the model's last choice, as waking minutes: 2,816 of that arm's 17,489.
+   Its line 1 was printed as 33.8% to 99.4% and is 40.3% to 99.3%. The arm file lists who died (not when), so the window
+   of a listed animal ends at its last receipt and the rest is credited to nobody; the numbers file names the animal.
+   No other saved arm lost a focal animal.
+9. **The numbers of the reason sentences are wording.** The valuation scan asked "does a name here reach an offer?"
+   before "is this a wording function?", and it follows names without scope, so the thresholds that only choose a
+   reason's words were counted as inline score literals (the wording row held one number). Asked in the other order:
+   18 wording numbers, and the count of inline score literals falls from 457 to 440. Five of the 30 clock constants
+   stand in the wording function and are now marked.
+10. **A waking is not a scheduled bout end.** A sleeper's nest bout is held one tick ahead while it sleeps, so "the end
+    as it stood at the last tick" is always "now" when it wakes, and every morning waking read as the scheduled end of
+    a bout: 190 decision points a seed among the animals aged 8 and over, one a night each. The tap now keeps who was
+    asleep at the end of the last tick. The scheduled share falls from 51.1% to 50.0% and the waking row rises from
+    0.2% to 1.4%; the gate's own verdicts are untouched.
+11. **"Nobody came along" is not a companion arriving.** The coarse reading of interrupt texts tried "came along"
+    before "nobody came", so the failed departures (13.2% of interrupts) were printed as "a companion arriving"
+    (13.9%); what is left of that row is an approach to mate (0.7%). "Gave alarm hoos" and "moved away" are read too.
+    A test holds the reading against the interrupt texts in `src/sim`.
+12. **Smaller repairs.** Each row of the receipt tables carries the seeds and focal animals it was run on (three
+    configurations exist on one training seed only, under a heading that named both); the days of a window are read
+    from the arm files, not typed; an animal born inside the tapped window would have read as interrupted at its
+    first decision (none was born); a trip pool of -1 (a dependent young animal, no trip code reached) entered the
+    young animals' distribution, which no table prints.
+
 ## 10. What was run
 
 - **Part A**, no simulation: 24 arm-and-set combinations found (15 with a model, 9 controls), 103,965 receipts.
 - **Part B**: seeds 48 and 7, 30 days of burn-in and 5 tapped days each, one simulation at a time, from a clean tree.
-  The numbers are those of the run at commit 65e0a5c; two earlier runs (at 2d98cb1 and 65efc15, before the readouts of
-  amendment 5) ended on the same hashes with the same counts. About 65 to 95 s a seed, the untapped check run
-  included. End hashes `10d4ef4232f7486d` (seed 48) and `50678685a0fdba6c` (seed 7), each equal to its untapped world's.
+  The numbers are those of the review's run at commit 7cd6f7a; three earlier runs (at 2d98cb1, 65efc15 and 65e0a5c)
+  ended on the same hashes with the same counts of decision points, and a separate script that reads only the
+  simulation's own counters (decision versions and `rgTally`) gave the same counts and verdicts for seed 48. About 65
+  to 115 s a seed, the untapped check run included. End hashes `10d4ef4232f7486d` (seed 48) and `50678685a0fdba6c`
+  (seed 7), each equal to its untapped world's.
 - **Valuation ledger**: source text only.
-- **Checks**: `tests/r7-ledger.test.ts` (13 tests), `tests/valuation-ledger.test.ts` (7), and unchanged
+- **Checks**: `tests/r7-ledger.test.ts` (16 tests), `tests/valuation-ledger.test.ts` (9), and unchanged
   `tests/sim-params.test.ts` (the goldens), `tests/kernel.test.ts` (the goldens again), `tests/sim-track-e.test.ts` (the
   field pin), `tests/sim-rg.test.ts`, `tests/prescription-ledger.test.ts`, `tests/r5-pilot.test.ts`; `tsc --noEmit`;
   `gen-params --check` (no parameter was added). The whole suite and the build were not run (the integrator's).
@@ -248,7 +280,9 @@ JSON stay under `artifacts/` (not committed); the numbers file is generated from
 days). Its name: rules-taught model on a rules menu.
 
 1. *Kind.* The model picked the kind of act, from a real choice, for 34.8% to 63.0% of waking minutes. Counting the
-   minutes the gate then held without asking, 99.9% of waking minutes were in a kind the model had picked. Over the
+   minutes the gate then held without asking, 99.9% of waking minutes followed a choice of the model: the kind it
+   picked, or the feeding the gate begins on its own when a trip the model picked arrives (the receipts cannot
+   separate the two; in the rules world the gate's holds are five keeps to one arrival). Over the
    whole 24 hours: 58.3% under a fresh choice, 41.5% held by the gate, 0.2% the rules. With the gate off the same
    adapter is asked at every decision point and the figure is 99.6%.
 2. *Target.* It picked the target of 7.6% of acts (114 of 1,494), or 10.5% of the acts that have a target. By class:
@@ -267,7 +301,7 @@ partners stand on the menu at 31.1% of decision points in the rules world.
 points; no kernel would be asked for them. For the others: 88.8 decision points per animal and day, and the gate asks
 again at 64.0% of them (56.9 asks a day). Of those asks, 44.9% follow something perceived, 32.0% a hand-set number
 (a need threshold, the 30 minute limit, the clock period) and 23.1% the end of the act. With the gate off, half of all
-asks (51.1%) come at the scheduled end of a bout, which is a hashed length inside a hand-set range.
+asks (50.0%) come at the scheduled end of a bout, which is a hashed length inside a hand-set range.
 
 **The cuts.** On average 11.59 options reach `offer()`, 8.26 are left on the legal list and 5.79 on the menu. The slot
 caps remove the most (3.144 options per decision point, two thirds of them trips to food trees and a fifth waters),
@@ -285,12 +319,13 @@ trip could go to number 50.8 on average and exceed 24 at 95.1% of decision point
 needs sub-menus or a sample**: one question over those trees would take 7.8 kernel calls with the existing fan-out
 wrapper (9.7 keeping two per group). Choosing among trees in view does not: there are at most four.
 
-**How much is still hand-coded** (the valuation ledger): 94 offer sites over 29 actions; 457 inline score literals on
-179 lines (372 weights, 45 thresholds on a state, 40 on age); 78 more thresholds in the conditions in front of
-offers; 123 terms switched by who the animal is (85 when age alone is set aside); 30 clock constants; 59 numbers in
+**How much is still hand-coded** (the valuation ledger): 94 offer sites over 29 actions; 440 inline score literals on
+166 lines (368 weights, 33 thresholds on a state, 39 on age); 78 more thresholds in the conditions in front of
+offers; 123 terms switched by who the animal is (85 when age alone is set aside); 30 clock constants (5 of them in
+the wording of reasons); 59 numbers in
 `src/decide`; 252 registry parameters read by the valuation, 238 of them not zero on the working base. Against the
 review's hand count (about 254 literals, 94 offer sites, about 40 conclusion terms): the offer sites agree exactly. The
-literal count is larger because this rule follows every name that reaches an offer (263 of the 457), counts whole
+literal count is larger because this rule follows every name that reaches an offer (246 of the 440), counts whole
 numbers above 1 and counts age thresholds; inside the offer calls alone there are 194. The conclusion terms are a
 different quantity: the review read for sentences that state a field finding; this counts every score term or offer
 condition switched by sex, rank, kinship, alliance, reproductive state, community or age, which over-counts (an age
@@ -308,8 +343,11 @@ name the rules' decisions as their label source) or "untuned model on a rules me
   without a log of the gate's own acts. The training-seed gate arms have no counters at all (they were run before the
   counters existed), so their bracket is the receipts' own.
 - **Waking minutes are minutes outside the nest act.** The receipts do not record sleep.
-- **"Left with the act still on offer" is an upper bound.** A finished act can stay on the menu with a penalty, and the
-  receipts do not say whether it had finished or why the animal was asked.
+- **"Left with the act still on offer" is an upper bound.** A finished act can be on the menu again (in the loop a
+  waiting animal whose act has finished is set to rest, so the act it finished is offered as if new, with no penalty),
+  and the receipts do not say whether it had finished or why the animal was asked.
+- **Deaths.** The arm files list who died, not when. A dead focal animal's last act loses the minutes between its last
+  receipt and its death; one animal in one training-seed arm is concerned.
 - **Part B describes the rules' own acts.** A model's acts differ, so its trigger mix will differ; the function that
   asks is the same.
 - **The hand-written conditions are seen only through targets**, not as options: an option a condition refuses never
@@ -318,8 +356,11 @@ name the rules' decisions as their label source) or "untuned model on a rules me
 - **Two more selections act before `offer()` and are not separated**: the single best dominant to greet, and the one
   nest tree. The nest is reported (11.7 trees in reach, one offered); the greeting is inside "partners in view against
   partners offered".
-- **The valuation ledger is lexical.** It follows names, not scopes, so a handful of numbers that only shape geometry
-  or rounding are counted as reaching a score; the lines are listed so each can be checked.
+- **The valuation ledger is lexical, and its literal count is an upper one.** It follows names, not scopes, so "reaches
+  an offer" takes in nearly every number of the file that is not structure, a condition or wording (two are left as
+  "other"). By a hand reading of the listed lines (the review's, not a script's) about twenty of the 246 only shape
+  geometry, units, rounding or bookkeeping: where a consortship is led, a crown's height, squared distances, minutes to
+  hours, the rounding of a score, the pool's size. The lines are listed so each can be checked.
 - **Not done:** no model was run; no receipt of a population night exists yet, so the fields of section 13 are a
   request, not a result; the swap check the review proposes (a scorecard row a random chooser does not move is not
   credited to the model) is `r7-card`'s; the label shares "wild, outcome, rules" are 100% rules for every saved
@@ -340,9 +381,11 @@ name the rules' decisions as their label source) or "untuned model on a rules me
 > hand-set number, 23.1% at the end of an act; 11.59 options reach `offer()`, 8.26 are legal, 5.79 reach the menu, the
 > slot caps and "one place per action" doing the cutting; a trip could go to 50.8 trees on average and the menu shows
 > 0.74, so choosing a tree needs sub-menus or a sample (7.8 kernel calls by the existing fan-out). Valuation ledger:
-> 94 offer sites, 457 inline score literals, 123 terms switched by who the animal is, 252 registry parameters read.
+> 94 offer sites, 440 inline score literals (an upper count), 123 terms switched by who the animal is, 252 registry
+> parameters read.
 > Every saved arm is "rules-taught model on a rules menu" or "untuned model on a rules menu"; none is "model-driven".
-> Goldens and the field pin unchanged; `tests/r7-ledger.test.ts` 13 tests, `tests/valuation-ledger.test.ts` 7.
+> Goldens and the field pin unchanged; `tests/r7-ledger.test.ts` 16 tests, `tests/valuation-ledger.test.ts` 9. Reviewed
+> by a second agent, which repaired five defects (section 9, amendments 8 to 12); the four lines did not move.
 
 **Command lines for `AGENTS.md`** (after the `r5-pilot.ts` line):
 
@@ -380,6 +423,8 @@ first two; the rest need a few lines in `scripts/lib/who-decided.ts` once the na
 7. The animal's age, or a daily count of the decisions the rules made for animals under 8.
 8. In the run's header: the adapter, its hash and its manifest's `label_source`; the decode rule (top pick, draw, held
    draw, and its salt); the gate setting; whether the rules' pick was withheld.
+9. The time of each death (the saved arm files list who died and of what, not when; the ledger ends a dead animal's
+   window at its last receipt). A population night has many more animals in which a death can fall.
 
 **Likely conflicts.** `src/sim/candidates.ts`: the tap's declaration after `aggrBit`, five edits inside `offer()` and
 one line before the trip shortlist. Any branch that edits `offer()` will conflict there; the tap's calls are the only
@@ -394,7 +439,8 @@ edited.
 worktrees, or a copy of their `artifacts`, must still exist), `tap --seed 48 --check` and `tap --seed 7 --check` one
 after the other, `scripts/valuation-ledger.ts`, then `report --md docs/staging/r7-ledger-numbers.md`. The JSON is under
 `artifacts/r7/ledger` of this worktree and is not committed. The line numbers in the valuation section are those of
-`src/sim/candidates.ts` at 65e0a5c and will move with the next edit of that file.
+`src/sim/candidates.ts` at 65e0a5c (unchanged by the review) and will move with the next edit of that file. The
+first version's JSON is kept beside it in `artifacts/r7/ledger-builder-181827e` (not committed).
 
 **Decisions that are the user's.**
 - Do the minutes the gate holds count toward "the model picks the kind of act for most of the day"? The answer moves
