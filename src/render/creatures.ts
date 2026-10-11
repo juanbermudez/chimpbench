@@ -142,6 +142,8 @@ export interface Anim {
   bodyQ: Float32Array; bx: number; by: number; bz: number; lift: number;
   elevated: number;                // 0 ground .. 1 in a tree
   carry: 0 | 1 | 2; carryBlend: number; carrierId: number;
+  /** Another animal is on its body (an infant it carries, alive or dead), by the carry state of the last frame. */
+  holds: boolean;
   // Appearance and overlays.
   fur: Float32Array; skin: Float32Array; gray: number; beard: number; bald: number; tuft: number; mottle: number;
   bristle: number; dim: number; fade: number; blinkAt: number; mouth: number; grin: number;
@@ -364,7 +366,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       attn: createAttention(), lk: [{ x: 0, v: 0 }, { x: 0, v: 0 }, { x: 0, v: 0 }], lookW: 0, eye: [{ x: 0, v: 0 }, { x: 0, v: 0 }], blink: createBlink(chimp.id), exert: 0,
       rs: [{ x: 0, v: 0 }, { x: 0, v: 0 }, { x: 0, v: 0 }],
       tx: chimp.position[0], tz: chimp.position[2], headingTarget: null,
-      bodyQ: new Float32Array([0, 0, 0, 1]), bx: 0, by: 0, bz: 0, lift: 0, elevated: 0, carry: 0, carryBlend: 0, carrierId: -1,
+      bodyQ: new Float32Array([0, 0, 0, 1]), bx: 0, by: 0, bz: 0, lift: 0, elevated: 0, carry: 0, carryBlend: 0, carrierId: -1, holds: false,
       fur: new Float32Array(3), skin: new Float32Array(3), gray: 0, beard: 0, bald: 0, tuft: 0, mottle: 0,
       bristle: 0, dim: 0, fade: 0, blinkAt: hash01(chimp.id, 9) * 4, mouth: 0, grin: 0, appearanceAt: -1, deadAt: null,
       px: 0, visible: true, lod: 2, lodFrom: 2, lodT: 99, poseAccum: 99, lastSkinFrame: -1, head: new THREE.Vector3(), top: 1, troopColor: '#cccccc',
@@ -438,8 +440,6 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   const pairings: Pairing[] = [];
   const receiver = new Map<number, Pairing>();
   const pairPool: Pairing[] = [];
-  /** Animals with another on their body (an infant they carry, alive or dead), from the carry state of the last frame. */
-  const carriers = new Set<number>();
   /** True when the animal is itself grooming a third animal it can be paired with (the reach and partner tests of pairingFor). */
   function groomsThird(b: Anim, a: Anim): boolean {
     const bc = b.chimp;
@@ -496,7 +496,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
           // pressed into the ground), and one cradling a dead infant, or groomed by the infant it holds, stays seated
           // (the cradling arm is the left one: no raised arm either). The harness override passes the same tests.
           const dead = (bc.carryingDeadId ?? -1) >= 0;
-          roleB = groomeePosture(pick, ground, dead || carriers.has(b.id), dead || (a.carry !== 0 && a.carrierId === b.id), debug.groomee);
+          roleB = groomeePosture(pick, ground, dead || b.holds, dead || (a.carry !== 0 && a.carrierId === b.id), debug.groomee);
           if (roleB === GROOMEE.prone) bHeading = (hash01(b.id, 5) > 0.5 ? 1 : -1) * Math.PI / 2;
           else if (roleB === GROOMEE.side) bHeading = 0;
         }
@@ -1371,8 +1371,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     for (const p of pairings) pairPool.push(p);
     pairings.length = 0; receiver.clear();
     interpolateAll(frame.subTick ?? 0, dt);
-    carriers.clear();
-    for (const a of animList) { a.paired = false; a.pairClip = null; a.partnerId = -1; a.headingTarget = null; a.tx = a.deadDrop ? a.dropX : a.track.x; a.tz = a.deadDrop ? a.dropZ : a.track.z; if (a.carry !== 0 && a.carrierId >= 0) carriers.add(a.carrierId); }
+    for (const a of animList) { a.paired = false; a.pairClip = null; a.partnerId = -1; a.headingTarget = null; a.holds = false; a.tx = a.deadDrop ? a.dropX : a.track.x; a.tz = a.deadDrop ? a.dropZ : a.track.z; }
+    for (const a of animList) if (a.carry !== 0 && a.carrierId >= 0) { const m = anims.get(a.carrierId); if (m) m.holds = true; }
     for (const a of animList) pairingFor(a);
     // Each animal is positioned by one pairing only: its own (as actor) first, else the first that targets it.
     actorIds.clear();
