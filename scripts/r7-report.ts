@@ -90,6 +90,16 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
     const keys = new Set(rulesArms.flatMap(a => Object.keys(u.vals[a])));
     for (const k of keys) u.spread[k] = spreadOf(rulesArms.map(a => u.vals[a][k]));
   }
+  // every arm continues one burned-in world per seed, over one window per unit: a file from another burn-in (a saved burn-in
+  // re-made after the simulation changed) or another length would be pooled silently, so it is refused here
+  seeds.forEach((seed, i) => {
+    const hashes = [...new Set((['F', 'P'] as Unit[]).flatMap(u => armNames.map(a => U[u].files[a][i].burnInHash)))];
+    if (hashes.length !== 1) throw new Error(`seed ${seed}: the arm files continue ${hashes.length} different burn-ins (${hashes.join(', ')}); re-run every arm of this seed from one burn-in`);
+  });
+  for (const unit of ['F', 'P'] as Unit[]) {
+    const windows = [...new Set(armNames.flatMap(a => U[unit].files[a].map(x => x.days)))];
+    if (windows.length !== 1) throw new Error(`unit ${unit}: the arm files cover windows of ${windows.join(' and ')} days; they must be one`);
+  }
   const armVals = (unit: Unit, g: string[], k: string) => g.map(a => U[unit].vals[a][k] ?? null);
   const any = U.F.files[armNames[0]][0];
   const heads = [...new Set((['F', 'P'] as Unit[]).flatMap(u => armNames.flatMap(a => U[u].files[a].map(x => `${x.head}${x.dirty ? ' (dirty)' : ''}`))))];
@@ -360,6 +370,55 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
   const fol = armNames.map(a => U.F.files[a].flatMap(x => Object.values(x.follows ?? {})));
   const tot = (g: (x: { follows: number; complete: number; lost: number; hours: number; focalOk: boolean }) => number) => fol.reduce((s, l) => s + l.reduce((q, x) => q + g(x), 0), 0);
   p(`Over the ${armNames.length} arms and ${seeds.length} seeds, the ${fol[0].length} observers of an arm (one per focal adult) recorded ${tot(x => x.follows)} follows, ${tot(x => x.complete)} complete (nest to nest) and ${tot(x => x.lost)} lost by the observer's own loss hazard, ${f(tot(x => x.hours), 0)} follow hours in all; every follow was of the observer's own animal: ${fol.every(l => l.every(x => x.focalOk)) ? 'yes' : 'NO'}. The adolescent of each seed has no observer (the observer follows adults of 15 and over).`);
+  p();
+  // ------------------------------------------------------------------------------------------------------------------
+  // 11. checks added by the review of 10 October 2026: read from the same files, no new run
+  // ------------------------------------------------------------------------------------------------------------------
+  p('## 11. Checks added by the review of 10 October (read from the same files; no new run)');
+  p();
+  p('### The ten focal animals inside the population runs');
+  p();
+  const fDays = U.F.files[armNames[0]][0].days;
+  p(`Sections 2 and 3 differ in three things at once: who carries the random choices, which animals are read, and for how long. Here the same ten focal animals are read over the same first ${fDays} days in both units: at unit F only they are driven by the arm, at unit P every animal aged ${any.rgMinAge} and over is. The rules decide alike in both (they read neither switch), so their two lines must agree. A larger change in the second line of a pair is what the companions add. In brackets: the mean of the two salts against the rules' mean.`);
+  p();
+  /** The card of the focal animals of each seed over the first days of the window (per-day counts only: the histograms are not narrowed). */
+  const focalCut = (unit: Unit, a: string): Values => cardSummary(U[unit].files[a].map(x => { const ids = new Set(x.focal.map(q => q.id)); return { ...x.card, animals: x.card.animals.filter(q => ids.has(q.id)), days: x.card.days.filter(d => ids.has(d.id) && d.day < fDays) }; }));
+  const cut: Record<Unit, Record<string, Values>> = { F: {}, P: {} };
+  for (const unit of ['F', 'P'] as Unit[]) for (const a of armNames) cut[unit][a] = focalCut(unit, a);
+  p('| Readout | Who is driven by the arm | Rules: mean ± SD | D | Random choice (two salts) | 10% random | 20% random | 30% random |');
+  p('| --- | --- | --- | --- | --- | --- | --- | --- |');
+  for (const k of ['actChanges', 'switchesPerWakingHour', 'tripsBegun', 'tripsDone', 'kmFixPerDay']) for (const unit of ['F', 'P'] as Unit[]) {
+    const d = digitsOf(k), sp = spreadOf(rulesArms.map(a => cut[unit][a][k] ?? null));
+    const cell = (g: string[]) => { const v = g.map(a => cut[unit][a][k] ?? null), m = meanOf(v); return `${v.map(x => f(x, d)).join(' / ')} (${m !== null && sp.mean ? `${m >= sp.mean ? '+' : ''}${f(100 * (m / sp.mean - 1), 0)}%` : 'no value'})`; };
+    p(`| ${labelOf(k)} | ${unit === 'F' ? 'the ten focal animals only (unit F)' : `every animal aged ${any.rgMinAge} and over (unit P, its first ${fDays} days)`} | ${f(sp.mean, d)} ± ${f(sp.sd, d)} | ${f(sp.D, d)} | ${GROUPS.map(([, g]) => cell(g)).join(' | ')} |`);
+  }
+  p();
+  p('### The half-hour share at unit P: on the animals adult by the Taï paper\'s rule, and on every animal read');
+  p();
+  p('The registration reads the card at unit P on every animal aged 8 and over. Sections 3 to 8 print the four half-hour rows on the animals adult by the Taï paper\'s rule (males over 12, females over 10): a choice written into this script after the registration and before the first unit-P run had finished. Both readings, so that the choice can be seen to change no call:');
+  p();
+  p('| Readout | Animals | Rules: mean ± SD | D | Random choice (two salts) | told | 10% random | told | 20% random | told | 30% random | told |');
+  p('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+  const everyone: Record<string, Values> = Object.fromEntries(armNames.map(a => [a, cardSummary(U.P.files[a].map(x => x.card))]));
+  for (const k of HALF_HOUR) for (const who of ['adult by the Taï rule', 'all aged 8 and over']) {
+    const get = (a: string) => (who === 'all aged 8 and over' ? everyone[a][k] : U.P.vals[a][k]) ?? null, sp = spreadOf(rulesArms.map(get));
+    p(`| ${labelOf(k)} | ${who} | ${f(sp.mean, 3)} ± ${f(sp.sd, 3)} | ${f(sp.D, 3)} | ${GROUPS.map(([, g]) => `${g.map(a => f(get(a), 3)).join(' / ')} | ${mark(told(sp, g.map(get)))}`).join(' | ')} |`);
+  }
+  p();
+  p('### How far beyond D each "nearer" call of section 6 lies (unit P)');
+  p();
+  p('A control arm is listed as nearer the middle of the band when both of its realizations are told from the rules and nearer. The margin is how far the realization closest to the rules lies beyond the rules\' mean ± D, in the row\'s units and as a share of D: a call with a small margin would not survive another draw. "Inside the band" says whether the rules\' mean already lies inside the field band, where a move toward the middle is not a move toward the field.');
+  p();
+  p('| Arm | Row | Rules: mean | D | The arm (two salts) | Margin beyond D | Margin ÷ D | The rules\' mean is inside the band |');
+  p('| --- | --- | --- | --- | --- | --- | --- | --- |');
+  for (const [name, g] of GROUPS) for (const id of SHORT_ROWS) {
+    const sp = U.P.spread[id], t = T(id);
+    if (!sp || sp.mean === null || sp.D === null) continue;
+    const v = armVals('P', g, id);
+    if (!(told(sp, v) === true && v.every(x => dist(t, x)! < dist(t, sp.mean)!))) continue;
+    const d = rowDigits(id), margin = Math.min(...v.map(x => Math.abs(x! - sp.mean!) - sp.D!));
+    p(`| ${LABEL[name]} | ${id} | ${f(sp.mean, d)} | ${f(sp.D, d)} | ${v.map(x => f(x, d)).join(' / ')} | ${f(margin, d + 1)} | ${f(margin / sp.D, 2)} | ${sp.mean >= t.accept.lo! && sp.mean <= t.accept.hi! ? 'yes' : 'no'} |`);
+  }
   p();
   writeFileSync(resolve(md), L.join('\n'));
   console.log(`wrote ${md} (${L.length} lines); pass mark: random told from the rules on ${nF} of 14 timing rows at unit F`);
