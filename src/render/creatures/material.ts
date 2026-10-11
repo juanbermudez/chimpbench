@@ -280,7 +280,9 @@ void RE_Direct_Hair( const in IncidentLight directLight, const in vec3 geometryP
     float ring = cNoise(vec3(atan(e.y, e.x) * 6.0, r * 900.0, 3.0));
     // Dark amber-brown iris with a darker limbal ring, near-black pupil, brown-pigmented sclera; the upper lid
     // shades the eye (no emissive: the "glow" was a saturated orange iris).
-    vec3 iris = mix(vec3(0.07, 0.035, 0.014), vec3(0.16, 0.085, 0.03), ring) * (0.8 + 0.35 * smoothstep(0.009, 0.004, r));
+    // Iris albedo at 0.62 of its old value: it used to show through a gate of about one third, so at full strength
+    // the old colour read as a bright yellow ring (W3).
+    vec3 iris = mix(vec3(0.043, 0.022, 0.009), vec3(0.10, 0.053, 0.019), ring) * (0.8 + 0.35 * smoothstep(0.009, 0.004, r));
     iris *= (1.0 - 0.45 * smoothstep(0.0065, 0.0096, r)) * (1.0 - 1.6 * vP5.y);
     vec3 sclera = vec3(0.028, 0.02, 0.016);
     vec3 eyeCol = mix(sclera, iris, smoothstep(0.0098, 0.0082, r) * fwd);
