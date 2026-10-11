@@ -510,6 +510,40 @@ took any `--days` (A13).
 **Still not exercised by anyone:** everything with a real worker (§10.4, first item). The first minutes of the night
 are where a surprise would show.
 
+### 10.7 Changes at the merge (11 October 2026; the integrator, branch `integrate-t1`; no model process)
+
+The stage was merged with stages R7, R8 and R9 and wired to them. What this document registered is unchanged except
+where said here.
+
+- **Decode (amends §2 and the item "The decode" below).** `scripts/lib/r10-decode.ts` no longer decodes. The night's
+  decode is stage R9's step of the loop (`src/kernel/decode.ts` through `scripts/lib/decoder.ts`): `--decode top`,
+  `draw` or `held`, with `--decode-salt N` (0 for top, 1 otherwise) and `--hold act|block|whole`. The engine passes the
+  decoder's step to `answerWaiting`, writes the record it returns on the receipt as `dec` (mode, salt, hold, epoch, why
+  it opened, the option applied last, the kernel's pick, the position applied, the draw or the noise: the fields R9's
+  arms log), saves the decoder's notes in every day's checkpoint and hands them back on a resume; the replay makes a
+  new decoder from the registry's setting (`decodeSpec`). A model arm always has the step (top unless another is named);
+  a no-model kernel arm has it only when `--decode` is given (the plumbing check). The registered night command
+  (`--decode top`) applies the same options as before and now logs the record. `held` is refused together with the
+  kinds-first menu (`activityFirst`), where R9's review found a held draw does not hold: by the script before anything
+  is written, and by the engine.
+- **Receipts are `r10-receipt-2` (amends §3).** An ask's `index` is the kernel's own pick and `picked` the option
+  applied (they differ under `draw` and `held`); `dec` is R9's record. A held line's `v` is the decision version the
+  gate ran at, the convention of an ask's `v`, not the version after the act was set (the finding of R7's review). Each
+  death in a day's summary carries its time `t`. No night had been run on `r10-receipt-1`; a replay refuses a run folder
+  of another schema and names the commit to replay it from.
+- **For `r7-ledger`.** `scripts/lib/who-decided.ts` `nightReceipts` and `nightInfo` read a run folder's lines;
+  `pnpm exec tsx scripts/r7-ledger.ts night <out>` prints the lines and writes `<out>/ledger.json`.
+- **For `r7-card`.** The replay reads the timing card through the tap hook by default
+  (`scripts/lib/r10-card-tap.ts`; `--no-card` leaves it out); `replay.md` has a section for it and `replay.json` holds
+  the card under `taps.card`.
+- **Tests.** `tests/r10-wiring.test.ts` (a short no-model night on the small map: the three modes, each replayed; stop
+  and resume with and without the decoder's notes; the refusals; the ledger against the run's own tally; the card
+  through the hook; the script from the command line); `tests/r10-night.test.ts` updated for the setting.
+- **Run again on the merged tree, field map, seed 48, no model.** The burned-in world is the pilot's
+  (4b5cc61f8ad797e0); `argmax-gate` for 2 days: 2,060 and 2,069 asks, day hashes 95bfc1fd4e6ddfda and 07ec9b9f26b64f60,
+  as in §10.3; its replay regenerates all 6,423 lines and reads the card and the observer. `null-gate --decode held`
+  for 1 day replays exactly (3,304 lines).
+
 ## For the integrator
 
 **1. Status line for `IMPLEMENTATION_PLAN.md`, Stage R10** (replacing "In progress (10 October 2026; branch

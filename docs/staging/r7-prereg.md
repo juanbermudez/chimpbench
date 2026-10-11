@@ -604,3 +604,10 @@ the report reads both units and the Taï file from one folder, so all of these a
 `pnpm exec tsx scripts/r7-card.ts run --seed 4111 --test-seed 4111 --unit F --out <folder>` (and `--unit P`), then
 `pnpm exec tsx scripts/r7-report.ts --dir <folder> --seeds 4111,4222 --md <its own numbers file>`. A report of unit F
 alone needs a change to the report script; it is not built.
+
+*At the merge (11 October 2026, branch `integrate-t1`):* the report now takes both. `scripts/r7-report.ts --units F`
+reads a ten-animal test alone, and `--engine "label=arm,arm;label=arm"` puts engine arms beside the control arms with
+no edit of the arm list: a column in every table and a section 12 where the registered rule of §8 is read row by row.
+`scripts/r7-card.ts` `armReaders` attaches the card and the row readers to any loop, so the two lists of functions
+above need not be attached by hand. With neither flag the report is unchanged (regenerated from the saved runs it
+equals `r7-numbers.md` but for the dated line). Tests: `tests/r7-engine.test.ts`.

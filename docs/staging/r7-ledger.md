@@ -436,6 +436,17 @@ holds `how` (`kept` or `arrived`), `act` and one `fam` where the ledger reads `b
 count of hidden events expects (use `v - 1`; as logged, the first held line after each ask would read as one hidden
 event and the bracket would not close).
 
+*At the merge (11 October 2026, branch `integrate-t1`):* the adapter exists and the timing is fixed. The night's held
+lines now carry the decision version the gate ran at (schema `r10-receipt-2`), so no `v - 1` is needed.
+`scripts/lib/who-decided.ts` `nightReceipts` maps ask and held lines to the ledger's receipts and `nightInfo` gives the
+window, the animals and each death's time; `pnpm exec tsx scripts/r7-ledger.ts night <run folder>` runs them. One rule
+changed: with the gate's lines in the log (`gateLogged`), every interval under the chooser counts as certainly under
+its fresh choice; a decision version that still passes without a line is an interrupt that reached the animal while it
+waited, and the test shows such steps sit only before an ask, never before a held line
+(`tests/r10-wiring.test.ts`). On a 2-day no-model night of the reference kernel on the field map (seed 48) the ledger
+gives one number where the saved receipts gave a range: a fresh choice for 54.4% of waking minutes and an intention
+the gate held for 45.0%. Items 3 to 8 of the list above are still not logged.
+
 **Likely conflicts.** `src/sim/candidates.ts`: the tap's declaration after `aggrBit`, five edits inside `offer()` and
 one line before the trip shortlist. Any branch that edits `offer()` will conflict there; the tap's calls are the only
 additions and can be re-applied by hand. `scripts/lib/` gains three files with new names. No shared document was
