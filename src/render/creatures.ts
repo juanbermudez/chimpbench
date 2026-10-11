@@ -1289,7 +1289,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     if (a.pCode !== PatrolCode.none && a.pCode !== PatrolCode.return) return patrolAttention(a, dt);
     // Stage W6, the decision beat: the gaze goes to the runner-up, then to what was chosen, before the body starts;
     // the first mover of a departure looks back. A deliberate turn (a slower spring than the idle glances).
-    if (a.beat.gaze !== Gaze.none && beatGoal(a, a.beat.gaze)) {
+    // (Not past a snake model: an alarming thing within 15 m keeps the eyes, as it does over every other target.)
+    let alarmed = false;
+    if (a.beat.gaze !== Gaze.none) for (const st of world.stimuli) if (st.kind === 'snake-model' && (st.position[0] - a.x) ** 2 + (st.position[2] - a.z) ** 2 < 225) { alarmed = true; break; }
+    if (a.beat.gaze !== Gaze.none && !alarmed && beatGoal(a, a.beat.gaze)) {
       if (a.lastSkinFrame < 0 || !Number.isFinite(a.lk[0].x) || Math.abs(a.lk[0].x - GOAL[0]) > 40) for (let k = 0; k < 3; k++) { a.lk[k].x = GOAL[k]; a.lk[k].v = 0; }
       for (let k = 0; k < 3; k++) springStep(a.lk[k], GOAL[k], 0.14, dt);
       return 0.95;
