@@ -168,6 +168,12 @@ test('a follower is drawn behind its own path by its place in the departure, nev
   assert.equal(lateTarget(1, move, Infinity, move + 5 * T, 1), LATE_MAX_TICKS * T);
   assert.equal(lateTarget(9, move, move, move, 1), LATE_MAX_TICKS * T);
   assert.equal(lateTarget(1, Infinity, move, move, 1), 0, 'the simulation has not moved it: nothing to delay');
+  // W6 review: a follower that was already on the move when it took the trip (walking, or half way down a trunk) is
+  // never held: its drawn time would stand still and it would freeze in mid-stride for up to a tick and a half.
+  assert.equal(lateTarget(2, move, move, move - T, 1, false), 0);
+  assert.equal(lateTarget(1, move - T, move, move - T, 4, false), 0);
+  assert.equal(lateTarget(1, move, Infinity, move + 0.4 * T, 1, false), 0);
+  assert.ok(lateTarget(2, move, move, move - T, 1, true) > 0, 'one that starts from rest still is');
   // One frame: the lateness grows no faster than drawn time (the body's time never runs backwards)...
   const d = T / 900;
   assert.equal(stepLate(0, 4 / 3600, d), d);

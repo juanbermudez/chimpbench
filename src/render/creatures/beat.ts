@@ -197,10 +197,12 @@ function inDeparture(i: number, j: number, key: ArrayLike<number>, since: ArrayL
  * How far behind its own path (ecological hours) a follower is drawn so that it sets off after the first mover: its
  * place in the departure times the gap, counted from the first mover's start. While the first mover has not moved
  * (moveFirst Infinity) the follower is held at its own start; never more than LATE_MAX_TICKS. 0 for the first mover
- * and for an animal the simulation has not moved yet.
+ * and for an animal the simulation has not moved yet. Also 0 for a follower that was already on the move when it took
+ * the trip (fromRest false: restedBefore): its drawn time would stand still in mid-stride or half way down a trunk,
+ * and a body that is already going has no start to put in order.
  */
-export function lateTarget(rank: number, moveSelf: number, moveFirst: number, renderT: number, rate: number): number {
-  if (rank <= 0 || !(moveSelf < Infinity)) return 0;
+export function lateTarget(rank: number, moveSelf: number, moveFirst: number, renderT: number, rate: number, fromRest = true): number {
+  if (rank <= 0 || !fromRest || !(moveSelf < Infinity)) return 0;
   const want = moveFirst < Infinity ? moveFirst + rank * staggerGap(rate) - moveSelf : renderT - moveSelf;
   return Math.min(LATE_MAX_TICKS * TICK_HOURS, Math.max(0, want));
 }

@@ -915,7 +915,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       const b = a.beat;
       // A follower is drawn a little behind its own path so that the first mover is seen to go first (beat.ts lateTarget).
       let target = 0;
-      if (b.since > -Infinity && b.rank > 0 && b.first >= 0) { const f = anims.get(b.first); if (f && f.beat.since > -Infinity) target = lateTarget(b.rank, b.moveT, f.beat.moveT, rt, rate); }
+      if (b.since > -Infinity && b.rank > 0 && b.first >= 0) { const f = anims.get(b.first); if (f && f.beat.since > -Infinity) target = lateTarget(b.rank, b.moveT, f.beat.moveT, rt, rate, b.fromRest); }
       a.late = step < 0.5 ? stepLate(a.late, target, step) : 0;
       sampleSmooth(a.track, rt - a.late, jump2);
       if (b.since > -Infinity) updateBeat(a, rt, rt - a.late, rate, dt); else { b.phase = Phase.none; b.gaze = Gaze.none; b.waiting = false; }
@@ -928,7 +928,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     // after the first mover's start (at the latest when its lateness runs out), on the common drawn time: its own
     // time stands still while it is held, and a countdown on that would hold it in its intention movement for as long.
     let start = startTime(b.since, b.moveT, b.fromRest), clock = rtA;
-    if (b.rank > 0 && b.first >= 0 && b.moveT < Infinity) {
+    if (b.rank > 0 && b.first >= 0 && b.moveT < Infinity && b.fromRest) {   // (one already on the move is not held: lateTarget)
       const f = anims.get(b.first);
       if (f && f.beat.since > -Infinity) { const turn = Math.min(f.beat.moveT + b.rank * staggerGap(rate), b.moveT + LATE_MAX_TICKS * TICK_HOURS); if (turn > start) { start = turn; clock = rt; } }
     }
