@@ -473,6 +473,51 @@ to the simulation either way. The gate-off contrast (step 2) is not run in this 
 seed (§8). These arms are the fourth read of the same ten animals on seeds 21 and 5: nothing from them is reported as
 more than a decode comparison under the name "rules-taught model on a rules menu".
 
+### 10.6 Results (11 October 2026, 03:48 to 11:24 EDT; frozen checkout `bench-t1` at a11c45c; one model process at a time)
+
+Tables: `docs/staging/r9-numbers.md` and `docs/staging/r9-seed2-numbers.md` (generated; copied from the run's
+`artifacts/r9/tables`). **Rules-taught model on a rules menu.** Ten focal animals, five days, seeds 21 and 5, the gate
+on. Run: `r4-draw-1`, `r4-held`, `r4c-draw-1`, `r4c-held`, `r4-draw-2` (1,612 to 1,949 s of model time each, no
+timeout, every replay reproduces its run), then the second training seed (`r4-rules-state-s2`: 7,694 s of training at
+6.5 GiB, development 0.627) with `r4s2-top` and `r4s2-draw-1`. Not run, as amendment A1 says: the two half-hour arms
+and the gate-off contrast. Three of the six model steps held 30 minutes for swap above 6 GB and then went ahead.
+
+Per animal and day (the rules / top pick / draw salt 1 / draw salt 2 / held for the act):
+
+| | the rules | first adapter: top | draw 1 | draw 2 | held | third adapter: top | draw 1 | held |
+|---|---|---|---|---|---|---|---|---|
+| act changes | 47.6 | 33.6 | 46.4 | 48.3 | 42.0 | 51.5 | 59.1 | 57.3 |
+| trips to food begun | 8.3 | 2.3 | 5.0 | 4.9 | 4.5 | 13.9 | 12.3 | 11.4 |
+| trips completed | 1.7 | 0.9 | 1.2 | 1.0 | 1.1 | 5.4 | 3.6 | 3.1 |
+| nights in a nest (of 50) | 50 | 50 | 49 | 50 | 42 | 50 | 48 | 48 |
+| energy eaten, kcal (guard) | 1,654 | 1,562 | 1,549 | 1,575 | 1,417 | 1,642 | 1,606 | 1,584 |
+| distance, km (guard) | 2.63 | 2.05 | 2.63 | 2.70 | 1.98 | 3.98 | 3.78 | 3.33 |
+
+**The registered statements, as the report prints them.** Drawing does what it is for: yes (the first adapter begins
++2.7 trips a day against the top pick, +1.9 to +3.4, noise 0.64; the third does not begin more). 1, drawing becomes the
+standard: **no** (it does no harm for the first adapter on salt 1, but the third adapter loses two nights in a nest,
+48 of 50 against 50, and the first adapter's second salt fails the reserves guard). 2, held noise is needed: **no**.
+The mechanism is there (a held draw is overturned at 19.1% of re-asks against 33.6% for a plain draw, 30.5% against
+48.0% for the third adapter, 0 re-rolled) and it does not help: the first adapter held spends 8 of 50 nights out of a
+nest and eats 145 kcal less (-286 to -3). 3, neither helps: **yes, by its first route** (both decodes fail "does no
+harm" for an adapter). By amendment A1, item 1, that statement names the outcome: **the top pick stays the standard
+decode**, and the draw stays an option that every later engine test runs beside it.
+
+**What it shows beyond the statements** (description, not a registered result). A draw brings the first adapter's
+switching to the rules' own level (46 to 48 act changes a day against 47.6) and doubles its trips begun, as the offline
+replay predicted (4.7 predicted, 5.0 and 4.9 measured). Its cost falls where the rules are near-certain and these
+adapters are not: at dusk an animal that draws something other than its nest stays out. That is a property of adapters
+taught one-hot labels from a packet that hid the current act, so the question goes to stage R11 (labels that carry the
+rules' own odds): there a draw should stop costing nests, and "nights in a nest under a draw" is its explicit readout.
+
+**The second training seed** (§8). Offline it is the first seed again: it picks the rules' decision at 0.597 against
+0.609 (-0.012, -0.034 to +0.012), with 0.148 against 0.155 on a trip and a trip AUC of 0.774 against 0.770, where
+R4b and R4c differed from R4 several times over. In the loop with the top pick it is the same animal (33.2 against 33.6
+act changes, 2.4 against 2.3 trips begun, 1,541 against 1,562 kcal). With a draw the two trainings differ more (7.4
+against 5.0 trips begun). So the single runs of R4, R4b and R4c were readable for the top pick, and the differences
+between those recipes were not training noise; under a draw the odds differ between trainings, so an arm that draws
+needs both seeds.
+
 ## For the integrator
 
 **What to launch, in order** (one model process at a time; each step holds while swap in use is above 6 GB and

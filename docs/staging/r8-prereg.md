@@ -580,6 +580,23 @@ it can occur). A number in §10 that its script does not print.
 - The probes behind items 1 to 3 and 5 were one-off scripts run in the worktree and are not in the branch; the tests
   named above hold each repair.
 
+## 10a. The wording test with the model (the integrator, 11 October 2026, 02:49 to 03:18 EDT; frozen checkout `bench-t1` at a11c45c)
+
+Table: `docs/staging/r8-wording-numbers.md` (generated). The existing adapter `r4-rules-state` scored on R4's held-out
+records in two renderings that differ only in the options' wording and the leaked lines (`scripts/r8-rerender.ts`;
+3,000 packets, 1,747 s of model time; today's rendering scored again equals the saved scores to 0.0015).
+
+On the 954 held-out fresh draws it picks the rules' decision at **0.609 with today's state-only packet and 0.386 with
+neutral option labels** (-0.223, -0.262 to -0.184 over animals; chance 0.186, the untuned model 0.286). By kind of
+decision: feeding 0.357 to 0.213, rest 0.822 to 0.530, social 0.541 to 0.195, travel 0.707 to 0.783. Its mean top
+probability falls from 0.659 to 0.491.
+
+Reading. More than half of what the adapter had learned over chance was read from the rules' own sentences on the
+options, most of all for social acts and rest. Every agreement figure of stages R4 to R5-gate carries that. The adapter
+was trained with the wording and is tested here without it, so 0.386 is a floor for what the animal's state alone can
+teach, not a ceiling; stage R11 trains on neutral labels and gives the honest figure. The test does not measure the
+order cue of the nearby line (§10.9): both renderings keep it.
+
 ## For the integrator
 
 **Merge notes.**

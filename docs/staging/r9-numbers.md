@@ -6,14 +6,21 @@ Registration: `docs/staging/r9-prereg.md`. **Rules-taught model on a rules menu.
 
 | Arm | what | seeds | head | model calls | model seconds | timeouts | deaths | ends on its saved or replayed world |
 |---|---|---|---|---|---|---|---|---|
-| `rules` | the rules | 21, 5 | 99d2186 | 0 | 0 | 0 | 0 | saved run reproduced |
-| `rules-r1` | the rules, re-draw 1 | 21, 5 | 99d2186 | 0 | 0 | 0 | 0 | saved run reproduced |
-| `rules-r2` | the rules, re-draw 2 | 21, 5 | 99d2186 | 0 | 0 | 0 | 0 | saved run reproduced |
-| `rules-r3` | the rules, re-draw 3 | 21, 5 | 99d2186 | 0 | 0 | 0 | 0 | saved run reproduced |
-| `r4-top` | first adapter, top pick (saved run, replayed) | 21, 5 | 99d2186 | 2707 | 1777 | 0 | 0 | saved run reproduced |
-| `r4c-top` | third adapter, top pick (saved run, replayed) | 21, 5 | 99d2186 | 3202 | 1631 | 0 | 0 | saved run reproduced |
-| `r4-top-free` | first adapter, top pick, gate off (saved run, replayed) | 21, 5 | 99d2186 | 4833 | 2679 | 0 | 0 | saved run reproduced |
-| `r4c-top-free` | third adapter, top pick, gate off (saved run, replayed) | 21, 5 | 99d2186 | 10273 | 7142 | 0 | 0 | saved run reproduced |
+| `rules` | the rules | 21, 5 | a11c45c | 0 | 0 | 0 | 0 | saved run reproduced |
+| `rules-r1` | the rules, re-draw 1 | 21, 5 | a11c45c | 0 | 0 | 0 | 0 | saved run reproduced |
+| `rules-r2` | the rules, re-draw 2 | 21, 5 | a11c45c | 0 | 0 | 0 | 0 | saved run reproduced |
+| `rules-r3` | the rules, re-draw 3 | 21, 5 | a11c45c | 0 | 0 | 0 | 0 | saved run reproduced |
+| `r4-top` | first adapter, top pick (saved run, replayed) | 21, 5 | a11c45c | 2707 | 1777 | 0 | 0 | saved run reproduced |
+| `r4c-top` | third adapter, top pick (saved run, replayed) | 21, 5 | a11c45c | 3202 | 1631 | 0 | 0 | saved run reproduced |
+| `r4-top-free` | first adapter, top pick, gate off (saved run, replayed) | 21, 5 | a11c45c | 4833 | 2679 | 0 | 0 | saved run reproduced |
+| `r4c-top-free` | third adapter, top pick, gate off (saved run, replayed) | 21, 5 | a11c45c | 10273 | 7142 | 0 | 0 | saved run reproduced |
+| `r4-draw-1` | first adapter, draw, salt 1 | 21, 5 | a11c45c | 3119 | 1787 | 0 | 0 | replay reproduces it |
+| `r4-draw-2` | first adapter, draw, salt 2 | 21, 5 | a11c45c | 3181 | 1615 | 0 | 0 | replay reproduces it |
+| `r4-held` | first adapter, held for the act | 21, 5 | a11c45c | 3228 | 1612 | 0 | 0 | replay reproduces it |
+| `r4c-draw-1` | third adapter, draw, salt 1 | 21, 5 | a11c45c | 3559 | 1823 | 0 | 0 | replay reproduces it |
+| `r4c-held` | third adapter, held for the act | 21, 5 | a11c45c | 3667 | 1949 | 0 | 0 | replay reproduces it |
+| `r4s2-top` | first recipe, second training seed, top pick | 21, 5 | a11c45c | 2735 | 1514 | 0 | 0 | replay reproduces it |
+| `r4s2-draw-1` | first recipe, second training seed, draw, salt 1 | 21, 5 | a11c45c | 3426 | 1772 | 0 | 0 | replay reproduces it |
 
 ## What is read (prereg §5)
 
@@ -27,6 +34,13 @@ Registration: `docs/staging/r9-prereg.md`. **Rules-taught model on a rules menu.
 | `r4c-top` | 51.5 | 46.5 | 13.9 | 5.4 | 64.0 | 50 of 50 | 1642 | -0.05 | 3.98 |
 | `r4-top-free` | 48.7 | 44.6 | 4.2 | 0.7 | 96.7 | 50 of 50 | 1562 | -0.02 | 2.47 |
 | `r4c-top-free` | 128.0 | 98.0 | 53.9 | 2.1 | 205.5 | 50 of 50 | 1488 | -0.63 | 8.00 |
+| `r4-draw-1` | 46.4 | 43.5 | 5.0 | 1.2 | 62.4 | 49 of 50 | 1549 | -0.10 | 2.63 |
+| `r4-draw-2` | 48.3 | 46.3 | 4.9 | 1.0 | 63.6 | 50 of 50 | 1575 | -0.06 | 2.70 |
+| `r4-held` | 42.0 | 40.6 | 4.5 | 1.1 | 64.6 | 42 of 50 | 1417 | -0.29 | 1.98 |
+| `r4c-draw-1` | 59.1 | 53.9 | 12.3 | 3.6 | 71.2 | 48 of 50 | 1606 | -0.12 | 3.78 |
+| `r4c-held` | 57.3 | 53.8 | 11.4 | 3.1 | 73.3 | 48 of 50 | 1584 | -0.14 | 3.33 |
+| `r4s2-top` | 33.2 | 31.7 | 2.4 | 0.9 | 54.7 | 50 of 50 | 1541 | 0.00 | 1.79 |
+| `r4s2-draw-1` | 52.1 | 49.3 | 7.4 | 1.9 | 68.5 | 50 of 50 | 1580 | -0.06 | 2.70 |
 
 ## The decode's asks (prereg §5.3)
 
@@ -38,6 +52,13 @@ A re-ask is an ask inside an epoch that is already open. "Changed" is the share 
 | `r4c-top` | 64.0 | 47.3 | 0.2 | 16.8 | 1.2 | 28.4 | 0.7 | 0.0 | 16.8 | 3.1% | 41.8% of 813 | – |
 | `r4-top-free` | 96.7 | 54.5 | 0.2 | 24.8 | 0.0 | 28.7 | 0.8 | 0.0 | 42.2 | 3.1% | 22.7% of 2041 | – |
 | `r4c-top-free` | 205.5 | 177.2 | 0.1 | 72.9 | 0.0 | 94.2 | 10.0 | 0.0 | 28.1 | 3.0% | 22.9% of 1359 | – |
+| `r4-draw-1` | 62.4 | 42.4 | 0.2 | 16.3 | 0.6 | 25.0 | 0.3 | 0.0 | 20.0 | 2.3% | 33.6% of 975 | – |
+| `r4-draw-2` | 63.6 | 43.6 | 0.2 | 16.4 | 0.5 | 26.2 | 0.3 | 0.0 | 20.0 | 4.1% | 35.6% of 959 | – |
+| `r4-held` | 64.6 | 40.5 | 0.2 | 14.3 | 0.7 | 25.0 | 0.3 | 0.0 | 24.1 | 2.5% | 19.1% of 1175 | 0 |
+| `r4c-draw-1` | 71.2 | 55.4 | 0.2 | 19.5 | 1.0 | 34.2 | 0.6 | 0.0 | 15.8 | 3.0% | 48.0% of 764 | – |
+| `r4c-held` | 73.3 | 55.0 | 0.2 | 18.2 | 0.9 | 34.7 | 1.0 | 0.0 | 18.3 | 1.7% | 30.5% of 901 | 0 |
+| `r4s2-top` | 54.7 | 32.5 | 0.2 | 11.5 | 0.9 | 19.5 | 0.3 | 0.0 | 22.2 | 3.3% | 26.2% of 1074 | – |
+| `r4s2-draw-1` | 68.5 | 49.8 | 0.2 | 16.7 | 0.7 | 31.5 | 0.8 | 0.0 | 18.7 | 2.8% | 34.1% of 909 | – |
 
 ## Gate off against gate on (prereg §5.4)
 
@@ -48,16 +69,65 @@ A re-ask is an ask inside an epoch that is already open. "Changed" is the share 
 
 ## Noise (prereg §5)
 
-The two decode salts: not on file. The rules' re-draws: 3 on file.
+The two decode salts: `r4-draw-2` minus `r4-draw-1`. The rules' re-draws: 3 on file.
 
 | Measure | salt 2 minus salt 1 | largest re-draw difference from the rules | noise |
 |---|---|---|---|
-| act changes | – | 3.58 | 3.58 |
-| changes of the kind of act | – | 3.08 | 3.08 |
-| trips to food begun | – | 0.64 | 0.64 |
-| trips to food completed | – | 0.30 | 0.30 |
-| asks of the kernel | – | 0.00 | 0.00 |
-| nights in a nest (share) | – | 0.000 | 0.000 |
-| energy eaten, kcal (guard) | – | 36.0 | 36.0 |
-| reserves, % of the usual store a day (guard) | – | 0.028 | 0.028 |
-| distance, km (guard) | – | 0.774 | 0.774 |
+| act changes | +1.86 (-7.86 to +11.58) | 3.58 | 3.58 |
+| changes of the kind of act | +2.78 (-6.08 to +11.64) | 3.08 | 3.08 |
+| trips to food begun | -0.06 (-1.08 to +0.96) | 0.64 | 0.64 |
+| trips to food completed | -0.24 (-0.64 to +0.16) | 0.30 | 0.30 |
+| asks of the kernel | +1.24 (-8.33 to +10.81) | 0.00 | 1.24 |
+| nights in a nest (share) | +0.020 (-0.025 to +0.065) | 0.000 | 0.020 |
+| energy eaten, kcal (guard) | +26.5 (-38.1 to +91.1) | 36.0 | 36.0 |
+| reserves, % of the usual store a day (guard) | +0.035 (-0.082 to +0.152) | 0.028 | 0.035 |
+| distance, km (guard) | +0.070 (-0.538 to +0.678) | 0.774 | 0.774 |
+
+## Against the top pick, first adapter (`r4-top`)
+
+| Measure | `r4-top` | the rules | `r4-draw-1` minus top | `r4-draw-2` minus top | `r4-held` minus top | `r4s2-top` minus top | `r4s2-draw-1` minus top |
+|---|---|---|---|---|---|---|---|
+| act changes | 33.6 | 47.6 | +12.8 (+9.1 to +16.4) **differs** | +14.6 (+6.5 to +22.8) **differs** | +8.4 (+1.9 to +14.9) **differs** | -0.4 (-2.8 to +2.0) | +18.5 (+13.0 to +24.0) **differs** |
+| changes of the kind of act | 31.4 | 45.2 | +12.1 (+8.3 to +15.9) **differs** | +14.9 (+7.6 to +22.2) **differs** | +9.2 (+2.9 to +15.5) **differs** | +0.3 (-2.2 to +2.8) | +17.9 (+11.9 to +24.0) **differs** |
+| trips to food begun | 2.3 | 8.3 | +2.7 (+1.9 to +3.4) **differs** | +2.6 (+1.8 to +3.4) **differs** | +2.2 (+0.9 to +3.5) **differs** | +0.1 (-0.5 to +0.8) | +5.0 (+3.7 to +6.3) **differs** |
+| trips to food completed | 0.9 | 1.7 | +0.4 (+0.2 to +0.6) **differs** | +0.1 (-0.2 to +0.5) | +0.2 (-0.3 to +0.7) | +0.0 (-0.4 to +0.5) | +1.0 (+0.7 to +1.3) **differs** |
+| asks of the kernel | 54.1 | 0.0 | +8.2 (+3.2 to +13.2) **differs** | +9.5 (+1.4 to +17.5) **differs** | +10.5 (+5.3 to +15.7) **differs** | +0.6 (-3.2 to +4.3) | +14.4 (+7.5 to +21.2) **differs** |
+| nights in a nest (share) | 1.00 | 1.00 | -0.02 (-0.07 to +0.03) | 0.00 (0.00 to 0.00) | -0.16 (-0.37 to +0.05) | 0.00 (0.00 to 0.00) | 0.00 (0.00 to 0.00) |
+| energy eaten, kcal (guard) | 1562 | 1654 | -13 (-99 to +74) | +14 (-22 to +49) | -145 (-286 to -3) **differs** | -20 (-70 to +30) | +18 (-20 to +57) |
+| reserves, % of the usual store a day (guard) | 0.02 | 0.01 | -0.12 (-0.25 to +0.02) | -0.08 (-0.14 to -0.02) **differs** | -0.30 (-0.54 to -0.06) **differs** | -0.02 (-0.10 to +0.07) | -0.08 (-0.14 to -0.01) **differs** |
+| distance, km (guard) | 2.05 | 2.63 | +0.57 (+0.28 to +0.87) | +0.64 (+0.07 to +1.22) | -0.07 (-0.56 to +0.42) | -0.26 (-0.43 to -0.09) | +0.64 (+0.11 to +1.18) |
+
+| Arm | H1 nests kept | H2 switching not doubled (ratio to top) | guard: energy | guard: reserves | guard: distance | does no harm |
+|---|---|---|---|---|---|---|
+| `r4-draw-1` | yes (49 of 50; top 50) | yes (1.38) | yes (-13 (-99 to +74) kcal) | yes (-0.12 (-0.25 to +0.02)) | yes (+0.57 km; limit 0.84) | **yes** |
+| `r4-draw-2` | yes (50 of 50; top 50) | yes (1.44) | yes (+14 (-22 to +49) kcal) | no (-0.08 (-0.14 to -0.02)) | yes (+0.64 km; limit 0.84) | **no** |
+| `r4-held` | no (42 of 50; top 50) | yes (1.25) | no (-145 (-286 to -3) kcal) | no (-0.30 (-0.54 to -0.06)) | yes (-0.07 km; limit 0.84) | **no** |
+| `r4s2-top` | yes (50 of 50; top 50) | yes (0.99) | yes (-20 (-70 to +30) kcal) | yes (-0.02 (-0.10 to +0.07)) | yes (-0.26 km; limit 0.84) | **yes** |
+| `r4s2-draw-1` | yes (50 of 50; top 50) | yes (1.55) | yes (+18 (-20 to +57) kcal) | no (-0.08 (-0.14 to -0.01)) | yes (+0.64 km; limit 0.84) | **no** |
+
+## Against the top pick, third adapter (`r4c-top`)
+
+| Measure | `r4c-top` | the rules | `r4c-draw-1` minus top | `r4c-held` minus top |
+|---|---|---|---|---|
+| act changes | 51.5 | 47.6 | +7.6 (-2.5 to +17.7) | +5.8 (-1.2 to +12.8) |
+| changes of the kind of act | 46.5 | 45.2 | +7.5 (-0.8 to +15.7) | +7.3 (+1.1 to +13.5) **differs** |
+| trips to food begun | 13.9 | 8.3 | -1.6 (-4.5 to +1.3) | -2.5 (-4.1 to -0.8) **differs** |
+| trips to food completed | 5.4 | 1.7 | -1.8 (-3.2 to -0.5) **differs** | -2.3 (-3.6 to -0.9) **differs** |
+| asks of the kernel | 64.0 | 0.0 | +7.1 (-4.8 to +19.0) | +9.3 (+2.0 to +16.6) **differs** |
+| nights in a nest (share) | 1.00 | 1.00 | -0.04 (-0.10 to +0.02) | -0.04 (-0.10 to +0.02) |
+| energy eaten, kcal (guard) | 1642 | 1654 | -36 (-90 to +19) | -58 (-122 to +6) |
+| reserves, % of the usual store a day (guard) | -0.05 | 0.01 | -0.08 (-0.19 to +0.03) | -0.09 (-0.19 to +0.00) |
+| distance, km (guard) | 3.98 | 2.63 | -0.20 (-0.82 to +0.43) | -0.65 (-1.45 to +0.15) |
+
+| Arm | H1 nests kept | H2 switching not doubled (ratio to top) | guard: energy | guard: reserves | guard: distance | does no harm |
+|---|---|---|---|---|---|---|
+| `r4c-draw-1` | no (48 of 50; top 50) | yes (1.15) | yes (-36 (-90 to +19) kcal) | yes (-0.08 (-0.19 to +0.03)) | yes (-0.20 km; limit 0.84) | **no** |
+| `r4c-held` | no (48 of 50; top 50) | yes (1.11) | yes (-58 (-122 to +6) kcal) | yes (-0.09 (-0.19 to +0.00)) | yes (-0.65 km; limit 0.84) | **no** |
+
+## The registered statements (prereg §6)
+
+- **Drawing does what it is for:** yes (first adapter's trips begun against top +2.7 (+1.9 to +3.4), noise 0.64, differs; third adapter -1.6 (-4.5 to +1.3), does not differ).
+- **1. Drawing becomes the standard decode:** no (does no harm: first adapter yes, third no).
+- **2. Held noise is needed:** no (i: drawing fails nests or switching and holding passes: no; ii: both do no harm and holding switches less, the two differing, with trips no further from the rules': no; share of re-asks changed, held against draw: 19.1% against 33.6%, 30.5% against 48.0%).
+- **A timer does as well** (the half-hour block passes the same tests): not run.
+- **3. Neither helps:** yes.

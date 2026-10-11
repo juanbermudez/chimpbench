@@ -516,7 +516,7 @@ the control arms exist to catch. So, for every later stage:
 - Nothing else in §8 changes: per-row values, no sums, no pass counts; the guards are reserve trend, distance, nights
   in a nest, act changes and trips completed; energy eaten is not a guard.
 
-The report's engine section (added at the merge) still applies the rule as first registered. It must apply this
+(Since the merge of stage R7b on 11 October the report applies this amendment: `docs/staging/r7b-prereg.md`.) The report's engine section (added at the merge) at first applied the rule as first registered. It must apply this
 amendment before the first engine arm is judged as "closer to the field"; stage R9 does not use this rule (it compares
 decodes on timing) and the first population night of stage R10 is a level measurement.
 
