@@ -6,7 +6,7 @@
 //
 //   pnpm exec tsx scripts/r10-night.ts run --seed 48 --arm trained-gate [--decode top] [--days 40] [--hours 10] [--out artifacts/r10/<label>]
 //       [--label L] [--burn-in 30] [--params-file docs/staging/integrator-kit/params/M6-W50.json] [--profile field|compressed]
-//       [--timeout-s 120] [--device mps] [--no-contexts] [--no-stop-check] [--allow-dirty]
+//       [--timeout-s 120] [--device mps] [--no-contexts] [--no-stop-check] [--allow-dirty] [--burnin-dir artifacts/r10/burnin]
 //   pnpm exec tsx scripts/r10-night.ts run --resume <out> [--days N] [--hours H]
 //   pnpm exec tsx scripts/r10-night.ts replay <out> [--taps a.ts,b.ts] [--no-field]
 //   pnpm exec tsx scripts/r10-night.ts status <out>
@@ -72,14 +72,17 @@ export function resultName(kernel: string, adapter: string | null): string {
 }
 const seedRole = (seed: number) => seed === 48 || seed === 7 ? 'a training seed of the rules-taught adapters (48 and 7)' : seed === 21 || seed === 5 ? 'a held-out seed read in stages R4 to R5-gate (not fresh)' : 'a development seed';
 
-/** The world after the burn-in on the rules, from a shared cache file or made now. */
-function burnedIn(seed: number, profile: 'field' | 'compressed', params: Record<string, number>, burnInDays: number, cache: string, log: (s: string) => void): World {
-  if (existsSync(cache)) return JSON.parse(gunzipSync(readFileSync(cache)).toString('utf8')) as World;
+/**
+ * The world after the burn-in on the rules, made now or read from a cache file. The file's name carries the commit and
+ * the parameters' hash, so a world burned in by other code or other parameters is never picked up; a run from a tree
+ * that is not clean uses no cache (`cache` null).
+ */
+function burnedIn(seed: number, profile: 'field' | 'compressed', params: Record<string, number>, burnInDays: number, cache: string | null, log: (s: string) => void): World {
+  if (cache && existsSync(cache)) return JSON.parse(gunzipSync(readFileSync(cache)).toString('utf8')) as World;
   const t0 = Date.now(), w = createWorld(seed, { profile, params });
   for (let i = 0; i < burnInDays * DAY; i++) tickWorld(w);
-  mkdirSync(dirname(cache), { recursive: true });
-  writeAtomic(cache, gzipSync(Buffer.from(JSON.stringify(w)), { level: 1 }));
-  log(`burn-in: ${burnInDays} days on the rules in ${Math.round((Date.now() - t0) / 1000)} s (kept at ${rel(cache)})`);
+  if (cache) { mkdirSync(dirname(cache), { recursive: true }); writeAtomic(cache, gzipSync(Buffer.from(JSON.stringify(w)), { level: 1 })); }
+  log(`burn-in: ${burnInDays} days on the rules in ${Math.round((Date.now() - t0) / 1000)} s${cache ? ` (kept at ${rel(cache)})` : ' (not kept: the tree is not clean)'}`);
   return w;
 }
 
@@ -187,7 +190,7 @@ async function run(a: Args): Promise<number> {
     reg.segments.push({ started: now(), fromDay: e.day, pid: process.pid, journalAnswers: journal.size, setAside: aside.moved });
     event(`resumed at the end of day ${e.day}${ck ? ` from ${relative(out, ck.file)}` : ' (the start world)'}; ${aside.moved.length} files of the day in progress set aside; ${journal.size} journalled answers will be reused`);
   } else {
-    const cache = resolve(ROOT, a.flag('burnin-cache', `artifacts/r10/burnin/${reg.paramsFile.replace(/^.*\//, '').replace(/\.json$/, '')}-${reg.profile}-s${reg.seed}-d${reg.burnInDays}.json.gz`));
+    const cache = reg.dirty ? null : resolve(ROOT, a.flag('burnin-dir', 'artifacts/r10/burnin'), `${reg.paramsFile.replace(/^.*\//, '').replace(/\.json$/, '')}-${reg.paramsSha256.slice(0, 8)}-${reg.profile}-s${reg.seed}-d${reg.burnInDays}-${reg.commit.slice(0, 10)}.json.gz`);
     const base = burnedIn(reg.seed, reg.profile, reg.params, reg.burnInDays, cache, log);
     reg.burnInHash = worldHash(base);
     const known = PILOT_BURN_IN[`${reg.profile}:${reg.seed}:${reg.burnInDays}`];
@@ -227,7 +230,8 @@ async function run(a: Args): Promise<number> {
       while ((swapUsedMB() ?? 0) > SWAP_HOLD_MB && waited < SWAP_HOLD_MIN && !signal) { log(`hold: swap ${swapUsedMB()} MB in use, above ${SWAP_HOLD_MB} MB (${waited} min waited)`); await sleep(60_000); waited++; }
       event(`before the model load: load ${loadavg().map(v => v.toFixed(2)).join(' ')}, swap ${swapUsedMB()} MB in use, waited ${waited} min`);
       // every worker of the night (the first, and any replacement) answers one real packet before it serves
-      const first = e.world.chimps.filter(c => c.alive && c.age >= reg.minAge).map(c => requestFor(e.world, c)).find(r => r.refusal === '');
+      // (the warm-up packet is built on a copy, so nothing of it can reach the run's world)
+      const probe = structuredClone(e.world), first = probe.chimps.filter(c => c.alive && c.age >= reg.minAge).map(c => requestFor(probe, c)).find(r => r.refusal === '');
       if (!first) throw new Refused('no animal on the kernel has a real choice to warm the worker up with');
       guard = new GuardedScorer(warmedWorker(async () => { const w = new Worker(a.flag('device', 'mps')); await w.start(); reg.worker = w.ready; return w; }, spec.adapter!, buildStateOnlyQuestion(first.request.context), first.request.options.length, log), reg.timeoutS * 1000);
       try { await guard.start(); } catch (error) { throw new Refused(error instanceof Error ? error.message : String(error)); }
