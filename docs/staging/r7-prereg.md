@@ -501,6 +501,25 @@ recounted, as far as a window can show it). The observer is seeded from the worl
 stream, so every arm of a seed shares one observer stream and D holds only part of the observer's own sampling
 noise. An engine arm cannot yet be added to the report without editing its list of arms.
 
+## 13a. Amendment A1 to the scoring rule (the integrator, 11 October 2026, 02:46 EDT; before any engine arm is judged)
+
+The review of this stage found that the rule of §8, as registered, measures distance to the middle of the field band,
+so an arm can count as "closer" by moving inside a band the rules already satisfy; this holds for 11 of the 15 rows,
+not only for bands that are limits. A noisier chooser then scores as closer to wild chimpanzees, which is the error
+the control arms exist to catch. So, for every later stage:
+
+- **"Closer to the field" is measured as the distance outside the band** (0 anywhere inside it). On a row where the
+  rules are inside the band an engine cannot count as closer; it can only stay inside ("not worse") or leave it.
+- An engine counts as closer on a row only if its distance outside the band is smaller than the best
+  rules-plus-random arm's on that row, by more than the smallest difference that row can show at the unit of the test.
+- The value, the middle of the band and the registered distance to it are still printed beside, as description.
+- Nothing else in §8 changes: per-row values, no sums, no pass counts; the guards are reserve trend, distance, nights
+  in a nest, act changes and trips completed; energy eaten is not a guard.
+
+The report's engine section (added at the merge) still applies the rule as first registered. It must apply this
+amendment before the first engine arm is judged as "closer to the field"; stage R9 does not use this rule (it compares
+decodes on timing) and the first population night of stage R10 is a level measurement.
+
 ## 14. For the integrator
 
 **Decisions that are the user's or the integrator's.**

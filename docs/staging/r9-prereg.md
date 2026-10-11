@@ -445,6 +445,34 @@ changed.** Its commits on this branch are the ones titled "R9 review".
    from a frozen checkout with no commit in between. `scripts/r9-run.sh publish` copies the tables into `docs/staging`
    once the runs are over. What is measured, and what each table holds, is unchanged.
 
+### 10.5 Amendment A1 (the integrator, 11 October 2026, 02:46 EDT; logged before any model arm)
+
+The review (§10.4, item 1) found that the statements of §6 can read yes together and that no order was registered.
+No rule of §6 changes. This amendment only fixes which statement names the outcome when two read yes, and which arms
+run first. The report prints each statement as it falls; the order below is applied when the result is read.
+
+1. **Statement 3 by its first route wins over everything.** If `draw` and `held` (`act`) both fail "does no harm"
+   (H1 to H3) for either adapter, the top pick stays. A decode that fails a guard is never named the standard or
+   "needed", also when it passes nests and switching; that it passed them is reported.
+2. **Statement 3 by its second route wins over statement 2.** If neither decode moves the first adapter's trips begun
+   beyond noise, the top pick stays the default, and a difference in act changes between `held` and `draw` is reported
+   as an observation only: no epoch state is added to the simulation on it.
+3. **Statements 1 and 2 together:** the user's approved design is a draw that is held (10 October). So where `draw`
+   qualifies as the standard and `held` is also "needed" with its mechanism shown, the held draw is the standard if it
+   also does what it is for by the same test as `draw`; if it does not, the plain draw is the standard and holding is
+   reported as an option that lowers switching.
+4. Statement 1 alone, statement 2 alone and statement 4 read as registered. Under statement 2 alone the held draw is
+   named the standard only if it does no harm in full (H1 to H3) and does what it is for; otherwise the result is
+   reported as it fell.
+
+**Arms and order.** First the five arms that answer statements 1 to 3 and give the spread between two decode salts,
+on seeds 21 and 5: `r4-draw-1`, `r4-held`, `r4c-draw-1`, `r4c-held`, `r4-draw-2`. The two half-hour arms (`r4-block`,
+`r4c-block`) are deferred: they may take about three and a half times their estimate (§10.4), and they decide only
+the clause "a timer does as well". Until they run, that clause is reported as not tested and no epoch state is added
+to the simulation either way. The gate-off contrast (step 2) is not run in this first pass. Then the second training
+seed (§8). These arms are the fourth read of the same ten animals on seeds 21 and 5: nothing from them is reported as
+more than a decode comparison under the name "rules-taught model on a rules menu".
+
 ## For the integrator
 
 **What to launch, in order** (one model process at a time; each step holds while swap in use is above 6 GB and
