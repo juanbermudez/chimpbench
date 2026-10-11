@@ -8,7 +8,7 @@ import { newDecoder, newTally, tallyAsk, BLOCK_H, type DecodeRecord, type Harnes
 import { asksOf, missingShare, replay, walk } from '../scripts/r9-held-replay';
 import { heldBreaks, R9_ARMS, specOf } from '../scripts/r9-loop';
 import { differs, noHarm, noiseOf, overturn, verdicts, whatFor, type Rows } from '../scripts/r9-report';
-import { ARMS, decodeDiffers, replayKernel, runArm, type ArmSpec, type DayRow, type Receipt } from '../scripts/r5-pilot';
+import { ARMS, armWorld, decodeDiffers, replayKernel, runArm, type ArmSpec, type DayRow, type Receipt } from '../scripts/r5-pilot';
 import { decode, DECODE_MODES, drawAt, gumbel, heldAt, heldNoise, optionKey, topIndex, unit, type DecodeAt } from '../src/kernel/decode';
 import { nullKernel } from '../src/kernel/kernels';
 import { answerWaiting } from '../src/kernel/loop';
@@ -81,7 +81,7 @@ test('top is the kernel\'s own pick; an option with probability 0 is never taken
   for (const mode of DECODE_MODES) assert.deepEqual(decode({ mode, salt: 3, temperature: 0.2, offset: [5, 0, 0, 0], prior: [0, 0, 0, 1], weights: [9, 1, 1, 1] } as never, at({ version: 5, epoch: 5 }), KEYS, P, 1), decode({ mode, salt: 3 }, at({ version: 5, epoch: 5 }), KEYS, P, 1));
   for (const a of Object.values(R9_ARMS)) if (a.decode) assert.deepEqual(Object.keys(a.decode).sort(), ['hold', 'mode', 'salt']);
   const code = (f: string) => readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
-  for (const f of ['src/kernel/decode.ts', 'scripts/lib/decoder.ts']) assert.equal(/temperature|offset|prior|weight|bias|calibrat|threshold|rescale|softmax|Math\.pow|\*\*/i.exec(code(f)), null, `${f} has no fitted knob`);
+  for (const f of ['src/kernel/decode.ts', 'scripts/lib/decoder.ts', 'src/kernel/loop.ts', 'scripts/r9-loop.ts']) assert.equal(/temperature|offset|prior|weight|bias|calibrat|threshold|rescale|softmax|Math\.pow|\*\*/i.exec(code(f)), null, `${f} has no fitted knob`);
   assert.ok(!/world\.rng|random\(|Math\.random/.test(code('src/kernel/decode.ts') + code('scripts/lib/decoder.ts')), 'the decode has no random generator and never reads the world\'s');
 });
 
@@ -302,6 +302,33 @@ test('in the loop: top is today byte for byte; draw and held are deterministic, 
   assert.equal(worldHash(base()), h0, 'the burned-in world is never written');
 });
 
+test('a run that stops and resumes in the loop (the world and the decoder\'s notes through JSON) is the uninterrupted run; without the notes it is not', async () => {
+  // odds that move with the clock, so a held draw is kept at some re-asks and overturned on the kernel's own odds at others
+  const moving: Kernel = { id: 'gliner', label: 'fake: odds that move', decide(request: KernelRequest) {
+    const q = Math.floor(request.context.time * 4), w = request.options.map(o => Math.exp(2 * unit(`odds|${optionKey(o)}`) + 1.5 * unit(`q|${q}|${optionKey(o)}`))), z = w.reduce((a, b) => a + b, 0), probabilities = w.map(x => x / z), index = topIndex(probabilities);
+    return { index, choice: `c${index}`, probabilities };
+  } };
+  const focal = new Set(focalSet(base()).map(f => f.id));
+  const go = async (spec: HarnessDecode, gate: 0 | 1, stopAt = -1, keepNotes = true) => {
+    let w = armWorld(base(), arm(spec, gate)), dec = newDecoder(spec);
+    const records: unknown[] = [], t = newTally();
+    for (let i = 0; i < 480; i++) {
+      if (i === stopAt) { const notes = JSON.parse(JSON.stringify(dec.snapshot())) as ReturnType<typeof dec.snapshot>; w = JSON.parse(JSON.stringify(w)) as World; dec = keepNotes ? newDecoder(spec, notes) : newDecoder(spec); }
+      for (const c of w.chimps) c.controller = c.alive && focal.has(c.id) ? 'model' : 'rules';
+      tickWorld(w);
+      for (const r of await answerWaiting(w, c => focal.has(c.id) ? moving : null, { decode: dec.step(w) })) { const record = dec.settle(w, r); if (record) tallyAsk(t, record, r.by === 'kernel' ? r.index : -1); records.push([w.tick, r.chimpId, r.by, r.index, record]); }
+    }
+    return { hash: worldHash(w), records: JSON.stringify(records), notes: JSON.stringify(dec.snapshot()), t };
+  };
+  for (const [spec, gate] of [[{ mode: 'held', salt: 1, hold: 'act' }, 0], [{ mode: 'held', salt: 1, hold: 'block' }, 1]] as [HarnessDecode, 0 | 1][]) {
+    const whole = await go(spec, gate), resumed = await go(spec, gate, 233);
+    assert.ok(whole.t.reasks > 5 && whole.t.there > 5, `${whole.t.reasks} re-asks, ${whole.t.there} with the held option on the menu`);
+    assert.equal(resumed.hash, whole.hash, `${spec.hold}: the resumed run ends on the uninterrupted run's world`);
+    assert.equal(resumed.records, whole.records, 'with the same record at every ask'); assert.equal(resumed.notes, whole.notes);
+    if (spec.hold === 'act') assert.notEqual((await go(spec, gate, 233, false)).records, whole.records, 'the check can fail: a resumed run that lost the notes opens its epochs again');
+  }
+});
+
 test('a day of the loop carries the new readouts: act changes in every arm, the decode\'s tallies where there is a decode', async () => {
   const b = base(), focal = focalSet(b), got = collect();
   const rules = await runArm(b, 'rules', ARMS.rules, 1, focal, null), plain = structuredClone(b);
@@ -381,11 +408,16 @@ test('the registered rules: no harm, what a decode is for, and the four statemen
   const heldLess = rows((a, d) => ({ trips: 4.5 + wob(a, d) + a / 20, changes: 30 + a / 12, flips: 3 })), held3less = rows((a, d) => ({ trips: 11 + wob(a, d) + a / 20, changes: 31 + a / 12, flips: 3 }));
   v = verdicts({ top, draw: drawA, held: heldLess, block: heldLess }, { top: top3, draw: third, held: held3less, block: held3less }, rules, noise);
   assert.deepEqual([v.drawStandard, v.act.ii, v.act.mechanism, v.heldNeeded, v.timerDoesAsWell, v.neither], [true, true, true, true, true, false], 'holding switches less beyond noise, by fewer overturned draws; here the block does as well');
+  assert.deepEqual([v.oneAndTwo, v.twoAndThree], [true, false], 'statements 1 and 2 both read yes here: the report says so and names no order (prereg §10.4)');
   v = verdicts({ top, draw: drawA, held: rows((a, d) => ({ trips: 4.5 + wob(a, d) + a / 20, changes: 30 + a / 12, flips: 12 })), block: null }, { top: top3, draw: third, held: rows((a, d) => ({ trips: 11 + wob(a, d) + a / 20, changes: 31 + a / 12, flips: 12 })), block: null }, rules, noise);
   assert.deepEqual([v.heldNeeded, v.heldUnexplained], [false, true], 'holding wins without overturning less: unexplained, not needed');
   const wild = rows((a, d) => ({ trips: 4 + wob(a, d) + a / 20, changes: 70 }));
   v = verdicts({ top, draw: wild, held: heldSame, block: null }, { top: top3, draw: third, held: held3same, block: null }, rules, noise);
   assert.deepEqual([v.drawStandard, v.act.i, v.heldNeeded], [false, true, true], 'drawing doubles the switching and holding does not');
+  assert.deepEqual([v.oneAndTwo, v.twoAndThree], [false, false]);
+  // rule 2 i reads only nests and switching: holding that passes both and fails the energy guard is "needed" while "neither helps" also reads yes
+  v = verdicts({ top, draw: wild, held: rows((a, d) => ({ trips: 4 + wob(a, d) + a / 20, changes: 36 + a / 10, flips: 3, kcalFormula: 1400 - a })), block: null }, { top: top3, draw: third, held: held3same, block: null }, rules, noise);
+  assert.deepEqual([v.heldNeeded, v.neither, v.twoAndThree, v.hHeld[0]!.holds], [true, true, true, false], 'the two statements contradict each other: the report names it and no standard');
   v = verdicts({ top, draw: wild, held: wild, block: null }, { top: top3, draw: third, held: held3same, block: null }, rules, noise);
   assert.deepEqual([v.drawStandard, v.heldNeeded, v.neither], [false, false, true], 'both harm: the top pick stays');
   v = verdicts({ top, draw: top, held: top, block: null }, { top: top3, draw: top3, held: top3, block: null }, rules, noise);

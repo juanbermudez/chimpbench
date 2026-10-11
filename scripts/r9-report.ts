@@ -99,7 +99,13 @@ export function verdicts(first: AdapterArms, third: AdapterArms, rules: Rows, no
   const act = needed('held'), block = needed('block');
   const heldWins = act.i || act.ii, heldNeeded = heldWins && act.mechanism;
   const neither = (hDraw.some(h => !h!.holds) && hHeld.some(h => !h!.holds)) || (!forDraw.firstMoves && !forHeld.firstMoves);
-  return { hDraw, hHeld, hBlock, forDraw, forHeld, drawStandard, act, block, heldNeeded, heldUnexplained: heldWins && !act.mechanism, timerDoesAsWell: heldWins && (block.i || block.ii), neither };
+  // The registered statements do not exclude each other in two cases, and the prereg does not order them (found by the
+  // review before any model arm; prereg §10.4). The report names both cases instead of choosing: `oneAndTwo`: drawing
+  // qualifies as the standard and held noise is also "needed" (rule 2 ii); `twoAndThree`: holding is "needed" and "neither
+  // helps" also reads yes (rule 2 i reads only nests and switching, so holding can pass it and fail a guard while drawing
+  // fails too; or holding switches less than drawing while neither moves the first adapter's trips).
+  return { hDraw, hHeld, hBlock, forDraw, forHeld, drawStandard, act, block, heldNeeded, heldUnexplained: heldWins && !act.mechanism, timerDoesAsWell: heldWins && (block.i || block.ii), neither,
+    oneAndTwo: drawStandard && heldNeeded, twoAndThree: heldNeeded && neither };
 }
 
 type File = { seed: number; burnIn: number; days: number; head: string; dirty: boolean; burnInHash: string; focal: { id: number; cls: string }[]; what?: string; reproduces?: boolean; savedFrom?: { arm: string; endHash: string; kernelSeconds?: number; calls?: number };
@@ -166,7 +172,9 @@ if (process.argv[1]?.endsWith('r9-report.ts')) {
       `- **2. Held noise is needed:** ${yes(v.heldNeeded)}${v.heldUnexplained ? ' (held wins by the tests but the share of re-asks changed is not lower than under drawing: **unexplained**, not "needed")' : ''} (i: drawing fails nests or switching and holding passes: ${yes(v.act.i)}; ii: both do no harm and holding switches less, the two differing, with trips no further from the rules': ${yes(v.act.ii)}; share of re-asks changed, held against draw: ${v.act.shares.map(s => `${f(100 * s.held)}% against ${f(100 * s.draw)}%`).join(', ')}).`,
       `- **A timer does as well** (the half-hour block passes the same tests): ${v.hBlock.every(h => h) ? yes(v.timerDoesAsWell) : 'not run'}.`,
       `- **3. Neither helps:** ${yes(v.neither)}.`,
-      ...(!v.drawStandard && !v.heldNeeded && !v.neither ? ['- **4. No standard is named:** the result is reported as it fell (tables above).'] : []));
+      ...(!v.drawStandard && !v.heldNeeded && !v.neither ? ['- **4. No standard is named:** the result is reported as it fell (tables above).'] : []),
+      ...(v.oneAndTwo ? ['- **Statements 1 and 2 both read yes.** The registered rules do not say which decode is then adopted (prereg §10.4): it is reported as it fell, for the integrator and the user to settle.'] : []),
+      ...(v.twoAndThree ? ['- **Statements 2 and 3 both read yes.** The registered rules do not order them (prereg §10.4): no standard is named on this evidence.'] : []));
     if (has('r4c-held-free')) md.push(`- **Gate-off contrast:** the third adapter, held for the act, gate off, begins ${f(armMean(rowsOf('r4c-held-free'), 'trips'))} trips a day (stop line 25): holding ${armMean(rowsOf('r4c-held-free'), 'trips') <= 25 ? 'does' : 'does not do'} the gate's work by the registered line.`);
   }
   const text = md.join('\n') + '\n';
