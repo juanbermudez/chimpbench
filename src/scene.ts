@@ -22,6 +22,7 @@ import { createGpuTimer, perf, perfEnd, perfNow } from './perf';
 import { hyp2 } from './render/fastmath';
 import { pickRadius } from './render/creatures/pick';
 import { createPortrait } from './render/creatures/portrait';
+import type { DrawnAct } from './render/creatures/drawn';
 import { cameraFootprint, footprintMoved } from './render/env/footprint';
 
 // Scene orchestrator. The environment (terrain, forest, water, sky, weather,
@@ -57,8 +58,11 @@ export interface CameraFootprint {
 /** followChimp: attach the camera follow without zooming (the UI retargets an attached follow to a new selection).
  * portrait: a small snapshot of an animal drawn into a canvas of the UI (render/creatures/portrait.ts); request() is
  * false when none can be taken now (render quality 'low', the cinematic view, no animal layer, or a refresh while
- * frames run long). */
-export type Scene = SceneAPI & { getFootprint(): CameraFootprint; followChimp(id: number): void; portrait: { request(id: number, canvas: HTMLCanvasElement, refresh?: boolean): boolean } };
+ * frames run long).
+ * drawnAct (stage W4): the act an animal's drawn body is in, and whether the simulation has begun a newer one the body
+ * has not started (render/creatures/drawn.ts); fills the caller's record, false when the animal is not drawn. */
+export type Scene = SceneAPI & { getFootprint(): CameraFootprint; followChimp(id: number): void; portrait: { request(id: number, canvas: HTMLCanvasElement, refresh?: boolean): boolean };
+  drawnAct(id: number, out: DrawnAct): boolean };
 /** Scene options (outside the shared contract), field profile only. focusId: the animal whose party the strategy view
  * frames at start (the whole-map overview when absent, as in the env harness). view 'close': open in the close view on
  * that animal instead, at a low orbit (a new world); the strategy view keeps the party framing for the R key. */
@@ -814,6 +818,7 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
     getListener,
     getZoom() { return rig.zoom(); },
     getFootprint() { return footprint; },
+    drawnAct(id: number, out: DrawnAct) { return creatures?.drawnAct?.(id, out) ?? false; },
     // A refresh (the same animal again) waits while frames run long: the readback then costs one long frame (portrait.ts).
     portrait: { request: (id: number, canvas: HTMLCanvasElement, refresh = false) => !!creatures?.portrait && quality !== 'low' && rig.mode !== 'cinematic' && !(refresh && frameEma > 0.024) && portrait.request(id, canvas) },
     dispose,
