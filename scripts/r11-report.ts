@@ -245,7 +245,7 @@ if (process.argv[1]?.endsWith('r11-report.ts')) {
     p('| Adapter | Top-pick arm: nights in a nest | Draw arm | Its nights in a nest (share) | Draw less top pick, share of nights, paired over animals | (i) nests kept against the top pick | (ii) not below the rules\' mean − D | N1 |');
     p('| --- | --- | --- | --- | --- | --- | --- | --- |');
     const verdict: Record<string, boolean | null> = {};
-    for (const key of [...NEW.p5b, ...NEW.p5a, 'old'].map(keyOf)) {
+    for (const key of [...new Set([...NEW.p5b, ...NEW.p5a].map(keyOf)), oldKey]) {   // (the dry run has one fake adapter per arm)
       const top = armsOf(key, 'top')[0], draws = armsOf(key, 'draw');
       if (!top && !draws.length) continue;
       if (!draws.length) { p(`| ${key} | ${top ? cnt(N[top]) : 'not on file'} | none on file | | | | | not read |`); verdict[key] = null; continue; }

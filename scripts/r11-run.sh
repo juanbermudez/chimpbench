@@ -32,7 +32,9 @@
 #
 # Generated tables go under artifacts/r11/tables (R11_TABLES), which git ignores, so the launch order runs end to end
 # from a frozen checkout. R11_FT_ROOT: this stage's data and adapters (default artifacts/decide-ft/r11). R11_OLD_FT: the
-# folder whose adapters/ holds r4-rules-state (default: this checkout's, else the worktree that made it).
+# folder whose adapters/ holds r4-rules-state (default: this checkout's, else the worktree that made it). R11_WORDING:
+# stage R8's generated wording table, the baseline of prereg §11.4 (default docs/staging/r8-wording-numbers.md, which a
+# checkout holds once stage R8's result is merged; without it the reading W1 is printed as "not read").
 cd "$(dirname "$0")/.." || exit 1
 ROOT="$(pwd)"; WT=/Volumes/Drive/chimpbench/MGOGO/.claude/worktrees
 first_dir() { for d in "$@"; do [ -d "$d" ] && { echo "$d"; return; }; done; echo "$1"; }
@@ -116,7 +118,7 @@ case "$1" in
     step $TSX scripts/r11-assemble.ts --parts "$FT/parts" --out "$FT"
     mkdir -p "$TABLES"
     step $TSX scripts/r11-data-report.ts --manifest "$FT/manifest.json" --md "$TABLES/r11-data.md" --json "$TABLES/r11-manifest.json"
-    step $TSX scripts/r11-offline.ts --dir "$FT" --md "$TABLES/r11-offline.md" ;;
+    step $TSX scripts/r11-offline.ts --dir "$FT" --md "$TABLES/r11-offline.md" ${R11_WORDING:+--wording "$R11_WORDING"} ;;
   sample) "$ROOT/scripts/r11-run.sh" sample-worlds && "$ROOT/scripts/r11-run.sh" assemble || exit 1 ;;
   controls)
     seed_ok "$2"; hold_load
@@ -163,7 +165,7 @@ case "$1" in
     before_model "real token counts (the tokenizer alone)"
     export MGOGO_FT_ROOT="$FT"
     step "$PY" r8_tokens.py --in "$AFT/eval/all.jsonl" --packets p5a,p5b --out "$AFT/eval/tokens.jsonl"
-    step $TSX scripts/r11-offline.ts --dir "$FT" --md "$TABLES/r11-offline.md" ;;
+    step $TSX scripts/r11-offline.ts --dir "$FT" --md "$TABLES/r11-offline.md" ${R11_WORDING:+--wording "$R11_WORDING"} ;;
   offline)
     assembled
     # the untuned model on every packet; each adapter on its own arm's packets
@@ -177,7 +179,7 @@ case "$1" in
       mv "$FT/eval/all.$p.jsonl.part" "$FT/eval/all.$p.jsonl"
     done
     mkdir -p "$TABLES"
-    step $TSX scripts/r11-offline.ts --dir "$FT" --md "$TABLES/r11-offline.md" ;;
+    step $TSX scripts/r11-offline.ts --dir "$FT" --md "$TABLES/r11-offline.md" ${R11_WORDING:+--wording "$R11_WORDING"} ;;
   loop)
     seed_ok "$2"; controls_on_file "$2"
     LIST="$($TSX scripts/r11-loop.ts list --decode none)" || { echo "R11 failed: the registered arms"; exit 1; }
@@ -210,7 +212,7 @@ case "$1" in
   replay) seed_ok "$2"; [ -n "$3" ] || { echo "usage: $0 replay <seed> <a,b,…>"; exit 2; }; step $TSX scripts/r11-loop.ts engine --seed "$2" --arms "$3" --out "$LOOP" --replay ;;
   report)
     mkdir -p "$TABLES"
-    [ -f "$FT/manifest.json" ] && { step $TSX scripts/r11-data-report.ts --manifest "$FT/manifest.json" --md "$TABLES/r11-data.md" --json "$TABLES/r11-manifest.json"; step $TSX scripts/r11-offline.ts --dir "$FT" --md "$TABLES/r11-offline.md"; }
+    [ -f "$FT/manifest.json" ] && { step $TSX scripts/r11-data-report.ts --manifest "$FT/manifest.json" --md "$TABLES/r11-data.md" --json "$TABLES/r11-manifest.json"; step $TSX scripts/r11-offline.ts --dir "$FT" --md "$TABLES/r11-offline.md" ${R11_WORDING:+--wording "$R11_WORDING"}; }
     S="${R11_SEEDS:-}"   # R11_SEEDS=4111: one seed alone (the engine arms read are those on file for every seed named)
     [ -n "$S" ] || for s in 4111 4222; do [ -f "$LOOP/F/s$s/rules-8.json" ] && S="$S${S:+,}$s"; done
     if [ -n "$S" ]; then tai "$LOOP"; reports "$LOOP" "$S" r11; else echo "R11 report: no control arms on file under $LOOP yet"; fi ;;

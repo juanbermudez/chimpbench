@@ -330,6 +330,7 @@ if (process.argv[1]?.endsWith('r11-offline.ts')) {
   // -------------------------------------------------------------------------------------------------------------------
   // 11. where the rules are near-certain (prereg §11.1: the offline half of "nights in a nest under a draw")
   // -------------------------------------------------------------------------------------------------------------------
+  const afterNine = L.length;   // sections 11 and 12 are computed first (the marks' table prints W1) and printed after section 10
   const certain = fresh.filter(r => Math.max(...q(r)) >= CLEAR), top = (r: R11Row) => argmax(q(r));
   const nestCertain = certain.filter(r => (r.phase === 'dusk' || r.phase === 'night') && r.options[top(r)].family === 'nest');
   p();
@@ -366,7 +367,7 @@ if (process.argv[1]?.endsWith('r11-offline.ts')) {
   p('| --- | --- | --- | --- | --- | --- |');
   for (const m of everyone) {
     const h = hits(m);
-    if (!h.length) continue;
+    if (!h.length || m === UNI) continue;   // (a uniform chooser has no top option: its chance is the number above)
     const b = boot(h.map(x => ({ key: x.key, v: x.v })), `top:${m.label}`), u = untunedOn(m.arm), isAdapter = !m.floor && m.provider !== 'base';
     const k = m === KP ? null : pairedHits(m, KP), d = isAdapter && u ? pairedHits(m, u) : null;
     if (isAdapter) W1[m.label] = wording && k ? b.lo > wording.neutral && k.lo > 0 : null;
@@ -378,6 +379,7 @@ if (process.argv[1]?.endsWith('r11-offline.ts')) {
   // -------------------------------------------------------------------------------------------------------------------
   /** What scripts/r11-report.ts reads for statement S2 (prereg §6.2): per adapter the divergence, the kind-prior baseline's, and the marks. */
   const summary: { fake: boolean; kindPriorDivergence: number; wordingBaseline: ReturnType<typeof wordingBaseline>; adapters: Record<string, { arm: Arm; seed: string; divergence: number; tripLessLabel: number | null; O1: boolean | null; O2: boolean | null; O3: boolean | null; O4: boolean | null; W1: boolean | null; nearCertain: { clear: number | null; nest: number | null } | null }> } = { fake: !!fake, kindPriorDivergence: mean(divOf(KP).map(x => x.v)), wordingBaseline: wording, adapters: {} };
+  const beforeTen = L.length;
   if (adapters.length) {
     p();
     p('## 10. The offline marks (prereg §6.1), per adapter');
@@ -396,6 +398,7 @@ if (process.argv[1]?.endsWith('r11-offline.ts')) {
       summary.adapters[m.label] = { arm: m.arm, seed: seedOf(m.label), divergence: mean(divOf(m).map(x => x.v)), tripLessLabel: t.length ? dTrip : null, O1, O2, O3, O4, W1: W1[m.label] ?? null, nearCertain: nearCertain[m.label] ?? null };
     }
   }
+  L.splice(afterNine, 0, ...L.splice(beforeTen));   // section 10 goes back before sections 11 and 12
   mkdirSync(resolve(md, '..'), { recursive: true });
   writeFileSync(resolve(arg('json', md.replace(/\.md$/, '.json'))), JSON.stringify(summary, null, 1) + '\n');
   mkdirSync(resolve(md, '..'), { recursive: true });
