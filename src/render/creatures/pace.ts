@@ -8,11 +8,17 @@
 // test and the choice of clip at that rate, whatever the playback speed (creatures.ts). A stylization: it carries the
 // small map's tuning over, it is not a measured gait transition.
 import { gaitOn } from '../../sim/gait';
-import { DEFAULT_PARAMS, type Params } from '../../sim/params';
+import { resolveParams, type Params } from '../../sim/params';
 import { GAITS } from './gait';
 
 /** Playback rate (ecological seconds per real second) the small map's thresholds were tuned at (stylization). */
 export const SMALL_MAP_RATE = 60;
+/**
+ * The walking speed those thresholds were tuned at: the 160 m map's own, read from the registry's compressed profile
+ * with no overrides (not a copy of a default used in place of a world's value: it is the anchor every world's own
+ * walking speed, from `paramsOf(world)`, is compared with).
+ */
+const SMALL_MAP_WALK_MPS = resolveParams('compressed').walkMps;
 /** Rendered adult body size used for the rates below (m; adults are 1.36 to 1.54, creatures/rig.ts). Design assumption. */
 export const ADULT_BODY_M = 1.45;
 
@@ -23,10 +29,10 @@ export const ADULT_BODY_M = 1.45;
 export const walkPace = (P: Params): number => gaitOn(P) ? Math.max(P.walkGaitMaleMps, P.walkGaitFemaleMps) : P.walkMps;
 
 /** True on the 160 m map (and any world that walks at its speed): the layer keeps its original expressions there, bit for bit. */
-export const smallMapPace = (P: Params): boolean => walkPace(P) === DEFAULT_PARAMS.walkMps;
+export const smallMapPace = (P: Params): boolean => walkPace(P) === SMALL_MAP_WALK_MPS;
 
 /** The reference rate (see the header): exactly SMALL_MAP_RATE on the 160 m map, 6.86 on the field map, 2.73 with the gait mechanism. */
-export const referenceRate = (P: Params): number => SMALL_MAP_RATE * (DEFAULT_PARAMS.walkMps / walkPace(P));
+export const referenceRate = (P: Params): number => SMALL_MAP_RATE * (SMALL_MAP_WALK_MPS / walkPace(P));
 
 /**
  * The playback rate above which an adult's walk can no longer be drawn with feet that grip the ground (the walk's

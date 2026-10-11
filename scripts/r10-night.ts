@@ -43,7 +43,7 @@ import { gunzipSync, gzipSync } from 'node:zlib';
 import { nullKernel, rulesKernel } from '../src/kernel/kernels';
 import type { Kernel } from '../src/kernel/types';
 import { requestFor } from '../src/sim/decide';
-import { DEFAULTS } from '../src/sim/params';
+import { resolveParams, type Overrides } from '../src/sim/params';
 import { createWorld, tickWorld } from '../src/simulation';
 import type { World } from '../src/types';
 import { worldHash } from '../tests/fixtures/golden';
@@ -148,7 +148,7 @@ async function run(a: Args): Promise<number> {
     // the decode (stage R9's step of the loop): a model arm always has one; a no-model kernel arm only when --decode is given
     const hold = a.flag('hold', 'act'), salt = a.has('decode-salt') ? +a.flag('decode-salt') : undefined;
     if ((a.has('decode') || a.has('decode-salt') || a.has('hold')) && spec.kernel === 'rules') throw new Refused('the rules arm has no kernel answer to decode: --decode, --decode-salt and --hold are for kernel arms');
-    const why = decodeRefusal(decode, { hold, salt, activityFirst: (params as Record<string, number>).activityFirst ?? DEFAULTS.activityFirst });
+    const why = decodeRefusal(decode, { hold, salt, activityFirst: resolveParams(profile, params as Overrides).activityFirst });
     if (why) throw new Refused(why);
     if (!(HOLDS as readonly string[]).includes(hold)) throw new Refused(`--hold ${HOLDS.join(' | ')}`);
     const decodeSpec = spec.kernel === 'gliner' || (spec.kernel !== 'rules' && a.has('decode')) ? nightDecode(decode as DecodeMode, salt ?? defaultSalt(decode as DecodeMode), hold as Hold) : null;
