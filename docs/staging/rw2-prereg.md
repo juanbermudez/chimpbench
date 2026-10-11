@@ -1,24 +1,24 @@
-# RW2: wild choice records from the three Dryad deposits (registration)
+# RW2: the wild records of the three Dryad deposits: one choice record, one small test, one yardstick (registration)
 
 Stage RW2 of Track R. Branch `rw2-wild-records`, from track-e 7f9ec5b. Registered Sunday 11 October 2026, 15:11 EDT (by `date`), **before any score was computed through this stage's code**. It extends stage RW (`docs/staging/rw-prereg.md`, `docs/staging/rw-bench-prereg.md`): the same kernel interface, the same scorer, the same seal.
 
 ## The plain page
 
-The three files you downloaded on 11 October, each checked by one audit and one sceptic. (Updated with the results of section 8.)
+The three files you downloaded on 11 October, each checked by one audit and one sceptic. (Updated with the results of section 8 and with the second reader's check of section 11.)
 
 **Taï grooming (Mielke et al. 2018): a true wild choice record, and a narrow one.**
 - What it is: the first adult a chimpanzee groomed, among the adults in sight, when it started a grooming session.
-- Wild decisions: 1,372 from 20 animals (599 to learn from, 353 to tune on, 420 sealed and unread).
+- Wild decisions: 1,372 from 20 animals: 557 to learn from, 329 to tune on, 420 sealed and unread. The other 66 are set aside because they fall on a day that also holds a more protected part.
 - What only it can teach: partner choice with both sexes, rank, a bond measure, a female's state and a recent quarrel. The Ngogo record has none of these.
 - What it cannot: whether or when to groom, or any other act. Western subspecies. The signal is weak: chance 0.24, the best simple rule 0.35.
 
 **Kanyawara coalitions (Fox et al. 2022): a record of who attacked together, not of who chose.**
-- Wild decisions: 122 joint attacks by adult females, about 100 independent days (73, 13, and 36 sealed).
+- Wild events, not decisions: 122 joint attacks by adult females on 100 days (73 to look at, 13 to tune on, 36 sealed and unread). Nothing says who chose.
 - Use: a small test only, never a teacher. Past allies and grooming partners are the co-attackers more often than chance. It also shows that the simulation never offers a side to an unrelated adult female.
 - What it cannot: whether to join, who started, who the victim was.
 
 **Budongo scans (Ramos-Fernández et al. 2018): not a choice record.**
-- Wild decisions: none. The rows are lists of who was near an unnamed animal, with no date or clock, and at least two observers' lists interleaved.
+- Wild decisions: none. The rows are lists of who was near an unnamed animal, with no date or clock, and at least two lists of the same moments interleaved (the file does not say whose).
 - Use: a yardstick for party size only (about 5 resident adults; one alone on a fifth of scans).
 - What it cannot: staying, leaving or joining, or any rate of change. Wild "join or leave" labels would need the field station's own sheets.
 
@@ -97,7 +97,7 @@ Declared, not prevented:
 
 ### 2.3 The seal
 
-- The reader deletes `gr.initiated` from every sealed row at load, before anything else is done with the row. No sealed record is built: a record needs its outcome for its own label and for the history of the chooser's later events.
+- The reader fixes a row's part from its group, the focal's code and its date before it makes the row, and never puts the `gr.initiated` cell of a sealed row into the row it keeps (amendment 6). No sealed record is built: a record needs its outcome for its own label and for the history of the chooser's later events.
 - Opening takes `scripts/rw2/rw2_ingest.py --open-sealed "<reason>"`, which appends a line to `docs/staging/rw2-sealed-log.md` **before** any file is read, and then `scripts/rw2-score.ts --part sealed --open-sealed "<reason>"`, which appends its own line (kernels, commit) before it reads the opened records. Each opening needs the user's go. A line in the log that no registered evaluation explains is a breach.
 - The sealed score is one final score per kernel, reported per stratum.
 - History of an opened sealed record: from all the chooser's earlier events, and a second score with history from train and development events only, side by side (`--history open`).
@@ -264,11 +264,11 @@ Same builder, same rules of identity and order as section 2.4. No date and no cl
 | `me` | invented name, adult female, "newcomer to the community" when she is one | a female is a newcomer in a period when none of her pairs is resident with resident (`immdyad`) |
 | `now` | how many other adult females are in the party; "I am attacking another chimpanzee" | the event's rows |
 | `nearby`, one line per option | invented name, adult female; "newcomer to the community"; "my close kin (mother, daughter or sister)" | `immdyad`, `kinship` |
-| `history` | "Rank here, highest first: …"; "In my party in the previous two years, most often first: …"; "Within 5 m of me in the previous two years, most often first: …"; "Groomed with me in the previous two years, most first: …" (amendment 1); "No history with me yet: …"; "Attacked alongside me before, most often first: …"; "In joint attacks before, most often first: …" | order of `ranksumbi_z`; the pair table's values **for the previous two-year period**; earlier events of the open parts, earlier days only |
+| `history` | "Rank here over the previous two years, highest first: …" (amendment 5); "In my party in the previous two years, most often first: …"; "Within 5 m of me in the previous two years, most often first: …"; "Groomed with me in the previous two years, most first: …" (amendment 1); "No history with me yet: …"; "Attacked alongside me before, most often first: …"; "In joint attacks before, most often first: …" | the order of `ranksumbi_z` and the pair table's other values, all **for the previous two-year period**; earlier events of the open parts, earlier days only |
 | options | "Attack alongside X", one per other adult female present | |
 
-- **Bonds are taken from the previous two-year period**, because the file's own columns average the period that contains the event and so look ahead. They enter as order within the menu only (the z-scores are pooled over all ten years). An option with no row in the previous period is named in "No history with me yet". Events of 2010 and 2011 have no previous period in the data: their packets carry no bond line at all, and scores are also reported for the records that do (periods B to E).
-- Rank is a pair sum; within one female's menu it orders the options by their own rank. That a low number is a high rank is inferred, not stated by the authors: pairs with a newcomer have a higher sum (0.44 and 1.05 against −0.13; outcome-free check; confidence moderate). The focal's own place is not recoverable, so "me" is not in the line.
+- **Bonds, and rank (amendment 5), are taken from the previous two-year period**, because the file's own columns average the period that contains the event and so look ahead. They enter as order within the menu only (the z-scores are pooled over all ten years). An option with no row in the previous period is named in "No history with me yet". Events of 2010 and 2011 have no previous period in the data: their packets carry no bond line and no rank line at all, and scores are also reported for the records that do (periods B to E).
+- Rank is a pair sum; within one female's menu it orders the options by their own rank. In the source it is each female's place in an Elo order built from aggression and submission among females, averaged over the two-year period (paper Methods 2c), so the value of the event's own period looks ahead and can hold the event itself: the packet takes the previous period's, and an option with no rank then is left out of the line. That a low number is a high rank is inferred, not stated by the authors: pairs with a newcomer have a higher sum (0.44 and 1.05 against −0.13; outcome-free check; confidence moderate). The focal's own place is not recoverable, so "me" is not in the line.
 - Coalition history comes from train and development events of earlier days only.
 - The context's act is a carrier (`follow`): the simulation has no "attack alongside". The label is written from the block.
 
@@ -283,7 +283,7 @@ nearby:
   Daga: adult female
   Gefo: adult female
 history:
-  Rank here, highest first: Gefo, Nasi, Daga, Tuza
+  Rank here over the previous two years, highest first: Gefo, Nasi, Daga
   In my party in the previous two years, most often first: Nasi, Daga, Gefo
   Within 5 m of me in the previous two years, most often first: Nasi, Gefo, Daga
   Groomed with me in the previous two years, most first: Nasi
@@ -306,12 +306,13 @@ Menus wider than 8 (44 of the 122 events) go through the same fan-out.
 | `groomed-prev` | groomed with her in the previous two years | 0.32 (audit) |
 | `groomdur-prev` | most grooming with her in the previous two years | not scored |
 | `kin` | her close kin | chosen 8 of 19 times against 0.17 for non-kin (sceptic) |
-| `rank-high` | the highest-ranking female present | 0.31 (audit; rank says who tends to attack, not whom she picks: sceptic) |
+| `rank-high` | the highest-ranking female present, by rank over the previous two years (amendment 5) | not scored (0.31 with the rank of the event's own period: audit; rank says who tends to attack, not whom she picks: sceptic) |
 | `resident` | not a newcomer | not scored (newcomer pairs are 2.9% of partnerships against 20%) |
 | `allied-before` | attacked alongside her most often before | 0.42 (sceptic, on a slightly different history) |
 | `frequent-aggressor` | most often in joint attacks before | 0.36 to 0.44 (sceptic, with later events included; here earlier days only) |
 | `stack` | **the bar:** attacked alongside her before, then most often in her party, then most often in joint attacks | not scored |
 | `assoc-now` | comparison only, never in a packet: most often in her party in the period that contains the event (looks ahead) | 0.42, or 0.31 with each female weighted equally (sceptic) |
+| `rank-now` | comparison only, never in a packet (amendment 5): the highest-ranking female present, by rank over the period that contains the event (looks ahead) | 0.31 (audit) |
 | `first-option` | check, not a rule | |
 
 Corrected statements that this registration adopts from the sceptic:
@@ -400,10 +401,10 @@ Time, from the packet counts and the server's token estimate of every packet (0.
 | run | packets sent | estimated tokens, median and largest | estimated time |
 | --- | --- | --- | --- |
 | Taï development, plain and fanned out, own view | 329 + 177 sub-menus | 215, 409 | about 1.2 min (50 s plain, about 20 s of sub-menus) |
-| Kanyawara development, plain and fanned out | 29 + 27 sub-menus | 268, 464 | about 15 s |
+| Kanyawara development, plain and fanned out | 29 + 27 sub-menus | 258, 469 | about 15 s |
 | **one adapter, development parts** (with about 20 s to load the model) | 562 | | **about 2 min** |
 | Taï train, plain and fanned out, own view | 557 + 345 sub-menus | 224, 450 | about 2.2 min (89 s plain, about 40 s of sub-menus) |
-| Kanyawara train, plain and fanned out | 145 + 165 sub-menus | 324, 549 | about 1.2 min |
+| Kanyawara train, plain and fanned out | 145 + 165 sub-menus | 335, 553 | about 1.2 min |
 | **one adapter, train and development** | about 1,770 | | **about 5 to 6 min** |
 | the third view of Taï instead of the own view | the same counts | 269 to 278, 534 | about 1.3 times the Taï figures |
 
@@ -411,7 +412,7 @@ The untuned model and the five adapters named above, on the development parts, a
 
 ## 8. Results (11 October 2026; train and development parts only; no model; the sealed parts not opened)
 
-Copied from `docs/staging/rw2-numbers.md` (generated at 7598b68). A rule's score is its expected top-1 with ties split; intervals are 95% over individuals.
+Copied from `docs/staging/rw2-numbers.md` (generated at 7598b68; regenerated at 679304e after amendment 5, which changed the Kanyawara rank rule and the Kanyawara packet lengths and nothing else). A rule's score is its expected top-1 with ties split; intervals are 95% over individuals.
 
 **The reader reproduces the audits.** On all 599 Taï train events, before the same-day rule, the derived records give chance 0.2328, past partner 0.3446, highest rank 0.2972, bond 0.2337, weakest bystander bond 0.2938, weakest mean bond 0.3230 and same sex 0.2254: the audit's and the sceptic's figures to the last digit. For Kanyawara they give 73 events, 159 participant records, coalitions of 65, 5, 1 and 2, and 66 date-and-set units, as the sceptic counted. Every eligible Taï development record has exactly one flagged row (329 of 329), which the audit could not check.
 
@@ -454,15 +455,17 @@ Copied from `docs/staging/rw2-numbers.md` (generated at 7598b68). A rule's score
 | most often in her party, previous two years | 0.232 (0.146 to 0.327) | 0.351 (0.201 to 0.464) | 0.334 | 0.315 |
 | most often within 5 m, previous two years | 0.242 | 0.365 | 0.388 | 0.419 |
 | her close kin | 0.222 | 0.241 | 0.325 | 0.330 |
-| highest rank | 0.201 | 0.310 | 0.464 | 0.414 |
+| highest rank, previous two years (amendment 5) | 0.191 (0.129 to 0.253) | 0.254 (0.193 to 0.311) | 0.357 (0.218 to 0.509) | 0.315 (0.188 to 0.483) |
 | not a newcomer | 0.209 | 0.265 | 0.338 | 0.311 |
 | comparison, looks ahead: most often in her party in the event's own period | 0.310 (0.182 to 0.446) | 0.400 | 0.300 | 0.345 |
+| comparison, looks ahead: highest rank in the event's own period (the rule as first scored) | 0.201 (0.115 to 0.293) | 0.310 (0.221 to 0.385) | 0.464 (0.231 to 0.687) | 0.414 (0.250 to 0.630) |
 | order check: the first option | 0.205 | 0.200 | 0.331 | 0.379 |
 
 - **With each female weighted equally, little clears chance on train:** "attacked alongside her before" (+0.106, 0.046 to 0.173), "groomed with her" (+0.091, 0.017 to 0.198), "not a newcomer" (+0.030, 0.007 to 0.054) and the look-ahead association (+0.131, 0.019 to 0.263). The clean association of the previous two years does not clearly (+0.053, −0.011 to 0.124).
 - The pooled scores are 0.13 to 0.20 over chance and rest on a few females, as the sceptic said. The sceptic's look-ahead figure (0.31 against 0.17 with females weighted equally) is reproduced (0.310 against 0.179).
 - Development is 29 records from 13 females: every interval is wide (the order check itself reads 0.21 to 0.38 across five orders, against 0.24). Nothing is chosen on it.
 - Kin, where a kin option exists, are few: the rule sits at chance over all records because most menus hold no kin.
+- Rank (amendment 5). With the previous period's rank the rule does not clear chance on either part (train +0.037 pooled, −0.007 to 0.084; development +0.112 with females equal, −0.009 to 0.251). With the rank of the event's own period it did on the pooled train score (+0.093, 0.024 to 0.152) and on development (+0.218, 0.018 to 0.413). Where a previous period exists the two readings agree (train, 107 records: 0.228 against 0.215, chance 0.178; development, 18 records: 0.333 both), so the difference is the events of 2010 and 2011, whose packets now carry no rank line; no sign that the look-ahead itself inflated a score.
 
 ### 8.3 Budongo
 
@@ -476,6 +479,12 @@ Made after the registration commit (4be4e8c, 15:11) and before the first real re
 2. **The derived records of a part are written in order of their hashed key**, so a file's order is neither the source's nor the order in time.
 3. Acceptance test 4's last clause ("renaming every animal changes nothing but hashes and names") cannot hold, because the split itself hashes the codes. It is replaced by: two records with the same facts and different keys give the same text but for the names; and the same chooser has a different invented name from record to record.
 4. The scorer's per-record outputs go to `--out` (by default `artifacts/rw2/bench`), so runs of several adapters do not overwrite each other.
+
+Made by the second reader (section 11), **after the no-model baselines of section 8 were seen and before any model was scored**:
+
+5. **Kanyawara rank is taken from the previous two-year period, as the bonds are** (commit 679304e). The file's `ranksumbi_z` on an event's row is the pair table's value for the period that contains the event (equal on all 1,117 train rows; confidence high), and the paper builds it from aggression and submission among females, as a daily ordinal rank "averaged for each female across each 2-year period" (Methods 2c; confidence high for the sentence). So it looks ahead exactly as the association columns do, and it can hold the joint attack itself. The packet line now reads "Rank here over the previous two years, highest first: …"; events of 2010 and 2011 carry no rank line; the rule `rank-high` reads the previous period; the first reading is kept as `rank-now`, a look-ahead comparison that is never written as text. The bar (`stack`) does not read rank and is unchanged, as is every other rule. Effect: section 8.2.
+6. **The seal is applied as a row is read** (commit 0197c0f): the reader fixes the part first and never keeps a sealed outcome cell, where it used to load every row and delete the cell in a second step. The records and the manifest are the same byte for byte. An unexpected failure now prints its kind and line, never a message that could quote a cell.
+7. **Words.** The plain page counts the eligible records (557, 329), not the events of each part; the Kanyawara events are not called decisions; "two observers' lists" became "two lists" (the file names no observer); the manifest counts the Kanyawara females as `eligibleParticipants`, not choosers; the title no longer calls all three deposits choice records.
 
 ## 10. For the integrator
 
@@ -538,7 +547,8 @@ Nothing below was written into the files it names. Sources of the Methods detail
   50 m of any other, read every 15 minutes; events with an adult male among the aggressors not analysed; 129 targets
   (56 resident adult females, 18 immigrant females, 42 males under 15, 13 adult males); for each coalition every
   female of the party is paired with each coalition female; predictors are the pair's values for the two-year period
-  that contains the event. No initiator or joiner is defined.
+  that contains the event (rank included: Elo ratings from aggression and submission among females, as an ordinal
+  rank per day averaged over each two-year period, Methods 2c). No initiator or joiner is defined.
 - **What the files contain: obtained and checked (11 October 2026; `docs/staging/rw2-prereg.md` §3).** `analysis2_datashare.csv`:
   1,815 rows, one per pair (a participant, one other adult female in the party) per event, flagged when the two
   attacked together; 122 events on 100 dates; 2 to 16 other females present (median 7). `analysis1_datashare.csv`: 811
@@ -550,7 +560,7 @@ Nothing below was written into the files it names. Sources of the Methods detail
 ### 10.4 `IMPLEMENTATION_PLAN.md`, Track R: a paragraph for stage RW2
 
 ```
-- **RW2: wild choice records from the three Dryad deposits (11 October 2026; branch `rw2-wild-records`; `docs/staging/rw2-prereg.md`, `rw2-numbers.md`, `data/rw2-manifest.json`).** The three downloads the user made on 11 October were each checked by an audit and a sceptic before anything was built, each split rule fixed before any outcome was read. **Taï grooming (Mielke et al. 2018) is a true choice record, and a narrow one:** the first adult a chimpanzee groomed among the analysed adults in sight, in a session it started; 1,372 events from 20 animals of both sexes (599 train, 353 development, 420 sealed; 557 and 329 after a same-day rule), with sex, reproductive state, recent aggression and the order of rank and bond, none of which the Ngogo record has; chance 0.23 to 0.24, the best simple rule (the partner it groomed first most often before) 0.34 to 0.35 on both open parts; the authors' bystander-bond columns score 0.32 on train and 0.27 on development, so they are left out of the packet. **Kanyawara coalitions (Fox et al. 2022) record who attacked together, not who chose:** 122 joint attacks by adult females (73, 13, 36 sealed), a small test and never a teacher; with each female weighted equally little beyond "attacked alongside her before" and "groomed with her" clears chance on train. **The Budongo scans (Ramos-Fernández et al. 2018) are not a choice record:** rows are undated lists around an unnamed focal animal, at least two observers' lists interleaved; a yardstick for party size among resident adults only. So the only route found to wild "join or leave" labels is closed until the field station's own sheets are asked for. The reader (`scripts/rw2/rw2_ingest.py`, standard-library Python, the only program that opens the raw files) writes derived records with no animal code and no date; `scripts/rw2-score.ts` scores any kernel stage RW can score through the same scorer and fan-out; both sealed parts are unopened (`docs/staging/rw2-sealed-log.md`). No model was run: `scripts/rw2-eval.sh <adapter>` scores the untuned model or an adapter on the development parts in about 2 minutes. A Taï adapter, if trained, is separate and named (`field choices, Tai first grooming partner`); T-HUN-9 and T-END-12 are proposed as compromised for it.
+- **RW2: the wild records of the three Dryad deposits, one of them a choice record (11 October 2026; branch `rw2-wild-records`; `docs/staging/rw2-prereg.md`, `rw2-numbers.md`, `data/rw2-manifest.json`).** The three downloads the user made on 11 October were each checked by an audit and a sceptic before anything was built, each split rule fixed before any outcome was read. **Taï grooming (Mielke et al. 2018) is a true choice record, and a narrow one:** the first adult a chimpanzee groomed among the analysed adults in sight, in a session it started; 1,372 events from 20 animals of both sexes (599 train, 353 development, 420 sealed; 557 and 329 after a same-day rule), with sex, reproductive state, recent aggression and the order of rank and bond, none of which the Ngogo record has; chance 0.23 to 0.24, the best simple rule (the partner it groomed first most often before) 0.34 to 0.35 on both open parts; the authors' bystander-bond columns score 0.32 on train and 0.27 on development, so they are left out of the packet. **Kanyawara coalitions (Fox et al. 2022) record who attacked together, not who chose:** 122 joint attacks by adult females (73, 13, 36 sealed), a small test and never a teacher; with each female weighted equally little beyond "attacked alongside her before" and "groomed with her" clears chance on train. **The Budongo scans (Ramos-Fernández et al. 2018) are not a choice record:** rows are undated lists around an unnamed focal animal, at least two observers' lists interleaved; a yardstick for party size among resident adults only. So the only route found to wild "join or leave" labels is closed until the field station's own sheets are asked for. The reader (`scripts/rw2/rw2_ingest.py`, standard-library Python, the only program that opens the raw files) writes derived records with no animal code and no date; `scripts/rw2-score.ts` scores any kernel stage RW can score through the same scorer and fan-out; both sealed parts are unopened (`docs/staging/rw2-sealed-log.md`). No model was run: `scripts/rw2-eval.sh <adapter>` scores the untuned model or an adapter on the development parts in about 2 minutes. A Taï adapter, if trained, is separate and named (`field choices, Tai first grooming partner`); T-HUN-9 and T-END-12 are proposed as compromised for it.
 ```
 
 And in the block "User decisions (10 October 2026)", the last bullet's "Waiting on the user: the three manual downloads …" becomes: "The three manual downloads arrived on 11 October and were checked (stage RW2)."
@@ -593,6 +603,33 @@ The Budongo scans are no label source. If anything were ever trained on them, th
 pnpm exec tsx scripts/rw2-score.ts --dataset tai-groom,kanyawara-coalition --part train,development [--kernels null,rules,gliner,gliner+fan2] [--view own|third] [--md docs/staging/rw2-numbers.md]   # scores any kernel stage RW can score on the Taï first-grooming-partner record and the Kanyawara co-attacker record (src/rw2); intervals over individuals; gliner needs --load-model (scripts/rw2-eval.sh <adapter> sets the runtime variables and runs one adapter on the development parts, about 2 min)
 ```
 
+## 11. The second reader's check (11 October 2026, 15:29 to 15:48 EDT, by `date`)
+
+A second agent read every file of the stage and attacked it. Its scripts are separate from the stage's, kept outside the repository, run as `/usr/bin/python3 -I`, print aggregates only, and read outcomes on the train parts only.
+
+**Re-derived independently, and equal to the stage's figures.**
+- Taï (`Data+Model2.csv`): 7,781 rows, East and South only (no mangabey row in this file); 1,372 events, 20 choosers, 28 partners; parts of 599, 353 and 420 events; 42 and 24 left out by the same-day rule; 557, 329 and 420 eligible; 440 community-days, 28 holding two parts and none after the rule; no session number in two parts; one flagged row in each of the 599 train events. On train: chance 0.2328 (599 events) and 0.2320 (557); highest rank 0.2972 and 0.2998; past partner 0.3446 and 0.3438.
+- Kanyawara: 122 events on 100 dates; parts of 73, 13 and 36 events and 1,117, 173 and 525 rows; no month and no date in two parts. On train: coalitions of 65, 5, 1 and 2; 159 participant records; 66 date-and-set units; 145 eligible from 20 females; chance 0.218 pooled and 0.179 with females equal; "most often in her party in the previous two years" 0.351 and 0.232.
+- Budongo: 10,747 and 13,134 rows, 10,616 and 12,935 non-empty; mean 4.76 and 5.15 adults; exactly one on 0.204 and 0.228.
+- The reader run again gives the committed manifest and the same derived records byte for byte, and the scorer the same numbers file.
+
+**The order of work holds.** The registration commit is 15:11:13; the folder of derived records was created at 15:21:38; the numbers were committed at 15:23:04. The rule tables of sections 2.5 and 3.5 did not change between the registration commit and the results.
+
+**The seal holds, tested on the real files.** On a scratch copy every sealed outcome was overwritten without being looked at (2,361 Taï cells; every cell but the event identifier of the 525 sealed Kanyawara rows; the pair table's whole outcome column): the reader's records and manifest did not change by a byte. With every outcome of every part overwritten, structure mode printed the same. The copies were deleted. Both gates refuse the sealed parts without a reason and write nothing; the log is empty.
+
+**Privacy holds.** None of the 52 Taï codes, 29 Kanyawara pseudonyms or 31 Budongo codes of the raw files occurs in any file this branch adds or changes, in a commit message or in the three provenance notes (whole-word search, exact case; any case for codes of three or more characters; only counts were printed). No fixture code is a real code. The derived records hold no decimal, no date and no clock time; every option of a record has the same fields.
+
+**No leak found in a packet.** The label sits first in the reader's stored order on 0.248 of Taï train records against chance 0.232 (0.291 in the file's own order), mean relative place 0.494; Kanyawara 0.221 against 0.218. Names and order are functions of the record's key, not of the answer. No field is carried by the chosen option alone.
+
+**Found and changed** (amendments 5 to 7 of section 9): the Kanyawara rank looked ahead; the seal was applied one step after the rows were loaded; five wordings called something more than it is.
+
+**Found and only declared.**
+- Kanyawara partners are read from the participant column, not from `event_factor`. They agree on 105 of the 106 participant pairs of the train part; one trio has one of its three pair rows not filed, and the reader counts all three as partners of each other (2 of 159 train records). Confidence high.
+- A Taï train row's bond can echo a sealed session (section 2.2): unchanged, and the bond rule is at chance on train.
+- The registered rules were chosen with the audits' train numbers known (section 0): unchanged.
+
+**Not checked by the second reader.** The Budongo statements that compare one row with another (section 4) are the audit's and the sceptic's; no paper was re-read but the one Methods sentence on rank; `scripts/rw2-eval.sh` has never been run and no model has been scored; whether an absolute `MGOGO_FT_ROOT` loads an adapter is unverified.
+
 ## Privacy
 
-Nothing derived from a raw row is in git except aggregate counts, rates and hashes. The derived records (`artifacts/rw2`, gitignored) hold no animal code, no date, no clock time and no value of the source; an option has no identity and a chooser one hashed label. No raw row, code or date-by-individual listing was printed while this stage was built. The raw files were read only by `scripts/rw2/rw2_ingest.py` and three scratch scripts of the same kind (column shapes, the Budongo row sums, a cross-check of train figures), all run as `/usr/bin/python3 -I` from outside `data/raw`. The authors' R script was not opened by this stage.
+Nothing derived from a raw row is in git except aggregate counts, rates and hashes. The derived records (`artifacts/rw2`, gitignored) hold no animal code, no date, no clock time and no value of the source; an option has no identity and a chooser one hashed label. No raw row, code or date-by-individual listing was printed while this stage was built. The raw files were read only by `scripts/rw2/rw2_ingest.py` and three scratch scripts of the same kind (column shapes, the Budongo row sums, a cross-check of train figures), all run as `/usr/bin/python3 -I` from outside `data/raw`. The authors' R script was not opened by this stage. The second reader's scripts (section 11) are of the same kind and are kept outside the repository; its two scratch copies of raw files for the seal test were deleted when the test ended.
