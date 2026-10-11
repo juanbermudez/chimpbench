@@ -117,7 +117,11 @@ interface Slot {
   id: number; name$: string; color: string; rank$: string; act$: string; vocal: string; sel: boolean; model: boolean; tx: number; ty: number; op: number;
   soon: boolean;
 }
-interface Banner { el: HTMLDivElement; key: string; visible: boolean; width: number; tx: number; ty: number; op: number; heard: boolean; }
+interface Banner {
+  el: HTMLDivElement; key: string; visible: boolean; width: number; tx: number; ty: number; op: number;
+  // Stage W10 (field map): what the banner shows, compared field by field so an unchanged banner builds no string.
+  heard: boolean; pid: number; count: number; color: string; word: string; tree: number; act: number; model: boolean;
+}
 type Rect = { x0: number; y0: number; x1: number; y1: number };
 /** Constant inline transform; per-frame positions arrive as --lx/--ly (see place()). */
 const LABEL_TRANSFORM = 'translate3d(var(--lx,0px),var(--ly,0px),0) translate(-50%,-100%)';
@@ -162,7 +166,7 @@ export function createLabels(container: HTMLElement) {
     const el = document.createElement('div');
     el.className = 'crl-ban'; el.style.display = 'none'; el.style.transform = LABEL_TRANSFORM;
     root.appendChild(el);
-    banners.push({ el, key: '', visible: false, width: 0, tx: NaN, ty: NaN, op: -1, heard: false });
+    banners.push({ el, key: '', visible: false, width: 0, tx: NaN, ty: NaN, op: -1, heard: false, pid: -1, count: 0, color: '', word: '', tree: -1, act: -1, model: false });
   }
   // Label widths arrive from a ResizeObserver after layout (no forced synchronous layout in the frame).
   const sized = new Map<Element, Slot | Banner>();
@@ -310,21 +314,24 @@ export function createLabels(container: HTMLElement) {
       V.set(p.x, p.y + 1.5 + MAP_LIFT_M * mapW, p.z - p.r * (1 - mapW)).project(camera);
       if (V.z > 1 || Math.abs(V.x) > 1.05 || Math.abs(V.y) > 1.05) continue;
       const x = (V.x * 0.5 + 0.5) * w, y0 = (-V.y * 0.5 + 0.5) * h - mapW * (partyMarkerPx(p.count) + 8);
-      let key: string, text = '', icon = '', model = false;
+      // What it says. Field map: an activity glyph, the size, the activity and the tree fed in; the banner the party
+      // would take is compared field by field, so nothing is built while it stays the same.
+      const slot = banners[bi];
+      let key = '', same = false, word = '', tree = -1, troopName = 'Community', kind = '';
       if (fieldMap) {
         const q = partyOf(world, p);
         members.length = 0;
         if (q) for (let j = 0; j < q.members.length; j++) { const c = anims.get(q.members[j])?.chimp; if (c) members.push(c); }
         summarizeParty(members, members.length, modelOn, SUM);
-        const species = SUM.activity === ACT_FEEDING && SUM.feedTree >= 0 ? treeOf(world, SUM.feedTree)?.species ?? '' : '';
-        const word = (p.phase && PHASE_TEXT[p.phase]) || KIND_WORD[p.kind] || ACTIVITY_NAMES[SUM.activity];
-        text = species ? `${word} · ${species}` : word; icon = CAT_ICON[ACTIVITY_CAT[SUM.activity]]; model = SUM.model;
-        key = `${p.id}|${p.count}|${p.color}|${text}|${SUM.activity}|${model ? 1 : 0}`;
-      } else key = `${p.id}|${p.kind}|${p.phase ?? ''}|${p.count}|${p.color}`;
-      let troopName = 'Community';
-      if (!fieldMap) for (const t of world.troops) if (t.id === p.troopId) troopName = t.name;
-      const kind = (p.phase && PHASE_TEXT[p.phase]) || (KIND_TEXT[p.kind] ?? p.kind);
-      const bw = bannerWidth.get(key) ?? (fieldMap ? 44 + 6.8 * (text.length + 2) : 22 + 7.2 * (troopName.length + kind.length + 4));
+        word = (p.phase && PHASE_TEXT[p.phase]) || KIND_WORD[p.kind] || ACTIVITY_NAMES[SUM.activity];
+        tree = SUM.activity === ACT_FEEDING ? SUM.feedTree : -1;
+        same = slot.pid === p.id && slot.count === p.count && slot.color === p.color && slot.word === word && slot.tree === tree && slot.act === SUM.activity && slot.model === SUM.model;
+      } else {
+        key = `${p.id}|${p.kind}|${p.phase ?? ''}|${p.count}|${p.color}`;
+        for (const t of world.troops) if (t.id === p.troopId) troopName = t.name;
+        kind = (p.phase && PHASE_TEXT[p.phase]) || (KIND_TEXT[p.kind] ?? p.kind);
+      }
+      const bw = fieldMap ? (same && slot.width ? slot.width : 46 + 6.8 * (word.length + (tree >= 0 ? 22 : 0))) : bannerWidth.get(key) ?? 22 + 7.2 * (troopName.length + kind.length + 4);
       let y = y0, r = rect(x - bw / 2, y - 18, x + bw / 2, y);
       if (hits(r, occluders) || hits(r, placed)) {
         if (!fieldMap) continue;
@@ -336,24 +343,28 @@ export function createLabels(container: HTMLElement) {
       }
       placed.push(r);
       const b = banners[bi++];
-      if (key !== b.key) {
-        b.key = key;
-        b.el.style.background = p.color;
-        if (fieldMap) {
-          b.el.className = b.heard ? 'crl-ban w10 heard' : 'crl-ban w10';
-          b.el.innerHTML = `<svg viewBox="0 0 12 12">${icon}</svg>${model ? '<svg class="crl-ban-ai" viewBox="0 0 10 10"><path d="M5 0l1.2 3.8L10 5 6.2 6.2 5 10 3.8 6.2 0 5l3.8-1.2Z"/></svg>' : ''}<b>${p.count}</b><span>${text}</span>${SOUND_ICON}`;
-        } else b.el.innerHTML = `<b>${troopName}</b><span>${kind} · ${p.count}</span>`;
-        b.width = 0;
-      }
       if (fieldMap) {
+        if (!same) {
+          b.pid = p.id; b.count = p.count; b.color = p.color; b.word = word; b.tree = tree; b.act = SUM.activity; b.model = SUM.model; b.key = '';
+          const species = tree >= 0 ? (treeOf(world, tree)?.species ?? '').replace(/[&<>"]/g, '') : '';
+          b.el.style.background = p.color;
+          b.el.className = b.heard ? 'crl-ban w10 heard' : 'crl-ban w10';
+          b.el.innerHTML = `<svg viewBox="0 0 12 12">${CAT_ICON[ACTIVITY_CAT[SUM.activity]]}</svg>${SUM.model ? '<svg class="crl-ban-ai" viewBox="0 0 10 10"><path d="M5 0l1.2 3.8L10 5 6.2 6.2 5 10 3.8 6.2 0 5l3.8-1.2Z"/></svg>' : ''}<b>${p.count}</b><span>${species ? `${word} · ${species}` : word}</span>${SOUND_ICON}`;
+          b.width = 0;
+        }
         const at = partyHeard.get(p.id), heard = at !== undefined && frame.elapsed >= at && frame.elapsed < at + HEARD_SHOW_S;
         if (heard !== b.heard) { b.heard = heard; b.el.classList.toggle('heard', heard); }
+      } else if (key !== b.key) {
+        b.key = key;
+        b.el.style.background = p.color;
+        b.el.innerHTML = `<b>${troopName}</b><span>${kind} · ${p.count}</span>`;
+        b.width = 0;
       }
       const dimmed = frame.highlightTroopId != null && frame.highlightTroopId !== p.troopId;
       place(b, x, y, dimmed ? 0.3 : 0.92);
       if (!b.visible) { b.el.style.display = ''; b.visible = true; }
     }
-    for (let i = bi; i < banners.length; i++) if (banners[i].visible) { banners[i].el.style.display = 'none'; banners[i].visible = false; banners[i].key = ''; }
+    for (let i = bi; i < banners.length; i++) if (banners[i].visible) { banners[i].el.style.display = 'none'; banners[i].visible = false; banners[i].key = ''; banners[i].pid = -1; }
 
     cand.length = 0;
     let hovered: Anim | null = null, hoverD = 34 * 34;

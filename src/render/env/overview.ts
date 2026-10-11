@@ -213,7 +213,8 @@ export function createOverview(world: World, river: RiverInfo, uniforms: SharedU
   quad.setAttribute('aInfo', infoAttr); quad.setAttribute('aHead', headAttr);
   quad.instanceCount = 0;
   const viewport = { value: new THREE.Vector2(1440, 900) };
-  const markerMaterial = owner.own(createMarkerMaterial(viewport, weightU, owner.own(createGlyphAtlas())));
+  const dayU = { value: 1 };
+  const markerMaterial = owner.own(createMarkerMaterial(viewport, weightU, owner.own(createGlyphAtlas()), dayU));
   const markerMesh = new THREE.Mesh(quad, markerMaterial);
   markerMesh.name = 'overview-parties';
   markerMesh.frustumCulled = false;
@@ -276,6 +277,7 @@ export function createOverview(world: World, river: RiverInfo, uniforms: SharedU
     const now = performance.now() / 1000;
     updatePartyMap(partyMap, w, now);
     const ortho = cam.isOrthographicCamera === true, lift = f.weight;
+    dayU.value = Math.min(1, Math.max(0, w.environment.daylight));
     lastOrtho = ortho; lastWeight = f.weight;
     if (colourKey !== w.troops || colourLen !== w.troops.length) { colourKey = w.troops; colourLen = w.troops.length; colours.clear(); for (const t of w.troops) colours.set(t.id, new THREE.Color(t.color)); }
     partyLines.uniforms.uPx.value = callArcs.uniforms.uPx.value = pixelWorld.value;

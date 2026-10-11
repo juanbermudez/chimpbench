@@ -66,13 +66,15 @@ const ARC_COLOURS: Partial<Record<CallKind, THREE.Color>> = {
   'alarm-hoo': preToneMapped('#aeeeff', new THREE.Color()), drum: preToneMapped('#f0cf9c', new THREE.Color()),
 };
 
+/** How far the marker is dimmed at full night (design assumption, set by eye against the night picture). */
+const NIGHT_DIM = 0.2;
 /**
  * The party marker's material. Instance attributes: aCentre (xyz), aStyle (radius px, selected, dim, activity),
  * aColor (community colour), aInfo (members, gold rim, heard 0..1, answering a call), aHead (travel direction x, z).
  */
-export function createMarkerMaterial(viewport: { value: THREE.Vector2 }, weight: { value: number }, atlas: THREE.Texture): THREE.ShaderMaterial {
+export function createMarkerMaterial(viewport: { value: THREE.Vector2 }, weight: { value: number }, atlas: THREE.Texture, day: { value: number }): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
-    uniforms: { uViewport: viewport, uW: weight, uAtlas: { value: atlas }, uGold: { value: GOLD }, uHoot: { value: HOOT } },
+    uniforms: { uViewport: viewport, uW: weight, uAtlas: { value: atlas }, uGold: { value: GOLD }, uHoot: { value: HOOT }, uDay: day },
     vertexShader: /* glsl */`
       attribute vec3 aCentre; attribute vec4 aStyle; attribute vec3 aColor; attribute vec4 aInfo; attribute vec2 aHead;
       uniform vec2 uViewport;
@@ -93,7 +95,7 @@ export function createMarkerMaterial(viewport: { value: THREE.Vector2 }, weight:
         vQ = position.xy * ext; vStyle = aStyle; vColor = aColor; vInfo = aInfo; vHead = head;
       }`,
     fragmentShader: /* glsl */`
-      uniform float uW; uniform sampler2D uAtlas; uniform vec3 uGold; uniform vec3 uHoot;
+      uniform float uW; uniform sampler2D uAtlas; uniform vec3 uGold; uniform vec3 uHoot; uniform float uDay;
       varying vec2 vQ; varying vec4 vStyle; varying vec3 vColor; varying vec4 vInfo; varying vec2 vHead;
       float glyph( float cell, vec2 uv ) {
         if ( uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 ) return 0.0;
@@ -103,7 +105,7 @@ export function createMarkerMaterial(viewport: { value: THREE.Vector2 }, weight:
       void main() {
         float r = length( vQ ), R = vStyle.x, sel = vStyle.y, act = vStyle.w;
         float members = vInfo.x, gold = vInfo.y, heard = vInfo.z, answering = vInfo.w;
-        vec3 ink = vec3( 0.03, 0.035, 0.03 ), paper = vec3( 0.95, 0.96, 0.92 );
+        vec3 ink = vec3( 0.012, 0.014, 0.012 ), paper = vec3( 0.95, 0.96, 0.92 );
         bool heading = dot( vHead, vHead ) > 0.5;
         // Disc in the community colour; its rim dark, or gold where a member is driven by the decision model.
         float disc = 1.0 - smoothstep( R - 0.8, R + 0.4, r );
@@ -150,6 +152,9 @@ export function createMarkerMaterial(viewport: { value: THREE.Vector2 }, weight:
           a = max( a, badge * max( vStyle.z, 0.6 ) );
         }
         if ( a < 0.01 ) discard;
+        // At night the picture's exposure rises many times over (the forest is dark) and an unlit mark burns out to
+        // white, glyph and all: the marker is dimmed as daylight goes so it keeps its colours (NIGHT_DIM, by eye).
+        col *= mix( ${NIGHT_DIM.toFixed(2)}, 1.0, uDay );
         gl_FragColor = vec4( col, a * uW );
       }`,
     transparent: true, depthTest: false, depthWrite: false, fog: false,

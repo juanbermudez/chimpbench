@@ -95,6 +95,7 @@ export function createMinimap(root: HTMLElement, ctx: Ctx) {
   // Stage W10: this card's own tracker of the parties and the calls (field map only).
   const pm = createPartyMap();
   const trailPts = new Float32Array((TRAIL_SAMPLES + 1) * 3), goalDash = [0, 0];
+  let callDrawAt = -1e9;   // the last redraw prompted by a call (at most four a second: at 1 day/s calls come every frame)
   const clockS = () => performance.now() / 1000;
   /** True while a call's arc is still being drawn. */
   function arcsLive(now: number): boolean {
@@ -126,10 +127,14 @@ export function createMinimap(root: HTMLElement, ctx: Ctx) {
       let n = trailPoints(tr, m.slot, w.time, trailPts);
       if (n > 0) { trailPts[n * 3] = m.x; trailPts[n * 3 + 1] = m.z; trailPts[n * 3 + 2] = 0; n++; }
       g.lineWidth = 1.1 * k;
-      for (let j = 0; j + 1 < n; j++) {
-        const age = trailPts[j * 3 + 2];
-        g.strokeStyle = rgba(t.color, dim ? A06 : age < 0.3 ? A55 : age < 0.6 ? A35 : A20);
-        g.beginPath(); g.moveTo(mx(w, trailPts[j * 3]), mz(w, trailPts[j * 3 + 1])); g.lineTo(mx(w, trailPts[j * 3 + 3]), mz(w, trailPts[j * 3 + 4])); g.stroke();
+      // Three strokes per party at most: the places are oldest first, so each age band is one run of the line.
+      for (let band = 0, j = 0; band < 3 && j + 1 < n; band++) {
+        const limit = band === 0 ? 0.6 : band === 1 ? 0.3 : -1;
+        if (!(trailPts[j * 3 + 2] > limit)) continue;
+        g.strokeStyle = rgba(t.color, dim ? A06 : band === 0 ? A20 : band === 1 ? A35 : A55);
+        g.beginPath(); g.moveTo(mx(w, trailPts[j * 3]), mz(w, trailPts[j * 3 + 1]));
+        while (j + 1 < n && trailPts[j * 3 + 2] > limit) { j++; g.lineTo(mx(w, trailPts[j * 3]), mz(w, trailPts[j * 3 + 1])); }
+        g.stroke();
       }
       // Goal: dashes to the tree, or to the place of the call, most members are walking to.
       if (m.goalKind !== GOAL_NONE && !dim) {
@@ -402,8 +407,8 @@ export function createMinimap(root: HTMLElement, ctx: Ctx) {
       if (anim.on) stepGlide(w, now);
       settle(w, now);
       // Stage W10: follow the parties and the calls (a pointer comparison on most frames; the marks refresh a few times
-      // a second inside), and redraw at once when a call has just been given, so the parties that heard it show.
-      if (w.size > 1000) { const next = pm.calls.next; updatePartyMap(pm, w, now / 1000); if (pm.calls.next !== next) drawnVer = -1; }
+      // a second inside), and redraw when a call has just been given, so the parties that heard it show.
+      if (w.size > 1000) { const next = pm.calls.next; updatePartyMap(pm, w, now / 1000); if (pm.calls.next !== next && now - callDrawAt > 250) { callDrawAt = now; drawnVer = -1; } }
       if (drawnVer !== viewVer) draw(w);
       drawFootprint(w);
     },
