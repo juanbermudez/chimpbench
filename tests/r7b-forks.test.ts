@@ -8,7 +8,7 @@ import test from 'node:test';
 import { acrossHorizons, costs, readout, reads, scoresOf } from '../scripts/lib/r7b-fork-readout';
 import { bodyTerms, distance, REGISTERED, SCALE_VARIANTS, scoreOf, TERMS, type Terms } from '../scripts/lib/r7b-score';
 import { betweenShare, chanceRepeat, halves, mulberry32, noiseRate, repeats, repeatsAllSplits, standsOut, winnerOf } from '../scripts/lib/r7b-stats';
-import { fork, forkPoint, listEligible, prepare, runFork, sampleHash, type ForkBase, type PointFile, type Replicate } from '../scripts/r7b-forks';
+import { fork, forkPoint, listEligible, OWN_NOISE_STEP, prepare, runFork, sampleHash, type ForkBase, type PointFile, type Replicate } from '../scripts/r7b-forks';
 import { thresholds } from '../src/sim/circadian';
 import { massOf, reserveCap } from '../src/sim/energy';
 import { paramsOf } from '../src/sim/params';
@@ -91,6 +91,14 @@ test('a fork: the same salt gives the same outcome and world, another salt anoth
   assert.notEqual(worldHash(other), worldHash(w1), 'another salt, another world');
   assert.ok(r1.r[0] && r1.r[1] && r1.diedAt === null && r1.held >= 0 && r1.held <= 24 && r2.r.length === 2);
   assert.ok(r1.r[1]!.z.every(Number.isFinite) && r1.r[1]!.meanD > 0 && r1.r[1]!.meanSq > 0);
+  // iteration 2: with the animal's own hashed noise re-drawn too, the salt also moves its decision count; still deterministic
+  assert.equal(w1.chimps.find(q => q.id === e.id)!.decisionVersion >= b.version + 1, true);
+  const plainFork = fork(b, parent.modelPolicy.mode, e.id, o, 3)!, own1 = fork(b, parent.modelPolicy.mode, e.id, o, 3, true)!, own2 = fork(b, parent.modelPolicy.mode, e.id, o, 3, true)!;
+  assert.equal(plainFork.chimps.find(q => q.id === e.id)!.decisionVersion, b.version + 1);
+  const moved = own1.chimps.find(q => q.id === e.id)!;
+  assert.equal(moved.decisionVersion, b.version + OWN_NOISE_STEP * 3 + 1); assert.equal(moved.action, o.action); assert.equal(moved.targetId, o.targetId);
+  assert.equal(worldHash(own1), worldHash(own2)); assert.notEqual(worldHash(own1), worldHash(plainFork));
+  assert.deepEqual(runFork(own1, e.id, horizons), runFork(own2, e.id, horizons));
   // a point forked whole: every option or null, the given salts each; only the food options when asked
   const whole = forkPoint(b, parent.modelPolicy.mode, e.id, () => true, [1, 2], [8]);
   assert.equal(whole.forks.length, b.options.length); assert.equal(whole.n, whole.forks.filter(Boolean).length * 2);

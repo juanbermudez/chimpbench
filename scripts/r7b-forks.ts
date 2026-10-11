@@ -11,7 +11,9 @@
 // its menu holds; (C) it is run a third time and every sampled point is forked. The parent is never salted or written:
 // its hash after each of the three runs equals a plain run's.
 //
-//   pnpm exec tsx scripts/r7b-forks.ts run [--seeds 48,7] [--n 100] [--days 5] [--out artifacts/r7b/forks]
+//   pnpm exec tsx scripts/r7b-forks.ts run [--seeds 48,7] [--n 100] [--days 5] [--out artifacts/r7b/forks] [--own-noise]
+// --own-noise (iteration 2): a replicate's salt also moves the forked animal's decision count, which re-draws the rules'
+// own hashed evaluation jitter and bout lengths for that animal (they never read the random stream).
 // A killed run resumes: each finished point is one line of <out>/s<seed>.points.jsonl. Then scripts/r7b-report.ts.
 // Development seeds 48 and 7 only. Nothing here writes a world except tickWorld and the forcing of §2.2.
 import { execSync } from 'node:child_process';
@@ -33,6 +35,8 @@ import { BURN_IN, burnInRefusal, PARAMS_FILE, salted, seedRefusal } from './r7-c
 
 export const DAY_TICKS = Math.round(24 / TICK_HOURS), HORIZON_TICKS = [Math.round(3 / TICK_HOURS), Math.round(6 / TICK_HOURS)] as const;
 export const SALTS = [1, 2, 3, 4, 5, 6, 7, 8], ADULT_AGE = 15, DAYLIGHT = 0.5;
+/** Iteration 2: the step by which a replicate's salt moves the forked animal's decision count (any step that never meets the animal's own counts would do). */
+export const OWN_NOISE_STEP = 1_000_003;
 /** The tap's reasons that are not a fresh draw (src/sim/rg.ts rgTap). */
 const NOT_A_DRAW = new Set(['kept', 'arrived', 'lead', 'phase', 'argmax']);
 /** Food options: feeding here, or a trip of the animal's own to a food tree (the families of scripts/em-sample.ts). */
@@ -90,10 +94,13 @@ export function prepare(parent: World, id: number): ForkBase | string {
  * version, held as the rules hold their own draw (the intention their policy stores: gate.ts intentOf), the animal and
  * the policy back on the rules, and the salt mixed into the random stream. null: the option cannot be applied.
  */
-export function fork(base: ForkBase, parentMode: World['modelPolicy']['mode'], id: number, option: { action: Action; targetId: number }, salt: number): World | null {
-  const w = structuredClone(base.world);
-  if (!applyDecision(w, id, option, 'rules', base.version)) return null;
-  const c = w.chimps.find(q => q.id === id)!, x = ix(c);
+export function fork(base: ForkBase, parentMode: World['modelPolicy']['mode'], id: number, option: { action: Action; targetId: number }, salt: number, ownNoise = false): World | null {
+  const w = structuredClone(base.world), c = w.chimps.find(q => q.id === id)!, x = ix(c);
+  let version = base.version;
+  // iteration 2 (prereg §6): the rules' own evaluation jitter and bout lengths are hashes of the animal's decision count
+  // (candidates.ts, execution.ts boutHours), which a salt in the random stream never re-draws; moving the count does
+  if (ownNoise) { c.decisionVersion += OWN_NOISE_STEP * salt; version = c.decisionVersion; }
+  if (!applyDecision(w, id, option, 'rules', version)) return null;
   x.rgIntent = intentOf(w, c, c.action, c.targetId, x.v, x.aux);
   c.controller = 'rules';
   w.modelPolicy = { ...w.modelPolicy, mode: parentMode };
@@ -135,13 +142,13 @@ export interface PointFile {
 }
 
 /** Forks one prepared point: every option (or only the food options), eight salts each. */
-export function forkPoint(base: ForkBase, parentMode: World['modelPolicy']['mode'], id: number, only: (family: string) => boolean = () => true, salts: number[] = SALTS, horizons: readonly number[] = HORIZON_TICKS): { forks: (Replicate[] | null)[]; copyMs: number; runMs: number; n: number } {
+export function forkPoint(base: ForkBase, parentMode: World['modelPolicy']['mode'], id: number, only: (family: string) => boolean = () => true, salts: number[] = SALTS, horizons: readonly number[] = HORIZON_TICKS, ownNoise = false): { forks: (Replicate[] | null)[]; copyMs: number; runMs: number; n: number } {
   let copyMs = 0, runMs = 0, n = 0;
   const forks = base.options.map(o => {
     if (!only(o.family)) return null;
     const reps: Replicate[] = [];
     for (const salt of salts) {
-      const t0 = performance.now(), w = fork(base, parentMode, id, o, salt), t1 = performance.now();
+      const t0 = performance.now(), w = fork(base, parentMode, id, o, salt, ownNoise), t1 = performance.now();
       if (!w) return null; // not applicable: the same for every salt
       reps.push(runFork(w, id, horizons));
       copyMs += t1 - t0; runMs += performance.now() - t1; n++;
@@ -157,7 +164,7 @@ if (process.argv[1]?.endsWith('r7b-forks.ts')) {
   const arg = (k: string, d: string) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
   if (process.argv[2] !== 'run') throw new Error('usage: r7b-forks.ts run [--seeds 48,7] [--n 100] [--days 5] [--out artifacts/r7b/forks]');
   const seeds = arg('seeds', '48,7').split(',').map(Number), N = +arg('n', '100'), days = +arg('days', '5'), out = resolve(arg('out', 'artifacts/r7b/forks'));
-  const FOOD_TARGET = +arg('food-target', '60'), FOOD_MAX = +arg('food-max', '100'), SPARE = 60;
+  const FOOD_TARGET = +arg('food-target', '60'), FOOD_MAX = +arg('food-max', '100'), SPARE = 60, OWN_NOISE = process.argv.includes('--own-noise');
   for (const s of seeds) { const no = seedRefusal(s, -1); if (no) throw new Error(no); }
   const head = git('rev-parse --short HEAD'), dirty = git('status --porcelain') !== '';
   if (dirty && !process.argv.includes('--allow-dirty')) throw new Error('the tree is not clean: commit first (docs/staging/r7b-prereg.md)');
@@ -229,7 +236,7 @@ if (process.argv[1]?.endsWith('r7b-forks.ts')) {
         const p0 = performance.now(), b = prepare(w, e.id), p1 = performance.now();
         if (typeof b === 'string') throw new Error(`seed ${st.seed}, tick ${e.tick}, animal ${e.id}: prepared in run B, not in run C (${b})`);
         const c = w.chimps.find(q => q.id === e.id)!;
-        const r = forkPoint(b, w.modelPolicy.mode, e.id, m === 'food' ? f => FOOD.has(f) : () => true);
+        const r = forkPoint(b, w.modelPolicy.mode, e.id, m === 'food' ? f => FOOD.has(f) : () => true, SALTS, HORIZON_TICKS, OWN_NOISE);
         const line: PointFile = { seed: st.seed, tick: e.tick, id: e.id, name: c.name, cls: classOf(c), sex: c.sex, age: +c.age.toFixed(2), mode: m, why: e.why, u: e.u,
           hour: b.hour, phase: b.phase, temperature: b.temperature, z0: b.z0, options: b.options,
           rulesTook: b.options.findIndex(o => o.action === e.took[0] && o.targetId === e.took[1]), rulesTop: b.rulesTop, forks: r.forks,
@@ -242,7 +249,7 @@ if (process.argv[1]?.endsWith('r7b-forks.ts')) {
     const same = new Set(Object.values(st.hashes)).size === 1;
     log(`seed ${st.seed}: done, ${forksDone} forks in ${Math.round((Date.now() - t0) / 1000)} s; the parent's four runs end on ${same ? 'one hash' : 'DIFFERENT hashes'} ${JSON.stringify(st.hashes)}`);
     writeFileSync(resolve(out, `s${st.seed}.json`), JSON.stringify({ stage: 'r7b-forks', seed: st.seed, head, dirty, paramsFile: PARAMS_FILE, burnIn: BURN_IN, days, burnInHash: st.burnInHash, parentHashes: st.hashes, parentUntouched: same,
-      n: N, salts: SALTS, horizonTicks: HORIZON_TICKS, adultAge: ADULT_AGE, daylight: DAYLIGHT, rgMinAge: paramsOf(st.base).rgMinAge,
+      n: N, salts: SALTS, ownNoise: OWN_NOISE, horizonTicks: HORIZON_TICKS, adultAge: ADULT_AGE, daylight: DAYLIGHT, rgMinAge: paramsOf(st.base).rgMinAge,
       eligible: st.eligible.length, eligibleByWhy: st.eligible.reduce((a, e) => { a[e.why] = (a[e.why] ?? 0) + 1; return a; }, {} as Record<string, number>),
       eligibleWithTwoFoodTapped: st.eligible.filter(e => e.kinds.filter(k => FOOD.has(k)).length >= 2).length,
       main: st.main.length, dropped: st.dropped.map(d => ({ tick: d.tick, id: d.id, reason: d.reason })), mainWithTwoFood: st.main.filter(c => c.food >= 2).length,

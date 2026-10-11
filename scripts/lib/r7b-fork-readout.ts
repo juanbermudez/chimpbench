@@ -146,3 +146,10 @@ export function costs(all: PointFile[]): { points: number; forks: number; copyMs
     forksPerPoint: main.length ? main.reduce((s, p) => s + p.ms.forks, 0) / main.length : NaN, died, diedBy3h: died3, notApplicable: na, options,
     injuredByKind: inj, heldMinByKind: Object.fromEntries(Object.entries(held).map(([k, v]) => [k, { n: v.length, median: quant(v, 0.5), q1: quant(v, 0.25), q3: quant(v, 0.75) }])) };
 }
+
+/** The eight-replicate winner of a point for a question at a horizon, by the registered score: its kind (kinds) or its menu position (food); null when the point is not read or has no value. */
+export function winnerKey(p: PointFile, q: Question, h: number): string | null {
+  if (!reads(p, q)) return null;
+  const s = scoresOf(p, q, h, { kind: 'scale', v: REGISTERED }), w = winnerOf(s.scores);
+  return w < 0 ? null : s.kind ? s.kind(w) : String(s.opts[w]);
+}
