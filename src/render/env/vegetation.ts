@@ -5,9 +5,10 @@ import type { Quality, Tree, World } from '../../types';
 import { Owner, foliageDepthMaterial, patchMaterial, rng, type SharedUniforms } from './shared';
 import type { Terrain } from './terrain';
 import { createBarkNormal, createBarkTexture, createLeafAtlas } from './textures';
-import { LIMB_FLAG, OBJ_TREE, addObject, type OccluderTable } from './occluders';
+import { FADE_CAPACITY, FADE_WIDTH, LIMB_FLAG, OBJ_TREE, addObject, type OccluderTable } from './occluders';
 import { cellOf, type Culler } from './cells';
 import { FIELD_TILE, runSteps, tileRange, tileSeed } from './field';
+import { CLUSTER_MAX_SCALE_PERSPECTIVE, CLUSTER_MAX_SCALE_STRATEGY, CLUSTER_MIN_PX_PERSPECTIVE, CLUSTER_MIN_PX_STRATEGY, CLUSTER_RADIUS, CLUSTER_SCALE_PERSPECTIVE, CLUSTER_SCALE_STRATEGY, LOWER_SLOT_SHARE, clusterColour, clusterLevel, clusterSize, clusterSlots, cropShare, crownTintByte, fruitColour, hexBytes, legacySlots, markColour, toHex } from './fruit';
 
 // Multi-tier Kibale forest: emergent and canopy crowns built from lit,
 // alpha-to-coverage leaf cards, buttressed trunks, lianas and aerial fig
@@ -21,7 +22,7 @@ import { FIELD_TILE, runSteps, tileRange, tileSeed } from './field';
 type CrownForm = 'umbrella' | 'dome' | 'column' | 'spread' | 'narrow';
 interface Architecture {
   form: CrownForm; depth: number; width: number; lobes: number; trunk: number; buttress: number; aerial: number;
-  leaf: 0 | 1; tint: string; flush: string | null; fruit: string; cauliflory: boolean;
+  leaf: 0 | 1; tint: string; flush: string | null; cauliflory: boolean;
 }
 
 /** Understory distance limits in perspective views (m); design assumption: herbs and ferns are sub-pixel beyond ~45 m. */
@@ -33,22 +34,22 @@ const FIELD_PLANT_REACH = 118;
 
 // Crown architecture per genus. Shapes are illustrative, after field descriptions of Kibale's chimp food trees.
 const ARCH: [RegExp, Architecture][] = [
-  [/ficus mucuso/i, { form: 'umbrella', depth: 0.4, width: 1.35, lobes: 7, trunk: 1.5, buttress: 1, aerial: 0.5, leaf: 0, tint: '#8dbb62', flush: null, fruit: '#e0582a', cauliflory: false }],
-  [/ficus/i, { form: 'dome', depth: 0.55, width: 1.15, lobes: 6, trunk: 1.25, buttress: 0.35, aerial: 1, leaf: 0, tint: '#78a955', flush: null, fruit: '#d94a2c', cauliflory: false }],
-  [/uvariopsis/i, { form: 'narrow', depth: 0.62, width: 0.8, lobes: 3, trunk: 0.62, buttress: 0, aerial: 0, leaf: 0, tint: '#5f8c4b', flush: null, fruit: '#e97c2a', cauliflory: true }],
-  [/pseudospondias/i, { form: 'spread', depth: 0.45, width: 1.15, lobes: 5, trunk: 1.0, buttress: 0.5, aerial: 0, leaf: 1, tint: '#94c066', flush: '#c77a45', fruit: '#4d2350', cauliflory: false }],
-  [/chrysophyllum/i, { form: 'column', depth: 0.58, width: 0.95, lobes: 4, trunk: 1.0, buttress: 0.45, aerial: 0, leaf: 1, tint: '#84ae5a', flush: '#caa15a', fruit: '#e7ab35', cauliflory: false }],
-  [/pterygota/i, { form: 'spread', depth: 0.36, width: 1.25, lobes: 6, trunk: 1.4, buttress: 1, aerial: 0, leaf: 0, tint: '#a3c86e', flush: null, fruit: '#7a5a38', cauliflory: false }],
-  [/mimusops/i, { form: 'dome', depth: 0.52, width: 1.0, lobes: 5, trunk: 1.1, buttress: 0.6, aerial: 0, leaf: 1, tint: '#5f8a48', flush: null, fruit: '#eb9d2e', cauliflory: false }],
-  [/celtis/i, { form: 'column', depth: 0.5, width: 0.95, lobes: 4, trunk: 1.0, buttress: 0.5, aerial: 0, leaf: 1, tint: '#86b15c', flush: null, fruit: '#c9a13b', cauliflory: false }],
+  [/ficus mucuso/i, { form: 'umbrella', depth: 0.4, width: 1.35, lobes: 7, trunk: 1.5, buttress: 1, aerial: 0.5, leaf: 0, tint: '#8dbb62', flush: null, cauliflory: false }],
+  [/ficus/i, { form: 'dome', depth: 0.55, width: 1.15, lobes: 6, trunk: 1.25, buttress: 0.35, aerial: 1, leaf: 0, tint: '#78a955', flush: null, cauliflory: false }],
+  [/uvariopsis/i, { form: 'narrow', depth: 0.62, width: 0.8, lobes: 3, trunk: 0.62, buttress: 0, aerial: 0, leaf: 0, tint: '#5f8c4b', flush: null, cauliflory: true }],
+  [/pseudospondias/i, { form: 'spread', depth: 0.45, width: 1.15, lobes: 5, trunk: 1.0, buttress: 0.5, aerial: 0, leaf: 1, tint: '#94c066', flush: '#c77a45', cauliflory: false }],
+  [/chrysophyllum/i, { form: 'column', depth: 0.58, width: 0.95, lobes: 4, trunk: 1.0, buttress: 0.45, aerial: 0, leaf: 1, tint: '#84ae5a', flush: '#caa15a', cauliflory: false }],
+  [/pterygota/i, { form: 'spread', depth: 0.36, width: 1.25, lobes: 6, trunk: 1.4, buttress: 1, aerial: 0, leaf: 0, tint: '#a3c86e', flush: null, cauliflory: false }],
+  [/mimusops/i, { form: 'dome', depth: 0.52, width: 1.0, lobes: 5, trunk: 1.1, buttress: 0.6, aerial: 0, leaf: 1, tint: '#5f8a48', flush: null, cauliflory: false }],
+  [/celtis/i, { form: 'column', depth: 0.5, width: 0.95, lobes: 4, trunk: 1.0, buttress: 0.5, aerial: 0, leaf: 1, tint: '#86b15c', flush: null, cauliflory: false }],
 ];
-const DEFAULT_ARCH: Architecture = { form: 'dome', depth: 0.5, width: 1, lobes: 5, trunk: 1, buttress: 0.3, aerial: 0, leaf: 1, tint: '#7ea657', flush: null, fruit: '#d99a35', cauliflory: false };
+const DEFAULT_ARCH: Architecture = { form: 'dome', depth: 0.5, width: 1, lobes: 5, trunk: 1, buttress: 0.3, aerial: 0, leaf: 1, tint: '#7ea657', flush: null, cauliflory: false };
 // Non-food trees that fill the stand (midstory and canopy) around the simulated food trees.
 const FILLER: Architecture[] = [
-  { form: 'column', depth: 0.5, width: 0.9, lobes: 4, trunk: 0.9, buttress: 0.3, aerial: 0, leaf: 1, tint: '#7aa452', flush: null, fruit: '#000', cauliflory: false },
-  { form: 'narrow', depth: 0.65, width: 0.8, lobes: 3, trunk: 0.6, buttress: 0, aerial: 0, leaf: 0, tint: '#557f42', flush: null, fruit: '#000', cauliflory: false },
-  { form: 'dome', depth: 0.5, width: 1.0, lobes: 5, trunk: 1.0, buttress: 0.4, aerial: 0, leaf: 1, tint: '#688f47', flush: '#b0713f', fruit: '#000', cauliflory: false },
-  { form: 'spread', depth: 0.38, width: 1.15, lobes: 5, trunk: 1.2, buttress: 0.8, aerial: 0, leaf: 0, tint: '#96bd66', flush: null, fruit: '#000', cauliflory: false },
+  { form: 'column', depth: 0.5, width: 0.9, lobes: 4, trunk: 0.9, buttress: 0.3, aerial: 0, leaf: 1, tint: '#7aa452', flush: null, cauliflory: false },
+  { form: 'narrow', depth: 0.65, width: 0.8, lobes: 3, trunk: 0.6, buttress: 0, aerial: 0, leaf: 0, tint: '#557f42', flush: null, cauliflory: false },
+  { form: 'dome', depth: 0.5, width: 1.0, lobes: 5, trunk: 1.0, buttress: 0.4, aerial: 0, leaf: 1, tint: '#688f47', flush: '#b0713f', cauliflory: false },
+  { form: 'spread', depth: 0.38, width: 1.15, lobes: 5, trunk: 1.2, buttress: 0.8, aerial: 0, leaf: 0, tint: '#96bd66', flush: null, cauliflory: false },
 ];
 
 function architecture(species: string): Architecture {
@@ -169,11 +170,20 @@ export interface Vegetation {
   objOfTree(treeId: number): number;
   /** Ground gap points under crowns where light shafts can land. */
   shaftSites: THREE.Vector3[];
-  update(world: World, quality: Quality, daylight?: number, perspective?: boolean): void;
+  update(world: World, quality: Quality, daylight?: number, perspective?: boolean, fruit?: FruitView): void;
   setQuality(quality: Quality): void;
   /** Cull probe: submitted triangles per pass (k) and every source instance per kind. */
   cullStats(): ReturnType<Culler['stats']>;
   cullSources(): Record<string, { count: number; casts: boolean; matrices: Float32Array }>;
+}
+
+/** Stage W7 (fruit you can see): what the fruit layer needs from the view each frame. One object, reused by the scene. */
+export interface FruitView {
+  camera: THREE.Camera;
+  /** Viewport height, CSS px. */
+  viewH: number;
+  /** The Food layer: crown tint and the clusters' minimum on-screen size (the clusters themselves always draw). */
+  on: boolean;
 }
 
 /** Near-field understory tile and litter decals (camera-following instances; no world placement). */
@@ -185,6 +195,12 @@ export interface VegetationKit {
   plantMaterial: THREE.MeshStandardMaterial; barkMaterial: THREE.MeshStandardMaterial; fruitMaterial: THREE.MeshStandardMaterial;
   lianaMaterial: THREE.MeshStandardMaterial; nearMaterial: THREE.MeshStandardMaterial; litterMaterial: THREE.MeshStandardMaterial;
   fruitGlow: { value: number }; fruitScale: { value: number };
+  /** Stage W7: clusters' minimum on-screen size (metres per px in the strategy view, metres per px per metre of depth in perspective, px, largest scale). */
+  fruitMin: { value: THREE.Vector4 };
+  /** Stage W7 crown tint: one RGBA8 texel per keep-clear object slot (the leaf shader's aObj): the species' fruit colour and the tint amount; its 0..1 strength (the Food layer). */
+  cropData: Uint8Array; cropTexture: THREE.DataTexture; fruitTint: { value: number };
+  /** Whose slots cropData holds (a field window's vegetation claims it on its first update after the swap). */
+  cropOwner: object | null;
   trunkGeometry: THREE.BufferGeometry; limbGeometry: THREE.BufferGeometry; finGeometry: THREE.BufferGeometry;
   crownGeometries: THREE.BufferGeometry[]; shrubGeometry: THREE.BufferGeometry; frond: THREE.BufferGeometry; herb: THREE.BufferGeometry;
   fruitGeo: THREE.BufferGeometry; litterGeo: THREE.BufferGeometry;
@@ -212,6 +228,52 @@ export function createVegetationKit(seed: number, uniforms: SharedUniforms, owne
   patchMaterial(leafMaterial, uniforms, { wind: 'crown', fade: 'crown', wet: 0.7, cloud: true, foliage: true, territory: true });
   const leafDepth = owner.own(foliageDepthMaterial(atlas, uniforms, { wind: 'crown' }));
   leafDepth.colorWrite = false;   // PCF maps sample the depth texture; the packed colour is never read
+  // Stage W7 crown tint (STYLIZATION: real crowns do not change colour with their crop). Each food tree's crop reaches
+  // the leaf shader through the per-object slot it already reads (aObj, the keep-clear fade's index): a second 64 × 64
+  // RGBA8 texture on the same slots (the fade texel's four channels are all taken) carries the species' fruit colour and
+  // a tint amount (fruit.ts crownTint). One texel fetch per leaf vertex; no draw call, pass or target is added.
+  const cropData = new Uint8Array(FADE_CAPACITY * 4);
+  const cropTexture = owner.own(new THREE.DataTexture(cropData, FADE_WIDTH, FADE_CAPACITY / FADE_WIDTH, THREE.RGBAFormat));
+  cropTexture.colorSpace = THREE.SRGBColorSpace;   // fruit colours are stored as sRGB bytes; the shader reads linear
+  cropTexture.magFilter = cropTexture.minFilter = THREE.NearestFilter;
+  cropTexture.generateMipmaps = false;
+  cropTexture.needsUpdate = true;
+  const fruitTint = { value: 1 };
+  leafMaterial.onBeforeCompile = ((base) => (shader: THREE.WebGLProgramParametersWithUniforms, renderer: THREE.WebGLRenderer) => {
+    base.call(leafMaterial, shader, renderer);
+    shader.uniforms.uCrop = { value: cropTexture };
+    shader.uniforms.uFruitTint = fruitTint;
+    // Per clump, so a tint never swims: a share of a fruiting crown's clumps (10% at a trace to 65% at a full crop,
+    // picked by a hash of the clump's place) turn most of the way to the fruit colour, the rest only a little, so the
+    // crown stays a living green one with masses of fruit colour in it; the upper, sun-side clumps of each lobe shift
+    // more than the ones underneath.
+    shader.vertexShader = 'uniform sampler2D uCrop; uniform float uFruitTint; varying vec4 vFruitTint;\n' + shader.vertexShader.replace('vec4 mvPosition = viewMatrix * envWorld;', /* glsl */`
+      vFruitTint = vec4( 0.0 );
+      #if defined( ENV_FADE ) && defined( USE_INSTANCING )
+      if ( uFruitTint > 0.001 ) {
+        float fruitO = aObj - step( ${LIMB_FLAG}.0, aObj ) * ${LIMB_FLAG}.0;
+        vec4 fruitT = texelFetch( uCrop, ivec2( int( mod( fruitO, ${FADE_WIDTH}.0 ) ), int( fruitO / ${FADE_WIDTH}.0 ) ), 0 );
+        if ( fruitT.a > 0.0 ) {
+          vec3 fruitC = instanceMatrix[ 3 ].xyz;
+          float fruitH = fract( sin( dot( fruitC, vec3( 91.7, 37.3, 53.1 ) ) ) * 43758.5453 );
+          float fruitUp = smoothstep( - 0.5, 0.3, ( fruitC.y - aCrown.y ) / max( aCrown.w, 0.1 ) );
+          float fruitSel = step( fruitH, 0.1 + 0.55 * fruitT.a );
+          float fruitK = mix( 0.22 * fruitT.a, mix( 0.5, 0.86, fruitT.a ), fruitSel ) * mix( 0.6, 1.0, fruitUp );
+          vFruitTint = vec4( fruitT.rgb, fruitK * uFruitTint );
+        }
+      }
+      #endif
+      vec4 mvPosition = viewMatrix * envWorld;`);
+    // The leaf keeps its own light and dark (the card's texture and the clump's shade) and takes the fruit's hue at the
+    // same luminance: a dark fruit (purple drupes, brown pods) tints as strongly as an orange fig.
+    shader.fragmentShader = 'varying vec4 vFruitTint;\n' + shader.fragmentShader.replace('#include <color_fragment>', /* glsl */`#include <color_fragment>
+      if ( vFruitTint.a > 0.001 ) {
+        const vec3 fruitLw = vec3( 0.2126, 0.7152, 0.0722 );
+        vec3 fruitHue = vFruitTint.rgb / max( dot( vFruitTint.rgb, fruitLw ), 0.02 );
+        diffuseColor.rgb = mix( diffuseColor.rgb, fruitHue * dot( diffuseColor.rgb, fruitLw ), vFruitTint.a );
+      }`);
+  })(leafMaterial.onBeforeCompile);
+  { const baseKey = leafMaterial.customProgramCacheKey; leafMaterial.customProgramCacheKey = () => baseKey.call(leafMaterial) + ':w7-fruit-tint'; }
   const shrubMaterial = owner.own(new THREE.MeshStandardMaterial({ map: atlas, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.7, alphaToCoverage: true }));
   // Perspective views drop the understory with distance (cells beyond; the last 8 m shrink): sub-pixel beyond ~45 m.
   patchMaterial(shrubMaterial, uniforms, { wind: 'crown', keep: 0.5, far: SHRUB_FAR, wet: 0.8, cloud: true, foliage: true, forestAO: true });
@@ -228,12 +290,26 @@ export function createVegetationKit(seed: number, uniforms: SharedUniforms, owne
   // Fruit gently self-lit so ripe crops stay legible from the strategy camera; the glow fades at night.
   const fruitGlow = { value: 0.2 };
   const fruitScale = { value: 1 };
+  const fruitMin = { value: new THREE.Vector4(0, 0, 0, 1) };
   fruitMaterial.onBeforeCompile = ((base) => (shader: THREE.WebGLProgramParametersWithUniforms, renderer: THREE.WebGLRenderer) => {
     base.call(fruitMaterial, shader, renderer);
     shader.uniforms.uFruitGlow = fruitGlow;
     shader.uniforms.uFruitScale = fruitScale;
+    shader.uniforms.uFruitMin = fruitMin;
     // Fruit reads at strategy scale; in perspective views it shrinks toward life size around each cluster's origin.
-    shader.vertexShader = 'uniform float uFruitScale;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n transformed *= uFruitScale;');
+    // Stage W7 (STYLIZATION, as party markers keep a screen size): a cluster is never drawn smaller on screen than
+    // uFruitMin.z px (fruit.ts clusterScale is the same arithmetic, under test), up to the scale uFruitMin.w.
+    shader.vertexShader = 'uniform float uFruitScale; uniform vec4 uFruitMin;\n' + shader.vertexShader.replace('#include <begin_vertex>', /* glsl */`#include <begin_vertex>
+      {
+        float fruitS = uFruitScale;
+        #ifdef USE_INSTANCING
+          vec4 fruitC = modelViewMatrix * vec4( instanceMatrix[ 3 ].xyz, 1.0 );
+          float fruitPx = uFruitMin.x + uFruitMin.y * max( - fruitC.z, 0.0 );
+          float fruitR = ${CLUSTER_RADIUS.toFixed(3)} * length( instanceMatrix[ 0 ].xyz );
+          fruitS = max( fruitS, min( uFruitMin.w, uFruitMin.z * fruitPx / max( fruitR, 1e-4 ) ) );
+        #endif
+        transformed *= fruitS;
+      }`);
     shader.fragmentShader = 'uniform float uFruitGlow;\n' + shader.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += diffuseColor.rgb * uFruitGlow;');
   })(fruitMaterial.onBeforeCompile);
   // Own material for the lianas: sharing the instanced bark material with this plain mesh made three re-derive the
@@ -266,7 +342,7 @@ export function createVegetationKit(seed: number, uniforms: SharedUniforms, owne
     for (let k = 0; k < uv.count; k++) uv.setXY(k, 0.29 + uv.getX(k) * 0.17, 0.54 + uv.getY(k) * 0.17);
   }
   const kit: VegetationKit = { leafMaterial, leafDepth, shrubMaterial, plantMaterial, barkMaterial, fruitMaterial, lianaMaterial, nearMaterial, litterMaterial,
-    fruitGlow, fruitScale, trunkGeometry, limbGeometry, finGeometry, crownGeometries, shrubGeometry, frond, herb, fruitGeo, litterGeo, near: null };
+    fruitGlow, fruitScale, fruitMin, cropData, cropTexture, fruitTint, cropOwner: null, trunkGeometry, limbGeometry, finGeometry, crownGeometries, shrubGeometry, frond, herb, fruitGeo, litterGeo, near: null };
   if (fieldNear) kit.near = createNearField(kit, rng(seed * 17 + 911), owner);
   return kit;
 }
@@ -364,7 +440,8 @@ export function* vegetationSteps(world: World, terrain: Terrain, uniforms: Share
   const lianaCurves: { curve: THREE.Curve<THREE.Vector3>; radius: number; obj: number }[] = [];
   interface FruitSlot { m: THREE.Matrix4; obj: number; }
   const fruitSlots: FruitSlot[] = [];
-  const fruitTrees: { tree: Tree; start: number; count: number; level: number; cells: number[] }[] = [];
+  // level, size and tint: what is drawn now (clusters shown, their size step, the crown tint byte); −1 before the first update.
+  const fruitTrees: { tree: Tree; start: number; count: number; level: number; size: number; tint: number; obj: number; rgb: number[]; cells: number[] }[] = [];
   const fruitColors: THREE.Color[] = [];
   // The random stream buildTree draws from: the shared sequence on the compressed map, a per-tree stream in field windows.
   let rand = random;
@@ -528,9 +605,9 @@ export function* vegetationSteps(world: World, terrain: Terrain, uniforms: Share
     // Fruit slots: upper outer shell for legibility from above, trunk for cauliflorous species.
     if (simTree) {
       const start = fruitSlots.length;
-      const fruitColor = new THREE.Color(arch.fruit);
+      const fruitColor = new THREE.Color(toHex(clusterColour(fruitColour(simTree.species))));
       for (const lobe of lobes) {
-        const per = Math.max(2, Math.round(lobe.r * 0.7));
+        const per = legacySlots(lobe.r);
         for (let k = 0; k < per; k++) {
           const theta = rand() * Math.PI * 2;
           const v = 0.15 + rand() * 0.7;
@@ -558,10 +635,42 @@ export function* vegetationSteps(world: World, terrain: Terrain, uniforms: Share
         [fruitSlots[i], fruitSlots[j]] = [fruitSlots[j], fruitSlots[i]];
         [fruitColors[i], fruitColors[j]] = [fruitColors[j], fruitColors[i]];
       }
+      // Stage W7 (STYLIZATION; fruit.ts clusterSlots): more slots, in proportion to each lobe's plan area, and a share of
+      // them hanging under the lobe where a viewer on the ground sees them. They draw from a stream of their own (the
+      // world seed and the tree's id), never from `rand`: on the compressed map that is the one sequence every later
+      // tree, shrub and fern is placed from, and in a field window it also places the tree's light shafts, so the
+      // forest stays exactly as it was and a rebuilt window still draws the same fruit.
+      const fr = rng(tileSeed(world.seed, simTree.id, 7, 29));
+      for (const lobe of lobes) {
+        const extra = clusterSlots(lobe.r) - legacySlots(lobe.r), under = Math.round(extra * LOWER_SLOT_SHARE);
+        for (let k = 0; k < extra; k++) {
+          const low = k < under;
+          const theta = fr() * Math.PI * 2;
+          if (low) {
+            // In the bottom fringe of the lobe's foliage (leaf clumps hang about half a clump below the lobe's shell).
+            const rad = lobe.r * (0.2 + Math.sqrt(fr()) * 0.7), drop = 0.5 * lobe.r * lobe.flat + 0.42 * THREE.MathUtils.clamp(lobe.r * 0.72, 1.3, 3.8) + fr() * 0.5;
+            dummy.position.set(lobe.x + Math.cos(theta) * rad, lobe.y - drop, lobe.z + Math.sin(theta) * rad);
+          } else {
+            const v = 0.15 + fr() * 0.7, s = Math.sqrt(1 - v * v);
+            dummy.position.set(lobe.x + Math.cos(theta) * s * lobe.r * 0.92, lobe.y + v * lobe.r * lobe.flat * 0.92, lobe.z + Math.sin(theta) * s * lobe.r * 0.92);
+          }
+          dummy.rotation.set(fr() * 3, fr() * 3, fr() * 3);
+          dummy.scale.setScalar(1.25 + fr() * 0.6);
+          dummy.updateMatrix();
+          fruitSlots.push({ m: dummy.matrix.clone(), obj: treeObj });
+          fruitColors.push(fruitColor.clone().multiplyScalar(0.85 + fr() * 0.3));
+        }
+      }
+      // A second shuffle (own stream) mixes the added slots in, so a partial crop shows above and below.
+      for (let i = fruitSlots.length - 1; i > start; i--) {
+        const j = start + Math.floor(fr() * (i - start + 1));
+        [fruitSlots[i], fruitSlots[j]] = [fruitSlots[j], fruitSlots[i]];
+        [fruitColors[i], fruitColors[j]] = [fruitColors[j], fruitColors[i]];
+      }
       // Cells the crown overlaps: the tree's fruit is packed only while one of them is in view.
       const cells = new Set<number>();
       for (const l of lobes) for (const [ox_, oz_] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) cells.add(cellOf(culler.grid, l.x + ox_ * l.r, l.z + oz_ * l.r));
-      fruitTrees.push({ tree: simTree, start, count: fruitSlots.length - start, level: -1, cells: [...cells] });
+      fruitTrees.push({ tree: simTree, start, count: fruitSlots.length - start, level: -1, size: -1, tint: -1, obj: treeObj, rgb: hexBytes(toHex(markColour(fruitColour(simTree.species)))), cells: [...cells] });
     }
     const nestLobe = lobes.reduce((best, l) => (l.r > best.r ? l : best), lobes[0]);
     return {
@@ -848,35 +957,69 @@ export function* vegetationSteps(world: World, terrain: Terrain, uniforms: Share
   }
 
   let fruitVersion = -1;
-  function update(worldNow: World, _quality: Quality, daylight = 1, perspective = false) {
+  const fruitM = new THREE.Matrix4();
+  const { fruitMin, fruitTint, cropData, cropTexture } = kit;
+  function update(worldNow: World, _quality: Quality, daylight = 1, perspective = false, view?: FruitView) {
     fruitGlow.value = 0.02 + daylight * 0.2;
     // E9: life-size clusters in perspective (the strategy view keeps them large enough to read as food).
-    fruitScale.value += ((perspective ? 0.32 : 1) - fruitScale.value) * 0.15;
-    fruitGlow.value *= perspective ? 0.15 : 1;
+    fruitScale.value += ((perspective ? CLUSTER_SCALE_PERSPECTIVE : CLUSTER_SCALE_STRATEGY) - fruitScale.value) * 0.15;
+    fruitGlow.value *= perspective ? 0.3 : 1;
+    // Stage W7: the clusters' minimum on-screen size and the crown tint follow the Food layer (off: clusters at their
+    // plain size, crowns green). Without a view (harness callers of the old signature) both stay off.
+    const on = view?.on === true;
+    fruitTint.value += ((on ? 1 : 0) - fruitTint.value) * 0.15;
+    if (fruitTint.value < 0.002) fruitTint.value = 0; else if (fruitTint.value > 0.998) fruitTint.value = 1;
+    if (on && view) {
+      const cam = view.camera as THREE.OrthographicCamera & THREE.PerspectiveCamera, h = Math.max(1, view.viewH);
+      if (cam.isPerspectiveCamera) fruitMin.value.set(0, 2 * Math.tan(THREE.MathUtils.degToRad(cam.fov) / 2) / h, CLUSTER_MIN_PX_PERSPECTIVE, CLUSTER_MAX_SCALE_PERSPECTIVE);
+      else fruitMin.value.set((cam.top - cam.bottom) / cam.zoom / h, 0, CLUSTER_MIN_PX_STRATEGY, CLUSTER_MAX_SCALE_STRATEGY);
+    } else fruitMin.value.set(0, 0, 0, 1);
     for (const mesh of nearMeshes) mesh.visible = perspective && !mesh.userData.hide;   // hide: probe A/B only
     let dirty = culler.version !== fruitVersion;
     fruitVersion = culler.version;
+    // The crop texels belong to whichever vegetation is drawn: a field window claims them on its first update.
+    let texels = kit.cropOwner !== fruitTrees;
+    if (texels) { kit.cropOwner = fruitTrees; cropData.fill(0); }
     for (const entry of fruitTrees) {
       const t = entry.tree;
       const live = worldNow.trees === world.trees ? t : worldNow.trees.find(x => x.id === t.id) ?? t;
-      const ratio = live.maxFruit > 0 ? THREE.MathUtils.clamp(live.fruit / live.maxFruit, 0, 1) : 0;
+      const ratio = cropShare(live);
+      // Crown tint: the species' fruit colour and the tint byte in the tree's texel (64 steps: an upload only when a step changes).
+      const tint = crownTintByte(ratio) & ~3;
+      if (tint !== entry.tint || texels) {
+        entry.tint = tint;
+        const o = entry.obj * 4;
+        cropData[o] = entry.rgb[0]; cropData[o + 1] = entry.rgb[1]; cropData[o + 2] = entry.rgb[2]; cropData[o + 3] = tint;
+        texels = true;
+      }
       // Scarce crops show nothing; the curve keeps half-ripe trees visibly different from full ones.
-      const level = ratio < 0.08 ? 0 : Math.ceil(entry.count * Math.pow(ratio, 0.8));
-      if (level === entry.level) continue;
-      entry.level = level;
+      const level = clusterLevel(entry.count, ratio), size = Math.round(clusterSize(ratio) * 20);
+      if (level === entry.level && size === entry.size) continue;
+      entry.level = level; entry.size = size;
       dirty = true;
     }
+    if (texels) cropTexture.needsUpdate = true;
     if (dirty) {
       let n = 0;
-      for (const entry of fruitTrees) if (culler.enabled === false || entry.cells.some(c => culler.cameraCells[c] === 1)) for (let k = 0; k < entry.level; k++) {
-        fruitMesh.setMatrixAt(n, fruitSlots[entry.start + k].m);
-        fruitObjData[n] = fruitSlots[entry.start + k].obj;
-        fruitMesh.setColorAt(n++, fruitColors[entry.start + k]);
+      for (const entry of fruitTrees) if (culler.enabled === false || entry.cells.some(c => culler.cameraCells[c] === 1)) {
+        const k = entry.size / 20;   // clusters grow with the crop (fruit.ts clusterSize), around their own centres
+        for (let i = 0; i < entry.level; i++) {
+          const e = fruitM.copy(fruitSlots[entry.start + i].m).elements;
+          e[0] *= k; e[1] *= k; e[2] *= k; e[4] *= k; e[5] *= k; e[6] *= k; e[8] *= k; e[9] *= k; e[10] *= k;
+          fruitMesh.setMatrixAt(n, fruitM);
+          fruitObjData[n] = fruitSlots[entry.start + i].obj;
+          fruitMesh.setColorAt(n++, fruitColors[entry.start + i]);
+        }
       }
       fruitMesh.count = n;
+      // Only the packed range goes to the GPU (the slot buffers are sized for every tree at a full crop).
+      // (A range of 0 would mean "to the end" to WebGL.)
+      const up = Math.max(1, n);
+      fruitMesh.instanceMatrix.clearUpdateRanges(); fruitMesh.instanceMatrix.addUpdateRange(0, up * 16);
       fruitMesh.instanceMatrix.needsUpdate = true;
+      fruitObjAttr.clearUpdateRanges(); fruitObjAttr.addUpdateRange(0, up);
       fruitObjAttr.needsUpdate = true;
-      if (fruitMesh.instanceColor) fruitMesh.instanceColor.needsUpdate = true;
+      if (fruitMesh.instanceColor) { fruitMesh.instanceColor.clearUpdateRanges(); fruitMesh.instanceColor.addUpdateRange(0, up * 3); fruitMesh.instanceColor.needsUpdate = true; }
     }
   }
 
