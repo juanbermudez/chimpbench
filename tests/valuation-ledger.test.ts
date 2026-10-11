@@ -98,3 +98,37 @@ test('the real files: stable, non-empty counts that a second method confirms', (
   assert.deepEqual(scanSource('src/sim/candidates.ts', readFileSync('src/sim/candidates.ts', 'utf8'), CANDIDATES_OPTS).sites.length, L.offerSites.total, 'the scan repeats');
   assert.match(valuationMarkdown(L), /Offer sites by action/);
 });
+
+// --- added by the review of the stage (docs/staging/r7-ledger.md §9, amendment 9) --------------------------------------
+test('a wording function keeps its numbers even when a name it shares reaches an offer', () => {
+  // names are followed without scope: `a` reaches the offer below, and so does every definition called `a`, the one
+  // inside reasonFor included; `cand` reaches it too, and with it the whole of reasonFor
+  const src = `
+function offer(action: string, target: number, score: number): void {}
+function reasonFor(c: Chimp): string { const a = c.energy < 0.45 ? 'low' : 'fine'; return world.hour < 12 ? a : 'late'; }
+function compute(c: Chimp): void {
+  const a = c.hunger * 0.7;
+  const cand = { reason: reasonFor(c) };
+  offer('rest', -1, a + weigh(cand) + 0.3);
+}
+`;
+  const named = scanSource('w.ts', src, { wordingFns: ['reasonFor'] }), unnamed = scanSource('w.ts', src);
+  const ctx = (s: typeof named, c: string) => s.literals.filter(l => l.context === c).map(l => l.value);
+  assert.deepEqual(ctx(named, 'wording'), ['0.45', '12'], 'the reason\'s own thresholds choose words');
+  assert.deepEqual([ctx(named, 'reaches'), ctx(named, 'offer')], [['0.7'], ['0.3']]);
+  assert.deepEqual(ctx(unnamed, 'reaches'), ['0.45', '12', '0.7'], 'not named as wording, the name-following rule takes them: the count is an upper one');
+  assert.deepEqual(named.clock.map(c => `${c.kind} ${c.value} ${c.wording}`), ['hour of day 12 true'], 'a clock comparison in a wording function is marked');
+});
+
+test('the real file: no number of the reason sentences is counted as a score literal', () => {
+  const lines = readFileSync('src/sim/candidates.ts', 'utf8').split('\n');
+  const from = lines.findIndex(l => l.startsWith('export function reasonFor(')) + 1, to = from + lines.slice(from).findIndex(l => l === '}') + 1;
+  assert.ok(from > 0 && to > from + 20, `reasonFor at lines ${from} to ${to}`);
+  const L = buildValuation(JSON.parse(readFileSync('docs/staging/integrator-kit/params/M6-W50.json', 'utf8')));
+  const inside = L.literals.list.filter(l => l.line >= from && l.line <= to);
+  assert.ok(inside.length >= 10, `${inside.length} numbers stand in reasonFor`);
+  assert.deepEqual([...new Set(inside.map(l => l.context))], ['wording']);
+  assert.equal(L.literals.score, L.literals.list.filter(l => l.context === 'offer' || l.context === 'reaches').length);
+  assert.ok(L.clock.wording > 0 && L.clock.wording < L.clock.candidates, `${L.clock.wording} of ${L.clock.candidates} clock constants only choose words`);
+  assert.equal(L.clock.wording, L.clock.list.filter(c => c.line >= from && c.line <= to).length, 'they are the ones inside reasonFor');
+});

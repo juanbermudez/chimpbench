@@ -40,7 +40,7 @@ export function buildValuation(overrides: Overrides = {}) {
       leftOut: cand.left.length, leftOutByRule: count(cand.left, l => l.why), list: cand.literals, left: cand.left },
     terms: { total: cand.terms.length, byWhere: count(cand.terms, t => t.where), byCategory: count(cand.terms.flatMap(t => t.categories.map(c => ({ c }))), x => x.c),
       notAgeAlone: cand.terms.filter(t => !(t.categories.length === 1 && t.categories[0] === 'age class')).length, list: cand.terms },
-    clock: { candidates: cand.clock.length, byKind: count(cand.clock, c => c.kind), list: cand.clock, decide: decide.flatMap(d => d.clock) },
+    clock: { candidates: cand.clock.length, wording: cand.clock.filter(c => c.wording).length, byKind: count(cand.clock, c => c.kind), list: cand.clock, decide: decide.flatMap(d => d.clock) },
     decide: { files: decideFiles, constants, byName: count(constants, c => `${c.file.replace('src/decide/', '')} ${c.name}`) },
     registry: { read: registry.length, byClass: count(registry, r => r.cls), inUse: registry.filter(r => r.inUse).length, inUseByClass: count(registry.filter(r => r.inUse), r => r.cls), list: registry },
   };
@@ -52,13 +52,13 @@ export function valuationMarkdown(L: Valuation, level = '#'): string {
   o.push(`${level} Valuation ledger`, '', `Generated ${L.date.slice(0, 16).replace('T', ' ')} UTC by \`scripts/valuation-ledger.ts\` at ${L.head} (rules: \`scripts/lib/valuation.ts\`; docs/staging/r7-ledger.md §5). A lexical count of the source text: nothing is run.`, '');
   o.push('| What is counted | Count |', '|---|---|');
   o.push(`| Offer sites in \`src/sim/candidates.ts\` (calls \`offer('<action>', …)\`) | ${L.offerSites.total} over ${L.offerSites.actions} actions${L.offerSites.dynamic ? `, plus ${L.offerSites.dynamic} with a computed action` : ''} |`);
-  o.push(`| Inline score literals (numbers inside an offer call, or in the definition of a name that reaches one) | ${L.literals.score} on ${L.literals.scoreLines} lines: ${L.literals.scoreByRole.weight ?? 0} weights in a sum or product, ${L.literals.scoreByRole.threshold ?? 0} thresholds on a state, ${L.literals.scoreByRole.age ?? 0} thresholds on age |`);
+  o.push(`| Inline score literals (numbers inside an offer call, or in the definition of a name that reaches one; names are followed without scope, so this is an upper count) | ${L.literals.score} on ${L.literals.scoreLines} lines: ${L.literals.scoreByRole.weight ?? 0} weights in a sum or product, ${L.literals.scoreByRole.threshold ?? 0} thresholds on a state, ${L.literals.scoreByRole.age ?? 0} thresholds on age |`);
   o.push(`| Numbers in the condition in front of an offer (eligibility thresholds) | ${L.literals.byContext.gate ?? 0} |`);
   o.push(`| Numbers that only choose a reason's wording | ${L.literals.byContext.wording ?? 0} |`);
   o.push(`| Other numbers in the file (geometry, helpers that reach no offer) | ${L.literals.byContext.other ?? 0} |`);
   o.push(`| Numbers left out as structure | ${L.literals.leftOut} |`);
   o.push(`| Terms switched by who the animal or its partner is | ${L.terms.total} (${L.terms.notAgeAlone} when those switched by age alone are set aside) |`);
-  o.push(`| Clock constants in \`candidates.ts\` (a number compared with the hour, with elapsed time or with daylight) | ${L.clock.candidates} |`);
+  o.push(`| Clock constants in \`candidates.ts\` (a number compared with the hour, with elapsed time or with daylight) | ${L.clock.candidates}${L.clock.wording ? ` (${L.clock.wording} of them stand in a wording function and only choose a reason's words)` : ''} |`);
   o.push(`| Numbers in \`src/decide/*.ts\` (need thresholds, clock periods, gate constants and the rest) | ${L.decide.constants.length} |`);
   o.push(`| Registry parameters \`candidates.ts\` reads | ${L.registry.read} (${L.registry.inUse} not zero on the base given) |`, '');
   o.push(`**Offer sites by action:** ${kv(L.offerSites.byAction)}.`, '');

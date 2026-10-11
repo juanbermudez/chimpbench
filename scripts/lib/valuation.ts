@@ -85,7 +85,8 @@ export interface Site { file: string; line: number; action: string; text: string
 export interface Literal { file: string; line: number; value: string; context: 'offer' | 'gate' | 'reaches' | 'wording' | 'other'; role: 'age' | 'threshold' | 'weight'; text: string }
 export interface Left { file: string; line: number; value: string; why: string }
 export interface Term { file: string; line: number; where: 'score-term' | 'offer-gate'; categories: string[]; text: string }
-export interface Clock { file: string; line: number; kind: 'hour of day' | 'elapsed time' | 'daylight'; value: string; text: string }
+/** `wording`: the comparison stands in a wording function (it chooses a reason's words, not a value). */
+export interface Clock { file: string; line: number; kind: 'hour of day' | 'elapsed time' | 'daylight'; value: string; text: string; wording: boolean }
 
 /** Who the animal or its partner is: the words that mark a term as stating a field conclusion (§5). A term may carry several. */
 export const CATEGORY_WORDS: Record<string, RegExp> = {
@@ -123,8 +124,9 @@ export interface ScanOpts {
  *   position, the start or the step of a `for`, a hash salt, a test of a registry switch (`P.x === 2`, a bit of a switch),
  *   or a test of an act's phase or of a length;
  * - every other number gets one context, the first that fits: inside an offer call ('offer'); inside the condition of an
- *   `if` whose body offers ('gate'); in the definition of a name that reaches an offer call, followed through the names
- *   used there ('reaches'); inside a wording function ('wording'); 'other';
+ *   `if` whose body offers ('gate'); inside a wording function ('wording'); in the definition of a name that reaches an
+ *   offer call, followed through the names used there ('reaches'); 'other'. Names are followed without scope, so
+ *   'reaches' takes in nearly every remaining number of a file whose main function offers: it is an upper count;
  * - a term is a `a ? b : c` in an offer call or a reaching definition, or the condition of a gate, whose test names sex,
  *   rank, kinship, alliance, reproductive state, community membership or age;
  * - a clock constant is a number compared with `hour`, with `time - …` or with `daylight`.
@@ -240,7 +242,9 @@ export function scanSource(file: string, src: string, opts: ScanOpts = {}): Scan
     const cmp = before?.t === 'p' && (COMPARE.has(before.s) || before.s === '&');
     if (cmp && isId(b2) && isP(b3, '.') && (isId(b4, 'P') || isId(b4, 'curP'))) { leave('a test of a registry switch'); continue; }
     if (cmp && isId(b2) && (b2!.s === 'phase' || b2!.s === 'length') && (isP(b3, '.') || isP(b3, '?.'))) { leave(`a test of ${b2!.s === 'phase' ? 'an act\'s phase' : 'a length'}`); continue; }
-    const context: Literal['context'] = offerRanges.some(r => inRange(i, r)) ? 'offer' : gates.some(r => inRange(i, r)) ? 'gate' : reachRanges.some(r => inRange(i, r)) ? 'reaches' : wordingRanges.some(r => inRange(i, r)) ? 'wording' : 'other';
+    // a wording function is named by the caller, so it is asked before the name-following rule: names are followed
+    // without scope, and a reason's own thresholds would otherwise count as numbers that reach a score
+    const context: Literal['context'] = offerRanges.some(r => inRange(i, r)) ? 'offer' : gates.some(r => inRange(i, r)) ? 'gate' : wordingRanges.some(r => inRange(i, r)) ? 'wording' : reachRanges.some(r => inRange(i, r)) ? 'reaches' : 'other';
     const after = toks[i + 1], compared = cmp || (after?.t === 'p' && COMPARE.has(after.s));
     const role: Literal['role'] = compared && ((cmp && isId(b2, 'age')) || (!cmp && isId(toks[i + 2], 'age'))) ? 'age' : compared ? 'threshold' : 'weight';
     literals.push({ file, line: k.line, value, context, role, text: textAt(k.line) });
@@ -288,7 +292,7 @@ export function scanSource(file: string, src: string, opts: ScanOpts = {}): Scan
       if (isId(t, 'time') && !isP(toks[a - 1], '.') && isP(toks[a + 1], '-')) sawTime = true;
     }
     if (!kind && sawTime && minus) kind = 'elapsed time';
-    if (kind) clock.push({ file, line: k.line, kind, value: k.s, text: textAt(k.line) });
+    if (kind) clock.push({ file, line: k.line, kind, value: k.s, text: textAt(k.line), wording: wordingRanges.some(r => inRange(i, r)) });
   }
 
   // --- registry ids read ---------------------------------------------------------------------------------------------
