@@ -67,37 +67,58 @@ function endOf(world: World, c: Chimp): number {
 // 1. The record: writers (the loop calls them only at observeV5 1)
 // ---------------------------------------------------------------------------------------------------------------------
 
-/**
- * A decision point opens (decide.ts decisionPoint, before the interrupt is cleared). `repoll`: a waiting animal polled
- * again; without a new interrupt it is still the decision point already noted.
- */
-export function ownAsk(world: World, c: Chimp, interrupted: boolean, repoll: boolean): void {
-  if (repoll && !interrupted) return;
-  const x = ix(c), r = rec(c);
-  r.ask = [world.time, interrupted ? 1 : x.finished ? 2 : 0];
-  if (x.finished) r.was = [CODE[c.action], c.targetId, c.actionTime, endOf(world, c), x.v, x.aux];
-  else if (!repoll) delete r.was;
-}
-
-/** A waiting animal's act can no longer go on and is set aside (decide.ts decisionPoint, before it is set to rest). */
-export function ownSetAside(c: Chimp): void {
-  const x = ix(c);
-  rec(c).was = [CODE[c.action], c.targetId, c.actionTime, END.NOT_POSSIBLE, x.v, x.aux];
-}
-
-/** The animal leaves the act it is in (execution.ts cleanupPrevious): a crown it fed in, a finished nest, a feeding bout. */
-export function ownLeave(world: World, c: Chimp, P: Params): void {
-  const x = ix(c), r = rec(c);
-  if (c.action === 'forage') {
-    if (x.phase === 2 && isTreeId(c.targetId)) {
+/** What leaving an act does to the record: a crown it fed in joins the crowns of the day and its feeding bout is over; out of a finished nest the day's crowns start anew. */
+function leave(r: OwnRecord, action: Action | undefined, target: number, phase: number, time: number, P: Params): void {
+  if (action === 'forage') {
+    if (phase === 2 && isTreeId(target)) {
       const fed = r.fed ?? (r.fed = []);
-      for (let i = 0; i < fed.length; i += 2) if (fed[i] === c.targetId) { fed.splice(i, 2); break; }
-      fed.push(c.targetId, world.time);
+      for (let i = 0; i < fed.length; i += 2) if (fed[i] === target) { fed.splice(i, 2); break; }
+      fed.push(target, time);
       while (fed.length > 2 * P.ownKeep) fed.splice(0, 2);
     }
     delete r.eat;
   }
-  if (c.action === 'nest' && x.phase >= 2) delete r.fed; // out of the nest: the crowns fed in are counted from here
+  if (action === 'nest' && phase >= 2) delete r.fed; // out of the nest: the crowns fed in are counted from here
+}
+/** The leave a waiting animal's record still owes (ownLeave, with its decision point open): done now, once. */
+function settle(r: OwnRecord, time: number, P: Params): void {
+  const w = r.was;
+  if (w && w.length > 6) { leave(r, ACTION_OF[w[0]], w[1], w[6], time, P); w.length = 6; }
+}
+
+/**
+ * A decision point opens (decide.ts decisionPoint, before the interrupt is cleared). `repoll`: a waiting animal polled
+ * again; without a new interrupt it is still the decision point already noted, and an act it went on with while it
+ * waited and that has now come to its own end is noted as what it was doing.
+ */
+export function ownAsk(world: World, c: Chimp, interrupted: boolean, repoll: boolean, P: Params): void {
+  const x = ix(c), r = rec(c), again = repoll && !interrupted && r.ask !== undefined;
+  if (again && !x.finished) return;
+  if (!again) r.ask = [world.time, interrupted ? 1 : x.finished ? 2 : 0];
+  if (x.finished) { settle(r, world.time, P); r.was = [CODE[c.action], c.targetId, c.actionTime, endOf(world, c), x.v, x.aux]; }
+  else if (!repoll) delete r.was;
+}
+
+/** A waiting animal's act can no longer go on and is set aside (decide.ts decisionPoint, before it is set to rest). */
+export function ownSetAside(world: World, c: Chimp, P: Params): void {
+  const x = ix(c), r = rec(c);
+  settle(r, world.time, P);
+  r.was = [CODE[c.action], c.targetId, c.actionTime, END.NOT_POSSIBLE, x.v, x.aux];
+}
+
+/**
+ * The animal leaves the act it is in (execution.ts cleanupPrevious): a crown it fed in, a finished nest, a feeding bout.
+ * With a decision point open the caller is decisionPoint setting a waiting, model-driven animal to rest (every other
+ * caller comes after ownStart has closed the point). The record then stays as it stood when the point opened, which is
+ * what a rules-driven animal's packet shows at its own decision points and what the sampler saves (the steps of the
+ * feeding bout kept, the crown not yet among those it has left): the packet a kernel is sent in the loop must be the
+ * packet it was trained on. `was` holds the act set aside; the phase it was in is noted as its seventh number and the
+ * leave is settled when a choice is applied (ownStart) or another act is set aside.
+ */
+export function ownLeave(world: World, c: Chimp, P: Params): void {
+  const x = ix(c), r = rec(c);
+  if (r.ask !== undefined && r.was !== undefined && r.was.length === 6) { r.was.push(x.phase); return; }
+  leave(r, c.action, c.targetId, x.phase, world.time, P);
 }
 
 /**
@@ -107,6 +128,7 @@ export function ownLeave(world: World, c: Chimp, P: Params): void {
  */
 export function ownStart(world: World, c: Chimp, P: Params, cand: Candidate, meta: CandidateMeta): void {
   const x = ix(c), r = rec(c);
+  settle(r, world.time, P); // a waiting animal's act was set aside with the point open: it is left now
   delete r.ask; delete r.was;
   r.at = [...stepsOf(c), PHASES.indexOf(dayPhase(world))];
   const t = r.trip;
@@ -233,13 +255,14 @@ const MOVING: Partial<Record<Action, true>> = { travel: true, follow: true, patr
 export function perceptOwn(world: World, c: Chimp, o: Chimp): Partial<SocialPercept> {
   const x = ix(c), r = x.own, out: Partial<SocialPercept> = {}, time = world.time;
   if (MOVING[o.action]) {
-    // the way it walks: its heading once it has taken a step of this act; at the moment it sets off on a trip to a tree,
-    // the way to that tree (a companion's goal crown is visible to the simulation's animals: they count who is going where)
-    let sx = Math.sin(o.heading), sz = Math.cos(o.heading), known = o.actionTime > 0;
-    if (!known && o.action === 'travel' && isTreeId(o.targetId)) {
-      const t = index(world).treeById.get(o.targetId);
-      if (t) { sx = t.position[0] - o.position[0]; sz = t.position[2] - o.position[2]; known = sx !== 0 || sz !== 0; }
-    }
+    // The way it is going. On a trip to a tree: the way to that tree (a companion's goal crown is visible to the
+    // simulation's animals: they count who is going where, and a joined trip names it). While it walks that is its
+    // heading; while it stands (an initiator checking who comes along, a leader waiting for a companion, the tick it
+    // sets off) its heading is left over from an earlier act and says nothing of where it is going (the review's
+    // measurement: docs/staging/r8-prereg.md §10.9). Any other movement: its heading, once it has taken a step of this act.
+    const t = o.action === 'travel' && isTreeId(o.targetId) ? index(world).treeById.get(o.targetId) : undefined;
+    let sx = t ? t.position[0] - o.position[0] : 0, sz = t ? t.position[2] - o.position[2] : 0, known = sx !== 0 || sz !== 0;
+    if (!known && o.actionTime > 0) { sx = Math.sin(o.heading); sz = Math.cos(o.heading); known = true; }
     if (known) {
       out.dir = compass(sx, sz);
       out.away = sx * (o.position[0] - c.position[0]) + sz * (o.position[2] - c.position[2]) > 0; // its distance from the focal is growing
@@ -254,16 +277,22 @@ export function perceptOwn(world: World, c: Chimp, o: Chimp): Partial<SocialPerc
   return out;
 }
 
-/** The animal's own experience (OwnExperience) at observeV5 1. */
-export function ownPercept(world: World, c: Chimp): OwnExperience {
+/**
+ * The animal's own experience (OwnExperience) at observeV5 1. `onMenu`: the act it is in is among its legal options
+ * (observe()'s own list). At an open decision point an act that has not ended but is off that list can no longer go on:
+ * the loop sets it aside for a waiting, model-driven animal (ownSetAside), and the packet of a rules-driven animal says
+ * the same of it at the same moment, so the sampler's packet is the loop's.
+ */
+export function ownPercept(world: World, c: Chimp, onMenu = true): OwnExperience {
   const x = ix(c), r = x.own, idx = index(world), time = world.time, out: OwnExperience = {};
-  const open = r?.ask !== undefined, was = open ? r!.was : undefined;
+  const open = r?.ask !== undefined, was = open ? r!.was : undefined, aside = open && !was && !onMenu;
   // what it is doing: the act that has just ended at the open decision point, or the act in progress
   {
     const action = was ? ACTION_OF[was[0]] ?? c.action : c.action, target = was ? was[1] : c.targetId, v = was ? was[4] : x.v, aux = was ? was[5] : x.aux;
     const inNest = c.nest !== null && c.nest.treeId === target && (was ? true : c.action === 'nest' && x.phase >= 2);
     const about = aboutOf(world, c, action, target, v, aux, inNest), who = isChimpId(target) ? idx.byId.get(target)?.name : undefined;
-    out.doing = { action, minutes: Math.round((was ? was[2] : c.actionTime) / 60), ...(who ? { who } : {}), ...(about ? { about } : {}), ...(was ? { ended: END_WORD[was[3]] ?? 'over' } : {}) };
+    out.doing = { action, minutes: Math.round((was ? was[2] : c.actionTime) / 60), ...(who ? { who } : {}), ...(about ? { about } : {}),
+      ...(was ? { ended: END_WORD[was[3]] ?? 'over' } : aside ? { ended: END_WORD[END.NOT_POSSIBLE] } : {}) };
   }
   // why it is being asked: a perception, the end of its act, or a change it feels or sees since it last chose
   if (open) {

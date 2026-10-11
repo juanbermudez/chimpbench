@@ -569,7 +569,8 @@ function buildJevStateQuestion(ctx: DecisionContext, wording: 1 | 2 = 1): JevPac
 // option is a neutral label: the act, its target and the animal's belief words (src/kernel/packet-own.ts). None of the
 // rules' wording is written: no reason sentence, no purpose phrase, no mark of urgency, no `urgent` line, no situational
 // rule, no sentence on dominance; the instruction is one sentence. Nothing here reads an option's `score` or `reason`,
-// its net rate or company value, or the feeding drive (tests/r8-packet.test.ts changes each and compares the text).
+// its net rate or company value, or the feeding drive (tests/r8-packet.test.ts changes each and compares the text), and
+// the animals nearby are listed nearest first, not in the observation's order, which follows the rules' scores.
 // The recorded failure at the "currently" phrase above (the current act beside the same option locked the model onto
 // continuing) is why the act is a line of state in the participle with its duration, never words on an option, and why
 // any one of the new lines can be left out (`without`) to measure its pull; see the pre-registration §6.
@@ -622,10 +623,18 @@ export function buildOwnQuestion(ctx: DecisionContext, opts: OwnOpts = {}): Loca
     state.now = [ctx.light ? lightWords(ctx.light) : `${clock(e.hour)} ${e.phase}`, `${weather}, ${Math.round(e.temperature)} °C`, `party of ${e.partySize} with ${e.partyAdultMales} adult males`, fruitWord(e.fruitNearby),
       e.nearTerritoryEdge ? 'at the territory edge' : '', e.strangersSeen || e.strangersHeard ? `strangers: ${e.strangersSeen} seen, ${e.strangersHeard} heard` : ''].filter(Boolean).join('; ');
   } else state.now = nowWords(ctx, false);
-  if (ctx.social.length) state.nearby = ctx.social.map(p => off('acts') ? describePercept(ctx, p) : describePerceptOwn(ctx, p));
+  // The observation lists the animals nearby with the targets of the rules' best-valued options first (observe.ts:
+  // "candidate targets first (by score)"), so in today's packets the order of the `nearby` line tells which partner the
+  // rules would take: on stage R4's saved held-out records the animal a social pick names is the first one listed in
+  // every fresh draw (docs/staging/r8-wording-probe.md, "The order of the nearby list"). That is a ranking the rules
+  // computed, so packet 5 does not carry it: the animals are listed nearest first, an order the animal itself perceives,
+  // ties by the line's own text. The order of the observation's list never reaches the text (tests/r8-packet.test.ts).
+  const near = ctx.social.map(p => ({ p, line: off('acts') ? describePercept(ctx, p) : describePerceptOwn(ctx, p) }))
+    .sort((a, b) => a.p.distance - b.p.distance || (a.line < b.line ? -1 : a.line > b.line ? 1 : 0));
+  if (near.length) state.nearby = near.map(n => n.line);
   if (own.lately && !off('lately')) { const l = latelyWords(own.lately, own.doing?.ended !== undefined); if (l) state.lately = l; }
   const named = new Set(ctx.candidates.map(c => c.targetId));
-  const last = off('last') ? [] : lastWords(ctx, short ? p => named.has(p.id) : () => true);
+  const last = off('last') ? [] : lastWords({ ...ctx, social: near.map(n => n.p) }, short ? p => named.has(p.id) : () => true);
   if (last.length) state.last = last;
   const memories = ownMemories(ctx, !off('last'), off('asked') ? undefined : own.asked?.event).slice(0, OWN_LINES[variant].memories);
   if (memories.length) state.memories = memories;

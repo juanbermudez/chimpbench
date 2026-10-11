@@ -153,7 +153,8 @@ export function observe(world: World, c: Chimp): DecisionContext {
     ...(history.length ? { history } : {}),
     ...(track ? { body: bodyPercept(world, c, P, v4), light: lightPercept(world) } : {}),
     ...(bodies.length ? { bodies } : {}),
-    ...(v5 ? { packet: 5 as const, own: ownPercept(world, c) } : v4 ? { packet: 4 as const } : {}),
+    // (own: an act in progress that is off the animal's own legal list can no longer go on; decide.ts decisionPoint tests the same)
+    ...(v5 ? { packet: 5 as const, own: ownPercept(world, c, all.some(k => k.action === c.action && k.targetId === c.targetId)) } : v4 ? { packet: 4 as const } : {}),
   };
 }
 

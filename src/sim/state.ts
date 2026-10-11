@@ -192,7 +192,12 @@ export interface ChimpX {
 export interface OwnRecord {
   /** The decision point now open: [eco-hour it opened, what opened it: 0 the scheduled end of the bout, 1 an interrupt, 2 the act's own end]. Cleared when an act starts. */
   ask?: number[];
-  /** The act that had come to its own end at that decision point, or that a waiting animal could not go on with: [action code, target id, seconds in it, end code, variant, aux]. */
+  /**
+   * The act that had come to its own end at that decision point, or that a waiting animal could not go on with: [action
+   * code, target id, seconds in it, end code, variant, aux]. A seventh number, the phase the act was in, is there while a
+   * waiting animal has been set to rest with the point open: leaving that act (its crown, its feeding bout, its nest) is
+   * entered in the record only when a choice is applied (own.ts ownLeave, ownStart).
+   */
   was?: number[];
   /** When it last chose (an act started or was chosen again): the step of the word of each drive (hunger, thirst, fatigue, loneliness, fear: 0 none … 4 severe), then the light phase (0 night, 1 dawn, 2 day, 3 dusk). */
   at?: number[];

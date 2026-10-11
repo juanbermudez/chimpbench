@@ -51,8 +51,12 @@ export interface R8Rec {
   opened: number; asked: OwnExperience['asked'] | null;
   options: R8Option[];
   context: DecisionContext;
-  /** The act in progress when it was asked, as the simulation holds it (the context's `own.doing` says the same in the animal's terms). */
-  act: { action: Action; targetId: number; seconds: number; finished: boolean };
+  /**
+   * The act in progress when it was asked, as the simulation holds it (the context's `own.doing` says the same in the
+   * animal's terms). `finished`: it had come to its own end. `onMenu`: it is among the animal's legal options; an act that
+   * has not ended and is off that list can no longer go on (the loop sets it aside for a waiting animal, decide.ts).
+   */
+  act: { action: Action; targetId: number; seconds: number; finished: boolean; onMenu: boolean };
   /** state: today's state-only packet; neutral: that packet with neutral options and the leaked lines removed; own, ownShort: packet 5, full and short. */
   packets: { state: LocalPacket; neutral: LocalPacket; own: LocalPacket; ownShort: LocalPacket };
   tokens: { state: number; neutral: number; own: number; ownShort: number };
@@ -85,12 +89,12 @@ export function sampleR8(o: SampleOpts): { recs: R8Rec[]; hash: string; decision
   const key = (k: { action: string; targetId: number }) => `${k.action}:${k.targetId}`;
   const skip = (why: string) => { skipped[why] = (skipped[why] ?? 0) + 1; };
   let pending: { c: Chimp; req: ReturnType<typeof buildRequest>; tick: number; opened: number; act: R8Rec['act'] } | null = null;
-  rulesTap.fn = (c, _list, policy) => {
+  rulesTap.fn = (c, list, policy) => {
     pending = null;
     if (!policy || !c.alive || c.age < P.rgMinAge) return;
     if (u01(`${o.tag ?? 'r8'}:${o.seed}:${w.tick}:${c.id}`) >= o.p) return;
     const rng = w.rng, before = JSON.stringify(ix(c).own ?? null);
-    pending = { c, req: buildRequest(w, c), tick: w.tick, opened: ix(c).own?.ask?.[1] ?? -1, act: { action: c.action, targetId: c.targetId, seconds: c.actionTime, finished: ix(c).finished } };
+    pending = { c, req: buildRequest(w, c), tick: w.tick, opened: ix(c).own?.ask?.[1] ?? -1, act: { action: c.action, targetId: c.targetId, seconds: c.actionTime, finished: ix(c).finished, onMenu: list.some(k => k.action === c.action && k.targetId === c.targetId) } };
     if (w.rng !== rng) throw new Error('building a request drew from world.rng');
     if (JSON.stringify(ix(c).own ?? null) !== before) throw new Error('building a request wrote the animal\'s own record');
   };
@@ -150,6 +154,7 @@ if (process.argv[1]?.endsWith('r8-contexts.ts')) {
   const meta = { stage: 'R8', packet: OWN_PACKET_VERSION, seed, base, paramsFile: BASES[base], switches: { observeV5: 1, menuParity: 1 }, argv: process.argv.slice(2),
     records: r.recs.length, labels: table(x => x.label), labelOnMenu: count(x => x.rgIndex >= 0), animals: new Set(r.recs.map(x => x.chimpId)).size,
     opened: table(x => ['scheduled', 'interrupt', 'ended'][x.opened] ?? 'unknown'), asked: table(asked), askedByWhy: table(x => `${x.why} -> ${asked(x)}`),
+    actWhenAsked: table(x => x.act.finished ? 'came to its own end' : x.act.onMenu ? 'in progress' : 'could not go on (off the menu)'),
     withRawScore: count(x => x.options.every(k => k.raw !== undefined)),
     tokensEstimateMedian: { state: med(x => x.tokens.state), neutral: med(x => x.tokens.neutral), own: med(x => x.tokens.own), ownShort: med(x => x.tokens.ownShort) },
     tokensEstimateMax: { state: Math.max(0, ...r.recs.map(x => x.tokens.state)), own: Math.max(0, ...r.recs.map(x => x.tokens.own)), ownShort: Math.max(0, ...r.recs.map(x => x.tokens.ownShort)) },

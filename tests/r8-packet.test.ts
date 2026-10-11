@@ -12,13 +12,13 @@ import { hashWithoutOwn, packetsOf, sampleR8, type R8Rec } from '../scripts/r8-c
 import { leakedIn, rerender, uniqueIds } from '../scripts/r8-rerender';
 import { estimateByBlock } from '../scripts/r8-tokens';
 import { wordingReport } from '../scripts/r8-wording-report';
-import { pickRates, wordingOnly } from '../scripts/r8-wording-probe';
+import { nearbyOrder, pickRates, wordingOnly } from '../scripts/r8-wording-probe';
 import { buildJevQuestion, buildLocalQuestion, buildOwnQuestion, decisionContextError, neutralized, optionParts, rulesWordings, situationRules, TOKEN_BUDGET_STATE, withoutOwn,
   type LocalPacket, type OwnBlock } from '../server/decide';
 import { actLabel, askedWords, BELIEF_FIELDS, bodyDepartures, doingWords, lastWords, latelyWords, neutralOption, OWN_INSTRUCTION } from '../src/kernel/packet-own';
 import { bodyWordsV4 } from '../src/kernel/packet-words';
 import { worldShapeProblem } from '../src/persist/envelope';
-import { candidateMeta, computeCandidates, V } from '../src/sim/candidates';
+import { candidateMeta, CODE, computeCandidates, V } from '../src/sim/candidates';
 import { applyDecision } from '../src/sim/decide';
 import { ownPercept } from '../src/sim/own';
 import { paramsOf } from '../src/sim/params';
@@ -39,6 +39,10 @@ function withParams(w: World, extra: Record<string, number>): World {
   return copy;
 }
 const textOf = (p: unknown) => JSON.stringify(p);
+const COMPASS = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest'];
+/** The compass word of a horizontal step (+x east, −z north), and the turn between two compass words in eighths. */
+const compassOf = (dx: number, dz: number) => COMPASS[Math.round(((Math.atan2(dx, -dz) * 180 / Math.PI + 360) % 360) / 45) % 8];
+const eighths = (a: string, b: string) => { const d = Math.abs(COMPASS.indexOf(a) - COMPASS.indexOf(b)); return Math.min(d, 8 - d); };
 
 // One field world on the working base with observeV5 1, seed 48. Every rules decision of an animal aged 8 or over is
 // recorded from 09:30 of the second day to its dusk (scripts/r8-contexts.ts, the stage's own sampler), and the world is
@@ -173,6 +177,13 @@ test('observeV5 1: the observeV4 observation plus the animal\'s own fields and t
       for (const p of ctx.social) {
         const o = idx.byId.get(p.id)!;
         if (p.dir !== undefined) { count('percept.dir'); assert.ok(['travel', 'follow', 'patrol', 'flee', 'transfer'].includes(p.action)); assert.equal(typeof p.away, 'boolean'); } else assert.equal(p.away, undefined);
+        // a companion on a trip to a tree: the way to that tree, walking or standing (a standing animal's heading is left over from an earlier act)
+        const goal = o.action === 'travel' && isTreeId(o.targetId) ? idx.treeById.get(o.targetId) : undefined;
+        if (goal && (goal.position[0] !== o.position[0] || goal.position[2] !== o.position[2])) {
+          count('percept.dir to its tree');
+          assert.equal(p.dir, compassOf(goal.position[0] - o.position[0], goal.position[2] - o.position[2]), `${label} ${c.name}: ${p.name} is going to its tree`);
+          assert.equal(p.away, (goal.position[0] - o.position[0]) * (o.position[0] - c.position[0]) + (goal.position[2] - o.position[2]) * (o.position[2] - c.position[2]) > 0);
+        }
         if (p.toMe) { count('percept.toMe'); assert.equal(o.targetId, c.id); }
         if (p.groomedH !== undefined) { count('percept.groomedH'); assert.equal(p.groomedH, Math.round((w.time - x.own!.g![p.id]) * 10) / 10); }
         if (p.groomedByH !== undefined) { count('percept.groomedByH'); assert.equal(p.groomedByH, Math.round((w.time - x.own!.gb![p.id]) * 10) / 10); }
@@ -195,6 +206,7 @@ test('observeV5 1: the observeV4 observation plus the animal\'s own fields and t
 
 test('at decision points: what it is doing, how its act ended, and why it is asked, which is never a timer', t => {
   const { recs } = world5(), kinds: Record<string, number> = {}, byWhy: Record<string, number> = {};
+  let aside = 0;
   const kind = (a: OwnExperience['asked']) => !a ? 'none' : a.event ? 'event' : a.ended ? 'ended' : a.felt ? 'felt' : 'light';
   assert.ok(recs.length > 800, `only ${recs.length} decision points`);
   for (const r of recs) {
@@ -202,7 +214,11 @@ test('at decision points: what it is doing, how its act ended, and why it is ask
     assert.equal(decisionContextError(r.context), '');
     assert.equal(d.action, r.act.action, 'the act in progress');
     assert.equal(d.minutes, Math.round(r.act.seconds / 60));
-    assert.equal(d.ended !== undefined, r.act.finished, 'an end is told exactly when the act came to its own end');
+    // an end is told exactly when the act came to its own end, or when it can no longer go on (off the animal's legal list):
+    // the loop sets such an act aside for a waiting animal, and the sampler's packet must say what the loop's does
+    assert.equal(d.ended !== undefined, r.act.finished || !r.act.onMenu, 'an end is told exactly when the act came to its own end or can no longer go on');
+    if (!r.act.finished && !r.act.onMenu) { aside++; assert.equal(d.ended, 'not-possible'); assert.match(r.packets.own.state.doing as string, /; it is no longer possible$/); }
+    else assert.notEqual(d.ended, 'not-possible');
     kinds[kind(a)] = (kinds[kind(a)] ?? 0) + 1; byWhy[`${r.why}:${kind(a)}`] = (byWhy[`${r.why}:${kind(a)}`] ?? 0) + 1;
     // one reason, and it follows what opened the decision point
     if (r.opened === 1) assert.ok(a?.event && !a.ended && !a.felt, 'an interrupt: the perception is the reason');
@@ -223,7 +239,8 @@ test('at decision points: what it is doing, how its act ended, and why it is ask
     assert.match(p.doing as string, d.ended ? /^was / : d.minutes < 1 ? /, just begun$/ : /, \d+ min$/);
     assert.equal(p.urgent, undefined);
   }
-  t.diagnostic(`asked: ${JSON.stringify(kinds)}; by the loop's reason: ${JSON.stringify(byWhy)}`);
+  t.diagnostic(`asked: ${JSON.stringify(kinds)}; by the loop's reason: ${JSON.stringify(byWhy)}; acts that could not go on (not ended, off the menu): ${aside} of ${recs.length}`);
+  assert.ok(aside > 20, `acts that could not go on: ${aside}`);
   for (const k of ['none', 'event', 'ended', 'felt']) assert.ok((kinds[k] ?? 0) > 10, `${k}: ${kinds[k] ?? 0}`);
   assert.ok((byWhy['max-age:none'] ?? 0) > 5 && (byWhy['kept:none'] ?? 0) > 50, 'timers are seen, and say nothing');
   // labels: fresh draws, kept acts and arrivals are told apart, and the scores without the hash jitter are saved
@@ -288,6 +305,66 @@ test('a model-driven animal set to wait still knows what it was doing; an applie
     }
   }
   assert.ok(ended >= 3 && applied >= 3, `ended acts seen while waiting: ${ended} (set aside ${aside}); choices applied: ${applied}`);
+});
+
+test('in the loop a waiting animal\'s packet is the one the sampler saves: an ended feeding bout keeps its eating line, its crown is not yet counted as left, and the leave is entered when a choice is applied', () => {
+  // A rules-driven animal is observed at its decision point before it leaves its act (the sampler's tap); a model-driven
+  // animal is set to rest first and observed while it waits. The record must read the same at both, or a kernel is
+  // trained on one packet and sent another.
+  const w = structuredClone(world5().day);
+  w.modelPolicy = { mode: 'lockstep', asyncGraceMinutes: 2 };
+  const focal = w.chimps.filter(c => c.alive && c.age >= 12).slice(0, 20);
+  for (const c of focal) c.controller = 'model';
+  const steps = new Map<number, number>(); // complete 5 minute steps of each animal's feeding bout before the tick
+  let bouts = 0, applied = 0;
+  for (let i = 0; i < 6 * HOUR && bouts < 12; i++) {
+    for (const c of focal) steps.set(c.id, ix(c).own?.eat?.[4] ?? 0);
+    tickWorld(w);
+    for (const c of focal) {
+      if (!c.alive || c.awaitingDecisionSince === null) continue;
+      const r = ix(c).own!, req = buildRequest(w, c), own = req.context.own!, was = r.was;
+      const fedBout = was !== undefined && was[0] === CODE.forage && isTreeId(was[1]) && was[3] !== 11 && steps.get(c.id)! >= 2;
+      if (fedBout) {
+        bouts++;
+        assert.equal(c.action, 'rest', 'set to rest while it waits');
+        assert.equal(own.doing!.action, 'forage');
+        assert.ok(own.doing!.ended, 'how the bout ended');
+        assert.ok(own.lately?.eating !== undefined, 'eating now against the start of the bout is still told');
+        assert.match(buildOwnQuestion(req.context).state.lately as string, /^was eating /);
+        const fed = r.fed ?? [];
+        assert.ok(!fed.some((id, k) => k % 2 === 0 && id === was![1] && fed[k + 1] >= r.ask![0]), 'the crown is not yet among those it has left');
+        assert.equal(own.lately!.crowns ?? 0, fed.length / 2);
+      }
+      if (req.options.length >= 2 && applyDecision(w, c.id, req.options[Math.max(0, req.rulesIndex)], 'decide', req.context.version) && fedBout) {
+        applied++;
+        const after = ix(c).own!;
+        assert.equal(after.was, undefined);
+        assert.equal(after.eat, undefined, 'the feeding bout is over');
+        assert.equal(after.fed![after.fed!.length - 2], was![1], 'the crown it fed in is the last it has left');
+      }
+    }
+  }
+  assert.ok(bouts >= 12 && applied >= 8, `ended feeding bouts seen while waiting: ${bouts}; choices applied after them: ${applied}`);
+});
+
+test('a companion\'s direction agrees with the trip it leads: "leaving northwest" beside "Go with it to the …, northwest"', t => {
+  // A leader that stands and checks who comes along has not turned yet: its heading is left over from an earlier act.
+  // The line must give the way it is going, which the option to join its trip states from the focal animal's own place.
+  const { recs } = world5();
+  let pairs = 0, same = 0;
+  for (const r of recs) {
+    for (const k of r.context.candidates) {
+      const a = k.about;
+      if (a?.form !== 'joined' || !a.with || !a.dir || (a.distM ?? 0) < 150) continue;
+      const p = r.context.social.find(q => q.name === a.with && q.action === 'travel' && q.distance <= 40);
+      if (!p) continue;
+      pairs++; same += +(p.dir === a.dir);
+      assert.ok(p.dir !== undefined, `${p.name} leads a trip: its direction is told`);
+      assert.ok(eighths(p.dir!, a.dir) <= 1, `${r.id}: ${p.name} is ${p.away ? 'leaving' : 'travelling'} ${p.dir}, and the trip it leads goes ${a.distM} m ${a.dir}`);
+    }
+  }
+  t.diagnostic(`${pairs} leaders within 40 m of a trip of 150 m or more: the same compass word ${same} times, a neighbouring one ${pairs - same}`);
+  assert.ok(pairs > 100, `${pairs} pairs`);
 });
 
 test('the request validation accepts the own fields and rejects malformed ones', () => {
@@ -410,6 +487,38 @@ test('none of the rules\' wording can appear in packet 5: the text does not depe
   assert.ok(urgentToday > 20, 'the sample exercises what is removed');
 });
 
+test('packet 5 lists the animals nearby nearest first: the order of the observation\'s list, which follows the rules\' scores, never reaches the text', t => {
+  // observe() lists the perceived animals with the targets of the rules' best-valued options first, so in today's
+  // packets the first animal on the nearby line is the partner the rules would take. A ranking the rules computed.
+  const { recs } = world5();
+  let picks = 0, firstListed = 0, firstInText = 0, chance = 0, lists = 0;
+  for (const r of recs) {
+    const ctx = r.context, lines = (r.packets.own.state.nearby ?? []) as string[];
+    if (ctx.social.length < 2) continue;
+    lists++;
+    // nearest first
+    const dist = lines.map(l => ctx.social.find(p => l.startsWith(`${p.name}: `))!.distance);
+    for (let i = 1; i < dist.length; i++) assert.ok(dist[i - 1] <= dist[i], `${r.id}: nearest first (${dist.join(', ')})`);
+    // the text is the same whatever the order of the observation's list
+    const turned: DecisionContext = { ...ctx, social: [...ctx.social].reverse() };
+    assert.equal(decisionContextError(turned), '');
+    for (const v of ['full', 'short'] as const) assert.deepEqual(buildOwnQuestion(turned, { variant: v }), buildOwnQuestion(ctx, { variant: v }), 'the order of the observation\'s list does not reach the text');
+    assert.deepEqual(buildJevQuestion(turned), buildJevQuestion(ctx));
+    for (const b of ['doing', 'asked', 'acts', 'lately', 'last'] as OwnBlock[]) assert.deepEqual(buildOwnQuestion(turned, { without: [b] }), buildOwnQuestion(ctx, { without: [b] }));
+    // how much the two orders tell of the rules' pick, on the fresh draws whose pick names a listed animal
+    const target = r.draw && r.rgIndex >= 0 ? r.options[r.rgIndex].targetId : -1, at = ctx.social.findIndex(p => p.id === target);
+    if (at < 0) continue;
+    picks++; chance += 1 / ctx.social.length;
+    firstListed += +(at === 0);
+    firstInText += +lines[0].startsWith(`${ctx.social[at].name}: `);
+    assert.equal(((r.packets.state.state.nearby ?? []) as string[])[0].startsWith(`${ctx.social[0].name}: `), true, 'today\'s packet writes the observation\'s order');
+  }
+  t.diagnostic(`${lists} contexts with two or more animals nearby; fresh draws whose pick names one of them: ${picks}; that animal is first in the observation's order ${firstListed} times, first on packet 5's nearby line ${firstInText} times, by chance ${chance.toFixed(1)}`);
+  assert.ok(lists > 1000 && picks > 100, `${lists} lists, ${picks} picks`);
+  assert.ok(firstListed / picks > 0.9, 'the observation\'s order tells the rules\' partner: what packet 5 must not carry');
+  assert.ok(firstInText < firstListed, 'the nearest animal is the partner less often than the first listed');
+});
+
 test('the same act has the same words whatever the rules\' motive; the wording test\'s packet changes only the leaked wording', t => {
   const { recs } = world5(), byAct = new Map<string, Set<string>>();
   let options = 0;
@@ -480,24 +589,28 @@ test('each new line on the built world: companions\' acts, foraging returns, soc
   for (const r of recs) {
     const ctx = r.context, full = r.packets.own.state as Record<string, unknown>, short = r.packets.ownShort.state as Record<string, unknown>, today = r.packets.state.state as Record<string, unknown>;
     // companions: every perceived animal's routine act is told (today's packet names only notable ones)
+    // (packet 5 lists them nearest first, today's packet in the observation's order: a line is found by its animal's name)
     const nearby = (full.nearby ?? []) as string[], before = (today.nearby ?? []) as string[];
+    const lineOf = (lines: string[], name: string) => { const of = lines.filter(l => l.startsWith(`${name}: `)); assert.equal(of.length, 1, `one line for ${name}`); return of[0]; };
     assert.equal(nearby.length, ctx.social.length);
-    ctx.social.forEach((p, i) => {
+    ctx.social.forEach(p => {
       const word = p.action === 'forage' ? 'feeding' : p.action === 'rest' ? 'resting' : p.action === 'travel' ? (p.dir ? (p.away ? `leaving ${p.dir}` : `travelling ${p.dir}`) : 'travelling') : null;
       if (!word) return;
       count(`nearby ${word.split(' ')[0]}`);
-      assert.ok(nearby[i].startsWith(`${p.name}: `) && nearby[i].endsWith(`, ${word}`), `${nearby[i]} (${word})`);
-      assert.ok(!before[i].includes(word.split(' ')[0]), 'today\'s packet leaves the routine act out');
+      assert.ok(lineOf(nearby, p.name).endsWith(`, ${word}`), `${lineOf(nearby, p.name)} (${word})`);
+      assert.ok(!lineOf(before, p.name).includes(word.split(' ')[0]), 'today\'s packet leaves the routine act out');
     });
     for (const p of ctx.social) if (p.toMe) { count('nearby toMe'); assert.match(nearby.find(l => l.startsWith(`${p.name}: `))!, / me$/); }
     assert.deepEqual(short.nearby, full.nearby);
     // lately and last
     if (ctx.own!.lately) { count('lately'); assert.equal(full.lately, latelyWords(ctx.own!.lately, ctx.own!.doing!.ended !== undefined)); assert.equal(short.lately, full.lately); } else assert.equal(full.lately, undefined);
-    const last = lastWords(ctx, () => true);
+    // (the timing lines follow the order of the nearby line: nearest first)
+    const near = { ...ctx, social: nearby.map(l => ctx.social.find(p => l.startsWith(`${p.name}: `))!) }, last = lastWords(near, () => true);
     if (last.length) {
       count('last'); assert.deepEqual(full.last, last);
+      assert.deepEqual([...last].sort(), [...lastWords(ctx, () => true)].sort(), 'the same lines as the observation gives, in the nearby line\'s order');
       const named = new Set(ctx.candidates.map(c => c.targetId));
-      assert.deepEqual(short.last ?? [], lastWords(ctx, p => named.has(p.id)));
+      assert.deepEqual(short.last ?? [], lastWords(near, p => named.has(p.id)));
       // what `last` says is not said again as a memory
       for (const m of (full.memories ?? []) as string[]) assert.doesNotMatch(m, /^(?:Groomed|Was groomed by|Pant-grunted to) /);
     }
@@ -512,7 +625,7 @@ test('each new line on the built world: companions\' acts, foraging returns, soc
       // (without `doing`, the reason for asking tells the end itself)
       for (const k of Object.keys(full)) if (k !== key && k !== 'memories' && !(b === 'doing' && k === 'asked because')) assert.deepEqual(without[k], full[k], `without ${b}: ${k}`);
     }
-    assert.deepEqual((buildOwnQuestion(ctx, { without: ['acts'] }).state as Record<string, unknown>).nearby, today.nearby, 'without the acts, nearby is today\'s');
+    assert.deepEqual([...((buildOwnQuestion(ctx, { without: ['acts'] }).state as Record<string, unknown>).nearby ?? []) as string[]].sort(), [...before].sort(), 'without the acts, the nearby lines are today\'s (nearest first)');
   }
   t.diagnostic(JSON.stringify(n));
   for (const k of ['nearby feeding', 'nearby resting', 'nearby leaving', 'nearby travelling', 'nearby toMe', 'lately', 'last', 'body']) assert.ok((n[k] ?? 0) > 20, `${k}: ${n[k] ?? 0}`);
@@ -619,4 +732,9 @@ test('the wording probe: pick rates by wording, and a predictor that reads the w
   assert.equal(w.rules.hit, 4, 'the rules\' wording tells the pick apart');
   assert.equal(w.n, 4);
   assert.ok(w.neutral.hit < 4, 'the act alone does not');
+  // the order of the nearby list: is the animal a social pick names the first one listed?
+  const ctx = (targets: number[], social: [number, number][]) => ({ candidates: targets.map(targetId => ({ targetId })), social: social.map(([id, distance]) => ({ id, distance })) });
+  const order = nearbyOrder([{ draw: true, rgIndex: 1, context: ctx([-1, 7], [[7, 12], [9, 3]]) }, { draw: true, rgIndex: 1, context: ctx([-1, 9], [[7, 12], [9, 3], [4, 20]]) },
+    { draw: true, rgIndex: 0, context: ctx([-1, 7], [[7, 12], [9, 3]]) }, { draw: true, rgIndex: 1, context: ctx([-1, 7], [[7, 12]]) }, { draw: false, rgIndex: 1, context: ctx([-1, 7], [[7, 12], [9, 3]]) }, { draw: true, rgIndex: 1 }]);
+  assert.deepEqual(order, { draws: 4, picksNamingListed: 3, listsOfTwoOrMore: 2, first: 1, chance: 1 / 2 + 1 / 3, nearest: 1 });
 });
