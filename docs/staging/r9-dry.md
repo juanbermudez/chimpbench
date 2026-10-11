@@ -6,18 +6,19 @@ Registration: `docs/staging/r9-prereg.md`. **No model: the plumbing check. Its k
 
 | Arm | what | seeds | head | model calls | model seconds | timeouts | deaths | ends on its saved or replayed world |
 |---|---|---|---|---|---|---|---|---|
-| `rules` | the rules | 48 | c4778c4 | 0 | 0 | 0 | 0 |  |
-| `sure-top` | a certain kernel, top pick | 48 | c4778c4 | 273 | 0 | 0 | 0 | replay reproduces it |
-| `sure-draw-1` | a certain kernel, draw | 48 | c4778c4 | 273 | 0 | 0 | 0 | replay reproduces it |
-| `sure-held` | a certain kernel, held for the act | 48 | c4778c4 | 273 | 0 | 0 | 0 | replay reproduces it |
-| `even-none` | even odds, no decode step (today) | 48 | c4778c4 | 354 | 0 | 0 | 0 | replay reproduces it |
-| `even-top` | even odds, top pick | 48 | c4778c4 | 354 | 0 | 0 | 0 | replay reproduces it |
-| `even-draw-1` | even odds, draw, salt 1 | 48 | c4778c4 | 305 | 0 | 0 | 0 | replay reproduces it |
-| `even-draw-2` | even odds, draw, salt 2 | 48 | c4778c4 | 375 | 0 | 0 | 0 | replay reproduces it |
-| `even-held` | even odds, held for the act | 48 | c4778c4 | 301 | 0 | 0 | 0 | replay reproduces it |
-| `even-block` | even odds, held for the half hour | 48 | c4778c4 | 1075 | 0 | 0 | 0 | replay reproduces it |
-| `even-draw-free` | even odds, draw, gate off | 48 | c4778c4 | 495 | 0 | 0 | 0 | replay reproduces it |
-| `even-held-free` | even odds, held for the act, gate off | 48 | c4778c4 | 414 | 0 | 0 | 0 | replay reproduces it |
+| `rules` | the rules | 48 | 027ec29 | 0 | 0 | 0 | 0 |  |
+| `sure-top` | a certain kernel, top pick | 48 | 027ec29 | 273 | 0 | 0 | 0 | replay reproduces it |
+| `sure-draw-1` | a certain kernel, draw | 48 | 027ec29 | 273 | 0 | 0 | 0 | replay reproduces it |
+| `sure-held` | a certain kernel, held for the act | 48 | 027ec29 | 273 | 0 | 0 | 0 | replay reproduces it |
+| `even-none` | even odds, no decode step (today) | 48 | 027ec29 | 354 | 1 | 0 | 0 | replay reproduces it |
+| `even-top` | even odds, top pick | 48 | 027ec29 | 354 | 0 | 0 | 0 | replay reproduces it |
+| `even-draw-1` | even odds, draw, salt 1 | 48 | 027ec29 | 305 | 1 | 0 | 0 | replay reproduces it |
+| `even-draw-2` | even odds, draw, salt 2 | 48 | 027ec29 | 375 | 0 | 0 | 0 | replay reproduces it |
+| `even-held` | even odds, held for the act | 48 | 027ec29 | 301 | 0 | 0 | 0 | replay reproduces it |
+| `even-block` | even odds, held for the half hour | 48 | 027ec29 | 1075 | 1 | 0 | 0 | replay reproduces it |
+| `even-whole` | even odds, held for the whole act (exploratory) | 48 | 027ec29 | 284 | 0 | 0 | 0 | replay reproduces it |
+| `even-draw-free` | even odds, draw, gate off | 48 | 027ec29 | 495 | 0 | 0 | 0 | replay reproduces it |
+| `even-held-free` | even odds, held for the act, gate off | 48 | 027ec29 | 414 | 0 | 0 | 0 | replay reproduces it |
 
 ## What is read (prereg §5)
 
@@ -33,6 +34,7 @@ Registration: `docs/staging/r9-prereg.md`. **No model: the plumbing check. Its k
 | `even-draw-2` | 68.0 | 64.2 | 7.0 | 2.0 | 75.0 | 4 of 5 | 1821 | 0.14 | 1.95 |
 | `even-held` | 29.4 | 27.8 | 3.6 | 0.4 | 60.2 | 1 of 5 | 906 | -1.33 | 2.56 |
 | `even-block` | 54.0 | 52.2 | 7.6 | 2.0 | 215.0 | 1 of 5 | 1663 | -0.38 | 5.67 |
+| `even-whole` | 23.0 | 21.8 | 3.4 | 0.4 | 56.8 | 2 of 5 | 1086 | -1.12 | 1.95 |
 | `even-draw-free` | 87.4 | 82.8 | 10.4 | 0.4 | 99.0 | 5 of 5 | 1729 | -0.13 | 3.41 |
 | `even-held-free` | 35.6 | 32.2 | 5.2 | 0.0 | 82.8 | 4 of 5 | 1136 | -1.00 | 2.17 |
 
@@ -50,6 +52,7 @@ A re-ask is an ask inside an epoch that is already open. "Changed" is the share 
 | `even-draw-2` | 75.0 | 57.4 | 1.0 | 30.4 | 1.2 | 24.2 | 0.6 | 0.0 | 17.6 | 6.8% | 81.7% of 82 | – |
 | `even-held` | 60.2 | 28.6 | 1.0 | 15.0 | 0.0 | 12.4 | 0.2 | 0.0 | 31.6 | 0.6% | 6.4% of 157 | 0 |
 | `even-block` | 215.0 | 26.0 | 1.0 | 0.0 | 0.0 | 0.0 | 0.0 | 25.0 | 189.0 | 10.6% | 3.8% of 837 | 0 |
+| `even-whole` | 56.8 | 16.0 | 1.0 | 14.2 | 0.6 | 0.0 | 0.2 | 0.0 | 40.8 | 4.9% | 10.9% of 193 | 0 |
 | `even-draw-free` | 99.0 | 65.6 | 1.0 | 34.4 | 0.0 | 29.8 | 0.4 | 0.0 | 33.4 | 5.4% | 77.8% of 158 | – |
 | `even-held-free` | 82.8 | 32.6 | 1.0 | 17.6 | 0.0 | 14.0 | 0.0 | 0.0 | 50.2 | 2.8% | 7.8% of 244 | 0 |
 
@@ -78,17 +81,17 @@ The two decode salts: `even-draw-2` minus `even-draw-1`. The rules' re-draws: 0 
 
 ## Against the top pick, even odds (plumbing check) (`even-top`)
 
-| Measure | `even-top` | the rules | `even-draw-1` minus top | `even-draw-2` minus top | `even-held` minus top | `even-block` minus top |
-|---|---|---|---|---|---|---|
-| act changes | 65.2 | 42.8 | -6.6 (-30.2 to +17.0) | +2.8 (-23.9 to +29.5) | -35.8 (-66.9 to -4.7) **differs** | -11.2 (-38.3 to +15.9) |
-| changes of the kind of act | 61.8 | 38.8 | -5.4 (-25.0 to +14.2) | +2.4 (-21.5 to +26.3) | -34.0 (-62.6 to -5.4) **differs** | -9.6 (-32.4 to +13.2) |
-| trips to food begun | 8.8 | 6.2 | -1.2 (-6.3 to +3.9) | -1.8 (-7.9 to +4.3) | -5.2 (-11.9 to +1.5) | -1.2 (-5.8 to +3.4) |
-| trips to food completed | 2.8 | 1.8 | -0.6 (-3.5 to +2.3) | -0.8 (-2.4 to +0.8) | -2.4 (-4.5 to -0.3) **differs** | -0.8 (-4.0 to +2.4) |
-| asks of the kernel | 70.8 | 0.0 | -9.8 (-29.7 to +10.1) | +4.2 (-26.0 to +34.4) | -10.6 (-40.1 to +18.9) | +144.2 (-59.8 to +348.2) |
-| nights in a nest (share) | 0.20 | 1.00 | +0.40 (-0.28 to +1.08) | +0.60 (-0.08 to +1.28) | 0.00 (-0.88 to +0.88) | 0.00 (0.00 to 0.00) |
-| energy eaten, kcal (guard) | 1612 | 1458 | -6 (-563 to +552) | +209 (-445 to +862) | -706 (-1450 to +38) | +51 (-317 to +419) |
-| reserves, % of the usual store a day (guard) | -0.20 | -0.25 | -0.05 (-0.57 to +0.47) | +0.34 (-0.58 to +1.25) | -1.13 (-2.09 to -0.16) **differs** | -0.18 (-0.74 to +0.39) |
-| distance, km (guard) | 2.33 | 2.76 | +1.35 (-0.93 to +3.63) | -0.38 (-1.49 to +0.73) | +0.23 (-1.75 to +2.22) | +3.35 (-0.14 to +6.83) |
+| Measure | `even-top` | the rules | `even-draw-1` minus top | `even-draw-2` minus top | `even-held` minus top | `even-block` minus top | `even-whole` minus top |
+|---|---|---|---|---|---|---|---|
+| act changes | 65.2 | 42.8 | -6.6 (-30.2 to +17.0) | +2.8 (-23.9 to +29.5) | -35.8 (-66.9 to -4.7) **differs** | -11.2 (-38.3 to +15.9) | -42.2 (-78.2 to -6.2) **differs** |
+| changes of the kind of act | 61.8 | 38.8 | -5.4 (-25.0 to +14.2) | +2.4 (-21.5 to +26.3) | -34.0 (-62.6 to -5.4) **differs** | -9.6 (-32.4 to +13.2) | -40.0 (-72.0 to -8.0) **differs** |
+| trips to food begun | 8.8 | 6.2 | -1.2 (-6.3 to +3.9) | -1.8 (-7.9 to +4.3) | -5.2 (-11.9 to +1.5) | -1.2 (-5.8 to +3.4) | -5.4 (-10.8 to -0.0) **differs** |
+| trips to food completed | 2.8 | 1.8 | -0.6 (-3.5 to +2.3) | -0.8 (-2.4 to +0.8) | -2.4 (-4.5 to -0.3) **differs** | -0.8 (-4.0 to +2.4) | -2.4 (-5.1 to +0.3) |
+| asks of the kernel | 70.8 | 0.0 | -9.8 (-29.7 to +10.1) | +4.2 (-26.0 to +34.4) | -10.6 (-40.1 to +18.9) | +144.2 (-59.8 to +348.2) | -14.0 (-51.2 to +23.2) |
+| nights in a nest (share) | 0.20 | 1.00 | +0.40 (-0.28 to +1.08) | +0.60 (-0.08 to +1.28) | 0.00 (-0.88 to +0.88) | 0.00 (0.00 to 0.00) | +0.20 (-0.84 to +1.24) |
+| energy eaten, kcal (guard) | 1612 | 1458 | -6 (-563 to +552) | +209 (-445 to +862) | -706 (-1450 to +38) | +51 (-317 to +419) | -526 (-2013 to +961) |
+| reserves, % of the usual store a day (guard) | -0.20 | -0.25 | -0.05 (-0.57 to +0.47) | +0.34 (-0.58 to +1.25) | -1.13 (-2.09 to -0.16) **differs** | -0.18 (-0.74 to +0.39) | -0.92 (-2.72 to +0.88) |
+| distance, km (guard) | 2.33 | 2.76 | +1.35 (-0.93 to +3.63) | -0.38 (-1.49 to +0.73) | +0.23 (-1.75 to +2.22) | +3.35 (-0.14 to +6.83) | -0.38 (-2.70 to +1.94) |
 
 | Arm | H1 nests kept | H2 switching not doubled (ratio to top) | guard: energy | guard: reserves | guard: distance | does no harm |
 |---|---|---|---|---|---|---|
@@ -96,3 +99,4 @@ The two decode salts: `even-draw-2` minus `even-draw-1`. The rules' re-draws: 0 
 | `even-draw-2` | yes (4 of 5; top 1) | yes (1.04) | yes (+209 (-445 to +862) kcal) | yes (+0.34 (-0.58 to +1.25)) | yes (-0.38 km; limit 0.79) | **yes** |
 | `even-held` | yes (1 of 5; top 1) | yes (0.45) | yes (-706 (-1450 to +38) kcal) | no (-1.13 (-2.09 to -0.16)) | yes (+0.23 km; limit 0.79) | **no** |
 | `even-block` | yes (1 of 5; top 1) | yes (0.83) | yes (+51 (-317 to +419) kcal) | yes (-0.18 (-0.74 to +0.39)) | no (+3.35 km; limit 0.79) | **no** |
+| `even-whole` | yes (2 of 5; top 1) | yes (0.35) | yes (-526 (-2013 to +961) kcal) | yes (-0.92 (-2.72 to +0.88)) | yes (-0.38 km; limit 0.79) | **yes** |
