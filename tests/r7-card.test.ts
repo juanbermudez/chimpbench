@@ -13,7 +13,7 @@ import type { World } from '../src/types';
 import { runBenchSeed, type BenchJob } from '../scripts/lib/bench-run';
 import { animalsView, communityView, focalAfter, focalFinish, focalStart, OBSERVER_ROWS, poolRow, popAfter, popBefore, popFinish, popStart, popStop, SHORT_ROWS, TRUTH_ROWS } from '../scripts/lib/r7-readers';
 import { act3Of, cardFinish, cardStart, cardStep, cardSummary, DAY_TICKS, HALF_HOUR_TICKS, histMean, histN, histQuantile, inNest, taiPersistence, TIMING_ROWS, CARD_LABELS, VISIT_GAP_TICKS } from '../scripts/lib/timing-card';
-import { ARMS, armWorld, salted } from '../scripts/r7-card';
+import { ARMS, armWorld, BURN_IN, burnInRefusal, salted, seedRefusal } from '../scripts/r7-card';
 import { familyOf } from '../scripts/em-sample';
 import { worldHash } from './fixtures/golden';
 
@@ -115,6 +115,28 @@ test('a salt at the fork is rngSalt\'s formula; the arms carry sixteen different
   assert.equal(paramsOf(base).kernelSim, 0, 'the burned-in world is untouched');
   const r = armWorld(base, ARMS['rules-3'], 'P', focal);
   assert.equal(paramsOf(r).kernelSim, 0); assert.ok(r.chimps.every(c => c.controller === 'rules'));
+});
+
+test('the runner refuses a reserved or retired seed however it is named, and a saved burn-in of another seed, length, registry or parameter set', () => {
+  assert.equal(seedRefusal(48, -1), ''); assert.equal(seedRefusal(7, -1), '');
+  assert.match(seedRefusal(21, -1), /development seeds/, 'seed 21 is no longer run without being named as a test seed');
+  assert.equal(seedRefusal(4111, 4111), '', 'a registered test names its seed twice');
+  assert.match(seedRefusal(4111, 4222), /development seeds/);
+  // AGENTS.md: C8 proof, patrol re-tests, C9 proof, the C11 pools, the retired seeds
+  for (const seed of [1111, 1515, 1717, 2626, 707, 1014, 5303, 5707, 7004, 7023, 8101, 9010, 9606, 606, 1616, 7001, 9101]) assert.match(seedRefusal(seed, seed), /reserved or retired/, `seed ${seed}`);
+  assert.match(seedRefusal(4.5, 4.5), /not a seed/);
+  // a fresh field world with the clock moved stands for the saved file (the check reads identity only)
+  const params = { observeV4: 1, menuParity: 1 }, made = createWorld(7, { profile: 'field', params });
+  const saved = (edit: (w: World) => void = () => {}) => { const w = { ...made, tick: BURN_IN * DAY_TICKS, sim: structuredClone((made as unknown as { sim: object }).sim) } as unknown as World; edit(w); return w; };
+  const settings = (w: World) => (w as unknown as { sim: { params: { registry: string; profile: string; overrides: Record<string, number> } } }).sim.params;
+  assert.equal(burnInRefusal(saved(), 7, params), '');
+  assert.equal(burnInRefusal(saved(), 7, { menuParity: 1, observeV4: 1 }), '', 'the order of the overrides does not matter');
+  assert.match(burnInRefusal(saved(), 48, params), /seed 7/);
+  assert.match(burnInRefusal(saved(w => { w.tick -= DAY_TICKS; }), 7, params), /not seed 7 after 30 days/);
+  assert.match(burnInRefusal(saved(w => { settings(w).registry = '0000000000000000'; }), 7, params), /parameter registry/);
+  assert.match(burnInRefusal(saved(), 7, { ...params, kernelNullShare: 0.2 }), /other parameter overrides/);
+  assert.match(burnInRefusal(saved(w => { settings(w).profile = 'compressed'; }), 7, params), /another profile/);
+  assert.equal(settings(made).registry, settings(saved()).registry, 'the world made here was not edited');
 });
 
 // ---------------------------------------------------------------------------------------------------------------------

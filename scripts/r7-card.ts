@@ -19,12 +19,13 @@ import { dirname, resolve } from 'node:path';
 import { taiPoints } from '../src/compare/tai';
 import { records, sharedStrings, sheetRows } from '../src/compare/xlsx';
 import type { SeedValue } from '../src/field/metrics';
-import { paramsOf } from '../src/sim/params';
+import { paramsOf, REGISTRY_HASH } from '../src/sim/params';
 import { mixSeed } from '../src/sim/rng';
 import { index } from '../src/sim/state';
 import { createWorld, tickWorld } from '../src/simulation';
 import type { World } from '../src/types';
 import { worldHash } from '../tests/fixtures/golden';
+import { RESERVED_SEEDS } from './e-run';
 import { focalSet } from './em-loop';
 import { focalAfter, focalFinish, focalStart, popAfter, popBefore, popFinish, popStart, popStop } from './lib/r7-readers';
 import { cardFinish, cardStart, cardStep, DAY_TICKS, taiPersistence, type CardResult } from './lib/timing-card';
@@ -44,6 +45,32 @@ export const ARMS: Record<string, ArmSpec> = {
 
 /** A re-draw: the salt mixed into the stream as rngSalt mixes it at world creation (src/sim/generation.ts). 0 leaves the stream. */
 export function salted(rng: number, salt: number): number { return salt ? mixSeed((rng ^ Math.imul(salt | 0, 0x9e3779b1)) >>> 0) : rng; }
+
+/**
+ * Why a seed may not be run, or '' when it may: the development seeds, or a registered test's own seed named twice
+ * (prereg §9). A reserved or retired seed of AGENTS.md (scripts/e-run.ts RESERVED_SEEDS) is refused however it is named.
+ */
+export function seedRefusal(seed: number, testSeed: number): string {
+  if (!Number.isInteger(seed) || seed < 0) return `--seed ${seed} is not a seed`;
+  if (RESERVED_SEEDS.has(seed)) return `seed ${seed} is reserved or retired (AGENTS.md): it is never run here, also not as a test seed`;
+  if (!DEV_SEEDS.includes(seed) && testSeed !== seed) return `development seeds ${DEV_SEEDS.join(' and ')} only; a registered test names its seed twice (--seed N --test-seed N; docs/staging/r7-prereg.md §9)`;
+  return '';
+}
+
+/**
+ * Why a saved burn-in may not be continued, or '' when it may. The file is named by seed and length only, so a world
+ * made with another parameter registry (any branch that adds or changes a parameter), another profile or other
+ * overrides would otherwise be picked up silently. It cannot see a change of code alone: every arm file records the
+ * burn-in's hash, and the report refuses arms of one seed that do not share it.
+ */
+export function burnInRefusal(base: World, seed: number, params: Record<string, number>): string {
+  const s = (base as unknown as { sim: { params: { registry: string; profile: string; overrides: Record<string, number> } } }).sim.params;
+  const flat = (o: Record<string, number>) => JSON.stringify(Object.keys(o).sort().map(k => [k, o[k]]));
+  if (base.seed !== seed || base.tick !== BURN_IN * DAY_TICKS) return `it is seed ${base.seed} at tick ${base.tick}, not seed ${seed} after ${BURN_IN} days`;
+  if (s.registry !== REGISTRY_HASH) return `it was made with parameter registry ${s.registry}, and this checkout has ${REGISTRY_HASH}`;
+  if (s.profile !== 'field' || flat(s.overrides) !== flat(params)) return 'it was made with another profile or other parameter overrides';
+  return '';
+}
 
 /** The copy an arm runs on: the burned-in world with the arm's switches, its salt, and at unit F the focal animals marked. */
 export function armWorld(base: World, spec: ArmSpec, unit: Unit, focalIds: number[]): World {
@@ -110,7 +137,8 @@ if (process.argv[1]?.endsWith('r7-card.ts')) {
   } else if (cmd === 'run') {
     const seed = +arg('seed', '48'), unit = arg('unit', 'F') as Unit;
     if (unit !== 'F' && unit !== 'P') throw new Error('--unit F | P');
-    if (!DEV_SEEDS.includes(seed) && +arg('test-seed', '-1') !== seed) throw new Error(`development seeds ${DEV_SEEDS.join(' and ')} only; a registered test names its seed twice (--seed N --test-seed N; docs/staging/r7-prereg.md §9)`);
+    const refused = seedRefusal(seed, +arg('test-seed', '-1'));
+    if (refused) throw new Error(refused);
     const days = +arg('days', String(DAYS[unit])), arms = arg('arms', Object.keys(ARMS).join(',')).split(',');
     for (const a of arms) if (!ARMS[a]) throw new Error(`unknown arm ${a}; known: ${Object.keys(ARMS).join(', ')}`);
     const head = git('rev-parse --short HEAD'), dirty = git('status --porcelain') !== '';
@@ -118,7 +146,11 @@ if (process.argv[1]?.endsWith('r7-card.ts')) {
     const params = { ...JSON.parse(readFileSync(resolve(PARAMS_FILE), 'utf8')), observeV4: 1, menuParity: 1 } as Record<string, number>;
     const t0 = Date.now(), cache = resolve(out, `burnin-M6-W50-s${seed}-d${BURN_IN}.json`);
     let base: World;
-    if (existsSync(cache)) base = JSON.parse(readFileSync(cache, 'utf8')) as World;
+    if (existsSync(cache)) {
+      base = JSON.parse(readFileSync(cache, 'utf8')) as World;
+      const stale = burnInRefusal(base, seed, params);
+      if (stale) throw new Error(`the saved burn-in ${cache} cannot be continued: ${stale}. Delete the file to make it again (about half a minute), and re-run every arm of this seed so that all arms share one burn-in`);
+    }
     else {
       base = createWorld(seed, { profile: 'field', params });
       for (let i = 0; i < BURN_IN * DAY_TICKS; i++) tickWorld(base);
