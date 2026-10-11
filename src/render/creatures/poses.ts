@@ -456,10 +456,11 @@ export const CLIPS: Record<string, Clip> = {
       const n = Math.floor(T / GROOM_SITE_S), u = smooth(((T / GROOM_SITE_S) % 1) * GROOM_SITE_S / GROOM_MOVE_S);
       const s0 = groomSite(c, n - 1, c.role), s1 = groomSite(c, n, c.role);
       // The held infant's back is its far side: the point is pushed outward instead of toward the groomer.
-      const [px, py, pz] = partnerPoint(c, s0[0] + (s1[0] - s0[0]) * u, lap ? -0.12 : 0.17 - 0.13 * lying, (s0[1] + (s1[1] - s0[1]) * u) * c.tsize);
-      // Hands lift off the hair while they move to the next site (off = +1 toward the groomer, -1 away from her).
+      const pp = partnerPoint(c, s0[0] + (s1[0] - s0[0]) * u, lap ? -0.12 : 0.17 - 0.13 * lying, (s0[1] + (s1[1] - s0[1]) * u) * c.tsize);
+      // Hands lift off the hair while they move to the next site (off: toward the groomer, or away from her in the
+      // lap variant); len is the stroke length. The point is read out of partnerPoint's shared buffer at once.
       const hop = sin(Math.PI * u) * (u < 1 ? 0.05 : 0), off = lap ? -0.6 : 1, len = lap ? 0.045 : 0.07;
-      const gx = px, gy = py + lying * 0.1 * c.tsize + hop * lying, gz = pz - hop * (1 - lying) * off;
+      const gx = pp[0], gy = pp[1] + lying * 0.1 * c.tsize + hop * lying, gz = pp[2] - hop * (1 - lying) * off;
       // Comb stroke: a slow pull through the hair (down a seated back, along a lying body), a quick return off the hair.
       const st = (T * 1.5) % 1, pull = st < 0.72 ? smooth(st / 0.72) : 1 - smooth((st - 0.72) / 0.28), back = st < 0.72 ? 0 : sin(Math.PI * (st - 0.72) / 0.28);
       const P = 6.5 + 4 * c.seed, m = (T + c.seed * 3) % P;
