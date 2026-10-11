@@ -7,7 +7,7 @@ import { bindSoundSettings, soundSettingsHtml } from './sound';
 // Settings dialog: render quality, frame-rate cap, biological aging mode, reseed, export, guide, shortcuts.
 
 export const SHORTCUTS: [string, string][] = [
-  ['Space', 'Play / pause'], ['1 – 7', 'Speed presets (1 is real time)'], ['F', 'Focus camera on selected'], ['C', 'Close view'], ['V', 'Cinematic view'],
+  ['Space', 'Play / pause'], ['1 – 8', 'Speed presets (1 is real time)'], ['F', 'Focus camera on selected'], ['C', 'Close view'], ['V', 'Cinematic view'],
   ['T', 'Society (right sidebar)'], ['E', 'Field experiments (right sidebar)'], ['M', 'Decision model (right sidebar)'], ['L', 'Toggle labels'], ['S', 'Sound on / off'], ['B', 'Show / hide the field log'], ['⇧ B', 'Show / hide the right sidebar'], ['I', 'Collapse / expand the chimp panel'], ['[  ]', 'Previous / next in community'], ['Esc', 'Back to the communities · close overlays'],
 ];
 
