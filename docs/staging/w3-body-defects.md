@@ -30,9 +30,10 @@ below). So the eye was drawn at about a third of its strength and two thirds of 
 adult that is dark skin under a glossy dark iris, which reads as an eye. On an infant it is pale pink skin, which reads
 as a blank socket. It was not level of detail (the mask is as weak on the finest mesh), not the young brow bone (the
 eyeball is the nearest surface over the iris at every age) and not a closed lid. Painting the eye at full strength
-brings the infants' eyes back (the larger, darker iris of the young went in with the same change, so the two were not
-shown apart). The review's face sheet made it look worse than it was for a second reason found here: two of its twelve
-animals (2 y and 7 y) were caught mid-blink at the usual 11 s capture.
+brings the infants' eyes back on its own: with the young animal's larger, darker iris switched off, the four young
+faces of the sheet all show eyes (`cause-check-gate-only.png` in the output directory). The review's face sheet made
+it look worse than it was for a second reason found here: two of its twelve animals (2 y and 7 y) were caught
+mid-blink at the usual 11 s capture.
 
 ## What changed, by defect
 
@@ -151,7 +152,7 @@ Strategy view: the two field-map shots differ from their before pictures by less
 ## Pictures
 
 Output directory: `/Volumes/Drive/chimpbench/shots/watch-2026-10-10/w3-body-defects/`, with `before/` and `after/`
-holding the same 21 file names (42 pictures). `cap.mjs` (harness), `scene.mjs` (field map, repeatable) and `live.mjs`
+holding the same 21 file names (42 pictures), plus `cause-check-gate-only.png`. `cap.mjs` (harness), `scene.mjs` (field map, repeatable) and `live.mjs`
 (the running app) reproduce them; `probes/` holds the three readout scripts and `tables.py`.
 
 | File | Framing | What to look at |
