@@ -418,6 +418,10 @@ test('the registered rules: no harm, what a decode is for, and the four statemen
   // rule 2 i reads only nests and switching: holding that passes both and fails the energy guard is "needed" while "neither helps" also reads yes
   v = verdicts({ top, draw: wild, held: rows((a, d) => ({ trips: 4 + wob(a, d) + a / 20, changes: 36 + a / 10, flips: 3, kcalFormula: 1400 - a })), block: null }, { top: top3, draw: third, held: held3same, block: null }, rules, noise);
   assert.deepEqual([v.heldNeeded, v.neither, v.twoAndThree, v.hHeld[0]!.holds], [true, true, true, false], 'the two statements contradict each other: the report names it and no standard');
+  // the other way to the same contradiction: holding switches less than drawing while neither moves the first adapter's trips
+  const still = (changes: (a: number) => number, flips: number, trips = 2) => rows((a, d) => ({ trips: trips + wob(a, d), changes: changes(a), flips }));
+  v = verdicts({ top, draw: still(a => 36 + a / 10, 12), held: still(a => 30 + a / 12, 3), block: null }, { top: top3, draw: still(a => 38 + a / 10, 12, 14), held: still(a => 31 + a / 12, 3, 14), block: null }, rules, noise);
+  assert.deepEqual([v.act.ii, v.heldNeeded, v.neither, v.twoAndThree], [true, true, true, true]);
   v = verdicts({ top, draw: wild, held: wild, block: null }, { top: top3, draw: third, held: held3same, block: null }, rules, noise);
   assert.deepEqual([v.drawStandard, v.heldNeeded, v.neither], [false, false, true], 'both harm: the top pick stays');
   v = verdicts({ top, draw: top, held: top, block: null }, { top: top3, draw: top3, held: top3, block: null }, rules, noise);
