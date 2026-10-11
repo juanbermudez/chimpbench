@@ -580,11 +580,11 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     if (!c.alive || c.action === 'dead') return ['dead', 0, null];
     const act = c.action;
     const high = a.elevated > 0.5;
-    // W1: an animal in a crown is drawn at its place on a branch whatever its sim position does there (placeGrounded),
-    // so sideways movement at height takes no locomotion clip: it would walk or gallop on the spot (players at 12 m
-    // were drawn galloping). It keeps the clip of what it is doing; climbing keeps its own. A clamber clip that moves
-    // through the crown is a later stage.
-    const still = !moving || (high && act !== 'climb');
+    // W1: an animal above 0.3 m is drawn at its place on a branch whatever its sim position does there (placeGrounded
+    // uses the same height), so sideways movement at height takes no locomotion clip: it would walk or gallop on the
+    // spot (players at 12 m were drawn galloping). It keeps the clip of what it is doing; climbing keeps its own. A
+    // clamber clip that moves through the crown is a later stage.
+    const still = !moving || (a.y > 0.3 && act !== 'climb');
     const recv = receiver.get(a.id);
     if (recv && recv.clipB && still) return [recv.clipB, recv.roleB, null];
     if (a.pairClip && still) return [a.pairClip, a.role, null];
