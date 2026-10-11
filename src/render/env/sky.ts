@@ -127,7 +127,7 @@ export function createSky(uniforms: SharedUniforms, owner: Owner): SkyRig {
       vec3 col = texColor * uSkyGain;
       // The massif's cover of this pixel (one pixel of soft edge); it hides the moon and takes the sun's disc out below.
       float dirTan = direction.y / max( length( direction.xz ), 1e-4 ), dirFw = max( fwidth( dirTan ), 1e-6 );
-      float ridge = ridgeTan( direction );
+      float ridge = dirTan < 0.1 ? ridgeTan( direction ) : -1.0;   // the ridge never passes 5 degrees: skip the rest of the sky
       float massif = ridge < 0.0 ? 0.0 : uMountain * uDome * smoothstep( - dirFw, dirFw, ridge - dirTan );
       // Night: deep blue gradient, stars, a faint Milky Way band and the moon with its lit limb toward the sun.
       float up = max( direction.y, 0.0 );
