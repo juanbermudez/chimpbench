@@ -285,8 +285,8 @@ launch's and prints the count. All 64 runs are made again at one head, so every 
 ## 13. Results (iteration 2; 10 October 2026, 20:08 to 21:00 EDT)
 
 Every number below is copied from [r7-numbers.md](r7-numbers.md), which `scripts/r7-report.ts` generates from the runs'
-JSON. 64 runs, all from a clean tree: unit F and unit P of seed 48 at head b19bc8f, unit P of seed 7 at 7ca84d2 (the
-commit between them changes only the report script). The burn-in hashes (4b5cc61f8ad797e0 for seed 48,
+JSON. 64 runs, all from a clean tree: unit F (both seeds) and unit P of seed 48 at head b19bc8f, unit P of seed 7 at
+7ca84d2 (the commit between them changes only the report script). The burn-in hashes (4b5cc61f8ad797e0 for seed 48,
 d9604068dec350b1 for seed 7) are those of the R5 pilot, so these are the worlds and the ten animals the first engine
 test used. All 32 unit-F runs end on the world hash they ended on in iteration 1's stopped launch. Processor time:
 301 s for unit F, 2,773 s for unit P. No model was loaded.
