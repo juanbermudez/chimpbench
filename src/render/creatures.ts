@@ -28,7 +28,7 @@ import { TICK_HOURS, advancePlayback, createPlayback, createTrack, pushSample, r
 import { ABOUT_MAX_RATE, BODY_SIGN, PATH_MOVING_MPS, Way, actChanged, createActTrack, pushAct, readBody, readDrawn, type ActTrack, type BodyState, type DrawnAct } from './creatures/drawn';
 import {
   DEPART_RADIUS_M, DEPART_WINDOW_TICKS, Gaze, Phase, THINK_SCAN_S, beatPhase, createBeat, deliberating, departFirst, departFollowers, departNearestFollower, departRank, firstMove,
-  gazeFor, lateTarget,
+  LATE_MAX_TICKS, gazeFor, lateTarget, staggerGap, steppedAlready,
   realSeconds, restedBefore, runnerUp, startTime, stepLate, type Beat,
 } from './creatures/beat';
 import { Posture, intention, postureOf } from './creatures/intention';
@@ -847,7 +847,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   /** A new act: where its target and the runner-up are, and what departure it may be part of. */
   function startBeat(a: Anim) {
     const c = a.chimp, b = a.beat, sign = BODY_SIGN[c.action];
-    b.since = a.acts.since; b.phase = Phase.none; b.gaze = Gaze.none; b.moveT = Infinity; b.fromRest = true; b.up = false;
+    b.since = a.acts.since; b.phase = Phase.none; b.gaze = Gaze.none; b.moveT = Infinity; b.own = steppedAlready(c.actionTime); b.fromRest = true; b.up = false; b.looked = false;
     b.key = -1; b.rank = 0; b.first = -1; b.followers = 0; b.backId = -1; b.goneFor = NaN; b.waiting = false; b.goalKind = 0; b.altKind = 0;
     // Urgent and pose-only acts (a charge, a call) are never waited for: no beat.
     if (!(b.since > -Infinity) || sign === 'any' || !c.alive) { b.since = -Infinity; return; }
@@ -886,7 +886,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       if (!(b.since > -Infinity)) continue;
       if (!live || !c.alive || a.carry !== 0 || rt - a.late > b.since + BEAT_KEEP_TICKS * TICK_HOURS) { b.since = -Infinity; b.key = -1; continue; }
       if (!(b.moveT < Infinity)) {
-        b.moveT = firstMove(a.track, b.since, MOVE_MPS);
+        b.moveT = firstMove(a.track, b.since, MOVE_MPS, b.own);
         if (b.moveT < Infinity) {
           b.fromRest = restedBefore(a.track, b.moveT, MOVE_MPS);
           // No target to look at (a trip home, a rest somewhere else): it looks where its first step goes.
@@ -916,13 +916,23 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       if (b.since > -Infinity && b.rank > 0 && b.first >= 0) { const f = anims.get(b.first); if (f && f.beat.since > -Infinity) target = lateTarget(b.rank, b.moveT, f.beat.moveT, rt, rate); }
       a.late = step < 0.5 ? stepLate(a.late, target, step) : 0;
       sampleSmooth(a.track, rt - a.late, jump2);
-      if (b.since > -Infinity) updateBeat(a, rt - a.late, rate, dt); else { b.phase = Phase.none; b.gaze = Gaze.none; b.waiting = false; }
+      if (b.since > -Infinity) updateBeat(a, rt, rt - a.late, rate, dt); else { b.phase = Phase.none; b.gaze = Gaze.none; b.waiting = false; }
     }
   }
   /** The part of the beat playing now and where the gaze goes for it (stylizations: beat.ts). */
-  function updateBeat(a: Anim, rtA: number, rate: number, dt: number) {
+  function updateBeat(a: Anim, rt: number, rtA: number, rate: number, dt: number) {
     const b = a.beat, c = a.chimp, go = BODY_SIGN[c.action] === 'go';
-    b.phase = beatPhase(realSeconds(startTime(b.since, b.moveT, b.fromRest) - rtA, rate), b.altKind !== 0);
+    // The countdown runs to the moment the body starts. For a follower of a departure that is its place in the order
+    // after the first mover's start (at the latest when its lateness runs out), on the common drawn time: its own
+    // time stands still while it is held, and a countdown on that would hold it in its intention movement for as long.
+    let start = startTime(b.since, b.moveT, b.fromRest), clock = rtA;
+    if (b.rank > 0 && b.first >= 0 && b.moveT < Infinity) {
+      const f = anims.get(b.first);
+      if (f && f.beat.since > -Infinity) { const turn = Math.min(f.beat.moveT + b.rank * staggerGap(rate), b.moveT + LATE_MAX_TICKS * TICK_HOURS); if (turn > start) { start = turn; clock = rt; } }
+    }
+    // The runner-up is glanced at once per act: an animal that then waits and counts down again goes straight to its goal.
+    b.phase = beatPhase(realSeconds(start - clock, rate), b.altKind !== 0 && !b.looked);
+    if (b.phase >= Phase.look) b.looked = true;
     // A trip the simulation has not started moving, once the body's own time has reached it: it stands and waits
     // (the simulation's initiator waits up to a minute for company before it goes or gives up).
     const waiting = go && !(b.moveT < Infinity) && rtA >= b.since, gone = b.moveT < Infinity && rtA >= b.moveT;
@@ -933,7 +943,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     if (waiting && (b.backId < 0 || !anims.has(b.backId))) b.backId = nearestMate(a);
     b.gaze = gazeFor(b.phase, b.goalKind !== 0, waiting, gone, go && b.rank === 0 && b.followers > 0, b.backId >= 0, b.goneFor);
     // A follower held back for the order watches the first mover until that one has set off, then turns to the goal.
-    if (b.rank > 0 && a.late > 1e-5 && !gone && b.first >= 0) { const f = anims.get(b.first); if (f && !(f.beat.moveT < Infinity && rtA + a.late >= f.beat.moveT)) { b.backId = b.first; b.gaze = Gaze.back; } }
+    if (b.rank > 0 && a.late > 1e-5 && !gone && b.first >= 0 && b.phase === Phase.none) { const f = anims.get(b.first); if (f && !(f.beat.moveT < Infinity && rt >= f.beat.moveT)) { b.backId = b.first; b.gaze = Gaze.back; } }
   }
   /** The nearest animal of its own party within 25 m (a waiting initiator's companions), or -1. */
   function nearestMate(a: Anim): number {
@@ -987,6 +997,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     // Stage W6: the simulation turns an animal to its new goal in the tick it decides. The drawn body, which has not
     // set off, keeps facing as it did and turns in its intention movement (or once it stands waiting), not two ticks early.
     if (a.way === Way.soon && a.headingTarget == null && !(a.beat.phase === Phase.intent || a.beat.waiting)) target = a.heading;
+    // An initiator standing and waiting for company faces where it means to go (the simulation turns it only with its first step).
+    else if (a.beat.waiting && a.headingTarget == null && a.elevated < 0.5 && beatGoal(a, Gaze.goal)) target = Math.atan2(GOAL[0] - a.x, GOAL[2] - a.z);
     if (turnSpeed > 0.25 * a.morph.size && pathSpeed > 0.05 * a.morph.size) target = Math.atan2(tr.vx, tr.vz);
     const before = a.heading;
     // The path is C1, so a moving animal can follow its direction closely (less body-vs-path lag in curves).

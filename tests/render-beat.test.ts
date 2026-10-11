@@ -4,7 +4,7 @@ import type { Candidate } from '../src/types';
 import {
   BACK_AFTER_S, BACK_FOR_S, BEAT_S, CATCH_UP, DEPART_RADIUS_M, DEPART_WINDOW_TICKS, GLANCE_S, Gaze, INTENT_S, LATE_MAX_TICKS, LOOK_S, Phase, RUNNER_MARGIN, STAGGER_ECO_S,
   STAGGER_REAL_S, THINK_SCAN_S, WAIT_CYCLE_S, beatPhase, choseBefore, deliberating, departFirst, departFollowers, departNearestFollower, departRank, firstMove, gazeFor, lateTarget,
-  looksBack, realSeconds, restedBefore, runnerUp, staggerGap, startTime, stepLate, waitLooksBack,
+  looksBack, realSeconds, restedBefore, runnerUp, staggerGap, startTime, stepLate, steppedAlready, waitLooksBack,
 } from '../src/render/creatures/beat';
 import { PATH_MOVING_MPS } from '../src/render/creatures/drawn';
 import { TICK_HOURS, createTrack, pushSample } from '../src/render/creatures/playback';
@@ -102,6 +102,14 @@ test('when the body starts: at the simulation\'s first step if it sets off from 
   // A feeding creep is not a start; a climb down is.
   assert.equal(firstMove(path([[0, 0], [0, 0], [0.5, 0], [0.5, 0]]), since, PATH_MOVING_MPS), Infinity);
   assert.equal(firstMove(path([[0, 0], [0, 0], [0, -4.6], [0, -4.6]]), since, PATH_MOVING_MPS), since - T);
+  // The act was chosen at the end of a tick, as the act before it finished its last stride: the step that ends at
+  // `since` was the old act's (Chimp.actionTime is still 0 in the state that first shows the new one), and the
+  // initiator then stands and waits for company.
+  assert.equal(steppedAlready(15), true); assert.equal(steppedAlready(0), false); assert.equal(steppedAlready(undefined), false); assert.equal(steppedAlready(45), true);
+  const tail = path([[walk, 0], [walk, 0], [walk, 0], [0, 0]]);
+  assert.equal(firstMove(tail, since, PATH_MOVING_MPS, true), since - T, 'read as its own step it would count as gone');
+  assert.equal(firstMove(tail, since, PATH_MOVING_MPS, false), Infinity, 'it has not moved in the new act: it waits');
+  assert.equal(firstMove(nextTick, since, PATH_MOVING_MPS, false), since);
   // Movement before the act is not the act's: only steps that end at or after `since` count.
   const arrived = path([[walk, 0], [walk, 0], [0, 0], [0, 0]]);
   assert.equal(firstMove(arrived, since, PATH_MOVING_MPS), Infinity, 'it walked in before the act and has stood since');

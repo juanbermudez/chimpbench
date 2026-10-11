@@ -56,18 +56,29 @@ export function runnerUp(list: readonly Candidate[], action: Action, targetId: n
   return best;
 }
 
+/** One simulation tick in ecological seconds (src/sim/state.ts TICK_SECONDS). */
+const TICK_S = 15;
+/**
+ * True when the state that first shows an act already holds the act's first step. The simulation lets an animal
+ * decide and then act within one tick, so an act chosen at the start of its turn has run for a tick when it is first
+ * seen (Chimp.actionTime, ecological seconds in the act, is then a tick long); one chosen at the end of a tick, when
+ * the act before it finished, or applied between two ticks by the decision loop, has not run yet (actionTime 0).
+ */
+export function steppedAlready(actionTime: number | undefined): boolean { return (actionTime ?? 0) >= TICK_S - 1e-6; }
+
 /**
  * When the simulation first moves the animal in an act that was first seen at `since`: the time (ecological hours) of
- * the older state of the first step of its position record that ends at or after `since` and is faster than minMps
- * (m per ecological second, in three dimensions). The simulation decides and takes the first step in one tick, so the
- * step that ends at `since` is the act's first. Infinity when no such step is recorded yet: the animal waits.
+ * the older state of the first step of its position record that belongs to the act and is faster than minMps (m per
+ * ecological second, in three dimensions). own: the step that ends at `since` is already the act's (steppedAlready);
+ * otherwise that step was the act before finishing and only later steps count. Infinity when no such step is
+ * recorded yet: the animal waits.
  * The drawn path (motion.ts) leaves a state it rested in with zero velocity, so the body starts exactly then.
  */
-export function firstMove(tr: Track, since: number, minMps: number): number {
+export function firstMove(tr: Track, since: number, minMps: number, own = true): number {
   const h = tr.hist;
   for (let k = tr.n - 1; k >= 1; k--) {
     const older = ((tr.head - k + HIST) % HIST) * 4, newer = ((tr.head - k + 1 + HIST) % HIST) * 4;
-    if (h[newer] < since) continue;
+    if (own ? h[newer] < since : h[newer] <= since) continue;
     const far = minMps * (h[newer] - h[older]) * 3600;
     const dx = h[newer + 1] - h[older + 1], dy = h[newer + 2] - h[older + 2], dz = h[newer + 3] - h[older + 3];
     if (far > 0 && dx * dx + dy * dy + dz * dz > far * far) return h[older];
@@ -231,8 +242,9 @@ export interface Beat {
   goalKind: number; goalId: number; gx: number; gy: number; gz: number;
   /** The runner-up glanced at, the same way. */
   altKind: number; altId: number; ax: number; ay: number; az: number;
-  /** When the simulation first moves the animal in this act (firstMove; Infinity: not yet). */
-  moveT: number;
+  /** When the simulation first moves the animal in this act (firstMove; Infinity: not yet), and whether the state
+   * that first showed the act already held its first step (steppedAlready). */
+  moveT: number; own: boolean;
   /** The departure: its key (-1 none), this animal's place in it, the first mover's id, how many chose after it and
    * the id of the one it looks back at (-1 none). */
   key: number; rank: number; first: number; followers: number; backId: number;
@@ -242,7 +254,9 @@ export interface Beat {
   fromRest: boolean;
   /** A lying or sleeping body has sat up for this beat and stays up until the act starts. */
   up: boolean;
+  /** The gaze has reached the chosen target once in this beat: the runner-up is not glanced at again. */
+  looked: boolean;
 }
 export function createBeat(): Beat {
-  return { since: -Infinity, phase: 0, gaze: 0, goalKind: 0, goalId: -1, gx: 0, gy: 0, gz: 0, altKind: 0, altId: -1, ax: 0, ay: 0, az: 0, moveT: Infinity, key: -1, rank: 0, first: -1, followers: 0, backId: -1, goneFor: NaN, waiting: false, fromRest: false, up: false };
+  return { since: -Infinity, phase: 0, gaze: 0, goalKind: 0, goalId: -1, gx: 0, gy: 0, gz: 0, altKind: 0, altId: -1, ax: 0, ay: 0, az: 0, moveT: Infinity, own: true, key: -1, rank: 0, first: -1, followers: 0, backId: -1, goneFor: NaN, waiting: false, fromRest: false, up: false, looked: false };
 }

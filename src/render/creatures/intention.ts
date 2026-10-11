@@ -41,7 +41,7 @@ export function intention(w: Pw, posture: number, k: number, yaw: number, rise: 
     // go down in front (toward the goal's side), the head stays up on the goal.
     v[PI.root + 1] += 0.1 * k; v[PI.root + 2] += 0.07 * k;
     w.a(B.hips, 0.6 * k).a(B.spine, 0.1 * k, turn * 0.35).a(B.chest, 0.06 * k, turn * 0.55).a(B.neck, -0.3 * k).a(B.head, -0.16 * k);
-    for (const l of [LIMB.armL, LIMB.armR]) {
+    for (let l = LIMB.armL; l <= LIMB.armR; l++) {   // the two arms (LIMB order: left, right); no array per call
       const o = PI.ik + l * 5, sx = l === LIMB.armL ? 1 : -1;
       v[o] += (sx * 0.2 + Math.sin(turn) * 0.12 - v[o]) * k; v[o + 1] += (0.13 - v[o + 1]) * k; v[o + 2] += (0.36 - v[o + 2]) * k;
       v[o + 3] = Math.max(v[o + 3], k);
