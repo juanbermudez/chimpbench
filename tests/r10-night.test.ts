@@ -8,7 +8,7 @@ import { glinerKernel } from '../scripts/lib/kernels';
 import { buildStateOnlyQuestion } from '../scripts/lib/packet-state';
 import { decode, decodedKernel, decodeRefusal } from '../scripts/lib/r10-decode';
 import { BESIDE, replayReport, replayRun, SHORT_ROWS, type FieldReadout } from '../scripts/lib/r10-read';
-import { ancestors, comparable, DAY, DayFiles, dayName, diskRefusal, isDriven, keyOf, listCkpts, meterStart, MIN_AGE, modelProcesses, newestCkpt, pruneCkpts, readCkpt, readLines, receiptKernel, RECEIPT_SCHEMA, runDay, RunStopped, setAside, STOP, stopCheck, warmedWorker,
+import { ancestors, comparable, DAY, DayFiles, dayName, diskRefusal, isDriven, keyOf, listCkpts, meterStart, MIN_AGE, modelProcesses, newestCkpt, pruneCkpts, readCkpt, readLines, receiptKernel, RECEIPT_SCHEMA, runDay, runningModelProcesses, RunStopped, setAside, STOP, stopCheck, venvLaunchers, WARM_UP_LIMIT_MS, warmedWorker,
   writeCkpt, writeRegistry, type Arrival, type AskLine, type DaySummary, type Engine, type HeldLine, type Line, type Registry, type Row, type Tap } from '../scripts/lib/r10-run';
 import { resultName } from '../scripts/r10-night';
 import { ARMS, armWorld, GuardedScorer } from '../scripts/r5-pilot';
@@ -220,6 +220,13 @@ test('the null kernel resumes exactly too; a signal ends the day cleanly; kernel
   let n = 0;
   await assert.rejects(runDay(start('null-gate'), nullKernel, { ticks: 700, stop: () => ++n === 50 ? 'signal SIGTERM' : '' }), (err: unknown) => err instanceof RunStopped && err.reason === 'signal SIGTERM');
   assert.equal(n, 50);
+  // a real signal reaches the process only when the event loop turns, and this kernel answers without waiting: the day
+  // gives the loop one turn per tick, so the request is seen within a few ticks (without the turn the 700 ticks would run out)
+  let signalled = '', looked = 0;
+  process.once('SIGUSR2', () => { signalled = 'signal SIGUSR2'; });
+  process.kill(process.pid, 'SIGUSR2');
+  await assert.rejects(runDay(start('null-gate'), nullKernel, { ticks: 700, stop: () => { looked++; return signalled; } }), (err: unknown) => err instanceof RunStopped && err.reason === 'signal SIGUSR2');
+  assert.ok(looked >= 1 && looked < 50, `the signal was seen after ${looked} ticks`);
   // a kernel that only fails: the rules settle each ask, and after the limit the run ends rather than go on as a rules run
   const dead: Kernel = { id: 'gliner', label: 'dead worker', decide() { throw new Error('worker gone'); } }, c = collect();
   await assert.rejects(runDay(start('null-gate'), dead, { ticks: 700, sink: c.sink, maxErrorsInRow: 30 }), (err: unknown) => err instanceof RunStopped && /^\d+ kernel errors in a row \(the last: kernel-error: worker gone\)/.test(err.reason));
@@ -241,6 +248,12 @@ test('the null kernel resumes exactly too; a signal ends the day cleanly; kernel
   await assert.rejects(warmedWorker(fake(false), 'r4-rules-state', {}, 3, () => {})(), /could not answer a warm-up packet with adapter "r4-rules-state": no such adapter/);
   await assert.rejects(warmedWorker(fake(true), 'r4-rules-state', {}, 5, () => {})(), /does not fit its menu of 5/);
   assert.equal(calls.filter(c => c === 'stop').length, 2, 'a worker that fails its warm-up is stopped');
+  // a worker that hangs on its warm-up packet (a model that never finishes loading) is stopped at the limit and the
+  // start fails with a line in the log, instead of holding the night with no one watching
+  const hung = async () => ({ stop() { calls.push('stop'); }, score: () => new Promise<number[][]>(() => {}) }), t0 = Date.now();
+  await assert.rejects(warmedWorker(hung, 'r4-rules-state', {}, 3, m => said.push(m), 40)(), /could not answer a warm-up packet with adapter "r4-rules-state": no answer in 40 ms/);
+  assert.ok(Date.now() - t0 < 5000); assert.equal(calls.filter(c => c === 'stop').length, 3); assert.match(said[said.length - 1], /^worker not warm after \d+ s and stopped: .*no answer in 40 ms/);
+  assert.equal(WARM_UP_LIMIT_MS, 600_000, 'ten minutes for a real worker: about four times the slowest load measured');
 });
 
 test('the replay of a run folder reproduces every day, reads the run through the observer and steps a tap; a damaged receipt file is caught', async () => {
@@ -351,6 +364,21 @@ test('the refusals: a reserved seed, low disk, another model process; the names 
   assert.deepEqual(modelProcesses(ps, [101], '/custom/env/bin/python').map(p => p.pid), [103, 104, 106, 111], 'the configured Decide Python counts whatever it runs; a listed pid is left out');
   assert.deepEqual(ancestors(ps, 107), [107, 108, 109]); assert.deepEqual(ancestors(ps, 103), [103, 102]);
   assert.deepEqual(modelProcesses('', [], ''), []);
+  // the process list as macOS gives it (this machine, 10 October 2026): an environment's bin/python starts again as the
+  // framework's binary, so the program's path names neither the environment nor MGOGO_DECIDE_PYTHON; the path it was
+  // started as is in its environment (ps -E), and counts
+  const framework = '/opt/homebrew/Cellar/python@3.12/3.12.12_1/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python', xcode = '/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Resources/Python.app/Contents/MacOS/Python';
+  const mac = [`  201     1 ${framework} -B r8_tokens.py --in x.jsonl`, `  202     1 ${xcode} /tmp/tool.py`, `  203     1 ${framework} -m http.server`, `  204     1 ${framework} -B worker.py --device mps`, '  205     1 /bin/zsh -c caffeinate -i tsx scripts/r10-night.ts run'].join('\n');
+  const macEnv = [`  201 ${framework} -B r8_tokens.py --in x.jsonl PATH=/usr/bin HF_HOME=/Volumes/Drive/chimpbench/hf-cache __PYVENV_LAUNCHER__=/Volumes/Drive/chimpbench/decide-env/bin/python PWD=/x`, `  202 ${xcode} /tmp/tool.py __PYVENV_LAUNCHER__=/Applications/Xcode.app/Contents/Developer/usr/bin/python3`,
+    `  203 ${framework} -m http.server PATH=/usr/bin __PYVENV_LAUNCHER__=/custom/env/bin/python`, `  204 ${framework} -B worker.py --device mps PATH=/usr/bin`, '  205 /bin/zsh -c caffeinate -i tsx scripts/r10-night.ts run MGOGO_DECIDE_PYTHON=/Volumes/Drive/chimpbench/decide-env/bin/python', ''].join('\n');
+  const started = venvLaunchers(macEnv);
+  assert.deepEqual([...started], [[201, '/Volumes/Drive/chimpbench/decide-env/bin/python'], [202, '/Applications/Xcode.app/Contents/Developer/usr/bin/python3'], [203, '/custom/env/bin/python']]);
+  assert.deepEqual(modelProcesses(mac, [], '').map(p => p.pid), [204], 'by the program\'s path alone the Decide environment\'s interpreter is not seen: only a script name is');
+  assert.deepEqual(modelProcesses(mac, [], '', started).map(p => p.pid), [201, 204], 'with the path it was started as, it is; another environment\'s Python and a shell that only names the variable are not');
+  assert.deepEqual(modelProcesses(mac, [], '/custom/env/bin/python', started).map(p => p.pid), [201, 203, 204]);
+  assert.match(modelProcesses(mac, [], '', started)[0].command, /r8_tokens\.py.*\(started as \/Volumes\/Drive\/chimpbench\/decide-env\/bin\/python\)$/, 'the refusal names what the process runs and the environment it belongs to');
+  // the real process list of this machine can be read (the two ps calls and their flags), whatever is running
+  if (process.platform === 'darwin') assert.ok(runningModelProcesses().every(p => Number.isInteger(p.pid) && p.pid !== process.pid && p.command.length > 0));
   assert.equal(resultName('gliner', 'r4-rules-state'), 'rules-taught model on a rules menu'); assert.equal(resultName('gliner', 'r4c-rules-state'), 'rules-taught model on a rules menu');
   assert.equal(resultName('gliner', 'base'), 'untuned model on a rules menu'); assert.ok(!/model-driven/i.test(['rules', 'argmax', 'null', 'gliner'].map(k => resultName(k, 'r4-field-groom')).join()));
   // a receipt kernel answers from the log and counts what it cannot find

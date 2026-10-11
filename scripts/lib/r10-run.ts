@@ -337,8 +337,14 @@ export async function runDay(e: Engine, kernel: Kernel | null, o: DayOpts = {}):
     meterTick(w, st);
     for (const tap of o.taps ?? []) tap.tick(w, i, lines);
     if (errorsInRow >= (o.maxErrorsInRow ?? MAX_ERRORS_IN_ROW)) throw new RunStopped(`${errorsInRow} kernel errors in a row (the last: ${Object.keys(fallbacks).filter(f => f.startsWith('kernel-error')).pop() ?? 'kernel-error'})`);
-    const why = o.stop?.();
-    if (why) throw new RunStopped(why);
+    if (o.stop) {
+      // a stop request (a signal) reaches this process only when the event loop turns, and a kernel that answers at once
+      // (the rules arm, the no-model kernels) never leaves the loop's microtasks: without one turn per tick such a run
+      // could not be told to stop at all (about 0.1 s per simulated day for the 5,760 turns)
+      await new Promise<void>(turn => setImmediate(turn));
+      const why = o.stop();
+      if (why) throw new RunStopped(why);
+    }
   }
   const rows = meterDayEnd(w, e.meter, day, !!timed, minAge);
   e.day = day;
@@ -563,16 +569,32 @@ export function diskRefusal(out: string, free: (p: string) => number = freeBytes
  * word of its command), never a mention of these names in the arguments of a shell or an editor: the shell that
  * launches a night has the interpreter's path in its own command line. `ps`: lines of "pid ppid command". `ignore`:
  * pids left out (this process and its ancestors). Pure, so a test can hand it a process list.
+ *
+ * `launchers` (venvLaunchers): the interpreter each Python process was started as. On macOS the process list does not
+ * show it: an environment's `bin/python` is a link to a framework build, which starts again as
+ * `…/Python.framework/…/Python.app/Contents/MacOS/Python`, so the Decide environment's own interpreter is listed under a
+ * path that names neither the environment nor MGOGO_DECIDE_PYTHON (seen on this machine, 10 October 2026: the Homebrew
+ * Cellar's path). The path it was started as is still in its environment, and counts like the program's.
  */
-export function modelProcesses(ps: string, ignore: number[] = [], python = process.env.MGOGO_DECIDE_PYTHON ?? ''): { pid: number; command: string }[] {
-  const out: { pid: number; command: string }[] = [];
+export function modelProcesses(ps: string, ignore: number[] = [], python = process.env.MGOGO_DECIDE_PYTHON ?? '', launchers: ReadonlyMap<number, string> = new Map()): { pid: number; command: string }[] {
+  const out: { pid: number; command: string }[] = [], decideEnv = (path: string) => path.includes('decide-env/') || (python !== '' && path === python);
   for (const line of ps.split('\n')) {
     const m = /^\s*(\d+)\s+(\d+)\s+(\S+)(.*)$/.exec(line);
     if (!m || ignore.includes(+m[1])) continue;
-    const program = m[3], rest = m[4];
+    const program = m[3], rest = m[4], startedAs = launchers.get(+m[1]) ?? '';
     if (!/python[0-9.]*$/i.test(program)) continue;
-    if (program.includes('decide-env/') || (python !== '' && program === python) || /decide_provider|decide_ft|(?:^|[\s/])(?:worker|server|train|train_r4|eval_offline|score_contexts)\.py\b/.test(rest)) out.push({ pid: +m[1], command: `${program}${rest}`.slice(0, 160) });
+    if (decideEnv(program) || decideEnv(startedAs) || /decide_provider|decide_ft|(?:^|[\s/])(?:worker|server|train|train_r4|eval_offline|score_contexts)\.py\b/.test(rest))
+      out.push({ pid: +m[1], command: `${`${program}${rest}`.slice(0, 160)}${startedAs && startedAs !== program ? ` (started as ${startedAs})` : ''}` });
   }
+  return out;
+}
+/**
+ * The interpreter each process was started as, from a process list with the environment (`ps -axEww -o pid=,command=`):
+ * the launcher of a framework Python leaves it in `__PYVENV_LAUNCHER__` before it starts the real binary. Pure.
+ */
+export function venvLaunchers(psWithEnvironment: string): Map<number, string> {
+  const out = new Map<number, string>();
+  for (const line of psWithEnvironment.split('\n')) { const pid = /^\s*(\d+)\s/.exec(line), v = /\s__PYVENV_LAUNCHER__=(\S+)/.exec(line); if (pid && v) out.set(+pid[1], v[1]); }
   return out;
 }
 /** This process and its ancestors, from a "pid ppid command" process list. */
@@ -583,8 +605,15 @@ export function ancestors(ps: string, pid: number): number[] {
   for (let p = parent.get(pid); p !== undefined && p > 1 && !out.includes(p); p = parent.get(p)) out.push(p);
   return out;
 }
+/**
+ * The model processes running now. It throws when the process list cannot be read (the caller refuses to start: a check
+ * that cannot be made is not a check that passed); the lists of a machine shared by several agents run to hundreds of
+ * kilobytes, so the buffer is far above execFileSync's default of 1 MB, past which the call fails.
+ */
 export function runningModelProcesses(): { pid: number; command: string }[] {
-  try { const ps = execFileSync('ps', ['-axo', 'pid=,ppid=,command='], { encoding: 'utf8' }); return modelProcesses(ps, ancestors(ps, process.pid)); } catch { return []; }
+  const read = (args: string[]) => execFileSync('ps', args, { encoding: 'utf8', maxBuffer: 256 << 20 });
+  const ps = read(['-axo', 'pid=,ppid=,command=']);
+  return modelProcesses(ps, ancestors(ps, process.pid), undefined, venvLaunchers(read(['-axEww', '-o', 'pid=,command='])));
 }
 /** Swap in use, MB (macOS `sysctl -n vm.swapusage`); null where it cannot be read. */
 export function swapUsedMB(): number | null {
@@ -592,22 +621,35 @@ export function swapUsedMB(): number | null {
 }
 
 /**
+ * The longest a worker may take over its warm-up packet (design assumption: about four times the slowest model load
+ * measured on this machine, 145 s with 7 GB of swap in use; a load that takes longer than this is treated as hung).
+ */
+export const WARM_UP_LIMIT_MS = 10 * 60_000;
+/**
  * A worker that has answered one real packet before it serves. The worker of the decide-ft harnesses reports "ready"
  * at once and loads the model on its first batch (55 to 145 s measured on this machine), so without this the first ask
  * after every start, and after every replacement in the night, would race the guard's time limit and fall to the
- * rules. `make` starts a worker; the warm-up call is made outside any time limit and its answer is thrown away (it is
- * built from a request no one applies, so the world is not touched). A worker that cannot answer it is stopped and
- * the start fails, loudly, instead of a night of fallbacks.
+ * rules. `make` starts a worker; the warm-up call is made outside the guard's time limit and its answer is thrown away
+ * (it is built from a request no one applies, so the world is not touched). A worker that cannot answer it, or has not
+ * answered within `limitMs`, is stopped and the start fails, loudly, instead of a night of fallbacks or a night spent
+ * waiting on a worker that hangs while it loads (a replacement in the small hours has no one watching it).
  */
-export function warmedWorker<W extends { score(batch: { adapter: string; packet: unknown }[]): Promise<number[][]>; stop(): void }>(make: () => Promise<W>, adapter: string, packet: unknown, options: number, log: (s: string) => void): () => Promise<W> {
+export function warmedWorker<W extends { score(batch: { adapter: string; packet: unknown }[]): Promise<number[][]>; stop(): void }>(make: () => Promise<W>, adapter: string, packet: unknown, options: number, log: (s: string) => void, limitMs = WARM_UP_LIMIT_MS): () => Promise<W> {
   return async () => {
     const w = await make(), t0 = Date.now();
+    let timer: ReturnType<typeof setTimeout> | undefined;
     try {
-      const [p] = await w.score([{ adapter, packet }]);
+      const late = new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error(`no answer in ${limitMs >= 60_000 ? `${Math.round(limitMs / 60_000)} min` : `${limitMs} ms`}`)), limitMs); });
+      const [p] = await Promise.race([w.score([{ adapter, packet }]), late]);
       if (!Array.isArray(p) || p.length !== options || !p.every(v => typeof v === 'number' && Number.isFinite(v))) throw new Error(`the warm-up answer does not fit its menu of ${options} (${JSON.stringify(p)?.slice(0, 120)})`);
       log(`worker warm: the model answered its first packet in ${Math.round((Date.now() - t0) / 1000)} s (the answer is not used)`);
       return w;
-    } catch (error) { w.stop(); throw new Error(`the worker could not answer a warm-up packet with adapter "${adapter}": ${error instanceof Error ? error.message : error}`); }
+    } catch (error) {
+      w.stop();
+      const why = `the worker could not answer a warm-up packet with adapter "${adapter}": ${error instanceof Error ? error.message : error}`;
+      log(`worker not warm after ${Math.round((Date.now() - t0) / 1000)} s and stopped: ${why}`);
+      throw new Error(why);
+    } finally { clearTimeout(timer); }
   };
 }
 

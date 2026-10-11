@@ -163,7 +163,8 @@ async function run(a: Args): Promise<number> {
       if (resuming && reg.adapterSha256 && reg.adapterSha256 !== sha) throw new Refused(`the adapter's weights changed since the run began (${sha.slice(0, 12)}, was ${reg.adapterSha256.slice(0, 12)})`);
       reg.adapterSha256 = sha;
     }
-    const others = runningModelProcesses();
+    let others: ReturnType<typeof runningModelProcesses>;
+    try { others = runningModelProcesses(); } catch (error) { throw new Refused(`the process list could not be read (${error instanceof Error ? error.message.slice(0, 200) : error}): whether another model process is running is not known`); }
     if (others.length) throw new Refused(`another model process is running (${others.map(p => `pid ${p.pid}: ${p.command}`).join(' | ')}): one model process at a time`);
   }
   for (const d of ['', 'ckpt', 'summary']) mkdirSync(resolve(out, d), { recursive: true });
