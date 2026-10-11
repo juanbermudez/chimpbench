@@ -18,13 +18,15 @@ function run(api: Clock, world: import('../src/types').World, speedId: string, f
   return ticks;
 }
 
-test('presets ascend from real time through 1 min/s to 1 day/s and end with max; unknown ids fail loudly', { skip }, () => {
+test('presets ascend from real time through the watching speed and 1 min/s to 1 day/s and end with max; unknown ids fail loudly', { skip }, () => {
   const { SPEED_PRESETS, createClock, setSpeed, formatRate } = clockApi!;
-  assert.deepEqual(SPEED_PRESETS.map(p => p.id), ['rt', '1x', '10x', '1h', '6h', '1d', 'max']);
+  assert.deepEqual(SPEED_PRESETS.map(p => p.id), ['rt', 'watch', '1x', '10x', '1h', '6h', '1d', 'max']);
   assert.equal(SPEED_PRESETS[0].ecoSecondsPerSecond, 1); assert.equal(SPEED_PRESETS[0].label, 'Real time');
-  assert.equal(SPEED_PRESETS[1].ecoSecondsPerSecond, 60); assert.equal(SPEED_PRESETS[1].label, '1×');
-  assert.equal(SPEED_PRESETS[5].ecoSecondsPerSecond, 86_400);
+  assert.equal(SPEED_PRESETS[1].ecoSecondsPerSecond, 4); assert.equal(SPEED_PRESETS[1].label, 'Watch 4×');   // stage W1
+  assert.equal(SPEED_PRESETS[2].ecoSecondsPerSecond, 60); assert.equal(SPEED_PRESETS[2].label, '1×');
+  assert.equal(SPEED_PRESETS[6].ecoSecondsPerSecond, 86_400);
   assert.equal(createClock().speedId, '1x', 'a new clock still starts at 1 min/s');
+  assert.equal(createClock().ecoSecondsPerSecond, 60, 'the watching speed is offered, not the default');
   for (let i = 1; i < SPEED_PRESETS.length; i++) assert.ok(SPEED_PRESETS[i].ecoSecondsPerSecond > SPEED_PRESETS[i - 1].ecoSecondsPerSecond);
   assert.throws(() => setSpeed(createClock(), 'warp'), /Unknown speed/);
   assert.equal(formatRate(60), '1 min/s'); assert.equal(formatRate(21_600), '6 h/s'); assert.equal(formatRate(86_400), '1 day/s');
@@ -57,6 +59,26 @@ test('real time: one 15-s tick per 15 real seconds, smooth sub-tick progress, a 
   const w2 = sim!.createWorld(9);
   for (let i = 0; i < 60 * 20; i++) api.advance(sw, w2, 1 / 60, () => false, () => 0);
   assert.ok(sw.effectiveRate > 0.5 && sw.effectiveRate < 1.5, `steady near 1 s/s right after the switch: ${sw.effectiveRate}`);
+});
+
+test('the watching speed: one tick every 3.75 real seconds, smooth sub-tick progress, the same worlds', { skip }, () => {
+  const api = clockApi!;
+  const world = sim!.createWorld(9), ref = sim!.createWorld(9);
+  const clock = api.createClock(); api.setSpeed(clock, 'watch');
+  assert.equal(clock.effectiveRate, 4, 'the readout starts at the new target');
+  let ticks = 0, frames = 0;
+  const step = () => { ticks += api.advance(clock, world, 1 / 60, () => false, () => 0); frames++; };
+  while (frames < 112) step();                                       // 1.87 s: half a tick
+  assert.equal(ticks, 0);
+  assert.ok(Math.abs(api.subTick(clock) - 0.5) < 0.01, `half a tick accrued after 1.87 s: ${api.subTick(clock)}`);
+  while (frames < 228) step();                                       // just past 3.75 s
+  assert.equal(ticks, 1, 'the first tick lands after 3.75 real seconds');
+  while (frames < 60 * 151) step();                                  // 151 s: forty ticks (the fortieth is due at 150 s)
+  assert.equal(ticks, 40);
+  assert.ok(clock.ticksLastFrame <= 1 && !clock.limited);
+  assert.ok(clock.effectiveRate > 2.5 && clock.effectiveRate < 5.5, `reported rate stays near 4 s/s between ticks: ${clock.effectiveRate}`);
+  for (let i = 0; i < 40; i++) sim!.tickWorld(ref);
+  assert.equal(JSON.stringify(world), JSON.stringify(ref), 'the watching speed changes only how often ticks run, never the world');
 });
 
 test('the same tick count yields identical worlds at 1× and at 1 day/s', { skip }, () => {

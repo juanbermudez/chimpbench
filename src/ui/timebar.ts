@@ -12,6 +12,7 @@ import { modelChipState } from './hud';
 
 export function presetLabel(eco: number, label: string): string {
   if (eco === 1) return 'Real time';
+  if (eco < 60 && label) return label;   // a named pace below 1 min/s (the watching speed); faster presets show their rate
   return Number.isFinite(eco) ? formatRate(eco) : label || 'Max';
 }
 
@@ -56,7 +57,7 @@ export function createTimebar(root: HTMLElement, ctx: Ctx) {
       // Paused shows only "Paused": the smoothed tick rate is still decaying and would read as work being done.
       // Below one tick per second (real time: one 15-s tick every 15 s) a rounded rate would read "0 ticks/s".
       const slow = clock.ecoSecondsPerSecond < TICK_SECONDS && !clock.limited;
-      set(tps, !clock.playing ? '' : slow ? `1 tick / ${Math.round(TICK_SECONDS / clock.ecoSecondsPerSecond)} s` : `${Math.round(clock.ticksPerSecond).toLocaleString()} ticks/s`);
+      set(tps, !clock.playing ? '' : slow ? `1 tick / ${+(TICK_SECONDS / clock.ecoSecondsPerSecond).toFixed(1)} s` : `${Math.round(clock.ticksPerSecond).toLocaleString()} ticks/s`);
       let st = 'ok', text = 'Running · every chimp resolves every tick';
       const target = clock.ecoSecondsPerSecond;
       if (!clock.playing) { st = 'paused'; text = 'Paused · Space to resume'; }

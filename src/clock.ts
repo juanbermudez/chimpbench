@@ -11,6 +11,10 @@ export interface SpeedPreset { id: string; label: string; ecoSecondsPerSecond: n
 export const SPEED_PRESETS: SpeedPreset[] = [
   // Real time: one 15-s tick every 15 real seconds; rendering interpolates between ticks (subTick), so motion is smooth.
   { id: 'rt', label: 'Real time', ecoSecondsPerSecond: 1 },        // 1 s/s
+  // Watching speed (stage W1; the user's decision of 10 October 2026, "a watching speed near 4×"): fast enough to follow
+  // a trip, slow enough that a field-map walk (0.35 m/s) is drawn with feet that grip the ground; the walk is natural
+  // from about 1.3 to 6.5 s/s and time-lapse above about 9 (render/creatures/pace.ts). Design assumption.
+  { id: 'watch', label: 'Watch 4×', ecoSecondsPerSecond: 4 },     // 4 s/s: one tick every 3.75 real seconds
   { id: '1x', label: '1×', ecoSecondsPerSecond: 60 },              // 1 min/s
   { id: '10x', label: '10×', ecoSecondsPerSecond: 600 },           // 10 min/s
   { id: '1h', label: '1 h/s', ecoSecondsPerSecond: 3_600 },
