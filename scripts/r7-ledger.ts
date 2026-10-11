@@ -75,7 +75,7 @@ export interface ArmEntry {
 /** One arm of one set, its seeds pooled. */
 export function armEntry(dir: string, seeds: number[], arm: string, adapterRoots: string[]): ArmEntry | null {
   const animals: AnimalLedger[] = [], per: ArmEntry['perAnimal'] = [], used: number[] = [], heads: string[] = [];
-  let spec: ArmFile['result']['spec'] | null = null, windowMin = 0, receipts = 0, fromReplay = false;
+  let spec: ArmFile['result']['spec'] | null = null, windowMin = 0, receipts = 0, fromReplay = false, gateLogged = false;
   const counters = { animalDays: 0, own: { model: 0, held: 0, rules: 0 }, asked: 0, byModel: 0, heldN: 0, byRules: 0 }, tallies = { points: 0, gateKept: 0, interrupts: 0 as number | null };
   let haveCounters = true;
   for (const seed of seeds) {
@@ -84,7 +84,8 @@ export function armEntry(dir: string, seeds: number[], arm: string, adapterRoots
     const file = JSON.parse(readFileSync(f, 'utf8')) as ArmFile;
     const rs = readFileSync(rf, 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l) as LedgerReceipt);
     spec = file.result.spec; used.push(seed); heads.push(file.head); receipts += rs.length;
-    const info: ArmInfo = { kernel: KERNEL[spec.kernel] ?? 'model', gate: spec.gate === 1, t0: file.burnIn * 24, t1: (file.burnIn + file.days) * 24, focal: file.focal.map(x => x.id) };
+    const info: ArmInfo = { kernel: KERNEL[spec.kernel] ?? 'model', gate: spec.gate === 1, t0: file.burnIn * 24, t1: (file.burnIn + file.days) * 24, focal: file.focal.map(x => x.id), gateLogged: rs.some(r => r.by === 'gate') };
+    if (info.gateLogged) gateLogged = true;
     windowMin = (info.t1 - info.t0) * 60;
     for (const fo of file.focal) { const L = animalLedger(fo.id, rs, info); animals.push(L); per.push({ seed, id: fo.id, cls: fo.cls, lines: linesOf(L) }); }
     // the run's own counters; a run made before they existed takes its replay's (the same world: the hashes are checked equal)
@@ -104,13 +105,13 @@ export function armEntry(dir: string, seeds: number[], arm: string, adapterRoots
   if (!spec) return null;
   const kernel = KERNEL[spec.kernel] ?? 'model', teacher = kernel === 'model' ? teacherOf(spec.adapter, adapterRoots) : '', total = totalOf(animals);
   const all = (m: { waking: number; nest: number; unknown: number }) => m.waking + m.nest + m.unknown, have = haveCounters && counters.animalDays > 0, lines = linesOf(total);
-  const kindTight = have && spec.gate === 1 && lines.wakingMin > 0 ? (() => {
+  const kindTight = have && spec.gate === 1 && !gateLogged && lines.wakingMin > 0 ? (() => {   // a log with gate lines needs no bracket
     // fresh waking minutes = fresh minutes of the day (counter) less the fresh nest minutes (bracketed by the receipts) less the few minutes after a one-kind menu
     const low = Math.max(total.certain.waking, counters.own.model - total.kind.chooser.nest - total.kind.chooser.unknown - all(total.kind['one-kind']));
     const high = Math.min(total.kind.chooser.waking, counters.own.model - total.certain.nest);
     return { low: low / lines.wakingMin, high: Math.max(low, high) / lines.wakingMin };
   })() : null;
-  const minutesCheck = have ? { receipts: all(total.kind.chooser) + all(total.kind['one-kind']), counters: counters.own.model + counters.own.held } : null;
+  const minutesCheck = have ? { receipts: all(total.kind.chooser) + all(total.kind.held) + all(total.kind['one-kind']), counters: counters.own.model + counters.own.held } : null;
   return { arm, kernel, adapter: spec.adapter ?? null, teacher, name: truthfulName(kernel, spec.adapter, teacher), gate: spec.gate === 1, noPick: spec.noPick === 1, seeds: used, animals: animals.length,
     windowMinPerAnimal: windowMin, receipts, heads: [...new Set(heads)], total, lines, perAnimal: per, counters: have ? { ...counters, fromReplay } : null, kindTight, minutesCheck, tallies };
 }
@@ -153,7 +154,8 @@ class Agg {
     const c = r.cuts;
     for (const cut of CUTS) { this.removed[cut] += c.removed[cut].length; if (c.removed[cut].length) this.removedAt[cut]++; for (const o of c.removed[cut]) inc((this.removedFam[cut] ??= {}), o.fam); }
     this.push('offered', c.offered.length); this.push('legal', c.legal.length); this.push('perceived', c.perceived.length); this.push('phased', c.phased.length); this.push('menu', c.menu.length); this.push('widthPossible', c.widthPossible);
-    this.push('targetless', c.targetless);
+    this.push('targetless', c.targetless); this.push('widthOwn', c.widthPossible - c.tripTrees.listed);
+    for (const fam of MENU_FAMS) this.push(`menuFam.${fam}`, c.menu.filter(m => m.fam === fam).length);
     for (const [name, s] of [['feedTrees', c.feedTrees], ['tripTrees', c.tripTrees], ['joinTrees', c.joinTrees], ['waters', c.waters], ['partners', c.partners]] as const) for (const [k, x] of Object.entries(s)) this.push(`${name}.${k}`, x as number);
     this.push('nestTrees.inReach', c.nestTrees.inReach); this.push('nestTrees.offered', c.nestTrees.offered);
     // a real choice of target on the menu: two options of one family with different targets
@@ -169,6 +171,8 @@ class Agg {
       dist: Object.fromEntries(Object.entries(this.v).map(([k, x]) => [k, dist(x)])) as Record<string, Dist> };
   }
 }
+/** Families whose number of options on the menu is kept per decision point. */
+const MENU_FAMS = ['feed', 'food-trip', 'social-move', 'drink', 'rest', 'nest', 'affiliative', 'greet', 'aggression', 'mating', 'call'];
 interface Rec { id: number; adult: boolean; trigger: TickTrigger; perceived: string; why: string; heldAct: string; endedHow: string; phase: string; cuts: CutsAt }
 const ASKED = (why: string) => (ASK_CLASS[why] ?? 'asked: other').startsWith('asked');
 
@@ -278,7 +282,7 @@ const MOST = 0.5;
 export function reportMarkdown(R: ReceiptsLedger | null, taps: TapResult[], V: Valuation | null, paramsForNumbers: Overrides): string {
   const o: string[] = [];
   o.push('# R7 ledger: who decided (generated by `scripts/r7-ledger.ts report`; do not edit)', '');
-  o.push(`Rules and definitions: \`docs/staging/r7-ledger.md\`. Every number below comes from the JSON files of \`scripts/r7-ledger.ts receipts\`, \`scripts/r7-ledger.ts tap\` and \`scripts/valuation-ledger.ts\`${R ? ` (receipts read ${R.date.slice(0, 10)} at ${R.head})` : ''}. No model was run and nothing was fitted.`, '');
+  o.push(`Rules and definitions: \`docs/staging/r7-ledger.md\`. Every number below comes from the JSON files of \`scripts/r7-ledger.ts receipts\`, \`scripts/r7-ledger.ts tap\` and \`scripts/valuation-ledger.ts\`${R ? ` (receipts read ${R.date.slice(0, 16).replace('T', ' ')} UTC at ${R.head})` : ''}. No model was run and nothing was fitted.`, '');
 
   // ---- 1. the four lines -------------------------------------------------------------------------------------------
   if (R) {
@@ -286,7 +290,7 @@ export function reportMarkdown(R: ReceiptsLedger | null, taps: TapResult[], V: V
     o.push('## 1. Today\'s baseline in four lines', '');
     if (ref) {
       const L = ref.lines, c = ref.counters;
-      o.push(`The reference is the ${WHAT[ref.arm] ?? ref.arm} on ${SET_WORDS[std.name] ?? std.name} (seeds ${ref.seeds.join(' and ')}, ${ref.animals} focal animals, ${ref.receipts} receipts). Its truthful name: **${ref.name}**.`, '');
+      o.push(`The reference configuration is the ${WHAT[ref.arm] ?? ref.arm}, on ${SET_WORDS[std.name] ?? std.name} (seeds ${ref.seeds.join(' and ')}, ${ref.animals} focal animals, ${ref.windowMinPerAnimal / 1440} days, ${ref.receipts} receipts). The name it may carry: **${ref.name}**.`, '');
       o.push(`1. **Kind.** The model picked the kind of act from a real choice for **${kindOf(ref)} of waking minutes** (${num(L.wakingMin / ref.animals / (ref.windowMinPerAnimal / 1440), 0)} waking minutes per animal and day by the receipts).${ref.gate ? ` After each such choice the gate holds the act without asking: counting those held minutes too, ${pct(L.kindHigh)} of waking minutes were in a kind the model had picked. The receipts do not log when the gate took over, so the first figure is a bracket${ref.kindTight ? ', closed with the run\'s own counters' : ''} (the receipts alone give ${bracket(L.kindLow, L.kindHigh)}).${c ? ` Over the whole 24 hours those counters give ${pct(sh(c.own.model, c.own.model + c.own.held + c.own.rules))} under a fresh choice, ${pct(sh(c.own.held, c.own.model + c.own.held + c.own.rules))} under an intention the gate held and ${pct(sh(c.own.rules, c.own.model + c.own.held + c.own.rules))} under the rules.` : ''}` : ''}`);
       o.push(`2. **Target.** It picked the target of **${pct(L.target)} of acts** (${ref.total.target.chooser} of ${L.acts}; ${pct(L.targetOfTargeted)} of the ${L.actsWithTarget} acts that have a target). The rest: ${ref.total.target['slot-cap']} acts whose one target was fixed before it saw the menu (the slot cap and the rules' score), ${ref.total.target.none} acts with no target, ${ref.total.target.fallback} set by the rules.`);
       o.push(`3. **Ending.** No ending was its own: no kernel is asked how long to act or when to stop, and the loop set the moment of every ask. At most **${pct(L.left)} of endings** (${ref.total.ending.left} of ${L.endings}) were its choice to leave an act that was still on offer when the loop asked; ${pct(L.gone)} ended with the act no longer on offer (the body, the world or a cut of the menu), ${pct(L.endedByRules)} by the rules. Asked with its act still on offer, it stayed ${pct(L.stayedWhenOffered)} of the time.`);
@@ -302,12 +306,12 @@ export function reportMarkdown(R: ReceiptsLedger | null, taps: TapResult[], V: V
     o.push('A bracket ("x to y") appears for gate arms only: see line 1 above. Per animal the share of waking minutes in a kind the model picked (held minutes included) runs, for the reference, from ' + (ref ? `${pct(Math.min(...ref.perAnimal.map(p => p.lines.kindHigh ?? 1)))} to ${pct(Math.max(...ref.perAnimal.map(p => p.lines.kindHigh ?? 0)))}` : '–') + '.', '');
 
     o.push('### Where the minutes and the acts went (model arms)', '');
-    o.push('| configuration, set | minutes: model, a real choice (waking; nest) | one kind on the menu | rules (fallback) | before the first receipt | acts: target picked by the model | fixed by the slot cap | no target | by the rules | targets it picked, by class |', '|---|---|---|---|---|---|---|---|---|---|');
+    o.push('| configuration, set | minutes after a model choice among kinds (waking; in the nest) | one kind on the menu | rules (fallback) | before the first receipt | acts: target picked by the model | fixed by the slot cap | no target | by the rules | targets it picked, by class |', '|---|---|---|---|---|---|---|---|---|---|');
     for (const s of R.sets) for (const a of s.arms.filter(x => x.kernel === 'model')) {
-      const t = a.total, all = (m: { waking: number; nest: number; unknown: number }) => m.waking + m.nest + m.unknown, day = all(t.kind.chooser) + all(t.kind['one-kind']) + all(t.kind.fallback) + all(t.kind.before);
-      o.push(`| ${WHAT[a.arm] ?? a.arm}, ${s.name} | ${pct(sh(t.kind.chooser.waking, day))}; ${pct(sh(t.kind.chooser.nest, day))} | ${pct(sh(all(t.kind['one-kind']), day), 2)} | ${pct(sh(all(t.kind.fallback), day), 2)} | ${pct(sh(all(t.kind.before), day))} | ${t.target.chooser} | ${t.target['slot-cap']} | ${t.target.none} | ${t.target.fallback} | ${Object.entries(t.targetByClass).filter(([, v]) => v.chooser > 0).map(([k, v]) => `${k} ${v.chooser} of ${v.chooser + v['slot-cap'] + v.fallback}`).join(', ') || 'none'} |`);
+      const t = a.total, all = (m: { waking: number; nest: number; unknown: number }) => m.waking + m.nest + m.unknown, day = all(t.kind.chooser) + all(t.kind.held) + all(t.kind['one-kind']) + all(t.kind.fallback) + all(t.kind.before);
+      o.push(`| ${WHAT[a.arm] ?? a.arm}, ${s.name} | ${pct(sh(t.kind.chooser.waking, day))}; ${pct(sh(t.kind.chooser.nest, day))} | ${pct(sh(all(t.kind['one-kind']), day), 2)} | ${pct(sh(all(t.kind.fallback), day), 2)} | ${pct(sh(all(t.kind.before), day))} | ${t.target.chooser} | ${t.target['slot-cap']} | ${t.target.none} | ${t.target.fallback + t.target.held} | ${Object.entries(t.targetByClass).filter(([, v]) => v.chooser > 0).map(([k, v]) => `${k} ${v.chooser} of ${v.chooser + v['slot-cap'] + v.fallback + v.held}`).join(', ') || 'none'} |`);
     }
-    o.push('', 'Minutes are shares of the whole window (24 hours a day). "Targets it picked, by class": of the acts aimed at a partner, a tree or a water, how many had a second target of the same kind on the menu.', '');
+    o.push('', 'Minutes are shares of the whole window (24 hours a day) and, for a gate arm, include the minutes the gate then held. "Targets it picked, by class": of the acts aimed at a partner, a tree or a call, how many had a second target of the same kind on the menu.', '');
 
     o.push('### What the receipts cannot say', '');
     o.push('| configuration, set | intervals between receipts | of them with a hidden event | hidden events (acts the gate kept or began, interrupts to a waiting animal) | the run\'s own tally: gate kept or began; interrupts | whole day by the run\'s counters: fresh choice; held by the gate; rules | minutes after a kernel answer: receipts against the run\'s counters | line 1 from the receipts alone | endings of acts the receipts did not name |', '|---|---|---|---|---|---|---|---|---|');
@@ -372,8 +376,9 @@ export function reportMarkdown(R: ReceiptsLedger | null, taps: TapResult[], V: V
     o.push('### How wide a menu "by possibility" is', '');
     o.push('One entry per tree in view, per remembered or listed tree out of view, per remembered water and per animal in view, plus the acts without a target that were offered (the ledger\'s own definition: `docs/staging/r7-ledger.md` §4).', '', '| | mean | median, each seed | 90th percentile, each seed | largest, each seed | share above 8 | above 16 | above 24 |', '|---|---|---|---|---|---|---|---|');
     const wide = (label: string, key: string) => o.push(`| ${label} | ${num(pooled('adults', key, d => d.mean), 1)} | ${perSeed('adults', key, d => d.median)} | ${perSeed('adults', key, d => d.p90)} | ${perSeed('adults', key, d => d.max)} | ${pct(pooled('adults', key, d => d.over8))} | ${pct(pooled('adults', key, d => d.over16))} | ${pct(pooled('adults', key, d => d.over24))} |`);
-    wide('the whole menu by possibility', 'widthPossible'); wide('trees in view (feed here or there)', 'feedTrees.inView'); wide('trees a trip could go to (pass the trip conditions)', 'tripTrees.pool');
+    wide('the whole menu by possibility', 'widthPossible'); wide('the same without the community\'s list of trees (the animal\'s own view and memory)', 'widthOwn'); wide('trees in view (feed here or there)', 'feedTrees.inView'); wide('trees a trip could go to (pass the trip conditions)', 'tripTrees.pool');
     wide('trees remembered, out of view', 'tripTrees.remembered'); wide('animals in view', 'partners.inView'); wide('the menu today', 'menu');
+    o.push('', `What today's menu holds, share of decision points: exactly one option to feed (a tree or the leaves where it stands) ${pct(pooled('adults', 'menuFam.feed', d => d.one))}, two or more ${pct(pooled('adults', 'menuFam.feed', d => d.twoPlus))}; one trip of its own to a food tree ${pct(pooled('adults', 'menuFam.food-trip', d => d.one))}, two or more ${pct(pooled('adults', 'menuFam.food-trip', d => d.twoPlus))}; a drink ${pct(1 - pooled('adults', 'menuFam.drink', d => d.zero))}; a nest ${pct(1 - pooled('adults', 'menuFam.nest', d => d.zero))}; rest ${pct(1 - pooled('adults', 'menuFam.rest', d => d.zero))}; two or more affiliative options ${pct(pooled('adults', 'menuFam.affiliative', d => d.twoPlus))}.`);
     o.push('', `So: is a sub-menu needed to choose a tree? A kernel built for 8 options can take the trees of a trip in one question at ${pct(1 - pooled('adults', 'tripTrees.pool', d => d.over8))} of decision points and needs a wider question or rounds at ${pct(pooled('adults', 'tripTrees.pool', d => d.over8))}; for trees in view the shares are ${pct(1 - pooled('adults', 'feedTrees.inView', d => d.over8))} and ${pct(pooled('adults', 'feedTrees.inView', d => d.over8))}. The whole menu by possibility fits in 8 at ${pct(1 - pooled('adults', 'widthPossible', d => d.over8))} of decision points.`, '');
   }
 

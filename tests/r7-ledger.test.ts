@@ -88,15 +88,37 @@ test('acts and ending credit: left with the act still on offer, not on offer, th
   ];
   const L = animalLedger(1, log, info(false, 0, 6));
   assert.equal(L.acts, 5);
-  assert.deepEqual(L.target, { chooser: 1, 'slot-cap': 3, none: 1, fallback: 0 }, 'feed, trip and nest each had one target of their kind; the rules\' rest has none');
-  assert.deepEqual(L.targetByClass.partner, { chooser: 1, 'slot-cap': 0, none: 0, fallback: 0 });
-  assert.deepEqual(L.ending, { left: 2, gone: 1, fallback: 1 });
+  assert.deepEqual(L.target, { chooser: 1, held: 0, 'slot-cap': 3, none: 1, fallback: 0 }, 'feed, trip and nest each had one target of their kind; the rules\' rest has none');
+  assert.deepEqual(L.targetByClass.partner, { chooser: 1, held: 0, 'slot-cap': 0, none: 0, fallback: 0 });
+  assert.deepEqual(L.ending, { left: 2, gone: 1, arrived: 0, fallback: 1 });
   assert.equal(L.running, 1);
   assert.deepEqual([L.stayed, L.leftWhenOffered], [1, 2]);
   const lines = linesOf(L);
   assert.equal(lines.target, 1 / 5); assert.equal(lines.targetOfTargeted, 1 / 4); assert.equal(lines.left, 2 / 4); assert.equal(lines.gone, 1 / 4); assert.equal(lines.endedByRules, 1 / 4);
   assert.equal(lines.stayedWhenOffered, 1 / 3);
   assert.deepEqual([L.settled, L.settledTwoKinds, L.settledTwoTargets], [5, 5, 1]);
+});
+
+test('a log that holds the gate\'s own lines and the trigger of each ask closes the bracket and names what the saved receipts cannot', () => {
+  // what a later run should log (docs/staging/r7-ledger.md, "For the integrator"): a line when the gate keeps or begins an act, and `why` on each ask
+  const gate = (t: number, v: number, act: [string, number, string], refusal: 'kept' | 'arrived'): LedgerReceipt => ({ ...R(t, v, [act], 0), by: 'gate', refusal });
+  const log = [
+    R(0, 1, [REST, FEED, TRIP], 2, { why: 'ended' }),            // the model picks a trip
+    gate(1, 2, TRIP, 'kept'),                                    // the gate keeps it: the same act, now a held intention
+    gate(2, 3, ['forage', TREE2, 'feed'], 'arrived'),            // the trip becomes feeding at its tree: a new act the gate began
+    R(3, 4, [REST, ['forage', TREE2, 'feed'], TRIP], 0, { why: 'need-bucket' }),   // asked because a need crossed a threshold: it leaves
+  ];
+  const L = animalLedger(1, log, { kernel: 'model', gate: true, t0: 0, t1: 4, focal: [1], gateLogged: true });
+  assert.deepEqual([L.kind.chooser.waking, L.kind.held.waking], [120, 120], 'hour 0 to 1 and 3 to 4 under a fresh choice; 1 to 3 under a held intention');
+  assert.equal(L.certain.waking, 120, 'nothing is hidden between the lines: no bracket');
+  assert.equal(L.hidden, 0);
+  assert.equal(L.acts, 3, 'the trip, the feeding the gate began, the rest');
+  assert.deepEqual(L.target, { chooser: 0, held: 1, 'slot-cap': 1, none: 1, fallback: 0 }, 'the feeding tree is the held trip\'s');
+  assert.deepEqual(L.ending, { left: 1, gone: 0, arrived: 1, fallback: 0 }, 'the trip ended by arriving; the feeding by the model\'s choice');
+  assert.deepEqual(L.askedBy, { ended: 1, 'need-bucket': 1 });
+  assert.deepEqual(L.leftBy, { 'need-bucket': 1 }, 'and the moment of that choice was a hand-set threshold');
+  const lines = linesOf(L);
+  assert.deepEqual([lines.kindLow, lines.kindHigh, lines.held, lines.arrived], [0.5, 0.5, 0.5, 0.5]);
 });
 
 test('an arm pools its focal animals; an animal with no receipt owns its window as time before the first decision', () => {
