@@ -790,7 +790,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     else { a.moving = um > MOVE_ENTER; a.stillT = 0; }
     if (a.moving !== wasMoving) a.dbg.moveToggles++;
     // W1: during those 0.8 s the stopped walker's swinging hand or foot comes down (it held it in the air, mid-stride,
-    // until the clip changed); it lifts again if the walk resumes. Exactly 0 on a walker that has not stopped.
+    // until the clip changed); it lifts again if the walk resumes. Exactly 0 on a walker that has not stopped. The rate
+    // (12 per second: down in about 0.2 s) is a stylization.
     const halted = a.moving && a.stillT > 0;
     a.settle = halted || a.settle > 1e-3 ? damp(a.settle, halted ? 1 : 0, 12, dtReal) : 0;
     // In time-lapse the rendered speed is inflated; pick gaits from the ecological-equivalent speed (W1: from the speed

@@ -135,7 +135,8 @@ export function createHud(root: HTMLElement, ctx: Ctx) {
       const pre = ctx.deps.speedPresets.find(p => p.id === clk.speedId);
       set(el.speed, pre ? presetLabel(pre.ecoSecondsPerSecond, pre.label) : clk.speedId);
       // Stage W1: at a speed this map's walk cannot be drawn at with real steps (deps.lapseRate), and while the clock keeps
-      // the chosen rate (the line would only repeat it), the line says "time-lapse"; a rate that falls short still shows.
+      // the chosen rate (the line would only repeat it), the line says "time-lapse"; a rate that falls short still shows
+      // (short by more than 15%: design assumption).
       const lapse = st === 'ok' && clk.ecoSecondsPerSecond > (ctx.deps.lapseRate?.() ?? Infinity) && Math.abs(clk.effectiveRate / clk.ecoSecondsPerSecond - 1) < 0.15;
       // Below one tick a second (Real time, the watching speed) the measured rate swings by half between ticks although
       // every tick lands on time: show the rate being kept.
