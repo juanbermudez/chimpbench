@@ -63,7 +63,7 @@ export interface Readout {
   /** Among points with a distinguishable winner that is not the rules' option: the rules' option is told below the winner. */ rulesToldWorse: Share;
   /** Kinds of the eight-replicate winners, of the options the rules took, and of all options on the menus. */ winnerKinds: Record<string, number>; rulesKinds: Record<string, number>; menuKinds: Record<string, number>;
   /** Kinds of the winners at the points where the winner is distinguishable. */ winnerKindsDistinguishable: Record<string, number>;
-  /** Per term: the mean share of its variance between options, what noise alone gives, the points at which it varies at all, and repeat if the score were that term alone. */
+  /** Per term: the mean share of its variance between options, what noise alone gives, the points at which it varies at all, and repeat if the score were that term alone (at those points). */
   terms: { term: string; between: number | null; noise: number | null; varies: number; repeat: Share }[];
   /** Per variant: points whose eight-replicate winner (kinds: its kind) differs from the registered score's, on all points and on those whose registered winner is distinguishable; the winners' kinds. */
   variants: { id: string; words: string; flips: Share; flipsAmongDistinguishable: Share; winnerKinds: Record<string, number> }[];
@@ -101,8 +101,9 @@ export function readout(all: PointFile[], q: Question, h: number): Readout {
     out.rulesTookKind = share(S.map((s, i) => { const t = pts[i].rulesTook, w = stand[i].winner; return t < 0 || w < 0 || !s.opts.includes(t) ? null : s.kind!(w) === pts[i].options[t].family; }));
   }
   TERMS.forEach((term, k) => {
-    const T = pts.map(p => scoresOf(p, q, h, { kind: 'term', k })), bs = T.map(t => betweenShare(t.scores)).filter((x): x is { share: number; noise: number } => x !== null);
-    out.terms.push({ term, between: bs.length ? meanOf(bs.map(b => b.share)) : null, noise: bs.length ? meanOf(bs.map(b => b.noise)) : null, varies: bs.length, repeat: share(T.map(t => repeats(t.scores, A, B, t.kind))) });
+    const T = pts.map(p => scoresOf(p, q, h, { kind: 'term', k })), all = T.map(t => betweenShare(t.scores)), bs = all.filter((x): x is { share: number; noise: number } => x !== null);
+    // repeat on the term alone is read where the term varies at all: where every fork has the same value the halves agree by the tie rule, which says nothing
+    out.terms.push({ term, between: bs.length ? meanOf(bs.map(b => b.share)) : null, noise: bs.length ? meanOf(bs.map(b => b.noise)) : null, varies: bs.length, repeat: share(T.map((t, i) => (all[i] === null ? null : repeats(t.scores, A, B, t.kind)))) });
   });
   const variants: { id: string; words: string; s: Scorer }[] = [...SCALE_VARIANTS.map(v => ({ id: v.id, words: v.words, s: { kind: 'scale', v } as Scorer })), ...FORM_VARIANTS];
   for (const v of variants) {

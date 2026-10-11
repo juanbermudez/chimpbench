@@ -153,7 +153,7 @@ if (process.argv[1]?.endsWith('r7b-report.ts')) {
     p();
     p('### 2.6 Which body state decides');
     p();
-    p('Per term at the horizon: the share of its variance at a point that lies between options rather than between replicates (averaged over the points where the term varies at all; beside it what replicate noise alone would give), and repeat if the score were that term alone.');
+    p('Per term at the horizon: the share of its variance at a point that lies between options rather than between replicates (averaged over the points where the term varies at all; beside it what replicate noise alone would give), and repeat if the score were that term alone, at the points where it varies.');
     p();
     p(`| Term | ${Q.flatMap(q => H.map(h => `${q === 'kinds' ? 'Kinds' : 'Food'}, ${hw[h]}: between options (noise alone); repeat on the term alone`)).join(' | ')} |`);
     p(`| --- | ${Q.flatMap(() => H.map(() => '---')).join(' | ')} |`);
