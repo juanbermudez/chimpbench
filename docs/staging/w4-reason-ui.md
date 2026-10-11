@@ -1,6 +1,6 @@
 # Stage W4: the reason and the options for any animal, and an act that is about to start
 
-Branch `w4-reason-ui`, cut from `track-e` at dea2643. Written 10 October 2026, 21:15 EDT. Interface and renderer only: nothing under `src/sim`, `data/` or `tests/fixtures` changed, no parameter was added, the World is read and never written.
+Branch `w4-reason-ui`, cut from `track-e` at dea2643. Written 10 October 2026, 21:15 EDT; reviewed by a second agent the same evening (22:24 EDT), whose findings, fixes and re-measurements are section 6, with sections 1 to 5 corrected where a fix changed what they say. Interface and renderer only: nothing under `src/sim`, `data/` or `tests/fixtures` changed, no parameter was added, the World is read and never written.
 
 Where the stage comes from: the review of 10 October (`/Volumes/Drive/chimpbench/shots/review-2026-10-10/reports/visual-behaviour_legibility.md`, fact-checked in `check-verify_visual_faults.md`, claims 4 and 5). Every living animal carries the options it weighed and a reason sentence, also when the rules decide, and the interface printed the reason in one place only, the cinematic caption. Labels and the chimp strip read the simulation's act while bodies are drawn two ticks behind it.
 
@@ -9,7 +9,7 @@ Where the stage comes from: the review of 10 October (`/Volumes/Drive/chimpbench
 1. **The reason in plain sight for the selected animal.** The chimp strip's "now" line is followed by the simulation's own reason sentence (`Chimp.reason`), up to three lines when the panel is expanded and one line (cut with an ellipsis, full text on hover) when it is collapsed. On a phone the collapsed strip keeps its height and gains a second row: the act's icon and the reason. The selected animal's label in the forest carries the same sentence as a second line. Other animals' labels are unchanged.
 2. **A Mind tab for every animal.** The tab opens on the decision: the pick over its two runners-up in one line with their values, who chose, then the reason in print. Under it every option it weighed, each with its score as a small bar and its reason as text (no tooltips). An animal the decision loop has no current trace for gets a live card built from its own `candidates` and `reason`, headed **Rules**. A trace card (the animal is on the model roster) has the same top, then the loop's own details as before: saw, options, pick, outcome, cost, the full percept, the history.
 3. **"About to".** While the drawn body has not begun the act the simulation has begun, the label and the strip read "about to travel" (italic, dashed underline, dimmed icon; in the strip "About to travel") and switch to the plain verb when the body begins it.
-4. **A line of activity in the Log tab.** The interface keeps a record of the selected animal's changes of act from the moment it is selected (nothing is written to the World). The Log tab leads with one bar of the last three hours coloured by kind of act, then the acts with their reasons, newest first, then the field log as before.
+4. **A line of activity in the Log tab.** The interface keeps a record of the selected animal's changes of act from the moment it is selected (nothing is written to the World). The Log tab leads with one bar of the last three hours coloured by kind of act, then the acts with their reasons, newest first, then the field log as before. Each act is tagged with who chose it: "rules", "model" (the engine's full name on hover), or "not a choice" for an act the simulation set without a decision, such as the rest of an animal waiting for an answer or a fight back (the last added by the review: such acts were tagged with the animal's last decision).
 
 Two smaller things came with the truthful names:
 
@@ -38,6 +38,8 @@ From the plan's block "User decisions (10 October 2026)". `mind-card.ts` `modelE
 - Jev: "General model (Jev) on a rules menu";
 - anything else: "Model <its identifier> on a rules menu".
 
+The browser provider reports the same base as its ONNX export (`onnx-community/GLiNER2.5-Decide-ONNX`, `src/providers/config.ts`); it is not tuned either and carries the same name (added by the review: it was first named "Model onnx-community/… on a rules menu").
+
 The interface cannot tell an adapter from the base model: the server reports the same model name either way. When the app serves an adapter, the server has to say so and `modelEngine()` gets the case "rules-taught model on a rules menu". Until then the interface never claims that name. "Model-driven" without a qualifier is not used anywhere in the new text. The Mind tab's footer now ends: "The options and their sentences are written by the rules, whoever picks."
 
 ### When the live card is shown instead of a trace
@@ -47,7 +49,7 @@ The latest trace is the first view only while it describes the act under way: it
 The live card says what it can know and no more:
 
 - the act under way is on the animal's list: the pick, headed Rules (or the engine's name when the animal's last decision came through the loop);
-- the act under way scores below another option: the line reads "scored below" instead of "over", with a note that the rules' policy can keep an act under way instead of taking the top score;
+- the act under way scores below another option: the line reads "scored below" instead of "over", with a note. When the rules chose, the note says that the rules do not always take the top score: they can keep an act under way, and a fresh choice can be a draw weighted by the scores (`src/sim/rg.ts`, on by default for animals aged 8 and over; the interface cannot tell which of the two happened). When the animal's last decision came through the loop, it says a model picked the act by its own probabilities (`mind-card.ts` `belowTopNote`; both corrected by the review);
 - the act is not on the list: "not among the options weighed" (a reaction, a fight, a wait the simulation set);
 - the animal is parked at a decision point: no pick, "Options on the table".
 
@@ -56,7 +58,8 @@ The live card says what it can know and no more:
 The first version announced an act for the two ticks of playback lag only. Measured in the running app, that left most of the gap uncovered: after the lag the body still comes down from a crown, walks the last metres or climbs to the food (a median of 1.1 s at 1 min/s for stationary acts, section 3). The rule now reads the body:
 
 - **A trip** (travel, follow, patrol, transfer, consort) is announced while the drawn body neither moves over the ground nor goes up or down. It ends the moment the drawn path moves.
-- **A stationary act** (rest, forage, drink, groom, nurse, nest, shelter, mate, pant-grunt, reconcile, console, share, beg) is announced while the drawn body is more than 0.75 m from where the simulation has the animal. It ends when the body is there and its drawn time has reached the state that first showed the act.
+- **A stationary act** (rest, forage, drink, groom, nurse, nest, shelter, mate, pant-grunt, reconcile, console, share, beg) is announced while the drawn body is more than 0.75 m from where the simulation has the animal and has more than a shuffle left to play. It ends when the body is there and its drawn time has reached the state that first showed the act.
+- **A shuffle is not an approach** (added by the review). On the field map the simulation's ground foragers eat from their first tick while creeping at 0.3 of a walk, which leaves the drawn body about 3 m behind for as long as the creep lasts. When the simulation moved the animal no faster than 0.45 of the world's walking speed over its last two ticks (the two ticks the body still has to play), the body shows the act wherever it is.
 - **Other acts** (charge, flee, display, attack, call, alarm, play, climb, hunt, submit, guard) are never announced: the pose changes at once or the act is short.
 - At most 6 ticks of drawn time after the state that first showed the act, so 2 simulated minutes with the lag. Once per act: when the body has begun it, later movement inside the act is not announced again. Not above 2 min/s. Never for a carried infant or a dead animal.
 
@@ -69,6 +72,7 @@ Constants, all in `src/render/creatures/drawn.ts` unless said, all labelled styl
 | `ACT_HIST` | 10 | tick states kept per drawn animal |
 | `ABOUT_TICKS` | 6 | drawn time after the act's first state within which it can be announced |
 | `ARRIVED_M` | 0.75 m | a body this close to the animal's place has arrived |
+| `SHUFFLE_SHARE` | 0.45 of the world's walking speed (`walkMps`, read with `paramsOf(world)`) | the simulation's movement at or below it is part of a stationary act, not a way to it |
 | `PATH_MOVING_MPS` | 0.05 m per ecological second | drawn path speed that counts as on the move |
 | `ABOUT_MAX_RATE` | 120 ecological s per s | no announcement above this playback rate |
 | `WHY_EVERY` (`labels.ts`) | 0.25 s | the label's reason line is rewritten at most this often |
@@ -161,7 +165,7 @@ Reading:
 Per frame, on what:
 
 - for each drawn animal: two comparisons, and three typed-array writes when its act changed or a tick ran;
-- for each label that shows a verb (the selected animal's party and the hovered animal, at most 20): one scan of ten states and one distance;
+- for each label that shows a verb (the selected animal's party and the hovered animal, at most 20): one scan of ten states, one distance, and the two newest steps of the animal's position record (the shuffle test);
 - nothing is allocated; no render pass, texture or shader was added, so the GPU is untouched.
 
 At 4 Hz, with the panels: one `drawnAct` read and one look at the selected animal for the act record.
@@ -187,7 +191,7 @@ Sizes: the scene's insets are the same in both sets (left 314, right 398, top 52
 
 Tests (each run with `fnm exec --using=22.22.3 -- pnpm exec tsx --test tests/<file>.test.ts`), all passing on the final code:
 
-- new: `render-drawn` 12, `ui-mind-card` 11;
+- new: `render-drawn` 16, `ui-mind-card` 14 (12 and 11 as built; the review added 4 and 4 and removed one assertion that could not fail);
 - existing, unchanged: `ui-chimp-panel` 2, `ui-map-view` 7, `ui-popover` 4, `ui-scalebar` 2, `ui-tooltip` 3, `ui-units` 6, `render-playback` 4, `render-motion` 6, `render-gait` 6, `render-pick` 6, `render-portrait` 3, `render-secondary` 6, `render-patrol` 10, `render-field` 12;
 - `pnpm exec tsc --noEmit`: clean.
 
@@ -208,17 +212,81 @@ Not run, as the brief says: `pnpm test`, `pnpm build`, the GPU probe. Golden has
 - **Short windows.** Under 800 px of window height the snapshot in the expanded panel shrinks from 84 to 64 px to give the reason two lines; under 690 px one line.
 - `docs/architecture.html` describes the Mind tab and was not touched.
 
-## 6. For the integrator
+## 6. Review (second pair of eyes, 10 October 2026, 22:24 EDT)
+
+A second agent read the whole diff, re-ran the checks, drove the running app and the simulation against the stage, and fixed what it confirmed, as six commits on this branch (0c3a984 to f378d10). Its scripts and JSON are in `/Volumes/Drive/chimpbench/shots/watch-2026-10-10/w4-reason-ui/review/`; the tables below are printed by `tables-review.mjs` and `drawn-sim-check.ts` there.
+
+### Found and fixed
+
+1. **"About to forage" over an animal already feeding, for up to two simulated minutes.** Caught at Real time (`labels-rtcatch-before-fix.json`): Rukaso went from play to "Forage on leaves and pith nearby" and its tag read "about to forage" for the whole 55 s recorded, 52.8 s of them over a body drawn in the forage clip. Cause: ground foragers eat from the first tick while creeping at 0.3 of a walk (`src/sim/execution.ts` `forageTick`), so on the field map the drawn body trails the simulation by about 3 m for as long as the creep lasts, and the rule judged "not there yet" by distance alone. Fix: the shuffle clause of section 2 (`drawn.ts` `shuffles`, `readBody`, `SHUFFLE_SHARE`). The real field simulation driven through the renderer's own pure parts, seed 48, six hours, animals aged 8 and over, in drawn ticks:
+
+| Kind of act | Starts | Announced, as built | Ticks announced inside the lag, as built | After the lag, as built | Announced, with the clause | Inside the lag, with the clause | After the lag, with the clause |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| forage, ground | 15 | 15 | 30.8 | 50.5 | 11 | 22.8 | 19.0 |
+| forage, a tree | 112 | 112 | 221.3 | 409.0 | 111 | 218.0 | 385.3 |
+| drink | 32 | 32 | 63.0 | 182.3 | 32 | 60.0 | 182.3 |
+| groom | 53 | 26 | 50.0 | 45.3 | 23 | 43.8 | 40.5 |
+| rest | 88 | 32 | 64.3 | 0.0 | 31 | 62.3 | 0.0 |
+| travel | 130 | 107 | 144.3 | 11.3 | 107 | 144.3 | 11.3 |
+| follow | 48 | 26 | 29.8 | 5.8 | 26 | 29.8 | 5.8 |
+
+   What is left for ground foraging with the clause is animals that first come down from a nest or a crown, or arrive at a walk, which is rightly announced. The price: a few short hops to a partner or a low crown (under 2.4 m a tick on the field map) are no longer announced. A test drives the field simulation through the rule and fails without the clause.
+2. **The browser's copy of the base model was not named "untuned".** The browser provider, the app’s default (`public/decision-providers.json`), reports `onnx-community/GLiNER2.5-Decide-ONNX`; the Mind tab named it "Model onnx-community/GLiNER2.5-Decide-ONNX on a rules menu" with the note "a model other than the published base". Fixed in `mind-card.ts` `modelEngine`, with a test.
+3. **The note under a pick that scores below another option told half of the rules' policy**, and gave the rules' policy as the reason for a model's pick. In the running app 19 to 20 of 49 animals were in an act scoring below another option (two readouts; the builder's had 12). Fixed (`belowTopNote`), with a test.
+4. **The Log tab credited acts nobody chose to the animal's last decision.** With a live model, the rest of an animal waiting for an answer would have been listed as the model's pick. Fixed in `decision-log.ts` (`actSource`), with a test that drives the simulation's own decision steps to the case.
+
+### Re-measured
+
+The builder's readout, re-run unchanged but for its output path (75 s at 1 min/s, every animal read each frame). "Behind" is by distance alone, so after the fixes it counts creeping ground foragers that are in fact feeding:
+
+| Run | Achieved rate (eco s per s) | Living, with a reason | Options per animal (min, median, max) | Act on its list, best score, below another | Changes of act (trips, stationary) | Behind by distance (s) | Of it announced (s) | Plain verb while behind (s) | Share plain |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| builder's code (7827c7b) | 49 | 49, 49 | 3, 7, 11 | 49, 29, 20 | 24, 64 | 82.8 | 66.6 | 16.2 | 20% |
+| after the review's fixes | 68 | 49, 49 | 3, 7, 11 | 49, 30, 19 | 24, 63 | 81.0 | 59.8 | 21.2 | 26% |
+
+So the headline of section 3 (the plain verb over a body that had not begun the act for 6.1 s of 43.0 s, 14%) was not reproduced as a number: two further samples gave 20% and, with the fixes, 26%. The direction holds: most of the time the body trails the act is announced. It is one morning of one seed.
+
+What stands under a name tag, independent of the rule's own thresholds (80 s at 1 min/s in the close view on the largest party; the tag's text against the clip the body is drawn in; the two runs followed the same animals through the same acts):
+
+| Run | Tag-frames | Announced tag-frames | Announced time (s) | "about to" over a still body at its place (s) | "about to" a trip over a moving body (s) |
+| --- | --- | --- | --- | --- | --- |
+| builder's code (7827c7b) | 13035 | 345 | 5.8 | 0.0 | 0.0 |
+| after the review's fixes | 13100 | 335 | 5.6 | 0.0 | 0.0 |
+
+Refresh cost on the final code (the builder's `perf.mjs`, short run of 15 s per scenario, 1440x900 at device pixel ratio 1, load 3.0 to 3.4). The "before" side (dea2643) was not re-measured; the builder's before numbers agree with the figures AGENTS.md already carries.
+
+| Panel showing, speed | UI ms per frame | Worst frame ms | Label overlay ms per frame | DOM nodes per s | Layouts per s | Layout ms per s | Style ms per s |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| overview tab, 1 min/s | 0.046 | 1.0 | 0.046 | 0.4 | 12.5 | 2.73 | 28.2 |
+| collapsed strip, 1 min/s | 0.053 | 1.4 | 0.049 | 0.2 | 9.9 | 2.35 | 24.7 |
+| mind tab, rules animal, 1 min/s | 0.036 | 1.3 | 0.015 | 0.7 | 4.3 | 0.76 | 6.2 |
+| mind tab, rules animal, 1 day/s | 0.087 | 0.9 | 0.023 | 65.4 | 21.0 | 5.11 | 30.4 |
+| overview tab, 1 day/s | 0.082 | 1.2 | 0.016 | 55.9 | 18.9 | 4.22 | 24.6 |
+
+Also re-run: type-check clean; 16 test files one by one, 107 tests passing (`render-drawn` 16, `ui-mind-card` 14, the 14 existing files unchanged), plus `decision` 22, `providers` 6, `decision-guide` 4; `verify-browser.mjs --no-model` passes the same 11 steps and stops at "store ready" for the same reason. Looked at, from the worktree as it is: the strip expanded and collapsed, the label, the Mind and Log tabs, the strategy view, the cinematic view (no label there; the caption carries the reason), night in a nest, a 1440x780 and a 1024x700 window, 390x844, and the small map. Nothing was found worse there. Five pictures are kept in `review/`.
+
+### Found and left
+
+- **A long approach reads the plain verb after two simulated minutes.** In the six-hour tally (`review/creep-check.out.txt`) every one of 32 drinks was still on its way when the window closed (the simulation's act is "drink" for the whole walk to the stream: one caught live was 712 m), and 39 of 119 walks to a crown. The tag then reads "drinking" over a walking animal for the rest of the way. Lifting the cap for a body that is on its way needs the record to remember the act before for longer than ten ticks, and a decision on how long "about to" may stand; not done.
+- **Inside the playback lag the body already plays the new stationary act's clip where it stands**, because the clip is chosen from the simulation's act (`creatures.ts` `chooseClip`). So "about to pant-grunt" stood over a body in the pant-grunt clip for one tick (15 s at Real time), and "about to drink" over a body in the drink clip between walking stretches (`labels-rtcatch.json`, rounds 2 and 0). The tag is right about the simulation; the pose is early. The cure is in the clip choice (hold a neutral pose while the tag is "about to"), which is where stage W1 works.
+- **Ground foragers creep towards a stale goal.** `forageTick` walks a ground forager to `x.gx, x.gz`, which `startAction` does not reset, so until its own tick in sixteen sets a new goal the animal creeps towards wherever the act before was heading (4 of 15 ground-forage starts in six hours crept about 1.5 m a tick for eight ticks or more; `review/ground-detail.out.txt`). A simulation matter, outside this stage, reported for the simulation's owners.
+- **The decision line can name one target three times.** Trees are named by species, so "Travel → Chrysophyllum albidum 0.34 scored below Forage → Chrysophyllum albidum 0.60 · Travel → Chrysophyllum albidum 0.34" is three different trees. The reasons under the options tell them apart; the line does not.
+- **A trace stops being the first view at high speed with a late answer.** `traceIsCurrent` allows two ticks between the request and the act; an answer that lands later (at 10 min/s a 0.35 s answer is 14 ticks) shows the live card, correctly headed with the engine, without the probabilities. The trace stays in the history.
+- **On the live card of an act a model picked, the values in the decision line are the rules' scores** (the column below is headed "Rules score"; the line itself has no unit).
+- **The selected animal's taller label is dropped when it would touch a panel**, as any label is; at 62 px it touches one sooner than a 19 px label did.
+- The stage's figure for the snapshot shrinking in short windows applies at common laptop sizes: a 1440x900 screen leaves a browser window under 800 px high, so there the snapshot is 64 px, not 84 px (looked at in `review/r6-strip-expanded-1440x780.png`; the layout holds).
+
+## 7. For the integrator
 
 ### Status line for `IMPLEMENTATION_PLAN.md` (stages W1 to W5, the W4 bullet)
 
-> - **W4 (branch `w4-reason-ui`):** every animal carries its options and a reason sentence, but the reason is printed only in the cinematic caption and labels change one to two ticks before the drawn body; show the reason and the options for any selected animal and mark an act that is about to start. **Done on its branch, awaiting review (10 October 2026; `docs/staging/w4-reason-ui.md`).** The reason is in the chimp strip (also collapsed) and on the selected animal's label; the Mind tab shows a live card from the animal's own candidates for any animal, headed Rules, with every option's reason in print and engines named as this block asks; labels and the strip read "about to …" until the drawn body has begun the act (at 1 min/s the plain verb stood over a body that had not begun the act for 43.0 s in a 75 s sample before and 6.1 s after); the Log tab has an activity line from a record the interface keeps. No simulation file, parameter, render pass or panel size changed. Not seen with a live model.
+> - **W4 (branch `w4-reason-ui`):** every animal carries its options and a reason sentence, but the reason is printed only in the cinematic caption and labels change one to two ticks before the drawn body; show the reason and the options for any selected animal and mark an act that is about to start. **Done on its branch, awaiting review (10 October 2026; `docs/staging/w4-reason-ui.md`).** The reason is in the chimp strip (also collapsed) and on the selected animal's label; the Mind tab shows a live card from the animal's own candidates for any animal, headed Rules, with every option's reason in print and engines named as this block asks; labels and the strip read "about to …" until the drawn body has begun the act, for at most two simulated minutes (at 1 min/s the plain verb stood over a body that had not begun the act for 14% to 26% of that time in three 75 s samples, against all of it before); the Log tab has an activity line from a record the interface keeps. Reviewed the same day: four defects fixed (a false "about to forage" over ground foragers, the browser model's name, the note on a pick below the top score, who an act in the Log is credited to). No simulation file, parameter, render pass or panel size changed. Not seen with a live model. Open: a long approach (every drink) reads the plain verb after two minutes, and a body can play a stationary act's clip while its tag still says "about to".
 
 ### Lines for `AGENTS.md`
 
 Gotchas, after the line that begins "Creature playback trails the sim by 2 ticks":
 
-> - Which act the drawn body is in (stage W4, `render/creatures/drawn.ts`): each drawn animal keeps the act and target of its last ten tick states, and `scene.drawnAct(id, out)` reports the act the body is in and whether the simulation has begun a newer one the body has not started (a trip: until the drawn path moves; a stationary act: until the body is within 0.75 m of where the simulation has the animal; at most 6 ticks of drawn time; never above 2 min/s). Labels and the chimp strip read it ("about to travel"). It reads the path, not the clip, and writes nothing to the World.
+> - Which act the drawn body is in (stage W4, `render/creatures/drawn.ts`): each drawn animal keeps the act and target of its last ten tick states, and `scene.drawnAct(id, out)` reports the act the body is in and whether the simulation has begun a newer one the body has not started (a trip: until the drawn path moves; a stationary act: until the body is within 0.75 m of where the simulation has the animal or has only a shuffle left to play, the simulation having moved the animal no faster than 0.45 of `walkMps` over its last two ticks; at most 6 ticks of drawn time; never above 2 min/s). Labels and the chimp strip read it ("about to travel"). It reads the path, not the clip, and writes nothing to the World.
 > - The selected animal's reason line on its label is one shared element (`.crl-why`) moved between labels and rewritten at most four times a second. Do not add children to every label: Chrome restyles a label's whole subtree each frame it moves.
 
 Verifying a change, the preview line:
@@ -240,6 +308,7 @@ None. The stage adds no simulation parameter. Its constants are interface conven
 ### Merge notes
 
 - **Likely conflicts.** `src/render/creatures.ts`: this branch touches the imports, the `CreatureLayer` and `Anim` interfaces, `addAnim`, two lines in `interpolateAll`, the `labels.update` call, a block after `getScale` and the return object. It does not touch `evaluatePose`, `chooseClip` or the motion thresholds, where W1 works. `src/style.css`: the chimp panel block, the Mind tab block and the phone block at the end. `src/render/creatures/labels.ts`, `src/ui/mind.ts`, `src/ui/inspector.ts`: large edits; take this branch's side if another stage only reformatted them.
+- **With W1 (from the review).** While a tag reads "about to" for a stationary act the body can already be drawn in that act's clip (section 6, "Found and left"). If W1 touches `chooseClip`, `aboutOf(a)` in `creatures.ts` is the signal for holding a neutral pose there. A creeping ground forager is drawn in a walk or gallop clip at 1 min/s today and reads "foraging"; once W1 chooses the clip from ecological speed the two should agree.
 - **With W1.** The rule reads the drawn path's speed, so it does not depend on the gait thresholds W1 changes. W1's watching speed near 4 s/s is under `ABOUT_MAX_RATE` (120), so announcements show there. Worth one look after both are merged: a trip start at the watching speed.
 - **With W5 (grooming).** A groomer walking up to its partner now reads "about to groom" until it is there. If W5 changes where the pair is drawn, check that the label still switches when the bodies meet (the rule compares the drawn path with the simulation's position, not with the partner).
 - **Run after the merge.** `pnpm test`, `pnpm build`, and `node scripts/verify-browser.mjs` against the main checkout's server, where the save store starts.
@@ -252,3 +321,4 @@ None. The stage adds no simulation parameter. Its constants are interface conven
 3. The gold spark and rings now mean "the decision loop asks about this animal" and are off when the model is switched off. Keep?
 4. Should the act record follow every animal, so the activity line is full the moment any animal is selected? It would be a few comparisons per animal four times a second and a few hundred small objects; it was left out because the brief asked for the selected animal's record.
 5. The default layout and the panel sizes were not touched (not put to the user).
+6. From the review: how long may "about to" stand? Today at most two simulated minutes, so an animal walking to a stream reads "about to drink" for two minutes and "drinking" for the rest of the walk (section 6, "Found and left"). The alternative is to keep it for as long as the body is on its way.
