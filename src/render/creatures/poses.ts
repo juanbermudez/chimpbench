@@ -70,8 +70,21 @@ export class Pw {
 // ---------------------------------------------------------------------------
 // Shared building blocks
 // ---------------------------------------------------------------------------
-function fist(w: Pw, side: 0 | 1, curl = 1) { // knuckle-walking hand: middle phalanges flat on the ground
-  w.r(side ? B.fingR : B.fingL, 0.3 * curl).r(side ? B.fingR2 : B.fingL2, 1.65 * curl);
+/**
+ * Knuckle-walking hand: the weight rests on the backs of the middle finger segments, with the joint at the base of
+ * the fingers bent back and the finger joint flexed [M: docs/research.md "Addendum: W3 body defects", tamagawa2020,
+ * matarazzo2015, thompson2020]. The direction of both bends is the sources'; the amounts are design assumptions
+ * (thompson2020 gives 26 to 59 degrees at the base of the fingers at the peak of a stride and no standing value).
+ * KNUCKLE_EXTEND mirrors the 0.3 rad of flexion the hand had about the vertical: the value at which the stance's
+ * ground snap equals its old one to a micrometre (solved numerically; the bind finger leans a little, so it is not
+ * exactly 0.3). That leaves the finger joint at the height it had: the ground snap, the wrist and the walk
+ * do not move, and no IK target needs adjusting. FINGER_LEVEL is the total turn that lays the middle and end
+ * segment (one bone here) with its underside level on the ground, pointing back: a quarter turn less the bind lean
+ * and the taper of that segment. It used to slope up 24 degrees from a single joint on the ground (W3).
+ */
+const KNUCKLE_EXTEND = 0.3868, FINGER_LEVEL = Math.PI / 2 - 0.075;
+function fist(w: Pw, side: 0 | 1, curl = 1) {
+  w.r(side ? B.fingR : B.fingL, -KNUCKLE_EXTEND * curl).r(side ? B.fingR2 : B.fingL2, (FINGER_LEVEL + KNUCKLE_EXTEND) * curl);
 }
 function grip(w: Pw, side: 0 | 1, g = 1) { w.r(side ? B.fingR : B.fingL, 0.7 * g).r(side ? B.fingR2 : B.fingL2, 1.3 * g); }
 function relaxHands(w: Pw) { w.r(B.fingL, 0.35).r(B.fingR, 0.35).r(B.fingL2, 0.55).r(B.fingR2, 0.55); }
