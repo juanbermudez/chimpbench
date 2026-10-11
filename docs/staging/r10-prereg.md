@@ -318,6 +318,12 @@ cover `src/sim/decide.ts`. 4. The field smoke (§7, 5 to 8). 5. Results in §10;
   script), not by a name anywhere in a command line, because the shell that launches the night carries the
   interpreter's path in its own command line; a model day prints a line every simulated hour once two minutes have
   passed, so a day of 15 to 25 minutes is not silent.
+- **A9 (20:43, after the runs of §10.3; the field runs were repeated after it and landed on the same hashes).** The
+  file that keeps the burned-in world between runs was named by parameter file, map, seed and days only, so a world
+  burned in by older code could have been picked up by a later commit. Its name now carries the commit and the
+  parameters' hash, and a run from a tree that is not clean keeps none. The warm-up packet of A8 is built on a copy of
+  the world (building it leaves the world's hash unchanged, checked on the start world of seed 48: all 38 animals on
+  the kernel have a real choice there, the first with 6 options).
 
 ### 10.2 Iterations (10 October 2026; no model process at any point)
 
@@ -335,6 +341,9 @@ The same simulated day cost 4 s to 290 s of wall time depending only on fsync an
 volume. Iteration 2 was slower than iteration 1 with fewer fsync calls: the volume was busier.
 
 ### 10.3 Results of the proofs (§7), at head a886f30 unless said
+
+(Proofs 5, 6 and 8 were run once more at the stage's last code commit, 8276757, after amendment A9: the same day
+hashes, 2,060 and 2,069 asks, and a replay that regenerates all 6,423 lines.)
 
 **Tests.** `tests/r10-night.test.ts`: 12 tests, 12 pass (compressed map, the working base, seed 48). With the
 eleven test files that cover what the stage touches or imports (`kernel`, `sim-params` with the goldens,
@@ -481,6 +490,10 @@ script sets them; read only."
     under the same key (`t`, `id`, `v`) with the hash `ctx`. If the ledger needs another field, `runDay` in
     `scripts/lib/r10-run.ts` builds the line in one place.
 - Tests to run at the merge: `tests/r10-night.test.ts` (12 tests; 30 to 60 s on a busy machine), then the whole suite.
+- The burned-in world is kept under `artifacts/r10/burnin/` in a file named by commit, so the first run after the
+  merge burns in again (about 35 s) and should print "the burned-in world is the pilot's (hash 4b5cc61f8ad797e0)"; if
+  it prints another hash, something merged has moved the simulation on the working base and the night is a different
+  world from R5's.
 
 **5. Launching the night** (the user's or the integrator's call; §8 has the full text):
 
