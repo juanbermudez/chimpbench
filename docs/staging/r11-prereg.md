@@ -941,7 +941,10 @@ model time in all. It is a check of the machinery, never a result: no number fro
   for seconds per packet only: one probability per option, summing to 1. No agreement is read from held-out draws.
 - **The loop's ask path** (MPS): `worker.py` started as the loop starts it, with the smoke adapter named: its ready
   line must carry the adapter with the file's hash; 25 held-out packets asked one at a time (shape, seconds per
-  ask), 8 of them also of the untuned model (the answers must differ: the adapter is in use).
+  ask), 8 of them also of the untuned model (the answers must differ: the adapter is in use). A copy of the smoke
+  adapter under a second name is loaded beside it, as a night's worker holds two adapters: asked of the copy, the
+  same 8 packets must give the same answers, and the first adapter the same again after the switch (added at 13:22,
+  before the run).
 - Afterwards `artifacts/r11/smoke` is deleted. Nothing is written under `artifacts/decide-ft/r11`.
 
 ## For the integrator
