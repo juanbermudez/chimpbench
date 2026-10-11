@@ -86,6 +86,9 @@ if (process.argv[1]?.endsWith('r11-offline.ts')) {
     if (arm) models.push({ label: provider, provider, arm, scores });
     else for (const a of ARMS) if (scores[a]) models.push({ label: `untuned on ${a === 'p5b' ? 'P5b' : 'P5a'}`, provider, arm: a, scores });
   }
+  // the untuned model first, then the primary arm (P5b) before the ablation, training seeds in order, comparisons (…-hard) last
+  const rank = (m: Model) => [m.provider === 'base' ? 0 : 1, /hard/.test(m.label) ? 1 : 0, m.arm === 'p5b' ? 0 : 1, +seedOf(m.label) || 0];
+  models.sort((x, y) => { const a = rank(x), c = rank(y); for (let i = 0; i < a.length; i++) if (a[i] !== c[i]) return a[i] - c[i]; return x.label < y.label ? -1 : 1; });
   const fresh = test.filter(r => r.label === 'fresh' && r.soft), other = test.filter(r => r.label !== 'fresh'), prior = kindPrior(train);
   const q = (r: R11Row) => r.options.map((_, i) => r.soft![`c${i}`]);
   // the two floors, as models that answer every fresh draw (they have no packet)

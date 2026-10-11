@@ -405,7 +405,7 @@ No process of the model's Python environment was started at any point; the R9 ch
 | assembly and data tables | c8d4cfb, clean | 03:53 to 03:56 | `scripts/r11-run.sh assemble` (first run at 63d1aaf to read the tables; one row was added to the data table and it was run again; the files on hand are the second run's) |
 | dry run, seed 48 | c8d4cfb, clean | 03:56 to 03:57 | `scripts/r11-run.sh dry` |
 | control arms, seeds 4111 and 4222 | 8d91c8b, clean | 03:57 to 04:01 | `scripts/r11-run.sh controls <seed>`: the first run ever made on these seeds |
-| tables | 8d91c8b | 04:02 | `scripts/r11-run.sh report`, then `publish` |
+| tables | 75968b7 | 04:08 | `scripts/r11-run.sh report`, then `publish` (first at 8d91c8b, 04:02; again after the card's heading was made to say whose test it is) |
 
 Tables, each generated from JSON by a script: [r11-data.md](r11-data.md) and [r11-manifest.json](r11-manifest.json)
 (the data), [r11-offline.md](r11-offline.md) (the offline floors; no adapter yet), [r11-card.md](r11-card.md) (stage
@@ -544,8 +544,8 @@ only): 9 tests, 9 pass.
 P5a variant; the files and their manifest; the registered arms and seeds; an engine arm with a stand-in kernel:
 packet 5 reaches it, the card reads it, the replay reproduces it). Results of it and of the neighbouring files are in
 §10.12. Nothing under `src/` or `data/` was changed by this stage (`scripts/r5-pilot.ts` gained three optional
-arguments and `scripts/r8-contexts.ts` one optional hook; absent, both run as before), so the goldens and the field
-pin cannot have moved; `tests/sim-track-e.test.ts`, the whole suite and the build were not run.
+arguments, `scripts/r8-contexts.ts` one optional hook and `scripts/r7-report.ts` an optional title and note; absent,
+all three run as before), so the goldens and the field pin cannot have moved; `tests/sim-track-e.test.ts`, the whole suite and the build were not run.
 
 ### 10.11 Not done, and what could not be verified tonight
 
@@ -596,8 +596,9 @@ parallel stages (`r12-menu-design`, `r7b-forks`) must not take 4111 or 4222 for 
 `scripts/r9-seed2.sh` (and any script that copies it) looks for another model process by the interpreter's path. On
 this machine a started interpreter is listed under the framework's own path: at 02:55, while the chain's scorer
 (`em_score.py`) was running, no process line held the interpreter's path. So that guard would not have refused a
-second model process. `scripts/r11-run.sh` also looks for the model scripts by name; the same two lines belong in the
-R9 and R10 scripts.
+second model process. `scripts/r11-run.sh` also looks for the model scripts by name (`model_procs`); that second
+pattern, run alone at 04:09, listed the chain's worker (`… Python -B worker.py …`). The same two lines belong in the
+R9 and R10 scripts. Nothing under the chain's folder was touched.
 
 **Where the files are.** Data and (later) adapters: `artifacts/decide-ft/r11` of this worktree. Control arms and
 burn-ins: `artifacts/r11/loop`. Both are git-ignored. From another checkout either point `R11_FT_ROOT` and `R11_OUT` at
