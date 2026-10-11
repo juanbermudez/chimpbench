@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createWorld, tickWorld } from '../src/simulation';
+import { applyDecision, createWorld, tickWorld } from '../src/simulation';
 import type { Candidate, Chimp, World } from '../src/types';
 import type { DecisionTraceView } from '../src/ui/contracts';
-import { BASE_MODEL, RULES_ENGINE, cardFromChimp, cardFromTrace, modelEngine, rowValue, targetName, traceIsCurrent } from '../src/ui/mind-card';
+import { BASE_MODEL, BASE_MODEL_ONNX, RULES_ENGINE, cardFromChimp, cardFromTrace, modelEngine, rowValue, targetName, traceIsCurrent } from '../src/ui/mind-card';
+import { DEFAULT_PROVIDER_CONFIG } from '../src/providers/config';
 import { ACTIVITY_KIND, DECISION_LOG_MAX, createDecisionLog, timeline, watchDecisions } from '../src/ui/decision-log';
 
 // Stage W4: the pure data behind the Mind tab's decision card (src/ui/mind-card.ts) and the Log tab's activity line
@@ -79,6 +80,10 @@ test('a parked animal shows what it is being asked about and no pick; a decision
 test('the engine names are the plan’s: the published base is an untuned model on a rules menu', () => {
   assert.equal(modelEngine(BASE_MODEL, 'server').label, 'Untuned model on a rules menu');
   assert.equal(modelEngine(undefined).id, 'untuned');
+  // The browser provider loads the same published base as its ONNX export and reports that name: also untuned.
+  assert.equal(BASE_MODEL_ONNX, DEFAULT_PROVIDER_CONFIG.browser.model);
+  assert.equal(modelEngine(DEFAULT_PROVIDER_CONFIG.browser.model, 'browser').label, 'Untuned model on a rules menu');
+  assert.equal(modelEngine('someone/another-model-ONNX', 'browser').id, 'other-model', 'a browser config pointed at another model is not claimed as the base');
   assert.equal(modelEngine('jev-latest', 'jev').id, 'general');
   assert.equal(modelEngine('r4-rules-state').label, 'Model r4-rules-state on a rules menu', 'an unknown model is named by its own identifier, not claimed as untuned');
   for (const e of [modelEngine(BASE_MODEL), modelEngine('x'), modelEngine('jev-latest', 'jev')]) assert.match(e.label, /on a rules menu$/);
@@ -146,7 +151,6 @@ test('the act record: starts at selection with the act under way, adds an entry 
   }
   assert.ok(changes >= 3, `the animal changed act ${changes} times`);
   assert.equal(log.entries.length, Math.min(DECISION_LOG_MAX, changes + 1), 'one entry per change of act or target, plus the first');
-  assert.equal(log.missed >= 0, true);
   for (let i = 1; i < log.entries.length; i++) {
     const a = log.entries[i - 1], b = log.entries[i];
     assert.ok(b.time >= a.time, 'in time order'); assert.ok(a.action !== b.action || a.targetId !== b.targetId, 'an entry is a change');
@@ -192,4 +196,53 @@ test('the activity line covers exactly the span, oldest first, with the unseen t
   assert.equal(tl.segments[tl.segments.length - 1].kind, ACTIVITY_KIND[c.action]);
   // An empty record is one unseen stretch.
   assert.deepEqual(timeline(createDecisionLog(), 10, 3).segments.map(s => s.kind), ['none']);
+});
+
+test('an act the simulation set without a decision is not credited to the animal\'s last decision', () => {
+  // The real loop's own steps, with nobody answering: an adult is handed to the model, parks at a decision point, an
+  // answer is applied for it through the loop's entry (source 'decide'), and when that act ends it is parked again,
+  // resting until an answer comes. Chimp.decisionSource still says 'decide' then; the wait was nobody's pick.
+  const w = createWorld(48);
+  for (let i = 0; i < 400; i++) tickWorld(w);
+  const c = w.chimps.find(x => x.alive && x.stage === 'adult')!;
+  w.modelPolicy.mode = 'lockstep'; c.controller = 'model';
+  for (let i = 0; i < 4000 && c.awaitingDecisionSince === null; i++) tickWorld(w);
+  assert.ok(c.awaitingDecisionSince !== null, 'parked at a decision point');
+  const parked = createDecisionLog(); watchDecisions(parked, w, c);
+  assert.equal(parked.entries[0].source, 'set', 'selected while parked: the act under way is not credited to anyone');
+  const pick = c.candidates.find(k => k.action !== 'rest' && k.action !== c.action) ?? c.candidates.find(k => k.action !== 'rest')!;
+  assert.equal(applyDecision(w, c.id, pick, 'decide'), true);
+  assert.equal(c.decisionSource, 'decide');
+  const log = createDecisionLog();
+  watchDecisions(log, w, c);
+  assert.equal(log.entries.length, 1); assert.equal(log.entries[0].source, 'decide', 'the act the answer set');
+  for (let i = 0; i < 6000 && c.alive && c.reason !== 'Waiting for a decision'; i++) { tickWorld(w); watchDecisions(log, w, c); }
+  assert.equal(c.reason, 'Waiting for a decision'); assert.equal(c.action, 'rest');
+  assert.equal(c.decisionSource, 'decide', 'the animal\'s last decision is still the model\'s');
+  const last = log.entries[log.entries.length - 1];
+  assert.equal(last.action, 'rest'); assert.equal(last.reason, 'Waiting for a decision');
+  assert.equal(last.source, 'set', 'the wait is not the model\'s pick');
+  assert.ok(log.entries.some(e => e.source === 'decide'));
+});
+
+test('the act record names who chose: the rules, a model through the loop, or nobody', () => {
+  const w = morning(48, 600), c = w.chimps.find(x => x.alive && x.candidates.length >= 2 && x.candidates.some(k => k.action === x.action && k.targetId === x.targetId))!;
+  const log = createDecisionLog();
+  watchDecisions(log, w, c);
+  assert.equal(log.entries[0].source, 'rules');
+  const other = c.candidates.find(k => !(k.action === c.action && k.targetId === c.targetId))!;
+  // A model's answer applied: the decision count moves, the source is the loop's.
+  const viaLoop = { ...c, action: other.action, targetId: other.targetId, reason: other.reason, decisionVersion: c.decisionVersion + 1, decisionSource: 'decide' as const };
+  watchDecisions(log, w, viaLoop);
+  assert.equal(log.entries.at(-1)!.source, 'decide');
+  // Attacked: it fights back. No decision was taken (the count did not move) and the act is not on its list.
+  watchDecisions(log, w, { ...viaLoop, action: 'attack', targetId: 99999, reason: 'Fight back' });
+  assert.equal(log.entries.at(-1)!.action, 'attack'); assert.equal(log.entries.at(-1)!.source, 'set');
+  // Selected in the middle of such an act: the first entry is not credited either.
+  const fresh = createDecisionLog();
+  watchDecisions(fresh, w, { ...c, action: 'attack', targetId: 99999, reason: 'Fight back', decisionSource: 'decide' });
+  assert.equal(fresh.entries[0].source, 'set');
+  // It dies: nobody's choice.
+  watchDecisions(log, w, { ...viaLoop, alive: false, action: 'dead', targetId: -1, causeOfDeath: 'injury' });
+  assert.equal(log.entries.at(-1)!.action, 'dead'); assert.equal(log.entries.at(-1)!.source, 'set');
 });
