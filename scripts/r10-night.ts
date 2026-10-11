@@ -114,8 +114,10 @@ async function run(a: Args): Promise<number> {
     if (g.commit !== reg.commit) throw new Refused(`the checkout is at ${g.commit.slice(0, 10)}, the run was started at ${reg.commit.slice(0, 10)}: resume it from a checkout of that commit`);
     if (g.dirty.length && !(reg.dirty && a.has('allow-dirty'))) throw new Refused(`the tree is not clean (${g.dirty.length} entries, e.g. ${g.dirty.slice(0, 3).join('; ')}): a run resumes only from the committed code it started on`);
     if (reg.state === 'running') log(`the registry says "running": the last process ended without closing it (a crash or a kill); resuming`);
-    if (a.has('days')) reg.daysAsked = +a.flag('days');
-    reg.hours = a.has('hours') ? +a.flag('hours') : null;
+    // the same checks as at the first start: a mistyped --days would otherwise close the run as "done" without a tick
+    const days = a.has('days') ? +a.flag('days') : reg.daysAsked, hours = a.has('hours') ? +a.flag('hours') : null;
+    if (!Number.isInteger(days) || days < 1 || (hours !== null && !(hours > 0))) throw new Refused('--days is a whole number of days; --hours is positive');
+    reg.daysAsked = days; reg.hours = hours;
   } else {
     const arm = a.flag('arm', 'rules'), spec = ARMS[arm], seed = +a.flag('seed', 'NaN'), profile = a.flag('profile', 'field'), decode = a.flag('decode', 'top');
     if (!spec) throw new Refused(`unknown arm "${arm}"; known: ${Object.keys(ARMS).filter(k => !ARMS[k].redraw).join(', ')}`);
@@ -319,6 +321,9 @@ function status(a: Args): number {
   const reg = readRegistry(resolve(a.pos[0])), d = reg.days, sum = (g: (x: DaySummary) => number) => d.reduce((s, x) => s + g(x), 0), asks = sum(x => x.asks);
   console.log(`${reg.label}: ${reg.name}; arm ${reg.arm}${reg.adapter ? ` (${reg.adapter})` : ''}, decode ${reg.decode}, seed ${reg.seed} (${reg.seedRole}), ${reg.profile} map; ${reg.under}`);
   console.log(`state: ${reg.state}${reg.ended ? ` (${reg.ended})` : ''}; ${d.length} of ${reg.daysAsked} days; commit ${reg.commit.slice(0, 10)}${reg.dirty ? ' (tree not clean)' : ''}; ${reg.segments.length} segment${reg.segments.length === 1 ? '' : 's'} (${reg.segments.length - 1} resume${reg.segments.length === 2 ? '' : 's'}); updated ${reg.updated}`);
+  // a signal to the script's own process is the clean stop; one sent to the whole launch (Ctrl-C, a closed terminal) can
+  // kill it in the middle of its close-down, which a resume treats as a crash (docs/staging/r10-prereg.md §10.6)
+  if (reg.state === 'running' && reg.segments.length) console.log(`if it is still running, its process is pid ${reg.segments[reg.segments.length - 1].pid}: kill -TERM that pid stops it cleanly after the tick in progress (state "interrupted"); if that process is gone, the run died and is continued with run --resume`);
   if (d.length) {
     const calls = sum(x => x.calls), ks = sum(x => x.kernelSeconds), fb: Record<string, number> = {};
     for (const x of d) for (const [k, v] of Object.entries(x.fallbacks)) fb[k] = (fb[k] ?? 0) + v;
