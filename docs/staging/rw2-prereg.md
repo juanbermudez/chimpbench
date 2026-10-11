@@ -471,6 +471,38 @@ Copied from `docs/staging/rw2-numbers.md` (generated at 7598b68; regenerated at 
 
 No score. The yardstick figures of section 4 are in `data/rw2-manifest.json`.
 
+### 8.4 The model on the development parts (the integrator, 11 October 2026, 15:51 to 16:22 EDT; frozen checkout `bench-rw2` at 97be5bf; one model process at a time)
+
+Tables, generated: `docs/staging/rw2-model-base.md`, `rw2-model-r4-rules-state.md`, `rw2-model-r4-field-groom.md`,
+`rw2-model-r4-rules-state-s2.md`, `rw2-model-r4c-rules-state.md` (the run's `artifacts/rw2/bench/<adapter>-own/numbers.md`).
+The own view; the sealed parts not opened; `r4b-rules-state` was not run.
+
+**Taï grooming, development part** (329 records of 13 animals; chance 0.244; the registered bar `stack-own` 0.353; top-1
+pooled over records, the difference against the bar paired on the same records with a 95% interval over animals):
+
+| kernel | one call | fanned out | against the bar, one call |
+| --- | --- | --- | --- |
+| the untuned model | 0.301 | 0.295 | −0.052 (−0.106 to +0.010) |
+| `r4-rules-state` (taught the rules' picks) | 0.261 | 0.283 | −0.091 (−0.142 to −0.052) |
+| `r4-rules-state-s2` (its second training seed) | 0.289 | 0.301 | −0.064 (−0.108 to −0.028) |
+| `r4c-rules-state` | 0.289 | 0.301 | −0.064 (−0.109 to −0.013) |
+| `r4-field-groom` (taught wild Ngogo male grooming choices) | 0.319 | 0.328 | −0.033 (−0.062 to +0.006) |
+
+No kernel reaches the simple rule "the adult it most often groomed first before". The adapter taught on wild Ngogo
+choices carries over best to another site, both sexes and another subspecies (0.319 against the untuned 0.301, level
+with the bar within its interval). The adapters taught the rules' picks are at or below the untuned model on wild
+partner choice: teaching the rules does not teach whom a wild chimpanzee grooms.
+
+**Kanyawara coalitions, development part** (29 records of 13 females; the bar 0.621 pooled): the kernels read 0.345
+to 0.621 with intervals about 0.3 wide. Nothing is concluded on it, as registered (§3.6).
+
+**What follows, by the registration's own rule** (the plain page's second recommendation: train a separate Taï adapter
+only if the existing kernels fall below the simple rule): they do, so a small named adapter on the 557 eligible train
+records is the next step, when the processor is free; its targets `T-HUN-9` and `T-END-12` are treated as in §2.7 until
+the user rules otherwise. **The rank amendment of the second reader (commit 679304e: the Kanyawara packet shows the
+rank of the earlier two years, not one that includes the attack) is confirmed by the integrator**: it removes a look
+ahead, was made before any model score, and changes no rule or bar.
+
 ## 9. Amendments
 
 Made after the registration commit (4be4e8c, 15:11) and before the first real record was read or any score computed (the harness commit 3d35ef2, 15:21; the first score at 15:21:46):
