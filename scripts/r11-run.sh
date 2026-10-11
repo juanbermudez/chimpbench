@@ -3,8 +3,9 @@
 # (train, parity, tokens, offline, loop, arms) first checks its arguments and what it needs on file (a wrong name is
 # refused at once, before anything waits), then refuses while another model process of this project is alive and
 # refuses a tree that is not clean, then writes the load and the swap in use and holds while swap in use is above 6 GB
-# (re-checked every minute for up to 30 minutes, then it goes ahead and says so; after a hold it looks for another
-# model process again). The output of every model step is also written to a log under artifacts/r11/logs (R11_LOGS).
+# (re-checked every minute, for as long as swap keeps falling and for 30 minutes at most, then it goes ahead and says
+# so; after a hold it looks for another model process again). The output of every model step is also written to a log
+# under artifacts/r11/logs (R11_LOGS).
 # A simulation step waits while the 1-minute load is 8 or more. It stops at the first failed step; a replay that does
 # not reproduce its run is a failed step. An arm or a score file on file is never run again. An adapter is on file once
 # its training has ended (manifest.json, the trainer's last write): weights without a manifest are a training cut short
@@ -57,6 +58,17 @@ WORLDS="48:W50:6 48:W25:12 7:W50:6 7:W25:12 21:W50:6 21:W25:12"   # seed:base:bu
 # prereg §11.1: stage R9 named no standard decode, so the top pick is primary and a draw arm runs beside it; no other decode is launched from here
 case "${R11_DECODE:-}" in ''|top|none) ;; *) echo "R11_DECODE=$R11_DECODE: stage R9 named no standard (docs/staging/r11-prereg.md §11.1); leave it unset"; exit 2 ;; esac
 swap_mb() { sysctl -n vm.swapusage | sed -E 's/.*used = ([0-9.]+)M.*/\1/' | cut -d. -f1; }
+# The hold before a model load: while swap in use is above 6 GB, for 30 minutes at most, and only as long as waiting
+# helps. When swap has not fallen by 50 MB in five minutes it is other programs' and will not drain: the step goes
+# ahead and says so. (11 October: two steps of stage R9 each waited the whole half hour at an unchanged 6,455 MB and
+# then went ahead; a night of this stage has nine model steps.) Sets n, the minutes waited, and still.
+hold_swap() {
+  n=0; still=0; last="$(swap_mb)"
+  while [ "$(swap_mb)" -gt 6144 ] && [ "$n" -lt 30 ] && [ "$still" -lt 5 ]; do
+    echo "R11 hold: swap $(swap_mb) MB in use, above 6 GB ($n min waited)"; sleep 60; n=$((n + 1))
+    now="$(swap_mb)"; if [ "$now" -lt "$((last - 50))" ]; then still=0; last="$now"; else still=$((still + 1)); fi
+  done
+}
 load1() { uptime | sed -E 's/.*load averages?: ([0-9]+).*/\1/'; }
 hold_load() { n=0; while [ "$(load1)" -ge 8 ] && [ "$n" -lt 60 ]; do echo "R11 hold: 1-minute load $(load1), 8 or more ($n min waited)"; sleep 60; n=$((n + 1)); done; }
 # Another model process of this project: anything run by the model runtime's interpreter, and, because that interpreter
@@ -76,10 +88,9 @@ refuse_other_model() { # <what>
 before_model() { # <what>
   refuse_other_model "$1"
   if [ -n "$(git status --porcelain)" ] && [ -z "$R11_ALLOW_DIRTY" ]; then echo "R11 refused ($1): the tree is not clean; commit first"; exit 3; fi
-  n=0
-  while [ "$(swap_mb)" -gt 6144 ] && [ "$n" -lt 30 ]; do echo "R11 hold: swap $(swap_mb) MB in use, above 6 GB ($n min waited)"; sleep 60; n=$((n + 1)); done
-  [ "$n" -gt 0 ] && refuse_other_model "$1, after a hold of $n min"   # half an hour is long enough for another model process to have started
-  echo "R11 machine before model load ($1): $(date '+%d %b %H:%M') | $(uptime | sed 's/.*load averages: /load /') | swap $(swap_mb) MB in use | waited $n min"
+  hold_swap
+  [ "$n" -gt 0 ] && refuse_other_model "$1, after a hold of $n min"   # a hold is long enough for another model process to have started
+  echo "R11 machine before model load ($1): $(date '+%d %b %H:%M') | $(uptime | sed 's/.*load averages: /load /') | swap $(swap_mb) MB in use | waited $n min$([ "$still" -ge 5 ] && echo ' (swap above 6 GB and not falling: going ahead)')"
 }
 step() { echo "R11 start: $* ($(date '+%H:%M'))"; "$@" || { echo "R11 failed: $*"; exit 1; }; }
 # A step whose output is also kept: to the terminal and to a log file, the step's own exit status kept (a pipe would hide it).
@@ -152,7 +163,7 @@ case "$1" in
     rc=0; others="$(model_procs)"
     if [ -n "$others" ]; then echo "R11 check: another model process is running; a model step would refuse:"; echo "$others"; rc=3; else echo "R11 check: no other model process"; fi
     if [ -n "$(git status --porcelain)" ]; then echo "R11 check: the tree is not clean; a model step would refuse"; rc=3; else echo "R11 check: the tree is clean"; fi
-    if [ "$(swap_mb)" -gt 6144 ]; then echo "R11 check: swap in use is above 6 GB; a model step would hold now (up to 30 minutes)"; else echo "R11 check: swap is under the hold line (6 GB)"; fi
+    if [ "$(swap_mb)" -gt 6144 ]; then echo "R11 check: swap in use is above 6 GB; a model step would hold now (while it keeps falling, 30 minutes at most)"; else echo "R11 check: swap is under the hold line (6 GB)"; fi
     [ "$rc" = 0 ] || exit "$rc" ;;
   train|train-hard)
     arm_ok "$2"; assembled
