@@ -955,6 +955,67 @@ model time in all. It is a check of the machinery, never a result: no number fro
   before the run).
 - Afterwards `artifacts/r11/smoke` is deleted. Nothing is written under `artifacts/decide-ft/r11`.
 
+### 12.4 The smoke run as run (14:13 to 14:34 EDT; head 0f3a5d3, tree clean; one model process at a time)
+
+The population run ended at 14:13 (`ended rc=0`); `scripts/r11-run.sh check` then found no other model process. Model
+time: 320 s of training, 400 s of scoring and about 245 s of the worker on MPS, 153 s of parity on the CPU.
+Nothing here is a result; the numbers of the smoke adapter are on 34 development rows after 328 examples.
+
+- **Parity: met in both arms.** `scripts/r11-run.sh parity p5b` and `parity p5a` each printed `PARITY OK`: on 12
+  development packets the training-side token ids equal the serving path's and the largest probability gap is 0
+  (111 s and 42 s). The 12 packets carry every line of packet 5 (`me`, `feeling`, `doing`, `asked because`,
+  `body`, `now`, `nearby`, `lately`, `last`, `memories`) and menus of 3 to 8 options.
+- **The trainer runs to its end on the real model.** 164 rows, 2 epochs, 42 steps, exit 0 in 320 s;
+  50 adapted modules, as stage R4. Both self-checks passed at the first step.
+- **The soft loss by hand, from the logged logits** (this agent's own arithmetic, no project code): a near-certain
+  label (8 options, 0.998 on one) printed 0.535294, by hand 0.535291; a spread label (3 options, 0.514 on
+  the top one) printed 1.028026, by hand 1.028027; the one-hot losses of the same two examples 0.530247 and
+  1.186263, by hand 0.530244 and 1.186264. The largest gap is 0.000003 (the log rounds logits to five places).
+- **The loss is finite and falls.** Mean training loss 1.7165 in the first epoch, 1.6026 in the second. Development
+  soft loss: untuned 1.8754, then 1.5152, then 1.4485 (the labels' own entropy on these rows is 0.289; a uniform
+  chooser would score 1.68).
+- **Memory is under stage R4's.** Peak MPS driver memory 5.49 GiB and peak footprint 6.14 GiB (stage R4: 6.09 and
+  6.82), with the eight longest training packets in the run; 0 out-of-memory retries. Swap in use rose from
+  4,509 MB to 6,389 MB during the training and stayed there after it ended.
+- **0.607 s per example** over the whole smoke run, 0.6 after the first ten steps, at a mean of 354.6 real tokens
+  (the training file's mean is 346.7). A development pass costs 0.765 s a row; the load, the untuned
+  development pass on 34 rows and the manifest took 69 s.
+- **The checkpoint saves and loads.** The saved epoch is the one with the lowest development loss (epoch 2 of
+  2); the manifest carries the arm's data manifest, the settings, the label kind and the cost. Loaded again by the
+  offline scorer at serving precision, the adapter gives a development soft loss of 1.4485: the trainer's own
+  figure for the saved epoch is 1.4485.
+- **One probability per option.** Through the offline scorer: 125 of 125 held-out packets and 34 of 34
+  development packets, each summing to 1. Through the loop's worker: 25 of 25 held-out packets asked one at a
+  time. The worker's ready line carries the adapter with the file's hash; the same 8 packets asked of the untuned
+  model differ by 0.0533 to 0.3716 on their most-moved option, so the adapter is in use; a copy of the adapter
+  loaded beside it answers the same (largest gap 0.0), and so does the first adapter after the switch.
+- **Seconds per ask in the loop's path:** median 0.319, mean 0.331, 95th percentile 0.459 (P5b, one packet at a
+  time, after the first). **The first ask, which holds the model load, took 220 s.** In the offline scorer the
+  first 64 packets took 341 s (about 309 s of it the load), the next 64 took 32 s. Both loads came right
+  after the training, with swap above 6 GB.
+- `artifacts/r11/smoke` was deleted afterwards; nothing was written under `artifacts/decide-ft/r11`.
+
+### 12.5 A fifth repair, found by the smoke run: the loop's first ask raced the guard's time limit (major)
+
+The loop's worker reports "ready" at once and loads the model on its first batch. The loop gives every ask 120
+seconds; an ask that is late goes to the rules and the worker is replaced, and the replacement loads the model again
+on its next ask. The first ask here took 220 s. Stage R10 had met the same thing (55 to 145 s measured) and
+repaired its own night script (`warmedWorker`, `scripts/lib/r10-run.ts`); stage R9's arms of 11 October loaded in
+about 80 s and so passed. `scripts/r11-loop.ts` had no warm-up. With a load slower than the limit the first arm of
+every worker (the primary arm `p5b-s7-top` and the old adapter's `old-top`, on both seeds) would have lost its
+first choices to the rules and been written to file as a result that is never run again; with every load that slow,
+every ask of the night would have waited two minutes and gone to the rules.
+
+Repair: every worker of the loop, at its start and at each replacement, now answers one packet that no one applies
+before it serves, outside the guard's limit (ten minutes at most; a worker that cannot is stopped and the step fails).
+The packet is the arm's own packet for the first animal of the burned-in world with a real choice, built on a copy;
+its answer is thrown away, so no world, receipt or replay changes. The check that the worker holds the arm's adapter
+now comes before the warm-up, so a missing adapter is still refused before any load. A warm-up packet exists on the
+saved burn-ins of both test seeds for all three packets (5 options on seed 4111, 6 on seed 4222), and building it
+leaves the world's hash unchanged. Logged at 14:42 EDT, before the dry run and the tests of the changed loop (§12.6).
+Not run on the real model through the loop: an engine arm on a test seed is a result, and the pieces are each
+exercised (the helper by today's population night, the worker and packet 5 by the smoke run above).
+
 ## For the integrator
 
 *(Rewritten by the reviewer on 11 October 2026 after §11; the builder's notes are kept where they still hold.)*
