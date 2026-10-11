@@ -807,15 +807,39 @@ two lines of the ablation cost 45 real tokens at the median. By the stage's own 
 real tokens, time as tokens to the power 1.5) the projected training cost is 0.58 s an example for P5b and 0.48 s
 for P5a: about 1 h 31 min and 1 h 14 min for three epochs of 3,120 rows, before the development passes.
 
-### 11.8 Not done by the review
+### 11.8 Not done by the review, and what stays unverified
 
 - Nothing was trained and no model was loaded: a whole-population run on the real model held the GPU from 11:27.
 - The like-for-like wording baseline (the first adapter on this stage's held-out draws, its own packet with neutral
   options) is not built: about 30 minutes of model time and a second packet rendering in the held-out file.
 - P5a was left as registered (one memory line comes back). A stricter ablation, P5b with the two lines deleted and
   nothing else changed, would need the files assembled again and is the user's choice.
-- The whole test suite and the build were not run; the merge with `track-e` (which moved to 241bceb at 11:32) was
-  tested for conflicts in memory only (`git merge-tree`: none) and not run.
+- The whole test suite and the build were not run; the merge with `track-e` (which moved to 241bceb at 11:32, with
+  stage R7b's changes to `scripts/r7-report.ts`) was tested for conflicts in memory only (`git merge-tree`: none; the
+  merged report script keeps this stage's `--title` and `--note` and every export this stage imports; nothing under
+  `src/` or `data/` moved on `track-e`, so the burn-ins stay valid). The merged tree was not run: the dry run is the
+  first step of the launch order for that reason.
+- `train_r11.py`, `parity.py`, `em_score.py` and the worker have still never met this stage's files: the trainer
+  parses, its arithmetic is tested and was checked by hand, and its two self-checks run at its first start.
+- Every time estimate is arithmetic on other stages' measurements.
+
+### 11.9 The review's runs (11 October 2026, 11:30 to 12:10 EDT; no model, no GPU)
+
+One simulation at a time; the 1-minute load stayed between 2.0 and 3.5; the population run under `bench-t1` was not
+touched. The amendments (commit a9e17bf, 12:03:12) came before the script repairs and before the dry run below.
+
+| What | Head, tree | When | Result |
+| --- | --- | --- | --- |
+| the builder's unfinished check: 15 wrong calls of `scripts/r11-run.sh`, the interpreter replaced by `/usr/bin/false` | e61d0b4, clean | 11:42 | every call refused on its arguments in under a second; `check` saw the population run's worker and refused |
+| the label by a second route (seed 48, two days of burn-in, one day sampled, `--check`) | e61d0b4, clean | 11:46 to 11:52 | §11.5 |
+| real token counts (CPU, the tokenizer alone) | e61d0b4 | 11:56 | §11.7 |
+| the repaired script: 26 wrong calls, the loop's listing with no adapter anywhere, `check`, the log wrapper | ff21849, clean | 12:03 | every wrong call refused at once (a wrong arm name in under two seconds, with or without another model process alive); nothing can start |
+| `scripts/r11-run.sh dry` (seed 48, the fake worker) | 1f9711e, clean; again at ff21849, clean | 12:03 to 12:04; 12:05 to 12:06 | all ten verdicts hold, 6 of 6 replays; the same end hashes as the builder's two runs |
+| `scripts/r11-run.sh report`, `publish` | ff21849 | 12:06 | the tables of this commit; the data manifest unchanged |
+| `tests/r11.test.ts` | ff21849 | 12:07 to 12:10 | 11 of 11 (one added: N1 and the wording baseline) |
+| `tests/r7-engine.test.ts`, `r5-pilot`, `r9-decode`, `r8-packet`, `r7-card` | ff21849 | 12:07 to 12:10 | 2, 5, 11, 21 and 15: all pass |
+| `training/decide_ft/test_soft_loss.py`, the loss by hand | ff21849 | 12:00; 12:10 | 9 of 9; §11.5 |
+| `tsc --noEmit`, the stage's scripts under the same strict check, `gen-params --check` | ff21849 | 12:10 | clean; 1,050 entries, none added; `git diff a11c45c -- src data` is empty |
 
 ## For the integrator
 
@@ -857,6 +881,7 @@ export R11_OUT=/Volumes/Drive/chimpbench/MGOGO/.claude/worktrees/r11-honest-retr
 
 # 1. before any load (starts nothing; a minute): must end with "no other model process" and "the tree is clean"
 scripts/r11-run.sh check
+scripts/r11-run.sh dry              # no model, about a minute: the whole path on this checkout against a fake worker; must end "R11 done (dry)" with 6 of 6 replays
 
 # 2. the trainer's inputs against the serving path (CPU, a few minutes each): each must print PARITY OK
 scripts/r11-run.sh parity p5b && scripts/r11-run.sh parity p5a
