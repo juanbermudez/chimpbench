@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 
 // Imported dynamically so this file skips (instead of crashing the whole
 // suite) while the simulation's fixed-tick exports are still being written.
@@ -18,13 +19,15 @@ function run(api: Clock, world: import('../src/types').World, speedId: string, f
   return ticks;
 }
 
-test('presets ascend from real time through 1 min/s to 1 day/s and end with max; unknown ids fail loudly', { skip }, () => {
+test('presets ascend from real time through the watching speed and 1 min/s to 1 day/s and end with max; unknown ids fail loudly', { skip }, () => {
   const { SPEED_PRESETS, createClock, setSpeed, formatRate } = clockApi!;
-  assert.deepEqual(SPEED_PRESETS.map(p => p.id), ['rt', '1x', '10x', '1h', '6h', '1d', 'max']);
+  assert.deepEqual(SPEED_PRESETS.map(p => p.id), ['rt', 'watch', '1x', '10x', '1h', '6h', '1d', 'max']);
   assert.equal(SPEED_PRESETS[0].ecoSecondsPerSecond, 1); assert.equal(SPEED_PRESETS[0].label, 'Real time');
-  assert.equal(SPEED_PRESETS[1].ecoSecondsPerSecond, 60); assert.equal(SPEED_PRESETS[1].label, '1×');
-  assert.equal(SPEED_PRESETS[5].ecoSecondsPerSecond, 86_400);
+  assert.equal(SPEED_PRESETS[1].ecoSecondsPerSecond, 4); assert.equal(SPEED_PRESETS[1].label, 'Watch 4×');   // stage W1
+  assert.equal(SPEED_PRESETS[2].ecoSecondsPerSecond, 60); assert.equal(SPEED_PRESETS[2].label, '1×');
+  assert.equal(SPEED_PRESETS[6].ecoSecondsPerSecond, 86_400);
   assert.equal(createClock().speedId, '1x', 'a new clock still starts at 1 min/s');
+  assert.equal(createClock().ecoSecondsPerSecond, 60, 'the watching speed is offered, not the default');
   for (let i = 1; i < SPEED_PRESETS.length; i++) assert.ok(SPEED_PRESETS[i].ecoSecondsPerSecond > SPEED_PRESETS[i - 1].ecoSecondsPerSecond);
   assert.throws(() => setSpeed(createClock(), 'warp'), /Unknown speed/);
   assert.equal(formatRate(60), '1 min/s'); assert.equal(formatRate(21_600), '6 h/s'); assert.equal(formatRate(86_400), '1 day/s');
@@ -57,6 +60,37 @@ test('real time: one 15-s tick per 15 real seconds, smooth sub-tick progress, a 
   const w2 = sim!.createWorld(9);
   for (let i = 0; i < 60 * 20; i++) api.advance(sw, w2, 1 / 60, () => false, () => 0);
   assert.ok(sw.effectiveRate > 0.5 && sw.effectiveRate < 1.5, `steady near 1 s/s right after the switch: ${sw.effectiveRate}`);
+});
+
+test('the watching speed: one tick every 3.75 real seconds, smooth sub-tick progress, the same worlds', { skip }, () => {
+  const api = clockApi!;
+  const world = sim!.createWorld(9), ref = sim!.createWorld(9);
+  const clock = api.createClock(); api.setSpeed(clock, 'watch');
+  assert.equal(clock.effectiveRate, 4, 'the readout starts at the new target');
+  let ticks = 0, frames = 0;
+  const step = () => { ticks += api.advance(clock, world, 1 / 60, () => false, () => 0); frames++; };
+  while (frames < 112) step();                                       // 1.87 s: half a tick
+  assert.equal(ticks, 0);
+  assert.ok(Math.abs(api.subTick(clock) - 0.5) < 0.01, `half a tick accrued after 1.87 s: ${api.subTick(clock)}`);
+  while (frames < 228) step();                                       // just past 3.75 s
+  assert.equal(ticks, 1, 'the first tick lands after 3.75 real seconds');
+  while (frames < 60 * 151) step();                                  // 151 s: forty ticks (the fortieth is due at 150 s)
+  assert.equal(ticks, 40);
+  assert.ok(clock.ticksLastFrame <= 1 && !clock.limited);
+  assert.ok(clock.effectiveRate > 2.5 && clock.effectiveRate < 5.5, `reported rate stays near 4 s/s between ticks: ${clock.effectiveRate}`);
+  for (let i = 0; i < 40; i++) sim!.tickWorld(ref);
+  assert.equal(JSON.stringify(world), JSON.stringify(ref), 'the watching speed changes only how often ticks run, never the world');
+});
+
+test('the scripts that pick a speed by its key agree with the preset order', { skip }, () => {
+  // Speed keys are positions in SPEED_PRESETS, so a new preset moves them. perf-probe keeps its own list of ids (it fell
+  // behind when Real time was added and again with the watching speed); verify-browser presses 7 for 1 day/s and 3 for
+  // 1 min/s; audio-probe presses 3 for 1 min/s and 1 for Real time.
+  const ids = clockApi!.SPEED_PRESETS.map(p => p.id);
+  const list = /const SPEEDS = \[([^\]]*)\]/.exec(readFileSync(new URL('../scripts/perf-probe.mjs', import.meta.url), 'utf8'));
+  assert.ok(list, 'scripts/perf-probe.mjs declares SPEEDS');
+  assert.deepEqual(list[1].split(',').map(s => s.trim().replace(/['"]/g, '')), ids, 'scripts/perf-probe.mjs SPEEDS follows SPEED_PRESETS');
+  assert.equal(ids[0], 'rt', 'key 1 (audio-probe)'); assert.equal(ids[2], '1x', 'key 3 (verify-browser, audio-probe)'); assert.equal(ids[6], '1d', 'key 7 (verify-browser)');
 });
 
 test('the same tick count yields identical worlds at 1× and at 1 day/s', { skip }, () => {

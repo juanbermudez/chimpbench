@@ -157,8 +157,8 @@ try {
   pass(`stranger playback: ${respond} listeners responding`);
   await key('Escape');
 
-  // Accelerated clock: every tick still runs; the achieved rate is reported honestly. (Key 6: 1 is real time.)
-  await key('6');
+  // Accelerated clock: every tick still runs; the achieved rate is reported honestly. (Key 7: 1 is real time, 2 the watching speed.)
+  await key('7');
   await page.waitForTimeout(4000);
   const s5 = await snap();
   assert.equal(s5.clock.speedId, '1d');
@@ -170,10 +170,10 @@ try {
     const h = window.__MGOGO__.snapshot().hour;
     if (!(h > 21 || h < 4)) return false;
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: '2' }));
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: '3' }));
     return true;
   }, null, 30000);
-  await key('2');
+  await key('3');
   await page.waitForTimeout(2500);
   const night = await snap();
   assert.ok(night.environment.daylight < 0.1, 'night');

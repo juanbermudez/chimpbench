@@ -94,7 +94,9 @@ if (want('zoom-ladder')) {
   await key('Space'); await setMix({ ambience: 0.8, weather: 0.8 });
 }
 // Busy close view at 10 min/s (subsampled calls), full mix: voice cap, stealing and the limiter under load.
-if (want('close-busy')) { await view('close'); await key('2'); await perf('intervene', 'colobus-troop'); await settle(2000); results.push(await record('close-busy', 10)); await key('1'); await view('rts'); await resetCamera(); }
+// (Speed keys are positions in the preset list: this pressed 2, which has been 1 min/s since Real time became key 1; stage W1
+// put the watching speed at key 2, so it presses 3 to keep running at 1 min/s. Key 1 below is Real time, as before.)
+if (want('close-busy')) { await view('close'); await key('3'); await perf('intervene', 'colobus-troop'); await settle(2000); results.push(await record('close-busy', 10)); await key('1'); await view('rts'); await resetCamera(); }
 // 3. Full mix up close (beds + animals).
 if (want('close-mix')) { await view('close'); await perf('intervene', 'snake-model'); await settle(1500); results.push(await record('close-mix')); await view('rts'); await resetCamera(); }
 // 4. Noon and night in the overview.

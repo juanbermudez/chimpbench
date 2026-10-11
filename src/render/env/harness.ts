@@ -7,12 +7,14 @@ import { solarPosition } from './shared';
 // Environment test page: ?hour=6.5&rain=0.8&cloud=0.9&weather=storm&wind=1&view=close|rts|cinematic
 // &quality=high|medium|low&seed=48&pause=1&territory=1&canopy=0&hud=0&focus=<chimpId>&zoom=2&x=..&z=..&t=<frozen seconds>
 // &profile=field: the real-metre world (C5b; the strategy view opens on the whole map, &strat=1 zooms onto the focus)
+// &params={"walkGait":1}: parameter overrides for the world (URL-encoded JSON; e.g. a Track E stack's walking speed)
 // Query overrides are re-applied after every sim step so screenshots are deterministic in lighting.
 
 const q = new URLSearchParams(location.search);
 const num = (key: string) => (q.has(key) ? Number(q.get(key)) : undefined);
-const api = sim as unknown as { createWorld(seed?: number, opts?: { profile?: 'compressed' | 'field' }): World; tickWorld?: (w: World) => void; stepWorld?: (w: World, dt: number) => void };
-const world = api.createWorld(num('seed') ?? 48, q.get('profile') === 'field' ? { profile: 'field' } : {});
+const api = sim as unknown as { createWorld(seed?: number, opts?: { profile?: 'compressed' | 'field'; params?: Record<string, number> }): World; tickWorld?: (w: World) => void; stepWorld?: (w: World, dt: number) => void };
+const overrides = q.has('params') ? { params: JSON.parse(q.get('params')!) as Record<string, number> } : {};
+const world = api.createWorld(num('seed') ?? 48, q.get('profile') === 'field' ? { profile: 'field', ...overrides } : overrides);
 const defaults: Environment = {
   weather: 'clear', rain: 0, cloud: 0.25, wind: 0.25, humidity: 0.8, temperature: 22, lightningAt: -1, season: 'wet',
   dayOfYear: 271, daylight: 1, sunAltitude: 1, sunAzimuth: 1.5, moonPhase: 0.5, fruitIndex: 0.5,

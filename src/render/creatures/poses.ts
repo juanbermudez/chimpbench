@@ -32,6 +32,9 @@ export interface PoseCtx {
   lp: number;
   /** 0..1 time-lapse regime: capped cadence, lower swing (gait.ts). */
   lapse: number;
+  /** 0..1 a walker that has stopped: its swinging hand or foot comes down and stays on the ground until it moves again
+   * (stage W1; it used to hold mid-stride with a limb in the air until the clip changed). Stylization. */
+  settle: number;
   /** Partner's hips, spine, chest, neck and head joints in this animal's unit body space (valid when hasBones). */
   pb: Float32Array; hasBones: boolean;
   /** Clock shared by both animals of a pair (s), so blows, flinches and grooming strokes line up. */
@@ -288,7 +291,7 @@ function quadGait(w: Pw, c: PoseCtx, gallop: boolean, sneak: boolean, sway = 1, 
   quadStance(w, c, low);
   // Walk footfalls from the individual limb phase (lateral or diagonal sequence) [M, Finestone et al. 2018].
   const off = gallop ? GALLOP_OFF : (WALK_OFF[0] = c.lp, WALK_OFF[1] = (c.lp + 0.5) % 1, WALK_OFF[2] = 0, WALK_OFF[3] = 0.5, WALK_OFF);
-  const liftK = (1 - 0.4 * c.lapse) * liftK0; // time-lapse: lower, quicker swings
+  const liftK = (1 - 0.4 * c.lapse) * liftK0 * (1 - c.settle); // time-lapse: lower, quicker swings; stopped: the swing comes down
   const lifts = gallop ? [0.13 * liftK, 0.13 * liftK, 0.12 * liftK, 0.12 * liftK] : [0.075 * liftK, 0.075 * liftK, 0.07 * liftK, 0.07 * liftK];
   const baseZ = [0.17 - low * 0.03, 0.17 - low * 0.03, -0.12 + low * 0.06, -0.12 + low * 0.06];
   const baseX = [0.2, -0.2, 0.11, -0.11];
@@ -296,7 +299,8 @@ function quadGait(w: Pw, c: PoseCtx, gallop: boolean, sneak: boolean, sway = 1, 
   for (let l = 0; l < 4; l++) {
     let sw = sweep * (l < 2 ? 1 : 0.95);
     if (l === 3) sw *= 1 - lim * 0.55;
-    const [dz, dy, stance] = limbCycle(ph, off[l], duty, sw, lifts[l] * (l === 3 ? 1 - lim * 0.5 : 1));
+    const [dz, dy, inStance] = limbCycle(ph, off[l], duty, sw, lifts[l] * (l === 3 ? 1 - lim * 0.5 : 1));
+    const stance = inStance || c.settle > 0.9 ? 1 : 0; // a settled limb is on the ground wherever its swing had reached
     const reachZ = gallop ? (l < 2 ? 0.08 : -0.04) : 0;
     w.ik(l, baseX[l], baseY[l] + dy, baseZ[l] + dz + reachZ, 1, l < 2 ? 0.55 + stance * 0.45 : 0.6 + stance * 0.4);
     w.v[PI.contact + l] = stance;
@@ -326,9 +330,9 @@ function bipedGait(w: Pw, c: PoseCtx, swagger: number) {
   w.r(B.hips, 0.42).r(B.spine, 0.06).r(B.chest, 0.02);
   const legs = [[0.12, 0], [-0.12, 0.5]];
   for (let i = 0; i < 2; i++) {
-    const [dz, dy, stance] = limbCycle(ph, legs[i][1], duty, sweep, (0.09 + swagger * 0.04) * (1 - 0.4 * c.lapse));
+    const [dz, dy, inStance] = limbCycle(ph, legs[i][1], duty, sweep, (0.09 + swagger * 0.04) * (1 - 0.4 * c.lapse) * (1 - c.settle));
     w.ik(LIMB.legL + i, legs[i][0] * (1 + swagger * 0.4), 0.08 + dy, 0.02 + dz, 1, 1);
-    w.v[PI.contact + LIMB.legL + i] = stance;
+    w.v[PI.contact + LIMB.legL + i] = inStance || c.settle > 0.9 ? 1 : 0;
   }
   const s1 = sin(ph * TAU);
   // Swagger: shoulders hunched, arms held out and swung, whole body rocking.

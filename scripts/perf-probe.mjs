@@ -28,7 +28,10 @@ const quality = String(opt('quality', 'high')); // 'auto' keeps the app's auto-d
 // --query the probe opens the compressed map (the app's default is the field profile), so runs stay comparable.
 const extraQuery = String(opt('query', '') || '');
 const appQuery = ['perf=1', pop ? `pop=${pop}` : '', /(^|&)profile=/.test(extraQuery) ? '' : 'profile=compressed', extraQuery].filter(Boolean).join('&');
-const SPEEDS = ['1x', '10x', '1h', '6h', '1d', 'max'];
+// Speed keys are positions in src/clock.ts SPEED_PRESETS (key 1 is the first). This list had fallen behind it: since Real
+// time became key 1 the "1x" scenarios ran at Real time and the "1d" ones at 6 h/s, and the watching speed (stage W1)
+// moved them one further. pickSpeed() now checks what the app reports, so the list cannot fall behind silently again.
+const SPEEDS = ['rt', 'watch', '1x', '10x', '1h', '6h', '1d', 'max'];
 const MATRIX = [];
 for (const view of ['rts', 'close', 'cinematic']) for (const speed of ['1x', '1h', '1d', 'max']) for (const time of ['day', 'night', 'storm']) MATRIX.push(`${view}-${speed}-${time}`);
 const QUICK = ['rts-1x-day', 'rts-1d-day', 'rts-max-day', 'close-1x-day', 'close-1d-night', 'cinematic-1x-day', 'rts-1x-storm', 'rts-1x-night'];
@@ -73,6 +76,14 @@ async function openApp(browser, extra = '') {
 async function metrics(cdp) { const { metrics } = await cdp.send('Performance.getMetrics'); return Object.fromEntries(metrics.map(m => [m.name, m.value])); }
 
 async function press(page, key) { await page.keyboard.press(key); await page.waitForTimeout(80); }
+/** Selects a speed preset by its key and fails loudly when the app ends up on another one (a scenario named after a speed must run at it). */
+async function pickSpeed(page, id) {
+  const si = SPEEDS.indexOf(id);
+  if (si < 0) return;
+  await press(page, String(si + 1));
+  const got = await page.evaluate(() => window.__MGOGO__.snapshot().clock.speedId);
+  if (got !== id) throw new Error(`perf-probe: key ${si + 1} selected speed "${got}", not "${id}": SPEEDS no longer matches src/clock.ts SPEED_PRESETS`);
+}
 
 async function setup(page, id) {
   const [view, speed, time] = id.split('-');
@@ -82,8 +93,7 @@ async function setup(page, id) {
   const want = { day: 10, night: 21, storm: 10 }[time];
   if (want !== undefined) await page.evaluate(want => { const h = window.__MGOGO__.snapshot().hour; return window.__MGOGO_PERF__.skipHours(((want - h) % 24 + 24) % 24); }, want);
   if (time === 'storm') await page.evaluate(() => window.__MGOGO_PERF__.intervene('storm'));
-  const si = SPEEDS.indexOf(speed);
-  if (si >= 0) await press(page, String(si + 1));
+  await pickSpeed(page, speed);
   const snap0 = await page.evaluate(() => window.__MGOGO__.snapshot());
   if (view === 'close' && snap0.view !== 'close') await press(page, 'c');
   if (view === 'cinematic' && snap0.view !== 'cinematic') await press(page, 'v');
@@ -263,7 +273,7 @@ try {
   const page = last?.page, cdp = last?.cdp, errors = last?.errors ?? [];
   if (soak > 0) {
     // Memory soak at 1 day/s in the RTS view: heap samples every 10 s.
-    await press(page, '5');
+    await pickSpeed(page, '1d');
     const samples = [];
     for (let t = 0; t <= soak; t += 10) { samples.push(await page.evaluate(() => Math.round(performance.memory.usedJSHeapSize / 1048576 * 10) / 10)); if (t < soak) await page.waitForTimeout(10000); }
     const info = await page.evaluate(() => window.__MGOGO_PERF__.info());

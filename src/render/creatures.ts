@@ -27,7 +27,8 @@ import { perfEnd, perfNow } from '../perf';
 import { advancePlayback, createPlayback, createTrack, pushSample, relocationJump2, type Track } from './creatures/playback';
 import { paramsOf } from '../sim/params';
 import { sampleSmooth } from './creatures/motion';
-import { GAITS, Regime, advancePhase, createLock, limbPhase, resetLock, solveGait, stepLock, type ContactLock, type GaitSolve } from './creatures/gait';
+import { GAITS, Regime, advancePhase, createLock, limbPhase, resetLock, solveClimb, solveGait, stepLock, type ContactLock, type GaitSolve } from './creatures/gait';
+import { referenceRate, smallMapPace } from './creatures/pace';
 import { applyInertia, blinkAt, createAttention, createBlink, createInertia, scanAngles, selectAttention, springStep, startInertia, type AttnCand, type Attention, type Blink, type Inertia } from './creatures/secondary';
 import type { KeepCandidate } from './env/occluders';
 import { createTreeIndex, type TreeIndex } from './creatures/tree-index';
@@ -127,6 +128,11 @@ export interface Anim {
   clip: string; clipT: number; role: number; gait: Gait | null; phase: number;
   // Motion (rendered ground point, heading).
   x: number; y: number; z: number; heading: number; speed: number; vel: number; inited: boolean;
+  /** Stage W1, maps that do not walk at the 160 m map's speed (creatures/pace.ts): the drawn speed with the path read at
+   * the reference rate (refSpeed), and at the faster of that and the playback rate (moveSpeed); m/s. Unused on the 160 m map. */
+  refSpeed: number; moveSpeed: number;
+  /** Stage W1: 0..1, a stopped walker lowering its swinging limb (poses.ts PoseCtx.settle); exactly 0 while it walks. */
+  settle: number;
   track: Track;                    // sim position history; track.x/y/z is the smooth sim path at render time
   ox: number; oz: number;          // eased layout offset (pairing, separation) added to the interpolated point
   // Gait and contacts (gait.ts), transitions (secondary.ts).
@@ -341,7 +347,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   const pctx: PoseCtx = {
     t: 0, time: 0, phase: 0, speedU: 0, freq: 0, seed: 0, stage: 'adult', male: true, age: 20, injury: 0, mood: 'calm', energy: 1,
     vocal: null, hasTarget: false, tx: 0, ty: 0, tz: 0, tdist: 99, tsize: 1, role: 0, inTree: false, wet: 0, stride: 0, lp: 0.6, lapse: 0,
-    pb: new Float32Array(15), hasBones: false, pairT: 0, side: 1,
+    pb: new Float32Array(15), hasBones: false, pairT: 0, side: 1, settle: 0,
   };
   const PAIR_BONES = [B.hips, B.spine, B.chest, B.neck, B.head];
   const V = new THREE.Vector3(), V2 = new THREE.Vector3(), Q = new THREE.Quaternion(), Q2 = new THREE.Quaternion(), Q3 = new THREE.Quaternion(), E = new THREE.Euler();
@@ -362,7 +368,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       clip: '', clipT: 0, role: 0, gait: null, phase: hash01(chimp.id, 3),
       x: chimp.position[0], y: 0, z: chimp.position[2], heading: chimp.heading ?? 0, speed: 0, vel: 0, inited: false,
       track: createTrack(chimp.position[0], Math.max(0, chimp.position[1] ?? 0), chimp.position[2]), ox: 0, oz: 0,
-      moving: false, stillT: 0, fastGait: false, turnRate: 0, climbDy: 0, dist: 0, strides: 0, poseDt: 0,
+      refSpeed: 0, moveSpeed: 0, settle: 0, moving: false, stillT: 0, fastGait: false, turnRate: 0, climbDy: 0, dist: 0, strides: 0, poseDt: 0,
       gs: { f: 0, stride: 0, regime: Regime.natural }, lapse: 0, locks: [createLock(), createLock(), createLock(), createLock()], drop: 0, planted: false, bank: 0,
       inert: createInertia(POSE_SIZE), prevOut: new Float32Array(POSE_SIZE), prevCur: new Float32Array(POSE_SIZE), outVel: new Float32Array(POSE_SIZE), skip: new Uint8Array(POSE_SIZE), hold: new Float32Array(12), holdMask: 0,
       dbg: { clipSwitches: 0, moveToggles: 0, replants: 0 },
@@ -615,12 +621,17 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     if (a.carry === 1) return [c.alive ? 'carryVentral' : 'deadCarried', 0, null];
     if (a.carry === 2) return ['carryDorsal', 0, null];
     if (!c.alive || c.action === 'dead') return ['dead', 0, null];
-    const recv = receiver.get(a.id);
-    if (recv && recv.clipB && !moving) return [recv.clipB, recv.roleB, null];
-    if (a.pairClip && !moving) return [a.pairClip, a.role, null];
-    const pairA = a.paired;
     const act = c.action;
     const high = a.elevated > 0.5;
+    // W1: an animal above 0.3 m is drawn at its place on a branch whatever its sim position does there (placeGrounded
+    // uses the same height), so sideways movement at height takes no locomotion clip: it would walk or gallop on the
+    // spot (players at 12 m were drawn galloping). It keeps the clip of what it is doing; climbing keeps its own. A
+    // clamber clip that moves through the crown is a later stage.
+    const still = !moving || (a.y > 0.3 && act !== 'climb');
+    const recv = receiver.get(a.id);
+    if (recv && recv.clipB && still) return [recv.clipB, recv.roleB, null];
+    if (a.pairClip && still) return [a.pairClip, a.role, null];
+    const pairA = a.paired;
     if (act === 'climb' && (c.position[1] ?? 0) > 0.25) return [moving || a.vel > 0.02 ? 'climb' : 'clingTrunk', 0, 'climb'];
     if (act === 'nest' && (high || c.nest)) {
       // actionTime counts ecological seconds in the current action: the first minutes are construction.
@@ -637,7 +648,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         return [pc.clip, pc.role, pc.gait];
       }
     }
-    if (moving) {
+    if (!still) {
       // Walk ↔ gallop with hysteresis (exit 20% below entry) so speed noise cannot flicker the gait.
       switch (act) {
         case 'charge': return ['gallop', 1, 'gallop'];
@@ -741,6 +752,11 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   const playback = createPlayback();
   // Relocation threshold from this world's speeds (read once: the layer is rebuilt when a simulation is swapped in).
   const jump2 = relocationJump2(paramsOf(world));
+  // Stage W1 (creatures/pace.ts): the moving thresholds and gallop entries below were tuned where the 160 m map's walk
+  // plays at 1 min/s. A world that walks at another speed (the field map) reads them at its reference rate instead,
+  // whatever the playback speed, so a walker is a walker at Real time and at 1 min/s alike. refMode is false on the
+  // 160 m map, which keeps its original expressions bit for bit. refK: ecological hours per second at that rate.
+  const refMode = !smallMapPace(paramsOf(world)), refK = referenceRate(paramsOf(world)) / 3600;
   let pbRate = 0;          // ecological hours of render time per real second (smoothed)
   let lastRenderT = NaN;
   function interpolateAll(subTick: number, dt: number) {
@@ -772,15 +788,27 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     a.x = nx; a.z = nz; a.y = tr.y; a.inited = true;
     a.dist += moved;
     // Rendered velocity: the path's analytic velocity × playback rate, plus the easing of layout offsets.
-    const vx = tr.vx * pbRate + (dt > 0 && !cut ? (a.ox - ox0) / dt : 0), vz = tr.vz * pbRate + (dt > 0 && !cut ? (a.oz - oz0) / dt : 0);
-    const pathSpeed = hyp2(tr.vx, tr.vz) * pbRate;
+    const ex = dt > 0 && !cut ? (a.ox - ox0) / dt : 0, ez = dt > 0 && !cut ? (a.oz - oz0) / dt : 0;
+    const vx = tr.vx * pbRate + ex, vz = tr.vz * pbRate + ez;
+    let pathSpeed = hyp2(tr.vx, tr.vz) * pbRate;
     const flat = hyp2(vx, vz);
     a.speed = cut ? 0 : dt > 0 ? damp(a.speed, flat, 14, dt) : a.speed;
     a.vel = cut ? 0 : dt > 0 ? damp(a.vel, hyp2(flat, tr.vy * pbRate), 8, dt) : a.vel;
+    let turnSpeed = a.speed;
+    if (refMode) {
+      // W1: the same velocity with the sim path read at the reference rate (refSpeed: the choice of clip) and at the
+      // faster of that and the playback rate (moveSpeed: the moving test and the heading, so nothing that counts as
+      // moving today stops counting). The easing of layout offsets is real time and enters as drawn: a partner
+      // sliding into place reads exactly as it does at 1 min/s, at every speed.
+      const km = Math.max(pbRate, refK);
+      a.refSpeed = cut ? 0 : dt > 0 ? damp(a.refSpeed, hyp2(tr.vx * refK + ex, tr.vz * refK + ez), 14, dt) : a.refSpeed;
+      a.moveSpeed = cut ? 0 : dt > 0 ? damp(a.moveSpeed, hyp2(tr.vx * km + ex, tr.vz * km + ez), 14, dt) : a.moveSpeed;
+      turnSpeed = a.moveSpeed; pathSpeed = hyp2(tr.vx, tr.vz) * km;
+    }
     // Heading: travel direction when moving (from the C1 path, so it turns smoothly), else the pairing/sim heading.
     const c = a.chimp;
     let target = a.headingTarget ?? c.heading ?? a.heading;
-    if (a.speed > 0.25 * a.morph.size && pathSpeed > 0.05 * a.morph.size) target = Math.atan2(tr.vx, tr.vz);
+    if (turnSpeed > 0.25 * a.morph.size && pathSpeed > 0.05 * a.morph.size) target = Math.atan2(tr.vx, tr.vz);
     const before = a.heading;
     // The path is C1, so a moving animal can follow its direction closely (less body-vs-path lag in curves).
     a.heading = cut ? target : dampAngle(a.heading, target, a.moving ? 10 : 4.5, dt);
@@ -799,13 +827,21 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     const wasMoving = a.moving;
     // Moving state with hysteresis; a walker must also be still for 0.8 s before it stands (it pauses mid-stride:
     // foragers stop and go every few ticks).
+    // (W1: on a map that does not walk at the 160 m map's speed the test reads moveSpeed; see updateMotion.)
+    const um = refMode ? a.moveSpeed / s : u;
     if (a.carry !== 0) a.moving = false;
-    else if (a.moving) { a.stillT = u > MOVE_EXIT ? 0 : a.stillT + dtReal; a.moving = a.stillT < 0.8; }
-    else { a.moving = u > MOVE_ENTER; a.stillT = 0; }
+    else if (a.moving) { a.stillT = um > MOVE_EXIT ? 0 : a.stillT + dtReal; a.moving = a.stillT < 0.8; }
+    else { a.moving = um > MOVE_ENTER; a.stillT = 0; }
     if (a.moving !== wasMoving) a.dbg.moveToggles++;
-    // In time-lapse the rendered speed is inflated; pick gaits from the ecological-equivalent speed.
+    // W1: during those 0.8 s the stopped walker's swinging hand or foot comes down (it held it in the air, mid-stride,
+    // until the clip changed); it lifts again if the walk resumes. Exactly 0 on a walker that has not stopped. The rate
+    // (12 per second: down in about 0.2 s) is a stylization.
+    const halted = a.moving && a.stillT > 0;
+    a.settle = halted || a.settle > 1e-3 ? damp(a.settle, halted ? 1 : 0, 12, dtReal) : 0;
+    // In time-lapse the rendered speed is inflated; pick gaits from the ecological-equivalent speed (W1: from the speed
+    // at the world's reference rate where that is not the 160 m map's 1 min/s, so a field walker is not read as a runner).
     const timeScale = Math.max(1, curSimRate / 60);
-    let [clip, role, gait] = chooseClip(a, a.moving, u / timeScale);
+    let [clip, role, gait] = chooseClip(a, a.moving, refMode ? a.refSpeed / s : u / timeScale);
     // A stationary quadruped turning more than ~50°/s steps around instead of spinning on planted feet.
     const turning = !a.moving && a.carry === 0 && a.elevated < 0.5 && c.alive && (clip === 'stand' || clip === 'listen') && Math.abs(a.turnRate) > 0.9;
     if (turning) { clip = 'walk'; gait = 'walk'; role = 0; }
@@ -821,11 +857,13 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     const dist = a.dist / s; a.dist = 0;
     if (gait === 'climb') {
       // Phase by height climbed (signed): stance hands and feet stay put on the bark; descending runs it backwards.
-      a.gs.stride = GAITS.climb.strideMax; a.gs.regime = Regime.natural;
+      // W1: above the cadence cap the gait table names for climbing (GAITS.climb.fCap; at 1 min/s the limbs cycled 15 to
+      // 30 times a second) the climb is shown as time-lapse, as walking is: the cycle runs at the cap, in the direction climbed.
+      solveClimb(GAITS.climb, a.vel / s, a.gs.regime, a.gs);
       const dy = a.climbDy / s; a.climbDy = 0;
-      const p = a.phase + (Math.abs(dy) < 1 ? dy / a.gs.stride : 0);
+      const p = a.phase + (a.gs.regime === Regime.timelapse ? Math.sign(dy) * a.gs.f * dtReal : Math.abs(dy) < 1 ? dy / a.gs.stride : 0);
       a.phase = p - Math.floor(p);
-      freq = a.gs.f = Math.abs(a.vel / s) / a.gs.stride;
+      freq = a.gs.f;
     } else if (gait) {
       if (turning) { a.gs.f = 1.4; a.gs.stride = 0.22; a.gs.regime = Regime.natural; a.phase = (a.phase + dtReal * 1.4) % 1; }
       else {
@@ -840,7 +878,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     a.lapse = damp(a.lapse, a.gs.regime === Regime.timelapse ? 1 : 0, 6, dtReal);
     // Context.
     pctx.t = a.clipT; pctx.time = animClock + hash01(a.id, 13) * 100; pctx.phase = a.phase; pctx.speedU = gait === 'climb' ? a.vel / s : u; pctx.freq = freq;
-    pctx.stride = gait ? a.gs.stride : 0; pctx.lapse = a.lapse; pctx.lp = limbPhase(hash01(a.id, 19), a.strides + a.phase);
+    pctx.stride = gait ? a.gs.stride : 0; pctx.lapse = a.lapse; pctx.settle = a.settle; pctx.lp = limbPhase(hash01(a.id, 19), a.strides + a.phase);
     pctx.seed = hash01(a.id, 17); pctx.stage = c.stage; pctx.male = c.sex === 'male'; pctx.age = c.age;
     pctx.injury = c.injury ?? 0; pctx.mood = c.mood ?? 'calm'; pctx.energy = c.energy ?? 1; pctx.vocal = c.vocal && (c.vocalUntil ?? 0) >= world.time ? c.vocal : null;
     pctx.role = role; pctx.inTree = a.elevated > 0.5; pctx.wet = 0; pctx.side = a.pSide;

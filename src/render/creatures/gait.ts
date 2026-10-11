@@ -51,6 +51,20 @@ export function solveGait(spec: GaitSpec, u: number, prev: Regime, out: GaitSolv
   return out;
 }
 
+/**
+ * Climbing (stage W1): cadence for a rendered climbing speed v (body lengths per real second, either sign). The stride
+ * is the gait's reach, so below the cadence cap the phase follows the height climbed and holding hands and feet stay
+ * on the bark; above the cap the climb is time-lapse at the cap, as a walk is. prev: leaving time-lapse needs the
+ * cadence to fall 12% below the cap (as solveGait).
+ */
+export function solveClimb(spec: GaitSpec, v: number, prev: Regime, out: GaitSolve): GaitSolve {
+  const f = Math.abs(v) / spec.strideMax;
+  out.stride = spec.strideMax;
+  if (f > (prev === Regime.timelapse ? spec.fCap * 0.88 : spec.fCap)) { out.regime = Regime.timelapse; out.f = spec.fCap; }
+  else { out.regime = Regime.natural; out.f = f; }
+  return out;
+}
+
 /** Advances a gait phase by distance d (body lengths) for a stride; in time-lapse by cadence × time instead. */
 export function advancePhase(phase: number, d: number, g: GaitSolve, dt: number): number {
   const step = g.regime === Regime.timelapse || g.stride < 1e-4 ? g.f * dt : d / g.stride;

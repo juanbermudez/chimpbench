@@ -12,6 +12,8 @@ import type { OlderParamsView, PersistenceView } from './ui/contracts';
 import type { ModelPolicy, SceneAPI, World } from './types';
 import { perf, perfAdd, perfDump, perfEnd, perfFrame, perfNow, perfReset } from './perf';
 import { growPopulation } from './sim/debug';
+import { paramsOf } from './sim/params';
+import { lapseRate } from './render/creatures/pace';
 import { createAudioEngine, type AudioEngine } from './audio/engine';
 import { APP_VERSION, SAVE_FORMAT, STATE_SHAPE, STATE_VERSION, captureDecider, paramsNote, restoreDecider, type PersistedSession, type SaveEnvelope } from './persist/envelope';
 import { createPersistence, type OpenResult } from './persist/controller';
@@ -174,6 +176,7 @@ const app = createApp(root, {
   getScene: () => scene,
   getSound: () => audio,
   setSpeed: id => setSpeed(clock, id),
+  lapseRate: () => lapseRate(paramsOf(world)),
   setPlaying: playing => { clock.playing = playing; },
   setPolicy: mode => { epoch++; setPolicy(decider, world, mode); },
   setRoster: (roster, selectedId) => { epoch++; setRoster(decider, world, roster, selectedId); },

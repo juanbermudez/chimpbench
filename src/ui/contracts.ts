@@ -58,6 +58,10 @@ export interface UiDeps {
    * portrait (optional extra): draw the animal's snapshot into the bottom panel's canvas (see PortraitView). */
   getScene(): (SceneAPI & { getFootprint?(): FootprintView; followChimp?(id: number): void; portrait?: PortraitView }) | null;
   setSpeed(id: string): void;
+  /** Optional (stage W1): the playback rate (ecological seconds per real second) above which this world's walk is drawn as
+   * time-lapse, because bodies cover ground faster than feet can step (render/creatures/pace.ts lapseRate). The menu bar
+   * and the time panel say so. Absent (the synthetic preview): never said. */
+  lapseRate?(): number;
   setPlaying(playing: boolean): void;
   setPolicy(mode: ModelPolicy['mode']): void;
   setRoster(roster: Roster, selectedId: number): void;

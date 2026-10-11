@@ -231,8 +231,10 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
       if (timeOpen) {
         // Anchor under the clock control (measured on open only: a user action, not the refresh loop).
         const r = btn.closest('.bar-clockctl')!.getBoundingClientRect();
-        drop.style.left = `${Math.round(Math.max(8, Math.min(r.left, window.innerWidth - 440)))}px`;
-        drop.hidden = false; timebar.update();
+        // Kept inside the window by the panel's own width (style.css sets it; a constant here had fallen behind it).
+        drop.hidden = false;
+        drop.style.left = `${Math.round(Math.max(8, Math.min(r.left, window.innerWidth - drop.offsetWidth - 20)))}px`;
+        timebar.update();
       } else drop.hidden = true;
       setAttr(btn, 'aria-expanded', String(timeOpen));
     },

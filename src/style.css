@@ -338,7 +338,7 @@ body.preview .viewport { background: #3a3d38; }
 .tip kbd { flex-shrink: 0; }
 
 /* ---------- Time & model dropdown (under the menu bar's clock control) ---------- */
-.tdrop { position: absolute; z-index: 31; top: calc(var(--hud-h) + 6px); left: 200px; width: 420px; padding: 14px 14px 12px; display: grid; gap: 14px; background: var(--overlay); border-color: var(--line-2); box-shadow: var(--shadow-lg); animation: dropIn .18s var(--ease); }
+.tdrop { position: absolute; z-index: 31; top: calc(var(--hud-h) + 6px); left: 200px; width: 512px; padding: 14px 14px 12px; display: grid; gap: 14px; background: var(--overlay); border-color: var(--line-2); box-shadow: var(--shadow-lg); animation: dropIn .18s var(--ease); }
 @keyframes dropIn { from { opacity: 0; transform: translateY(-6px); } }
 .td-sec + .td-sec { padding-top: 12px; border-top: 1px solid var(--line); }
 .td-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
@@ -348,7 +348,7 @@ body.preview .viewport { background: #3a3d38; }
 .tb-speeds button { position: relative; height: 32px; border-radius: 7px; font-size: 12px; color: var(--ink-3); white-space: nowrap; text-align: center; font-variant-numeric: tabular-nums; transition: background .15s, color .15s; }
 .tb-speeds button:hover { background: var(--hover); color: var(--ink); }
 .tb-speeds button[aria-checked="true"] { color: var(--ink); background: rgba(255, 255, 255, .12); font-weight: 600; box-shadow: inset 0 0 0 1px var(--line-2); }
-.sp-key { display: none; } /* keys 1–7 are named in the panel header and each button's tooltip */
+.sp-key { display: none; } /* the speed keys are named in the panel header and each button's tooltip */
 .tb-rate { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .tb-tps { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-3); white-space: nowrap; }
 .tb-state { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 11.5px; color: var(--ink-3); min-width: 0; }
@@ -973,6 +973,8 @@ dialog.settings::backdrop { background: rgba(0, 0, 0, .6); }
   .soc-cols .soc-col { padding: 4px; } .soc-cols .soc-col + .soc-col { border-left: 0; border-top: 1px solid var(--line); margin-top: 18px; padding-top: 18px; }
   .mp-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+/* Eight speeds (stage W1) do not fit one row of the time panel on a phone: two rows of four. */
+@media (max-width: 480px) { .tb-speeds { grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @keyframes sheetIn { from { transform: translateY(40px); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }

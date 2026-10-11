@@ -5,6 +5,7 @@ import { mountSoundButton } from './sound';
 import { setAttr, setText } from './morph';
 import { saveIndicator } from './simulations';
 import { presetLabel } from './timebar';
+import { TICK_SECONDS } from '../simulation';
 
 // Menu bar: one opaque bar (brand · simulation · clock control · time · weather · population |
 // sound · panels · settings · guide). Every changing readout sits in a fixed-width slot (see style.css),
@@ -33,7 +34,7 @@ export function createHud(root: HTMLElement, ctx: Ctx) {
   <div class="bar-sep" data-sim></div>
   <div class="bar-group bar-clockctl">
     <button class="tc-play" data-k="play" aria-keyshortcuts="Space" aria-label="Pause (Space)" title="Play / pause (Space)">${icon('pause')}</button>
-    <button class="tc-rate" data-act="time" aria-haspopup="dialog" aria-expanded="false" aria-controls="time-drop" title="Time controls and decision model (speeds 1–7)">
+    <button class="tc-rate" data-act="time" aria-haspopup="dialog" aria-expanded="false" aria-controls="time-drop" title="Time controls and decision model (speeds 1–${ctx.deps.speedPresets.length})">
       <span class="tc-text"><span class="tc-speed" data-k="speed">1 min/s</span><span class="tc-achieved" data-k="achieved">—</span></span>${icon('chevron')}
     </button>
   </div>
@@ -133,7 +134,15 @@ export function createHud(root: HTMLElement, ctx: Ctx) {
       if (clk.playing !== playing) { playing = clk.playing; el.play.innerHTML = icon(playing ? 'pause' : 'play'); attr(el.play, 'aria-label', playing ? 'Pause (Space)' : 'Play (Space)'); }
       const pre = ctx.deps.speedPresets.find(p => p.id === clk.speedId);
       set(el.speed, pre ? presetLabel(pre.ecoSecondsPerSecond, pre.label) : clk.speedId);
-      set(el.achieved, st === 'paused' ? 'Paused' : st === 'blocked' ? 'Waiting on model' : `${formatRate(clk.effectiveRate)}${st === 'limited' ? ' · capped' : ''}`);
+      // Stage W1: at a speed this map's walk cannot be drawn at with real steps (deps.lapseRate) the line says "time-lapse"
+      // instead of repeating the chosen rate. A capped clock keeps its number, and so does one whose measured rate is
+      // under half the chosen one (slow frames; design assumption: a wide margin, so the line does not flicker). The
+      // time panel shows the measured rate at these speeds.
+      const lapse = st === 'ok' && clk.ecoSecondsPerSecond > (ctx.deps.lapseRate?.() ?? Infinity) && clk.effectiveRate >= 0.5 * clk.ecoSecondsPerSecond;
+      // Below one tick a second (Real time, the watching speed) the measured rate swings by half between ticks although
+      // every tick lands on time: show the rate being kept.
+      const kept = st === 'ok' && clk.ecoSecondsPerSecond < TICK_SECONDS ? clk.ecoSecondsPerSecond : clk.effectiveRate;
+      set(el.achieved, st === 'paused' ? 'Paused' : st === 'blocked' ? 'Waiting on model' : lapse ? 'time-lapse' : `${formatRate(kept)}${st === 'limited' ? ' · capped' : ''}`);
       attr(clockCtl, 'data-state', st);
       if (persist) {
         const ps = persist.status(), ind = saveIndicator(ps);
