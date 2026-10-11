@@ -393,7 +393,6 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
     // view: Fresnel, sky visibility under the crowns and absorption decide how bright the stream reads).
     water.envBoost.value = 0.45 / Math.max(0.02, scene.environmentIntensity);
     water.perspective.value = perspective ? 1 : 0;
-    terrain.mountainMaterial.color.copy(sky.fogColor).lerp(tmpColor.set('#46586a').multiplyScalar(0.25 + env.daylight * 0.75), 0.28);
     vegetation.update(world, quality, env.daylight, perspective);
     weather.update(envFrame);
     territory.update(world, dt, frame.elapsed, layers.territory, frame.highlightTroopId, env.daylight, terrain.height);
@@ -473,7 +472,6 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
       }
     }
   }
-  const tmpColor = new THREE.Color();
   const tmpDir = new THREE.Vector3();
   let aoWeight = 1;
 

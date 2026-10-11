@@ -418,6 +418,8 @@ export interface Post {
   readonly sceneTarget: THREE.WebGLRenderTarget;
 }
 
+/** Ambient occlusion fades out over this range of view distance (m) in perspective views; see createPost. Design assumption. */
+const AO_FAR_START = 1200, AO_FAR_END = 2400;
 const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
 // Grades by time of day, in display space. Kept deliberately gentle.
 const GRADES = {
@@ -439,6 +441,21 @@ export function createPost(renderer: THREE.WebGLRenderer, scene: THREE.Scene, ca
   const gtaoSetSize = gtao.setSize.bind(gtao);
   gtao.setSize = (w: number, h: number) => gtaoSetSize(Math.max(1, Math.round(w / 2)), Math.max(1, Math.round(h / 2)));
   gtao.blendIntensity = 0.75;
+  // Perspective views: occlusion fades out between AO_FAR_START and AO_FAR_END metres from the camera (stage W2). The
+  // depth buffer steps by about 0.6 m at 2 km and 4 m at 5 km (near plane 0.4 m, 32-bit float), more than the 1.6 m
+  // radius the pass looks in, so on far geometry it drew dark bars and dashes (the "barcode" on the old mountain mesh,
+  // marks along the far forest's edge). Nothing within the detailed window or the canopy ring (1.3 km) changes.
+  const gtaoFar = gtao.gtaoMaterial.fragmentShader
+    .replace('vec3 viewPos = getViewPosition(vUv, depth);', `vec3 viewPos = getViewPosition(vUv, depth);
+			#if PERSPECTIVE_CAMERA == 1
+				if ( - viewPos.z > ${AO_FAR_END.toFixed(1)} ) { discard; return; }
+			#endif`)
+    .replace('ao = pow(ao, scale);', `ao = pow(ao, scale);
+			#if PERSPECTIVE_CAMERA == 1
+				ao = mix( ao, 1.0, smoothstep( ${AO_FAR_START.toFixed(1)}, ${AO_FAR_END.toFixed(1)}, - viewPos.z ) );
+			#endif`);
+  if (gtaoFar.split('PERSPECTIVE_CAMERA == 1').length - gtao.gtaoMaterial.fragmentShader.split('PERSPECTIVE_CAMERA == 1').length !== 2) console.warn('post: the ambient occlusion far fade did not apply (three\'s GTAO shader changed)');
+  gtao.gtaoMaterial.fragmentShader = gtaoFar;
   // High threshold: only true HDR highlights (sun glints on water, wet leaves, lightning-lit surfaces) and the sun disc
   // bloom. The threshold pass keeps a pixel's full value once it is over the line and the widest blur spans the frame,
   // so anything large above it veils the whole picture: the sky dome therefore limits itself to a ceiling under this

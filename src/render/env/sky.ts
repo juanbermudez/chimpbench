@@ -42,6 +42,14 @@ const OVERCAST_DOME = 0.5;
  * under heavy cloud only, and it fades out with nightfall (the night dome is its own gradient). Stylization.
  */
 const SKY_FLOOR_SUN = 0.08;
+/**
+ * The Rwenzori massif, ~60 km west-southwest of Ngogo, as part of the dome (stage W2): a ridge line by bearing
+ * (215 to 310 degrees from north, up to about 5 degrees high, the span and height the old mesh had), filled with the
+ * sky behind it darkened by about a fifth and cooled, so it can never be brighter than that sky; its foot stands in
+ * the horizon band. It fades out under cloud (from 50% cover) and rain, when a range that far away cannot be seen.
+ * Stylization: the outline is noise, not the range's real profile.
+ */
+const MOUNTAIN_TINT = '0.74, 0.79, 0.86';
 const luma = (c: THREE.Color) => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
 /** Skyglow floor for the strategy view at night (linear irradiance multiplier on albedo). */
 const NIGHT_FLOOR_RTS = 0.08;
@@ -94,13 +102,21 @@ export function createSky(uniforms: SharedUniforms, owner: Owner): SkyRig {
     // Stage W2: the horizon colour (= the fog colour), the height of the band painted with it (sine of elevation), the
     // dome's luminance floor (a colour whose luminance is the floor) and uDome, 0 while the image-based light renders.
     uHorizon: { value: new THREE.Color() }, uHorizonBand: { value: HORIZON_BAND_CLEAR }, uSkyFloor: { value: new THREE.Color(0, 0, 0) }, uDome: { value: 1 },
+    uMountain: { value: 1 },
   });
   material.fragmentShader = material.fragmentShader
     .replace('void main() {', /* glsl */`
       uniform float uNight; uniform float uOvercast; uniform vec3 uOvercastColor; uniform float uFlash;
       uniform vec3 uMoonDir; uniform vec3 uSunDirW; uniform float uMoonLight; uniform vec3 uNightTint; uniform float uSkyGain;
       uniform float uSkyCeil; uniform float uDiscCeil;
-      uniform vec3 uHorizon; uniform float uHorizonBand; uniform vec3 uSkyFloor; uniform float uDome;
+      uniform vec3 uHorizon; uniform float uHorizonBand; uniform vec3 uSkyFloor; uniform float uDome; uniform float uMountain;
+      // Tangent of the ridge line's elevation on this bearing (negative outside the massif).
+      float ridgeTan( vec3 d ) {
+        float az = degrees( atan( d.x, - d.z ) );
+        float u = ( az + ( az < 0.0 ? 360.0 : 0.0 ) - 215.0 ) / 95.0;
+        if ( u <= 0.0 || u >= 1.0 ) return -1.0;
+        return pow( sin( u * 3.14159265 ), 0.7 ) * ( 260.0 + noise( vec2( u * 9.0, 1.7 ) ) * 110.0 + abs( noise( vec2( u * 31.0, 4.1 ) ) ) * 70.0 ) / 5200.0;
+      }
       float starHash( vec3 p ) { p = fract( p * 0.3183099 + 0.1 ); p *= 17.0; return fract( p.x * p.y * p.z * ( p.x + p.y + p.z ) ); }
       // Per channel: unchanged below 80% of the ceiling m, then an exponential shoulder that never passes m.
       vec3 skyShoulder( vec3 c, float m ) { float a = m * 0.8, w = m - a; return min( c, vec3( a ) ) + w * ( 1.0 - exp( - max( c - a, 0.0 ) / w ) ); }
@@ -108,6 +124,10 @@ export function createSky(uniforms: SharedUniforms, owner: Owner): SkyRig {
     .replace('gl_FragColor = vec4( texColor, 1.0 );', /* glsl */`
       // Preetham radiance is several times brighter than the scene's light units; scale it to sit behind the forest.
       vec3 col = texColor * uSkyGain;
+      // The massif's cover of this pixel (one pixel of soft edge); it hides the moon and takes the sun's disc out below.
+      float dirTan = direction.y / max( length( direction.xz ), 1e-4 ), dirFw = max( fwidth( dirTan ), 1e-6 );
+      float ridge = ridgeTan( direction );
+      float massif = ridge < 0.0 ? 0.0 : uMountain * uDome * smoothstep( - dirFw, dirFw, ridge - dirTan );
       // Night: deep blue gradient, stars, a faint Milky Way band and the moon with its lit limb toward the sun.
       float up = max( direction.y, 0.0 );
       col += uNightTint * uNight * ( 0.35 + 0.65 * ( 1.0 - up ) ) * ( 0.25 + uMoonLight * 1.2 );
@@ -135,7 +155,7 @@ export function createSky(uniforms: SharedUniforms, owner: Owner): SkyRig {
           vec3 sphereN = normalize( t1 * q.x + t2 * q.y - uMoonDir * sqrt( max( 0.0, 1.0 - dot( q, q ) ) ) );
           float lit = smoothstep( -0.05, 0.12, dot( sphereN, uSunDirW ) );
           float mare = noise( q * 3.0 + 7.0 ) * 0.12;
-          col = mix( col, vec3( 0.9, 0.92, 1.0 ) * ( 0.02 + lit * ( 0.55 - mare ) ) * ( 1.0 - cloudCoverage * 0.8 ), disc );
+          col = mix( col, vec3( 0.9, 0.92, 1.0 ) * ( 0.02 + lit * ( 0.55 - mare ) ) * ( 1.0 - cloudCoverage * 0.8 ), disc * ( 1.0 - massif ) );
         }
         col += vec3( 0.55, 0.62, 0.8 ) * pow( max( moonCos, 0.0 ), 900.0 ) * 0.05 * uMoonLight * uNight;
       }
@@ -148,6 +168,8 @@ export function createSky(uniforms: SharedUniforms, owner: Owner): SkyRig {
       float floorL = dot( skyFloor, vec3( 0.2126, 0.7152, 0.0722 ) ), skyL = dot( col, vec3( 0.2126, 0.7152, 0.0722 ) );
       float s2 = skyL * skyL, f2 = floorL * floorL;
       col += skyFloor * ( ( sqrt( sqrt( s2 * s2 + f2 * f2 ) ) - skyL ) / max( floorL, 1e-5 ) );
+      // The massif: the sky behind it (capped, so without the sun's disc), darker and cooler.
+      col = mix( col, min( col, vec3( uSkyCeil ) ) * vec3( ${MOUNTAIN_TINT} ), massif );
       col += vec3( 0.55, 0.6, 0.8 ) * uFlash * ( 0.3 + 0.7 * smoothstep( -0.05, 0.4, direction.y ) );
       // One horizon colour (stage W2): the lowest band of the dome is the fog colour, so haze and sky meet without a seam.
       col = mix( col, uHorizon, uDome * ( 1.0 - smoothstep( 0.0, uHorizonBand, direction.y ) ) );
@@ -212,6 +234,7 @@ export function createSky(uniforms: SharedUniforms, owner: Owner): SkyRig {
       (skyU.uSunDirW.value as THREE.Vector3).copy(env.sunDir);
       const overcast = THREE.MathUtils.smoothstep(cloud, 0.55, 0.95) * 0.85 + rain * 0.15;
       skyU.uOvercast.value = Math.min(0.95, overcast);
+      skyU.uMountain.value = (1 - THREE.MathUtils.smoothstep(cloud, 0.5, 0.8)) * (1 - Math.min(1, rain * 4));
       const dayLevel = THREE.MathUtils.smoothstep(altDeg, -8, 20);
       // The overcast dome is a share of the horizon colour (stage W2). The image-based light keeps the grey it had.
       horizonColor(altDeg, dayLevel, overcast, rain, fogColor);
