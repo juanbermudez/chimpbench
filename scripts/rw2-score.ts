@@ -3,7 +3,7 @@
 //
 //   /usr/bin/python3 -I scripts/rw2/rw2_ingest.py                       # first: the derived records (artifacts/rw2) and data/rw2-manifest.json
 //   pnpm exec tsx scripts/rw2-score.ts --dataset tai-groom,kanyawara-coalition --part train,development
-//       [--kernels null,rules] [--shuffles 5] [--seed 20261011] [--reps 2000] [--limit N] [--dir artifacts/rw2] [--md docs/staging/rw2-numbers.md]
+//       [--kernels null,rules] [--shuffles 5] [--seed 20261011] [--reps 2000] [--limit N] [--dir artifacts/rw2] [--out <dir>/bench] [--md docs/staging/rw2-numbers.md]
 //   kernels: null · rules (every registered rule of the dataset) · a rule's id (src/rw2/kernels.ts)
 //            gliner (needs --load-model; [--adapter base] [--device mps] [--view own|third]; starts the local worker; never run in stage RW2)
 //            <kernel>+fan2 | +fan1 | +pool3 answers a menu wider than 8 by sub-menus of 8 (src/kernel/fanout.ts); <kernel>@N runs N option orders
@@ -153,7 +153,7 @@ async function main() {
   const sealed = parts.includes('sealed');
   if (sealed && !has('--open-sealed')) throw new Error('the sealed part opens only with --open-sealed "<reason>" (the user\'s go; docs/staging/rw2-prereg.md §2.3)');
   if (sealed) { const { logOpening } = await import('./lib/rw-load'); console.error(`SEALED PART OPENED: ${logOpening(arg('--open-sealed', ''), specs, execSync('git rev-parse --short HEAD').toString().trim(), arg('--sealed-log', SEALED_LOG))}`); }
-  const out = `${dir}/bench`;
+  const out = arg('--out', `${dir}/bench`);   // per-record outputs: private
   mkdirSync(out, { recursive: true });
 
   const closers: (() => void)[] = [];
