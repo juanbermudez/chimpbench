@@ -225,4 +225,20 @@ of §6 do not change in any of them.
 
 ## 10. Iteration log and results
 
-(Empty at registration.)
+**Code delivered before any run** (commits 8deccbd, 99afb41, 4783e4f): `src/kernel/decode.ts` (the decode, pure),
+the optional decode step of `src/kernel/loop.ts` `answerWaiting`, `scripts/lib/decoder.ts` (the epochs, the record of
+every ask), `scripts/r5-pilot.ts` (an arm's decode, the receipt's `dec`, act changes and the decode's tallies per
+animal-day), `scripts/r9-loop.ts` (the arms, step 0, the plumbing check), `scripts/r9-held-replay.ts` (§7),
+`scripts/r9-report.ts` (§5 and §6 as functions with tests), `scripts/r9-run.sh`, `scripts/r9-seed2.sh`,
+`scripts/r9-seed-spread.ts` (§8), `tests/r9-decode.test.ts`.
+
+- **Iteration 0 (logged 10 October 2026, 20:07 EDT, before it runs; no model, this agent).**
+  (a) `scripts/r9-run.sh dry`: the plumbing check on seed 48 (one day on the rules, then one day per arm, five focal
+  animals): a kernel that is certain (the rules' top option, probability 1) and one with even odds (the null kernel),
+  under `top`, `draw` (two salts), `held` with both epochs, gate on and off; every arm replayed from its receipts.
+  It proves plumbing only; a kernel with even odds is a random chooser, so its rows say nothing about a model.
+  (b) `scripts/r9-run.sh reference 21` and `reference 5`: step 0 of §4. (c) `scripts/r9-run.sh predict`: §7.
+  Said before it runs, from a development run of (a) on an uncommitted tree: with even odds the `block` arm asked the
+  kernel about three times as often as the others, because a brief act that the block's noise favours (a display) is
+  chosen again as soon as it ends, until the half hour is over. That is a property of a hold that does not know the
+  act has ended, and it is why `block` is the crude arm; it is not changed here.
