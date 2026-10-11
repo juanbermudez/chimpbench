@@ -403,9 +403,9 @@ No process of the model's Python environment was started at any point; the R9 ch
 | --- | --- | --- | --- |
 | sampling, six worlds | 7774a25, clean | 03:22 to 03:46 | `scripts/r11-contexts.ts` per world with `--check` (179 to 270 s each) |
 | assembly and data tables | 1fd98ee, clean | 04:14 to 04:17 | `scripts/r11-run.sh assemble`. Run three times (63d1aaf at 03:49, c8d4cfb at 03:53, 1fd98ee), each time after a row or a table was added to the data report and never after a change to a label or a packet; the training, development and held-out files of the last two runs have the same hashes |
-| dry run, seed 48 | c8d4cfb, clean | 03:56 to 03:57 | `scripts/r11-run.sh dry` |
+| dry run, seed 48 | c8d4cfb, clean; again at 388740e, clean | 03:56 to 03:57; 04:18 | `scripts/r11-run.sh dry` (the second run after the tables' wording changed: the same end hashes, the same ten verdicts) |
 | control arms, seeds 4111 and 4222 | 8d91c8b, clean | 03:57 to 04:01 | `scripts/r11-run.sh controls <seed>`: the first run ever made on these seeds |
-| tables | 1fd98ee | 04:18 | `scripts/r11-run.sh report`, then `publish` (first at 8d91c8b, 04:02; again when the card's heading was made to say whose test it is, and after the last assembly) |
+| tables | 388740e | 04:19 | `scripts/r11-run.sh report`, then `publish` (first at 8d91c8b, 04:02; again when the card's heading was made to say whose test it is, and after the last assembly) |
 
 Tables, each generated from JSON by a script: [r11-data.md](r11-data.md) and [r11-manifest.json](r11-manifest.json)
 (the data), [r11-offline.md](r11-offline.md) (the offline floors; no adapter yet), [r11-card.md](r11-card.md) (stage
