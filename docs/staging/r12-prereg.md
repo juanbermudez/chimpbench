@@ -129,7 +129,17 @@ run with `offerTap` counting offers by action and variant would confirm it; it i
 
 At most three iterations of the classification, each logged here before the table is generated from it.
 
-- **Iteration 1** (11 October 2026, 03:14 EDT): the rules of §2.2 and §2.3 as written above. Not yet applied.
+- **Iteration 1** (11 October 2026, 03:14 EDT): the rules of §2.2 and §2.3 as written above. Applied at 03:36 EDT: every
+  one of the 369 distinct conditions classed in `data/r12-offer-classes.json`, with the ten rulings and the list of what
+  stays with the rules written before any count by class was seen. `--check` on it: 0 problems; 69 sites live, 6 young
+  only, 19 legacy, as expected in §2.5. Committed before the table was generated. Two things the rules of §2.2 did not
+  foresee were settled while classifying, by the rule's own wording and noted in the file: (a) a condition whose
+  text is shared by sites where it reads differently gets a reading per site (`over`): the actor's sex on the two sides
+  of a mating is physical there and advice elsewhere; the age line of 12 in front of a helper that is called a second
+  time for the young is structure at the five sites that both calls reach. (b) Two sites are unreachable on the base
+  although no single switch condition in front of them says so (a contradiction between two of their conditions; an
+  impulse that is only rolled without a switch); the file names the base fact and the reason (`dead`) and the script
+  checks the fact.
 
 ## For the integrator
 

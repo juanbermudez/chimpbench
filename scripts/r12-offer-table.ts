@@ -70,7 +70,14 @@ export interface AtomClass {
   /** With `fix: drop`: the packet line that carries the fact. */
   line?: string;
 }
-export interface SiteClass { print: string; act: string; teacher: Teacher[]; /** What code selects before the offer (which tree, which dominant). */ pre?: string; note?: string }
+export interface SiteClass {
+  print: string; act: string; teacher: Teacher[];
+  /** What code selects before the offer (which tree, which dominant). */ pre?: string; note?: string;
+  /** A condition that reads differently at this site (the actor's sex on the two sides of a mating; a helper called twice): its class here, whole. */
+  over?: Record<string, AtomClass>;
+  /** A base fact under which the site is unreachable although no single switch condition in front of it says so, and why. */
+  dead?: string; deadWhy?: string;
+}
 export interface Ruling { title: string; ask: string; recommend: string; sites: string[] }
 export interface Classes { about: string; rulings: Ruling[]; stays: string[]; atoms: Record<string, AtomClass>; sites: Record<string, SiteClass> }
 
@@ -97,6 +104,8 @@ const uniq = <T>(list: T[]): T[] => [...new Set(list)];
 
 export interface Row {
   site: OfferSite; kinds: Kind[]; cls?: SiteClass;
+  /** A condition's class at this site (the site's own reading where it has one). */
+  of: (a: Atom) => AtomClass | undefined;
   /** 'legacy': no path is reachable on the base; 'young': only animals under KERNEL_AGE reach it; 'live' otherwise. */
   status: 'legacy' | 'young' | 'live';
   /** Why a legacy site is unreachable: the switch conditions that are false on the base. */
@@ -145,11 +154,14 @@ export function buildTable(src: string, classes: Classes, overrides: Overrides =
       for (const t of cls.teacher) if (!(t in TEACHERS)) problems.push(`unknown teacher "${t}" at ${site.key}`);
       if (!cls.teacher.length) problems.push(`no teacher named at ${site.key}`);
     }
-    const of = (a: Atom) => classes.atoms[a.text];
+    const of = (a: Atom) => cls?.over?.[a.text] ?? classes.atoms[a.text];
+    for (const t of Object.keys(cls?.over ?? {})) if (![...site.paths, ...site.sources].some(p => p.atoms.some(a => a.text === t))) problems.push(`a condition named for ${site.key} is not among its conditions: ${t}`);
+    const deadFact = cls?.dead !== undefined ? fact(cls.dead, site.key) : undefined;
+    if (cls?.dead !== undefined && deadFact === false) problems.push(`${site.key} is claimed unreachable under "${cls.dead}", which does not hold on this base`);
     const deadIn = (p: Path) => p.atoms.filter(a => of(a)?.c === 'SWI' && truth(of(a)!.is) === false);
     const youngIn = (p: Path) => p.atoms.some(a => of(a)?.adult === 'never');
     const reachable = site.paths.filter(p => deadIn(p).length === 0);
-    const status: Row['status'] = reachable.length === 0 ? 'legacy' : reachable.every(youngIn) ? 'young' : 'live';
+    const status: Row['status'] = reachable.length === 0 || deadFact === true ? 'legacy' : reachable.every(youngIn) ? 'young' : 'live';
     const used = status === 'live' ? reachable.filter(p => !youngIn(p)) : reachable;
     const all = [...used, ...site.sources.filter(p => deadIn(p).length === 0)].flatMap(p => p.atoms);
     const seen = new Set<string>();
@@ -160,7 +172,8 @@ export function buildTable(src: string, classes: Classes, overrides: Overrides =
     const fixes = binding.map(a => of(a)!.fix).filter(Boolean);
     const plan: Row['plan'] = fixes.includes('rules') ? 'rules' : fixes.includes('drop') ? 'widen' : fixes.length ? 'keep' : 'none';
     const kinds = uniq(site.variants.map(v => kindOf(site.action as Action, (V as Record<string, number>)[v] ?? V.NONE, site.aux ? 1 : -1)));
-    return { site, kinds, cls, status, dead: uniq(site.paths.flatMap(p => deadIn(p).map(a => a.text))), binding, carried, written, plan };
+    const dead = [...(deadFact === true ? [cls!.deadWhy ?? cls!.dead!] : []), ...uniq(site.paths.flatMap(p => deadIn(p).map(a => a.text)))];
+    return { site, kinds, cls, of, status, dead, binding, carried, written, plan };
   });
   for (const r of classes.rulings) for (const k of r.sites) if (!sites.some(s => s.key === k)) problems.push(`a ruling names a site that is not in the source: ${k}`);
   return { sourceHash: sha(src), classesHash: sha(classesText), base: BASE_FILE, facts, params: P as unknown as Record<string, number>, rows, classes, problems: uniq(problems), atoms };
@@ -182,8 +195,8 @@ export function tableMarkdown(T: Table): string {
   const n = (f: (r: Row) => boolean, of = live) => of.filter(f).length;
   const lineOf = (key: string) => rows.find(r => r.site.key === key)?.site.line ?? 0;
   const where = (keys: string[]) => uniq(keys.map(lineOf)).sort((a, b) => a - b).join(', ');
-  const numberCount = (r: Row) => uniq(r.binding.filter(a => hand.includes(C.atoms[a.text].c)).flatMap(a => [...a.numbers, ...a.params.map(p => `P.${p}`)])).length;
-  const handNumbers = uniq(live.flatMap(r => r.binding.filter(a => hand.includes(C.atoms[a.text].c)).flatMap(a => [...a.numbers.map(x => `${x}@${a.text}`), ...a.params.map(p => `P.${p}`)]))).length;
+  const numberCount = (r: Row) => uniq(r.binding.filter(a => hand.includes(r.of(a)!.c)).flatMap(a => [...a.numbers, ...a.params.map(p => `P.${p}`)])).length;
+  const handNumbers = uniq(live.flatMap(r => r.binding.filter(a => hand.includes(r.of(a)!.c)).flatMap(a => [...a.numbers.map(x => `${x}@${a.text}`), ...a.params.map(p => `P.${p}`)]))).length;
 
   o.push('# Stage R12: the "possible or advisable" table of the offer sites', '');
   o.push(`Generated by \`scripts/r12-offer-table.ts\` from \`${SOURCE}\` (sha256 ${T.sourceHash}…) and the classification in \`${CLASSES_FILE}\`, on the working base \`${T.base}\` (field map). Nothing was run: the script reads the source as text. **Every count below is computed; every class is a reading of the code by the stage's author, kept in the classification file, and is what the user is asked to sign off.** Design: \`docs/staging/r12-prereg.md\`.`, '');
@@ -239,8 +252,8 @@ export function tableMarkdown(T: Table): string {
 
   // ---- details ----
   o.push('## 4. Every site, with its conditions as written', '');
-  const atomLine = (a: Atom): string => {
-    const k = C.atoms[a.text];
+  const atomLine = (r: Row, a: Atom): string => {
+    const k = r.of(a);
     if (!k) return `- **UNCLASSIFIED** ${code(a.text)}`;
     const marks: string[] = [];
     if (k.c === 'SWI') marks.push(T.facts[(k.is ?? '').replace(/^!/, '')] === undefined ? 'unknown switch' : ((k.is ?? '').startsWith('!') ? !T.facts[k.is!.slice(1)] : T.facts[k.is!]) ? 'true on the base' : '**false on the base**');
@@ -257,9 +270,9 @@ export function tableMarkdown(T: Table): string {
     o.push(`\`offer('${s.action}', ${s.target}, …${s.variants.join('|') !== 'NONE' ? `, V.${s.variants.join(' | V.')}` : ''})\` in \`${s.fn}\`; kind: ${r.kinds.join(', ')}; key \`${s.key}\`, print \`${s.print}\`. **${STATUS[r.status]}**${r.status === 'live' ? `; carries ${r.carried.map(c => CLASS_NAMES[c].toLowerCase()).join(', ') || 'nothing but possibility'}; ${PLAN[r.plan]}` : ''}. Teacher: ${(r.cls?.teacher ?? []).map(t => TEACHERS[t] ?? t).join('; ') || '(none named)'}.`, '');
     if (r.cls?.pre) o.push(`*Chosen by code before the offer:* ${r.cls.pre}`, '');
     if (r.cls?.note) o.push(`*Note:* ${r.cls.note}`, '');
-    if (r.status === 'legacy') o.push(`Unreachable because: ${r.dead.map(code).join('; ')}.`, '');
-    for (const p of s.paths) { o.push(s.paths.length > 1 || p.label ? `Reached ${p.label ? `through ${p.label}` : 'directly'}:` : 'Conditions:'); for (const a of p.atoms) o.push(atomLine(a)); o.push(''); }
-    for (const p of s.sources) { o.push(`Where its target comes from (\`${p.label}\`):`); for (const a of p.atoms) o.push(atomLine(a)); o.push(''); }
+    if (r.status === 'legacy') o.push(`Unreachable because: ${r.dead.map(d => d.includes(' ') && !/[=!<>|(]/.test(d) ? d : code(d)).join('; ')}.`, '');
+    for (const p of s.paths) { o.push(s.paths.length > 1 || p.label ? `Reached ${p.label ? `through ${p.label}` : 'directly'}:` : 'Conditions:'); for (const a of p.atoms) o.push(atomLine(r, a)); o.push(''); }
+    for (const p of s.sources) { o.push(`Where its target comes from (\`${p.label}\`):`); for (const a of p.atoms) o.push(atomLine(r, a)); o.push(''); }
     const nums = uniq([...s.paths, ...s.sources].flatMap(p => p.atoms.flatMap(a => a.numbers)));
     if (nums.length) o.push(`Number literals in its conditions: ${nums.join(', ')}.${r.status === 'live' ? ` Hand-set numbers in its advice, quota and dice conditions: ${numberCount(r)}.` : ''}`, '');
   });
@@ -267,7 +280,7 @@ export function tableMarkdown(T: Table): string {
   // ---- the hand-set conditions ----
   o.push('## 5. Every advice, quota and dice condition of a live site', '', '| Class | Condition | In plain words | Proposal | Packet line | Sites (lines) |', '|---|---|---|---|---|---|');
   const liveAtoms = new Map<string, number[]>();
-  for (const r of live) for (const a of r.binding) if (hand.includes(C.atoms[a.text].c)) liveAtoms.set(a.text, [...(liveAtoms.get(a.text) ?? []), r.site.line]);
+  for (const r of live) for (const a of r.binding) if (hand.includes(r.of(a)!.c)) liveAtoms.set(a.text, [...(liveAtoms.get(a.text) ?? []), r.site.line]);
   for (const c of hand) for (const [text, lines] of [...liveAtoms].filter(([t]) => C.atoms[t].c === c).sort((a, b) => a[1][0] - b[1][0] || (a[0] < b[0] ? -1 : 1))) {
     const k = C.atoms[text];
     o.push(`| ${c} | ${cell(code(text.length > 160 ? `${text.slice(0, 160)} …` : text))} | ${cell(k.w)} | ${k.fix ?? ''} | ${k.line ? code(k.line) : ''} | ${uniq(lines).join(', ')} |`);
