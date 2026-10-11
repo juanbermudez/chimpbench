@@ -53,13 +53,15 @@ export function createTimebar(root: HTMLElement, ctx: Ctx) {
     update() {
       const w = ctx.world();
       if (clock.speedId !== speedKey) { speedKey = clock.speedId; speeds.forEach(b => { const on = b.dataset.speed === clock.speedId; b.setAttribute('aria-checked', String(on)); b.tabIndex = on ? 0 : -1; }); }
-      set(rate, clock.playing ? formatRate(clock.effectiveRate) : 'Paused');
       // Paused shows only "Paused": the smoothed tick rate is still decaying and would read as work being done.
-      // Below one tick per second (real time: one 15-s tick every 15 s) a rounded rate would read "0 ticks/s".
+      // Below one tick per second (real time: one 15-s tick every 15 s) a rounded rate would read "0 ticks/s", and the
+      // measured rate swings by half between ticks although every tick lands on time: show the rate being kept.
       const slow = clock.ecoSecondsPerSecond < TICK_SECONDS && !clock.limited;
+      set(rate, !clock.playing ? 'Paused' : formatRate(slow && !clock.blockedByModel ? clock.ecoSecondsPerSecond : clock.effectiveRate));
       set(tps, !clock.playing ? '' : slow ? `1 tick / ${+(TICK_SECONDS / clock.ecoSecondsPerSecond).toFixed(1)} s` : `${Math.round(clock.ticksPerSecond).toLocaleString()} ticks/s`);
-      let st = 'ok', text = 'Running · every chimp resolves every tick';
       const target = clock.ecoSecondsPerSecond;
+      // Stage W1: above the rate at which this map's walk can be drawn with real steps the picture is time-lapse; say so.
+      let st = 'ok', text = target > (ctx.deps.lapseRate?.() ?? Infinity) ? 'Time-lapse · bodies outrun their steps; every tick still runs' : 'Running · every chimp resolves every tick';
       if (!clock.playing) { st = 'paused'; text = 'Paused · Space to resume'; }
       else if (clock.blockedByModel) { st = 'blocked'; text = 'Waiting on model · lockstep holds the clock until the model answers'; }
       else if (clock.limited) { st = 'limited'; text = `Sim-limited · every tick still runs; capped at ${formatRate(clock.effectiveRate)}${Number.isFinite(target) ? ` of ${formatRate(target)}` : ''}`; }

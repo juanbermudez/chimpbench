@@ -5,6 +5,7 @@ import { mountSoundButton } from './sound';
 import { setAttr, setText } from './morph';
 import { saveIndicator } from './simulations';
 import { presetLabel } from './timebar';
+import { TICK_SECONDS } from '../simulation';
 
 // Menu bar: one opaque bar (brand · simulation · clock control · time · weather · population |
 // sound · panels · settings · guide). Every changing readout sits in a fixed-width slot (see style.css),
@@ -133,7 +134,13 @@ export function createHud(root: HTMLElement, ctx: Ctx) {
       if (clk.playing !== playing) { playing = clk.playing; el.play.innerHTML = icon(playing ? 'pause' : 'play'); attr(el.play, 'aria-label', playing ? 'Pause (Space)' : 'Play (Space)'); }
       const pre = ctx.deps.speedPresets.find(p => p.id === clk.speedId);
       set(el.speed, pre ? presetLabel(pre.ecoSecondsPerSecond, pre.label) : clk.speedId);
-      set(el.achieved, st === 'paused' ? 'Paused' : st === 'blocked' ? 'Waiting on model' : `${formatRate(clk.effectiveRate)}${st === 'limited' ? ' · capped' : ''}`);
+      // Stage W1: at a speed this map's walk cannot be drawn at with real steps (deps.lapseRate), and while the clock keeps
+      // the chosen rate (the line would only repeat it), the line says "time-lapse"; a rate that falls short still shows.
+      const lapse = st === 'ok' && clk.ecoSecondsPerSecond > (ctx.deps.lapseRate?.() ?? Infinity) && Math.abs(clk.effectiveRate / clk.ecoSecondsPerSecond - 1) < 0.15;
+      // Below one tick a second (Real time, the watching speed) the measured rate swings by half between ticks although
+      // every tick lands on time: show the rate being kept.
+      const kept = st === 'ok' && clk.ecoSecondsPerSecond < TICK_SECONDS ? clk.ecoSecondsPerSecond : clk.effectiveRate;
+      set(el.achieved, st === 'paused' ? 'Paused' : st === 'blocked' ? 'Waiting on model' : lapse ? 'time-lapse' : `${formatRate(kept)}${st === 'limited' ? ' · capped' : ''}`);
       attr(clockCtl, 'data-state', st);
       if (persist) {
         const ps = persist.status(), ind = saveIndicator(ps);
