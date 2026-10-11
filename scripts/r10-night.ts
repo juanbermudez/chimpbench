@@ -10,6 +10,7 @@
 //   pnpm exec tsx scripts/r10-night.ts run --resume <out> [--days N] [--hours H]
 //   pnpm exec tsx scripts/r10-night.ts replay <out> [--taps a.ts,b.ts] [--no-field]
 //   pnpm exec tsx scripts/r10-night.ts status <out>
+//   pnpm exec tsx scripts/r10-night.ts plain --seed 48 [--days 2] [--burn-in 30] [--profile field]   # createWorld and tickWorld only: the hashes a rules arm must end each day on
 //
 // Arms: rules | argmax-gate (the rules' top option through the loop, gate on: no model) | null-gate | trained-gate
 // (r4-rules-state, gate on) and the other kernel arms of scripts/r5-pilot.ts. A model arm needs the runtime variables of
@@ -280,8 +281,21 @@ function status(a: Args): number {
   return 0;
 }
 
+/** The plain rules world: createWorld and tickWorld, nothing of this script's machinery (no cache, no arm, no meter, no checkpoint). */
+function plain(a: Args): number {
+  const seed = +a.flag('seed', 'NaN'), days = +a.flag('days', '2'), burnIn = +a.flag('burn-in', '30'), profile = a.flag('profile', 'field') as 'field' | 'compressed';
+  if (!Number.isInteger(seed) || RESERVED_SEEDS.has(seed)) throw new Refused('--seed N: a development seed');
+  const params = { ...JSON.parse(readFileSync(resolve(ROOT, a.flag('params-file', 'docs/staging/integrator-kit/params/M6-W50.json')), 'utf8')) as Record<string, number>, observeV4: 1, menuParity: 1 };
+  const t0 = Date.now(), w = createWorld(seed, { profile, params });
+  for (let i = 0; i < burnIn * DAY; i++) tickWorld(w);
+  console.log(`plain rules world, seed ${seed}, ${profile} map: after ${burnIn} days ${worldHash(w)}`);
+  for (let d = 1; d <= days; d++) { for (let i = 0; i < DAY; i++) tickWorld(w); console.log(`day ${d}: ${worldHash(w)}`); }
+  console.log(`${Math.round((Date.now() - t0) / 1000)} s`);
+  return 0;
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const [cmd, ...rest] = process.argv.slice(2), a = parseArgs(rest);
-  (async () => cmd === 'run' ? run(a) : cmd === 'replay' ? replay(a) : cmd === 'status' ? status(a) : (console.error('usage: r10-night.ts run|replay|status … (see the header of scripts/r10-night.ts)'), 2))()
+  (async () => cmd === 'run' ? run(a) : cmd === 'replay' ? replay(a) : cmd === 'status' ? status(a) : cmd === 'plain' ? plain(a) : (console.error('usage: r10-night.ts run|replay|status|plain … (see the header of scripts/r10-night.ts)'), 2))()
     .then(code => process.exit(code), error => { if (error instanceof Refused) { console.error(`r10-night refused: ${error.message}`); process.exit(2); } console.error(error); process.exit(1); });
 }

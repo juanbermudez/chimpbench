@@ -271,4 +271,18 @@ cover `src/sim/decide.ts`. 4. The field smoke (§7, 5 to 8). 5. Results in §10;
 
 ## 10. Iteration log and results
 
-(Filled in as the stage runs.)
+### 10.1 Amendments (written 10 October 2026, 20:05, after the code and its unit tests, before the field smoke)
+
+- **A1. One rule of §4 is withdrawn before it was ever used:** "three worker restarts within one simulated day end the
+  run". A busy spell of a few minutes would end a night that could have gone on, and a stop cannot give those hours
+  back. Timeouts are counted per day, each costs at most the time limit, and they are part of S4 at day 5. The other
+  rule stands: 50 kernel errors in a row end the run at once (a worker that has died answers nothing, and a night of
+  rules fallbacks is not a model night).
+- **A2. One more file per day:** `summary/dNNN.json`, the day's summary, written before the checkpoint, so that a
+  resume rebuilds the registry's list of days from files and not from a registry that may be one day behind.
+- **A3. The journal is reused for answers only.** A journalled error (a timeout, a dead worker) is asked again on a
+  resume. The journal also receives the reused answers again, so a second crash in the same day loses nothing.
+- **A4. Two commands beside the registered three:** `plain` (createWorld and tickWorld only: the hashes a rules arm
+  must end each day on, for proof 5) and the switch `--crash-at-tick N` (the process kills itself with SIGKILL after
+  N ticks: the crash of proof 7).
+- **A5. The replay has no error limit** (it must run to the end and report missing receipts, not stop on them).
