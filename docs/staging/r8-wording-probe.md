@@ -56,3 +56,13 @@ Distinct wordings in the training draws: 31 neutral labels, 111 rules' sentences
 | charge | 6 | Charge at NAME (0.000, 191) | Charge at NAME, a recent immigrant, near my food (0.081, 37) | 0.081 |
 | follow | 2 | Follow NAME, who is moving off DIR (0.083, 36) | Keep up with my mother NAME (0.113, 53) | 0.030 |
 | call | 2 | Pant-hoot and drum as the party reunites (0.009, 113) | Pant-hoot so my allies out of sight know where I am (0.021, 700) | 0.013 |
+
+## The order of the nearby list
+
+The observation lists the animals nearby with the targets of the rules' best-valued options first, and today's packets write the `nearby` line in that order. Held-out records (they carry their context), fresh draws only.
+
+| Fresh draws | The pick names a listed animal | of those, two or more animals listed | That animal is the first one listed | Chance | It is the nearest listed (ties included) |
+| --- | --- | --- | --- | --- | --- |
+| 954 | 196 | 162 | 162 (1.000) | 0.296 | 72 (0.444) |
+
+Packet 5 lists the animals nearest first (`src/providers/packet.ts`), so its order is not the rules'.

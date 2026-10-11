@@ -434,7 +434,11 @@ export interface SocialPercept {
   /** Optional: the focal animal's tension toward this individual, 0..1 (own-community members only). */
   tension?: number;
   // Stage R8 (`observeV5` 1; docs/staging/r8-prereg.md §2): what the focal animal sees this individual doing, and its own timing with it
-  /** The compass direction it is moving in, while its act is a movement (travel, follow, patrol, flee, transfer). */
+  /**
+   * The compass direction it is going in, while its act is a movement (travel, follow, patrol, flee, transfer): on a trip
+   * to a tree the way to that tree (its heading while it walks; a standing animal's heading says nothing of where it
+   * is going), otherwise its heading once it has taken a step of the act.
+   */
   dir?: Compass;
   /** With `dir`: true when its distance from the focal animal is growing (it is leaving). */
   away?: boolean;
