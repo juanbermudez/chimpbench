@@ -21,6 +21,14 @@ export const ARC_GROW_S = 2.4, ARC_HOLD_S = 0.3, ARC_FADE_S = 0.9;
 export const ARC_LIFE_S = ARC_GROW_S + ARC_HOLD_S + ARC_FADE_S;
 /** A call older than this (ecological hours: one simulated minute) when first seen is not drawn: it is not news. */
 export const FRESH_CALL_H = 1 / 60;
+/** How many arcs are drawn at once, and how the log keeps to it when more calls are given than that (time-lapse: at
+ * 1 h/s the three communities of the field map give some 36 long calls a real second, and drawing the newest twelve
+ * cut every arc off after a third of a second, 0 to 400 m out, so none showed its reach). Below ARC_BUSY arcs in the
+ * air every call is noted; from there on one is noted at most every ARC_GAP_S, and none while ARC_MAX are in the air:
+ * the calls shown are then a sample, and every arc shown lives its whole life and reaches its radius. On the first
+ * day of seed 48 (field map, 314 long calls): at 1 min/s all are noted (1.5 arcs in the air on average, 8 at most),
+ * at 10 min/s half of them, at 1 h/s one in eight. Design assumptions. */
+export const ARC_MAX = 12, ARC_BUSY = 8, ARC_GAP_S = ARC_LIFE_S / ARC_MAX;
 
 /** Radius (m) of the drawn arc `age` real seconds after the call: 0 at the caller, exactly `radius` from ARC_GROW_S on.
  * Eased at both ends (smoothstep), so the first metres are slow enough to see in a view a few hundred metres across. */
@@ -68,10 +76,18 @@ export function createCallLog(cap = 32): CallLog {
     troop: new Int32Array(cap), caller: new Int32Array(cap), time: new Float64Array(cap), at: new Float64Array(cap).fill(-Infinity), lastId: 0, lastTime: -Infinity };
 }
 export function resetCallLog(log: CallLog): void { log.n = 0; log.next = 0; log.id.fill(-1); log.at.fill(-Infinity); log.lastId = 0; log.lastTime = -Infinity; }
+/** Arcs of the log still in the air at `now` (the consumer's clock): entries younger than ARC_LIFE_S, newest first. */
+export function liveArcs(log: CallLog, now: number): number {
+  let n = 0;
+  for (let k = 0; k < log.n; k++) { if (now - log.at[(log.next - 1 - k + 2 * log.cap) % log.cap] >= ARC_LIFE_S) break; n++; }
+  return n;
+}
 /**
  * Notes the calls of `calls` not seen before (call ids only grow within a world) whose reach is drawn and that are
  * still fresh. Returns how many were added: they are the newest `added` entries (logSlot(log, 0) is the newest).
- * A world whose clock ran backwards (another simulation was opened) starts the log again.
+ * When more are given than can be drawn to their radius, only some are noted (ARC_MAX, ARC_BUSY, ARC_GAP_S above);
+ * a call left out is not looked at again. A world whose clock ran backwards (another simulation was opened) starts
+ * the log again.
  */
 export function noteCalls(log: CallLog, calls: readonly Call[], worldTime: number, now: number): number {
   if (worldTime < log.lastTime) resetCallLog(log);
@@ -80,10 +96,13 @@ export function noteCalls(log: CallLog, calls: readonly Call[], worldTime: numbe
   // Calls are appended in id order, so the unseen ones are at the end of the list.
   let first = calls.length;
   while (first > 0 && calls[first - 1].id > log.lastId) first--;
+  let live = first < calls.length ? liveArcs(log, now) : 0;
   for (let i = first; i < calls.length; i++) {
     const c = calls[i];
     if (c.id > maxId) maxId = c.id;
     if (!REACH_KINDS.has(c.kind) || worldTime - c.time > FRESH_CALL_H || !(c.radius > 0)) continue;
+    if (live >= ARC_MAX || (live >= ARC_BUSY && now - log.at[(log.next - 1 + log.cap) % log.cap] < ARC_GAP_S)) continue;
+    live++;
     const k = log.next;
     log.id[k] = c.id; log.kind[k] = c.kind; log.x[k] = c.position[0]; log.z[k] = c.position[2]; log.radius[k] = c.radius;
     log.troop[k] = c.troopId; log.caller[k] = c.callerId; log.time[k] = c.time; log.at[k] = now;

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { Call, CallKind } from '../src/types';
-import { ARC_FADE_S, ARC_GROW_S, ARC_HOLD_S, ARC_LIFE_S, FRESH_CALL_H, arcAlpha, arcRadius, arrivalDelay, createCallLog, drawsReach, inEarshot, logFind, logSlot, noteCalls } from '../src/render/callreach';
+import { ARC_BUSY, ARC_FADE_S, ARC_GAP_S, ARC_GROW_S, ARC_HOLD_S, ARC_LIFE_S, ARC_MAX, FRESH_CALL_H, arcAlpha, arcRadius, arrivalDelay, createCallLog, drawsReach, inEarshot, liveArcs, logFind, logSlot, noteCalls } from '../src/render/callreach';
 import { HEARD_HOLD_S, HEARD_LOOK_S, HEARD_REFRACTORY_S, createHeard, holding, listening, noteHeard } from '../src/render/creatures/heard';
 import { createWorld, tickWorld } from '../src/simulation';
 
@@ -86,11 +86,45 @@ test('the log follows a real world: every long call of a morning is noted once, 
   for (let t = 0; t < 960; t++) {
     tickWorld(world);
     for (const c of world.calls) if (drawsReach(c.kind) && !want.has(c.id)) want.set(c.id, c.radius);
-    const added = noteCalls(log, world.calls, world.time, t / 4);
+    // A tick a real second (15 s/s): the 160 m world packs its calls so closely that at 1 min/s more than eight arcs
+    // are at times in the air and the log's limit (the next test) leaves a few calls out; nothing draws them there.
+    const added = noteCalls(log, world.calls, world.time, t);
     for (let k = 0; k < added; k++) { const s = logSlot(log, k); assert.equal(log.radius[s], want.get(log.id[s]), 'the radius of the call record'); got++; }
   }
   assert.ok(want.size > 5, `the morning has long calls (${want.size})`);
   assert.equal(got, want.size);
+});
+
+test('when more calls are given than can be drawn to their radius, some are noted and each of those lives its whole life', () => {
+  // The default speed and slower: a long call every two real seconds. Every one is noted.
+  const slow = createCallLog(32);
+  let id = 1000000, n = 0;
+  for (let t = 0; t < 60; t += 2) n += noteCalls(slow, [call(++id, 'pant-hoot', 0, 0, 1000, t / 60)], t / 60, t);
+  assert.equal(n, 30);
+  assert.ok(liveArcs(slow, 58) <= 2);
+  // Two calls in one frame while few arcs are in the air: both noted (a drum and a pant-hoot, a small chorus).
+  assert.equal(noteCalls(slow, [call(++id, 'drum', 0, 0, 1000, 1), call(++id, 'pant-hoot', 5, 5, 1000, 1)], 1, 60), 2);
+  // Time-lapse at 1 h/s: 36 long calls a real second for 20 s, a frame every sixtieth of a second.
+  const log = createCallLog(32), starts = new Map<number, number>();
+  let calls: Call[] = [], noted = 0, given = 0, maxLive = 0, acc = 0;
+  for (let f = 0; f < 1200; f++) {
+    const now = f / 60;   // real seconds, and hours of the world at 1 h/s
+    calls = calls.slice(-40);
+    for (acc += 36 / 60; acc >= 1; acc--) { calls.push(call(++id, 'pant-hoot', id % 97, id % 89, 1000, now)); given++; }
+    const added = noteCalls(log, calls, now, now);
+    for (let k = 0; k < added; k++) starts.set(log.id[logSlot(log, k)], now);
+    noted += added;
+    maxLive = Math.max(maxLive, liveArcs(log, now));
+    // An arc that is still growing or fading is still in the log: nothing newer has pushed it out.
+    for (const [cid, t0] of starts) { if (now - t0 < ARC_LIFE_S) assert.ok(logFind(log, cid) >= 0, `call ${cid} lost ${(now - t0).toFixed(2)} s into its arc`); else starts.delete(cid); }
+  }
+  assert.ok(given >= 715 && given <= 720);
+  assert.ok(maxLive <= ARC_MAX, `never more than ${ARC_MAX} arcs in the air (${maxLive})`);
+  assert.ok(maxLive >= ARC_BUSY);
+  // About one every ARC_GAP_S once it is busy: 20 s of it is some 66 arcs, of 720 calls.
+  assert.ok(noted >= 50 && noted <= 20 / ARC_GAP_S + ARC_BUSY, `a sample (${noted} of ${given})`);
+  // A call left out is not looked at again when the flood stops.
+  assert.equal(noteCalls(log, calls, 20, 30), 0);
 });
 
 test('a listener orients once, for a moment, and not again at once', () => {

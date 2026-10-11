@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { Owner } from './shared';
-import { ARC_LIFE_S, arcAlpha, arcRadius, type CallLog } from '../callreach';
+import { ARC_LIFE_S, ARC_MAX, arcAlpha, arcRadius, type CallLog } from '../callreach';
 import { GOAL_CALL, GOAL_NONE, MAX_MARKS, TRAIL_SAMPLES, TRAIL_SLOTS, trailPoints, type PartyMap } from './party-map';
 import { preToneMapped } from '../creatures/util';
 import type { CallKind } from '../../types';
@@ -135,7 +135,7 @@ export function createMarkerMaterial(viewport: { value: THREE.Vector2 }, weight:
           float ang = atan( vQ.y, - vQ.x );
           float wedge = 1.0 - smoothstep( 0.5, 0.66, abs( ang - 0.785 ) );
           float arcs = max( 1.0 - smoothstep( 0.8, 1.6, abs( r - ( outer + 3.0 ) ) ), 1.0 - smoothstep( 0.8, 1.6, abs( r - ( outer + 7.0 ) ) ) );
-          float h = arcs * wedge * min( 1.0, heard * 3.0 );
+          float h = arcs * wedge * min( 1.0, heard * 3.0 ) * vStyle.z;   // dimmed with its marker when another community is highlighted
           col = mix( col, uHoot, h * ( 1.0 - disc ) ); a = max( a, h );
         }
         // Size: the number of members in a small badge, lower right.
@@ -285,7 +285,8 @@ export function createPartyLines(owner: Owner, heights: MarkHeights): PartyLines
 
 // --- Call arcs ------------------------------------------------------------------------------------------------
 
-const MAX_ARCS = 12, ARC_STEPS = 192, ARC_HALF_PX = 2.6;
+// As many rings as the call log lets be in the air at once (callreach.ts ARC_MAX), so none is cut off while it grows.
+const MAX_ARCS = ARC_MAX, ARC_STEPS = 192, ARC_HALF_PX = 2.6;
 
 export interface CallArcs {
   mesh: THREE.Mesh;
