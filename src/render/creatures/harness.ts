@@ -5,6 +5,7 @@
 // &patrol=out|listen|incursion|return runs the course as a two-animal patrol on that leg).
 // patrol (&phase=out|listen|incursion|return|release|heard|cycle|none, &n=6: a border patrol in single file with a
 // published Party.patrolPhase; docs/realism-design.md §5.3.1 P4b; the camera follows the middle animal).
+// single also takes &age=, &sex=male|female and &swelling=0..1 for its first animal.
 // Other params: zoom=close|mid|far|rts, rain=0..1, night=1, sel=<id>, labels=1,
 // social=1, perception=1, hl=<troopId>, rate=<eco s per s>, moving=1.
 import * as THREE from 'three';
@@ -254,6 +255,11 @@ if (mode === 'sheet') {
 } else if (mode === 'single') {
   const act = (q.get('action') ?? 'groom') as Action;
   setupAction(act, 0, 0, q.has('moving'));
+  // &age=, &sex=, &swelling=: override the first animal of the tile (a swollen female or an infant on its own, W3).
+  const first = world.chimps[0];
+  if (first && q.has('age')) { first.age = Number(q.get('age')); first.stage = stageOf(first.age); }
+  if (first && q.has('sex')) first.sex = q.get('sex') === 'female' ? 'female' : 'male';
+  if (first && q.has('swelling')) first.swelling = Number(q.get('swelling'));
   camTarget.set(0.4, 0.6, 0); camPos.set(2.8, 2.0, 4.6);
   if (act === 'nest' || act === 'climb') { camTarget.set(0.5, 5, 0); camPos.set(6, 7, 10); }
 } else if (mode === 'scene' || mode === 'perf') {
