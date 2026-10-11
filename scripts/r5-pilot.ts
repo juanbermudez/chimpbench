@@ -39,14 +39,18 @@ import { worldHash } from '../tests/fixtures/golden';
 import { focalSet } from './em-loop';
 import { familyOf } from './em-sample';
 import { Worker, type Scorer } from './ft-society';
+import { newDecoder, newTally, tallyAsk, type DecodeRecord, type DecodeTally, type HarnessDecode } from './lib/decoder';
 import { glinerKernel } from './lib/kernels';
 import { buildStateOnlyQuestion, tokensOf } from './lib/packet-state';
 
 export const DAY = Math.round(24 / TICK_HOURS), TICK_MIN = TICK_HOURS * 60;
 export const MAX_DAYS = 5;
 
-/** An arm: who chooses for the focal animals, and the loop's two settings. `redraw`: a rules world with its random stream advanced by that many draws (the noise reference). */
-export interface ArmSpec { kernel: 'rules' | 'null' | 'argmax' | 'gliner'; adapter?: string; gate?: 1; noPick?: 1; redraw?: number }
+/**
+ * An arm: who chooses for the focal animals, and the loop's two settings. `redraw`: a rules world with its random stream advanced by that many draws (the noise reference).
+ * `decode` (stage R9; docs/staging/r9-prereg.md): the loop's decode step for this arm (scripts/lib/decoder.ts); absent, the kernel's own pick is applied and the receipts are those of earlier stages.
+ */
+export interface ArmSpec { kernel: 'rules' | 'null' | 'argmax' | 'gliner'; adapter?: string; gate?: 1; noPick?: 1; redraw?: number; decode?: HarnessDecode }
 export const ARMS: Record<string, ArmSpec> = {
   rules: { kernel: 'rules' },
   'rules-r1': { kernel: 'rules', redraw: 1 }, 'rules-r2': { kernel: 'rules', redraw: 2 }, 'rules-r3': { kernel: 'rules', redraw: 3 },
@@ -68,6 +72,14 @@ export interface Receipt {
   tick: number; t: number; id: number; v: number; phase: string; n: number; rulesIndex: number;
   opts: [string, number][]; fam: string[]; by: 'kernel' | 'rules'; refusal: string; detail: string;
   index: number | null; p: number[] | null; picked: number; sha: string; tokens: number; ms: number;
+  /** Stage R9: what the decode step did at this ask (mode, salt, hold, epoch, the draw or the noise); only in arms that have one. */
+  dec?: DecodeRecord;
+}
+/** Stage R9: the receipts of two logs (a run and its replay) that differ in the option applied or in the decode's record. 0: the decode is reproduced from what the receipts hold. */
+export function decodeDiffers(a: Receipt[], b: Receipt[]): number {
+  let n = Math.abs(a.length - b.length);
+  for (let i = 0; i < Math.min(a.length, b.length); i++) if (a[i].picked !== b[i].picked || JSON.stringify(a[i].dec ?? null) !== JSON.stringify(b[i].dec ?? null)) n++;
+  return n;
 }
 const key = (t: number, id: number, v: number) => `${t.toFixed(6)}:${id}:${v}`;
 const famOf = (o: Candidate) => { const m = candidateMeta.get(o); return familyOf(o.action, m?.v ?? V.NONE, m?.aux ?? -1); };
@@ -124,6 +136,13 @@ export interface DayRow {
    * settled; `heldN`: new acts the gate kept or began without asking; `byRules`: new acts the rules settled.
    */
   own?: { model: number; held: number; rules: number }; asked?: number; byModel?: number; heldN?: number; byRules?: number;
+  /**
+   * Stage R9 (docs/staging/r9-prereg.md §5), over the whole day, in every arm. `changes`: ticks at whose end the animal's
+   * act (action and target) differs from its act one tick before, measured after the loop's step (a model-driven animal's
+   * one-tick wait is not seen); `kindChanges`: the same for the kind of act (the families of scripts/em-sample.ts).
+   * `dec`: the decode's asks that day, in arms that have a decode step (scripts/lib/decoder.ts DecodeTally).
+   */
+  changes?: number; kindChanges?: number; dec?: DecodeTally;
 }
 export interface Decisions {
   id: number; name: string; cls: string;
@@ -166,7 +185,10 @@ export async function runArm(base: World, name: string, spec: ArmSpec, days: num
   // running state per focal animal: the ledger at the day's start, the last position and 5-min fix, the day's counters
   const st = new Map(focalIds.map(f => { const c = idx0.byId.get(f.id)!, L = ix(c).en; return [f.id, { in0: L?.in ?? 0, fin0: L?.fin ?? L?.in ?? 0, out0: L?.out ?? 0, res0: L?.res ?? 0, px: c.position[0], pz: c.position[2], fx: c.position[0], fz: c.position[2],
     cat: CATEGORIES.map(() => 0), light: 0, night: 0, nest: 0, m: 0, mf: 0, fam: famNow(c), tgt: c.targetId, tripTo: -1, atW: false, trips: 0, drinks: 0, tripsDone: 0,
-    owner: 'rules' as 'model' | 'held' | 'rules', own: { model: 0, held: 0, rules: 0 }, asked: 0, byModel: 0, heldN: 0, byRules: 0 }]; }));
+    owner: 'rules' as 'model' | 'held' | 'rules', own: { model: 0, held: 0, rules: 0 }, asked: 0, byModel: 0, heldN: 0, byRules: 0,
+    act: c.action as string, changes: 0, kindChanges: 0, dec: newTally() }]; }));
+  // stage R9: the arm's decode step (it keeps its own notes per animal, outside the world)
+  const decoder = spec.decode && kernel ? newDecoder(spec.decode) : null;
   const ms: number[] = [], last = new Map<number, { ms: number; answer: KernelAnswer | null; sha: string; tokens: number }>();
   // the kernel, timed, with its raw answer kept for the receipt
   const timed: Kernel | null = kernel && { ...kernel, async decide(request, env) {
@@ -188,9 +210,11 @@ export async function runArm(base: World, name: string, spec: ArmSpec, days: num
       if (n > 0) { if (!timed) { d.rulesDecisions += n; s.byRules += n; s.owner = 'rules'; } else if (c.awaitingDecisionSince === null) { d.gateKept += n; s.heldN += n; s.owner = 'held'; } else d.interrupts += n; } }
     if (timed) {
       const s = performance.now();
-      const results = await answerWaiting(w, c => focal.has(c.id) ? timed : null);
+      const results = await answerWaiting(w, c => focal.has(c.id) ? timed : null, decoder ? { decode: decoder.step(w) } : {});
       kernelMs += performance.now() - s;
       for (const r of results) {
+        const record = decoder?.settle(w, r) ?? null;
+        if (record) tallyAsk(st.get(r.chimpId)!.dec, record, r.by === 'kernel' ? r.index : -1);
         // a pass reached the kernel unless the request itself was refused (a kernel that throws leaves StepResult.calls at 0)
         const d = dec.get(r.chimpId)!, req = r.request!, fam = req.options.map(famOf), asked = r.refusal !== 'fewer-than-two-options' && r.refusal !== 'invalid-context', l = asked ? last.get(r.chimpId) : undefined;
         d.points++; if (asked) calls += Math.max(1, r.calls);
@@ -201,7 +225,7 @@ export async function runArm(base: World, name: string, spec: ArmSpec, days: num
         opts.receipts?.({ tick: w.tick, t: +req.context.time.toFixed(6), id: r.chimpId, v: req.context.version, phase: req.context.environment.phase, n: req.options.length, rulesIndex: req.rulesIndex,
           opts: req.options.map(o => [o.action, o.targetId]), fam, by: r.by, refusal: r.refusal, detail: r.refusal === 'invalid-context' && r.detail === 'body' ? `body: ${bodyFieldError(req.context.body)}` : r.detail,
           index: a && typeof a.index === 'number' ? a.index : null, p: a && Array.isArray(a.probabilities) ? a.probabilities as number[] : null, picked: r.by === 'kernel' ? r.index : -1,
-          sha: l?.sha ?? '', tokens: l?.tokens ?? 0, ms: l ? +l.ms.toFixed(1) : 0 });
+          sha: l?.sha ?? '', tokens: l?.tokens ?? 0, ms: l ? +l.ms.toFixed(1) : 0, ...(record ? { dec: record } : {}) });
       }
     }
     // measurement only: nothing below writes the world
@@ -223,6 +247,10 @@ export async function runArm(base: World, name: string, spec: ArmSpec, days: num
         if (night) { s.night++; if (inNest(c)) s.nest++; }
         // stage R4b: trips to food begun and drinks, from the act the animal is in after this tick
         const fam = famNow(c);
+        // stage R9: act changes (the act after this tick against the act after the last one)
+        if (c.action !== s.act || c.targetId !== s.tgt) s.changes++;
+        if (fam !== s.fam) s.kindChanges++;
+        s.act = c.action;
         if (fam === 'food-trip' && (s.fam !== 'food-trip' || c.targetId !== s.tgt)) { s.trips++; s.tripTo = c.targetId; }
         else if (fam !== 'food-trip' && s.tripTo >= 0) { if (c.action === 'forage' && c.targetId === s.tripTo) s.tripsDone++; s.tripTo = -1; }
         s.fam = fam; s.tgt = c.targetId;
@@ -238,9 +266,10 @@ export async function runArm(base: World, name: string, spec: ArmSpec, days: num
           min: Object.fromEntries(CATEGORIES.map((n, k) => [n, +(s.cat[k] * TICK_MIN).toFixed(2)])), daylightMin: +(s.light * TICK_MIN).toFixed(2),
           km: +(s.m / 1000).toFixed(4), kmFixes: +(s.mf / 1000).toFixed(4), nightMin: +(s.night * TICK_MIN).toFixed(2), nestShare: s.night ? +(s.nest / s.night).toFixed(4) : null,
           waterDefMl: ix(c).wat ? Math.round(ix(c).wat!.def) : null, trips: s.trips, drinks: s.drinks, tripsDone: s.tripsDone,
-          own: { model: +s.own.model.toFixed(2), held: +s.own.held.toFixed(2), rules: +s.own.rules.toFixed(2) }, asked: s.asked, byModel: s.byModel, heldN: s.heldN, byRules: s.byRules });
+          own: { model: +s.own.model.toFixed(2), held: +s.own.held.toFixed(2), rules: +s.own.rules.toFixed(2) }, asked: s.asked, byModel: s.byModel, heldN: s.heldN, byRules: s.byRules,
+          changes: s.changes, kindChanges: s.kindChanges, ...(decoder ? { dec: s.dec } : {}) });
         Object.assign(s, { in0: now.in, fin0: now.fin, out0: now.out, res0: now.res, cat: CATEGORIES.map(() => 0), light: 0, night: 0, nest: 0, m: 0, mf: 0, trips: 0, drinks: 0, tripsDone: 0,
-          own: { model: 0, held: 0, rules: 0 }, asked: 0, byModel: 0, heldN: 0, byRules: 0 });
+          own: { model: 0, held: 0, rules: 0 }, asked: 0, byModel: 0, heldN: 0, byRules: 0, changes: 0, kindChanges: 0, dec: newTally() });
       }
     }
     if (endOfDay) { dayHashes.push(worldHash(w)); opts.log?.(`${name} day ${day + 1}/${days}: ${Math.round((Date.now() - t0) / 1000)} s (kernel ${Math.round(kernelMs / 1000)} s, ${calls} calls${opts.guard ? `, ${opts.guard.timeouts - timeouts0} timeouts` : ''})`); }
