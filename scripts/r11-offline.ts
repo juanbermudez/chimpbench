@@ -386,19 +386,19 @@ if (process.argv[1]?.endsWith('r11-offline.ts')) {
     for (const s of read<{ id: string; packet: string; probs: number[] }>(baseFile)) (old[s.packet] ??= new Map()).set(s.id, s.probs);
     const both = fresh.filter(r => old.oldState?.has(r.id) && old.oldNeutral?.has(r.id));
     const oldHit = (r: R11Row, name: string) => { const pr = old[name].get(r.id)!; if (pr.length !== r.options.length) throw new Error(`the baseline: ${pr.length} probabilities for the ${r.options.length} options of ${r.id}`); return +(argmax(pr) === r.rgIndex); };
-    const over = (v: (r: R11Row) => number, tag: string) => boot(both.map(r => ({ key: animal(r), v: v(r) })), `like:${tag}`);
-    likeForLike = { draws: both.length, withWording: over(r => oldHit(r, 'oldState'), 'wording'), neutral: over(r => oldHit(r, 'oldNeutral'), 'neutral'), difference: over(r => oldHit(r, 'oldNeutral') - oldHit(r, 'oldState'), 'difference') };
+    const over = (v: (r: R11Row) => number, tag: string) => boot(both.map(r => ({ key: animal(r), v: v(r) })), `r11-baseline:top:${tag}`);   // (the tags of scripts/r11-baseline.ts: the same intervals in both tables)
+    likeForLike = { draws: both.length, withWording: over(r => oldHit(r, 'oldState'), 'oldState'), neutral: over(r => oldHit(r, 'oldNeutral'), 'oldNeutral'), difference: over(r => oldHit(r, 'oldNeutral') - oldHit(r, 'oldState'), 'difference') };
     p(`**Like for like (prereg §13.2): a description; W1 above stays as registered.** The first adapter (\`${OLD}\`) scored on ${both.length === fresh.length ? 'these same' : `${n(both.length)} of these`} ${n(fresh.length)} fresh draws, on its own state-only packet: top-1 ${ci(likeForLike.withWording)} with the rules' wording on the options and ${ci(likeForLike.neutral)} with neutral options (paired difference ${ci(likeForLike.difference)})${wording ? `; on stage R4's draws the same two figures were ${f(wording.withWording)} and ${f(wording.neutral)}` : ''}. That adapter was trained with the wording, on one-hot picks with kept acts among its labels, and never saw the neutral rendering. The whole table is in [r11-baseline.md](r11-baseline.md).`);
-    const mine = everyone.filter(m => !m.floor && hits(m).length);
+    const mine = adapters.filter(m => hits(m).length);   // (the adapters of this stage, as registered; the floors and the untuned model are in the table above)
     if (mine.length) {
       p();
-      p('| Model, on its own arm\'s packets | Top-1, the rules\' pick | Less the first adapter with neutral options (paired on the same draws) | Less the first adapter with the rules\' wording (paired) |');
+      p('| Adapter, on its own arm\'s packets | Top-1, the rules\' pick | Less the first adapter with neutral options (paired on the same draws) | Less the first adapter with the rules\' wording (paired) |');
       p('| --- | --- | --- | --- |');
       const ids = new Set(both.map(r => r.id)), byId = new Map(both.map(r => [r.id, r]));
       for (const m of mine) {
         const h = hits(m).filter(x => ids.has(x.id)), less = (name: string) => boot(h.map(x => ({ key: x.key, v: x.v - oldHit(byId.get(x.id)!, name) })), `like:${m.label}:${name}`);
         const a = less('oldNeutral'), b = less('oldState');
-        if (m.provider !== 'base') lessOld[m.label] = { neutral: a, wording: b };
+        lessOld[m.label] = { neutral: a, wording: b };
         p(`| ${m.label} | ${f(mean(h.map(x => x.v)))} | ${ci(a)} | ${ci(b)} |`);
       }
     }
