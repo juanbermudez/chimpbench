@@ -4843,3 +4843,36 @@ opened and are not cited. No behavioural constant, parameter or simulation code 
   read; Deschner et al. 2003, 2004 are named elsewhere in this file as not verified); the tuft's size and the age it
   is lost; eye or iris size by age; ear dimensions; the finger-joint angle and the standing posture of the
   knuckle-walking hand (not in what was opened).
+
+## Addendum: W10 calls and map (11 October 2026)
+
+Written for stage W10 (`docs/staging/w10-calls-map.md`; render and interface only, nothing under `src/sim`). No new
+source was opened: research.md was searched first (pant-hoot, playback, orient, travel hoo, audib), and what the stage
+states as fact is already here. No behavioural constant, parameter or simulation code is involved.
+
+**What W10 leans on (all listed above).**
+- **How far a pant-hoot carries.** The arc of a call is drawn to the simulation's own radius (`Call.radius`, from
+  `hearPantHootM` and the other `hear*M` parameters: 1,000 m for a pant-hoot or drumming on the field map, 36 m on the
+  160 m map), not to a literature value. That parameter rests on "Pant-hoot audibility 1–2 km" (Pending verification
+  above: secondary citations of Reynolds & Reynolds 1965 and Ghiglieri 1984 through [wilson2001] and
+  [wilsonWrangham2003]; audibility to human observers) [L]; row P-SCALE-3 of `docs/realism-design.md`.
+- **Calls are answered and followed.** 75% of 352 "inquiring" pant-hoots got a vocal reply and 67% were followed by a
+  fusion, on average 5.2 min later [southern2025] [M] (Loango, *P. t. troglodytes*). Travel hoos recruited at least one
+  follower in 55 of 77 vocal initiations (71.4%) against 30 of 89 silent ones [gruberZuberbuhler2013] [H]. Parties with
+  three or more adult males chorused and approached playbacks of a stranger's pant-hoot [wilson2001]. These are why
+  the stage shows who heard a call and which party then walks toward it; the walk itself is the simulation's
+  (`Chimp.targetId` of a trip toward a caller is the call's id), not something the renderer adds.
+
+**What stays a stylization, with no source.**
+- A listener turning its head toward a distant call and holding still for a second or two
+  (`src/render/creatures/heard.ts`: 2.4 s of looking, 1.5 s of holding, 10 s before it orients again). No entry here
+  describes an orienting response of wild chimpanzees to a distant call of their own community, and none was looked for.
+- The arc itself (`src/render/callreach.ts`: 2.4 s to reach the radius, then 0.3 s standing and 0.9 s fading, in real
+  seconds at every playback speed) and the small ring on each listener in the strategy view.
+- Every map mark (`src/render/env/party-marks.ts`, `party-map.ts`): the activity pictogram and the five classes of act
+  behind it, the size badge, the heading tick, the gold rim, the heard tick, the half-hour trail, the dashed goal line.
+  They are map conventions and claim nothing about chimpanzees.
+
+**Not found or not looked for:** a field measurement of how far chimpanzees themselves hear a pant-hoot (the 1–2 km is
+to human observers); head or body orientation toward distant calls; how party size is counted in the field when
+dependent young are present (the marker counts every member, as the simulation's party list does).
