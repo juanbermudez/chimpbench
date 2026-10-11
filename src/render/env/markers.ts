@@ -233,7 +233,8 @@ export function createBeliefMarkers(world0: World, owner: Owner, container: HTML
     for (let i = 0; i < w.chimps.length; i++) if (w.chimps[i].id === id) { c = w.chimps[i]; break; }
     const count = c ? collectBeliefs(c, w.time, treeOf, marks) : 0;
     n = 0; nMem = 0; nOpt = 0; target = -1; text = '';
-    for (let i = 0; i < count; i++) {
+    // Last to first: collectBeliefs puts the act's tree first and the options next, and they are drawn over the rest.
+    for (let i = count - 1; i >= 0; i--) {
       const b = marks[i];
       // The close view shows only where it is going (a sky full of diamonds would bury the animal); the strategy view all.
       if (mode !== 'rts' && b.kind !== 2) continue;

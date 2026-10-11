@@ -245,7 +245,11 @@ export const isTreeId = (id: number) => id > 100000 && id < 200000;
 
 /** kind: 0 a tree it remembers (chimp.memory), 1 a tree one of its options goes to, 2 the tree its current act goes to. */
 export interface BeliefMark { treeId: number; x: number; z: number; kind: 0 | 1 | 2; /** Hours since it last saw the tree itself; -1 when the tree is not in its memory. */ hours: number; /** The option's score (kinds 1, 2), else 0. */ score: number }
-export const MAX_BELIEFS = 24;
+/**
+ * Marks the buffer holds: every tree a field animal can remember (the simulation's memTreeCap, 60 in the field profile)
+ * and a dozen trees its options go to. A design assumption on the renderer's side; nothing reads the parameter.
+ */
+export const MAX_BELIEFS = 72;
 export function createBeliefMarks(): BeliefMark[] { return Array.from({ length: MAX_BELIEFS }, () => ({ treeId: -1, x: 0, z: 0, kind: 0 as const, hours: -1, score: 0 })); }
 /** Acts whose target is a tree the animal goes to or is in. */
 const TREE_ACTS: Partial<Record<Chimp['action'], true>> = { travel: true, forage: true, climb: true, nest: true };
@@ -254,20 +258,38 @@ const TREE_ACTS: Partial<Record<Chimp['action'], true>> = { travel: true, forage
  * memory with the hours since it saw it (Memory.seenAt), every tree an option on its list goes to (Candidate.targetId)
  * and the tree its act in progress goes to. The crop it believes each holds lives in chimp.sim (treeCrop) and is NOT
  * read: the renderer reads the contract only. Pure; writes only out.
+ *
+ * Order of out[]: the act's tree, then the option trees, then the remembered ones. The first two are never the ones
+ * left out when the buffer is full: a field animal remembers more than 24 trees from its fourth day on, and a buffer
+ * filled from its memory first lost the mark, the line and the label of the very tree it was walking to. When the
+ * remembered trees do not all fit, the ones seen longest ago give way.
  */
 export function collectBeliefs(c: Pick<Chimp, 'memory' | 'candidates' | 'action' | 'targetId' | 'alive'>, time: number, treeOf: (id: number) => Tree | undefined, out: BeliefMark[]): number {
   let n = 0;
   if (!c.alive) return 0;
-  const mem = c.memory ?? [];
-  for (let i = 0; i < mem.length && n < out.length; i++) {
-    const m = mem[i];
-    if (m.kind !== 'tree' || findMark(out, n, m.entityId) >= 0) continue;
-    const o = out[n++];
-    o.treeId = m.entityId; o.x = m.position[0]; o.z = m.position[2]; o.kind = 0; o.hours = Math.max(0, time - m.seenAt); o.score = 0;
-  }
+  if (TREE_ACTS[c.action] && isTreeId(c.targetId)) n = addMark(out, n, c.targetId, 2, 0, treeOf);
   const cands = c.candidates ?? [];
   for (let i = 0; i < cands.length; i++) { const k = cands[i]; if (TREE_ACTS[k.action] && isTreeId(k.targetId)) n = addMark(out, n, k.targetId, 1, k.score, treeOf); }
-  if (TREE_ACTS[c.action] && isTreeId(c.targetId)) n = addMark(out, n, c.targetId, 2, 0, treeOf);
+  const mem = c.memory ?? [];
+  for (let i = 0; i < mem.length; i++) {
+    const m = mem[i];
+    if (m.kind !== 'tree') continue;
+    const hours = Math.max(0, time - m.seenAt);
+    let k = findMark(out, n, m.entityId);
+    if (k >= 0) {   // the act's tree, an option's tree or a second entry for the same tree: it is one it remembers
+      const o = out[k];
+      if (o.hours < 0 || hours < o.hours) { o.hours = hours; o.x = m.position[0]; o.z = m.position[2]; }
+      continue;
+    }
+    if (n < out.length) k = n++;
+    else {   // full: this one takes the place of the remembered tree seen longest ago, if that is older than it
+      let oldest = hours;
+      for (let j = 0; j < n; j++) if (out[j].kind === 0 && out[j].hours > oldest) { oldest = out[j].hours; k = j; }
+      if (k < 0) continue;
+    }
+    const o = out[k];
+    o.treeId = m.entityId; o.x = m.position[0]; o.z = m.position[2]; o.kind = 0; o.hours = hours; o.score = 0;
+  }
   return n;
 }
 function findMark(out: BeliefMark[], n: number, id: number): number { for (let i = 0; i < n; i++) if (out[i].treeId === id) return i; return -1; }

@@ -228,19 +228,63 @@ test('beliefs come from the contract: remembered trees with their age, option tr
   assert.equal(c.memory.length, 5); assert.equal(c.candidates.length, 5);
 });
 
-test('beliefs on a living field world: every mark is a real tree, at most the buffer holds', () => {
+test('beliefs on a living field world: every mark is a real tree, and every tree an act goes to is marked', () => {
   const w = createWorld(48, { profile: 'field' });
   const out = createBeliefMarks();
-  let marked = 0;
+  let marked = 0, acts = 0;
   for (const c of w.chimps) {
     const n = collectBeliefs(c, w.time, id => treeById(w.trees, id), out);
     assert.ok(n <= out.length);
     for (let i = 0; i < n; i++) { const t = treeById(w.trees, out[i].treeId); assert.ok(t, `tree ${out[i].treeId}`); assert.ok(out[i].hours >= -1); }
+    assert.equal(new Set(out.slice(0, n).map(b => b.treeId)).size, n, 'one mark a tree');
+    const treeAct = c.alive && ['travel', 'forage', 'climb', 'nest'].includes(c.action) && treeById(w.trees, c.targetId) !== undefined;
+    if (treeAct) { acts++; assert.equal(out[0].kind, 2, `${c.name}: the act's tree comes first`); assert.equal(out[0].treeId, c.targetId); }
+    assert.equal(out.slice(0, n).filter(b => b.kind === 2).length, treeAct ? 1 : 0);
     marked += n;
   }
-  assert.ok(marked >= 0);
+  assert.ok(acts > 10, `${acts} animals in an act that goes to a tree`);
+  assert.ok(marked > w.chimps.length, `${marked} marks`);
   assert.equal(treeById(w.trees, w.trees[77].id), w.trees[77]);
   assert.equal(treeById(w.trees, 1), undefined);
+});
+
+test('a full memory never costs the tree the animal is going to, nor its options (found in review)', () => {
+  // A field animal remembers up to 60 trees (memTreeCap); from its fourth day the first version's buffer of 24, filled
+  // from memory first, dropped the act's tree: no mark, no line, no label on the tree it was walking to.
+  const trees = Array.from({ length: 200 }, (_, i) => tree(100001 + i, i * 30, -i * 10, 0.5));
+  const treeOf = (id: number) => treeById(trees, id);
+  const memory = Array.from({ length: 60 }, (_, i) => ({ entityId: 100001 + i, kind: 'tree', seenAt: 100 - i, position: [i * 30, 0, -i * 10] }));
+  const base = { alive: true, action: 'travel', targetId: 100150, memory, candidates: [
+    { action: 'travel', targetId: 100150, score: 0.6, reason: '' }, { action: 'travel', targetId: 100160, score: 0.4, reason: '' }, { action: 'forage', targetId: 100058, score: 0.2, reason: '' },
+  ] } as unknown as Chimp;
+  const out = createBeliefMarks();
+  assert.ok(MAX_BELIEFS >= 60 + 4, 'room for a whole field memory and a few option trees');
+  const n = collectBeliefs(base, 100, treeOf, out);
+  assert.equal(n, 62, '60 remembered trees, the tree it is going to and one more option tree');
+  assert.deepEqual({ ...out[0] }, { treeId: 100150, x: 149 * 30, z: -149 * 10, kind: 2, hours: -1, score: 0.6 }, 'the act\'s tree first, known of but not remembered');
+  assert.deepEqual([out[1].treeId, out[1].kind, out[1].hours], [100160, 1, -1]);
+  assert.deepEqual([out[2].treeId, out[2].kind, out[2].hours], [100058, 1, 57], 'an option tree it remembers keeps its age');
+  assert.equal(out.slice(0, n).filter(b => b.kind === 0).length, 59);
+  // The same with the tree it is going to in its memory, last in the list.
+  const m2 = collectBeliefs({ ...base, targetId: 100060 } as unknown as Chimp, 100, treeOf, out);
+  assert.equal(m2, 62);
+  assert.deepEqual([out[0].treeId, out[0].kind, out[0].hours], [100060, 2, 59]);
+  // More remembered trees than the buffer holds: the act's tree and the options stay, the oldest memories give way.
+  const big = Array.from({ length: MAX_BELIEFS + 30 }, (_, i) => ({ entityId: 100001 + i, kind: 'tree', seenAt: i, position: [i * 30, 0, -i * 10] }));
+  const k = collectBeliefs({ ...base, memory: big } as unknown as Chimp, 200, treeOf, out);
+  assert.equal(k, MAX_BELIEFS);
+  const got = out.slice(0, k);
+  assert.equal(got[0].treeId, 100150); assert.equal(got[0].kind, 2);
+  assert.ok(got.some(b => b.treeId === 100160 && b.kind === 1));
+  const plain = got.filter(b => b.kind === 0);
+  const newest = big.filter(m => m.entityId !== 100058).sort((a, b) => b.seenAt - a.seenAt).slice(0, plain.length).map(m => m.entityId).sort();   // 100058 is an option's tree
+  assert.deepEqual(plain.map(b => b.treeId).sort(), newest, 'the freshest memories are the ones kept');
+  assert.equal(plain.length, MAX_BELIEFS - 3);
+  assert.equal(new Set(got.map(b => b.treeId)).size, k);
+  // A tree in memory twice counts once, at its freshest sighting.
+  const twice = [{ entityId: 100003, kind: 'tree', seenAt: 2, position: [60, 0, -20] }, { entityId: 100003, kind: 'tree', seenAt: 9, position: [60, 0, -20] }];
+  const d = collectBeliefs({ alive: true, action: 'rest', targetId: -1, candidates: [], memory: twice } as unknown as Chimp, 10, treeOf, out);
+  assert.equal(d, 1); assert.equal(out[0].hours, 1);
 });
 
 test('a remembered tree fades with the hours since it was seen, and says so', () => {
