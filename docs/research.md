@@ -4785,10 +4785,11 @@ opened and are not cited. No behavioural constant, parameter or simulation code 
   The four fingers are one slab on two bones in this body, so the difference between digits (wunderlich2009) is not drawn.
 - `src/render/creatures/body.ts` `SWELL`, `TUFT`: the swelling is anogenital skin and the tuft is on the rump [L,
   shefferly2005], so both masks sit low on the back of the pelvis instead of on the lower back. Their exact centres,
-  the mask sizes (kept from before), the 5 cm inflation at full swelling and the 16 mm the tuft stands proud are
-  stylizations. The drawn swelling is well under the 938 to 1,400 cc the account gives (the mask is an ellipsoid of
-  about 380 cc cut by the body surface); enlarging it changes the animal's outline and was left for the user. The age
-  at which the tuft fades (3 to 5.5 years, `src/render/creatures.ts`) was already in the code and has no source here.
+  the mask sizes (the swelling's an ellipsoid of 384 cc, 366 cc before; the tuft's unchanged), the 5 cm inflation at
+  full swelling (unchanged) and the 16 mm the tuft stands proud (new) are stylizations. The drawn swelling is well
+  under the 938 to 1,400 cc the account gives (its mask ellipsoid is cut by the body surface); enlarging it changes
+  the animal's outline and was left for the user. The age at which the tuft fades (3 to 5.5 years,
+  `src/render/creatures.ts`) was already in the code and has no source here.
 - Stylizations with no source: the young animal's larger, darker iris (`creatures.ts` P5.y, `material.ts`); the eye
   paint's rim; the ear hollow painted on a solid ear plate; the dark grooves between fingers and between toes; the
   hair highlight's lobe widths, weights and mask limits (already listed under §14).

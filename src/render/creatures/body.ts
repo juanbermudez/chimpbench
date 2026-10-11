@@ -38,8 +38,9 @@ export const EAR = { c: [0.082, 1.146, 0.03] as V3, r: [0.0095, 0.034, 0.028] as
  * the tuft is on the rump (docs/research.md, "Addendum: W3 body defects", shefferly2005 [L]), so both sit low on the
  * back of the pelvis: with the hips pitched 1.1 rad in the knuckle-walking stance (poses.ts quadStance) the swelling
  * faces backward about level with the hip joint and the tuft lies above it at the tail-bone. Where exactly, and how
- * large, is a stylization: the mask sizes are the ones the body had before (the swelling's width and the tuft's
- * radii unchanged), not measurements.
+ * large, is a stylization, not a measurement: the swelling's mask keeps its width and about its volume (an ellipsoid
+ * of 384 cc against 366 cc; its other two radii were evened out for the slanted surface it now lies on) and the
+ * tuft's radii are unchanged.
  */
 export const SWELL = { c: [0, 0.53, -0.085] as V3, r: [0.052, 0.042, 0.042] as V3 };
 export const TUFT = { c: [0, 0.572, -0.122] as V3, r: [0.028, 0.035, 0.03] as V3 };
