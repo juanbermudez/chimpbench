@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 
 // Imported dynamically so this file skips (instead of crashing the whole
 // suite) while the simulation's fixed-tick exports are still being written.
@@ -79,6 +80,17 @@ test('the watching speed: one tick every 3.75 real seconds, smooth sub-tick prog
   assert.ok(clock.effectiveRate > 2.5 && clock.effectiveRate < 5.5, `reported rate stays near 4 s/s between ticks: ${clock.effectiveRate}`);
   for (let i = 0; i < 40; i++) sim!.tickWorld(ref);
   assert.equal(JSON.stringify(world), JSON.stringify(ref), 'the watching speed changes only how often ticks run, never the world');
+});
+
+test('the scripts that pick a speed by its key agree with the preset order', { skip }, () => {
+  // Speed keys are positions in SPEED_PRESETS, so a new preset moves them. perf-probe keeps its own list of ids (it fell
+  // behind when Real time was added and again with the watching speed); verify-browser presses 7 for 1 day/s and 3 for
+  // 1 min/s; audio-probe presses 3 for 1 min/s and 1 for Real time.
+  const ids = clockApi!.SPEED_PRESETS.map(p => p.id);
+  const list = /const SPEEDS = \[([^\]]*)\]/.exec(readFileSync(new URL('../scripts/perf-probe.mjs', import.meta.url), 'utf8'));
+  assert.ok(list, 'scripts/perf-probe.mjs declares SPEEDS');
+  assert.deepEqual(list[1].split(',').map(s => s.trim().replace(/['"]/g, '')), ids, 'scripts/perf-probe.mjs SPEEDS follows SPEED_PRESETS');
+  assert.equal(ids[0], 'rt', 'key 1 (audio-probe)'); assert.equal(ids[2], '1x', 'key 3 (verify-browser, audio-probe)'); assert.equal(ids[6], '1d', 'key 7 (verify-browser)');
 });
 
 test('the same tick count yields identical worlds at 1× and at 1 day/s', { skip }, () => {
