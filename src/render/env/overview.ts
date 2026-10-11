@@ -446,7 +446,9 @@ export function createFruitLayer(world: World, owner: Owner): FruitLayer {
     }
     quad.instanceCount = n;
     const up = Math.max(1, n);
-    for (const [attr, size] of [[centreAttr, 3], [styleAttr, 2], [colourAttr, 3]] as const) { attr.clearUpdateRanges(); attr.addUpdateRange(0, up * size); attr.needsUpdate = true; }
+    centreAttr.clearUpdateRanges(); centreAttr.addUpdateRange(0, up * 3); centreAttr.needsUpdate = true;
+    styleAttr.clearUpdateRanges(); styleAttr.addUpdateRange(0, up * 2); styleAttr.needsUpdate = true;
+    colourAttr.clearUpdateRanges(); colourAttr.addUpdateRange(0, up * 3); colourAttr.needsUpdate = true;
   }
 
   function update(w: World, f: FruitLayerFrame) {

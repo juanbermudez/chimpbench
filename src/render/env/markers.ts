@@ -229,7 +229,8 @@ export function createBeliefMarkers(world0: World, owner: Owner, container: HTML
 
   function rebuild(w: World, id: number, mode: ViewMode) {
     worldRef = w;
-    const c = w.chimps.find(x => x.id === id);
+    let c: World['chimps'][number] | undefined;
+    for (let i = 0; i < w.chimps.length; i++) if (w.chimps[i].id === id) { c = w.chimps[i]; break; }
     const count = c ? collectBeliefs(c, w.time, treeOf, marks) : 0;
     n = 0; nMem = 0; nOpt = 0; target = -1; text = '';
     for (let i = 0; i < count; i++) {
