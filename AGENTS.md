@@ -121,7 +121,7 @@ Frame loop order (in `src/main.ts`): `pumpDecisions` → `advance` (clock runs `
 - `scripts/shot.mjs`, `scripts/verify-browser.mjs` and the probes load Playwright through `scripts/lib/playwright.mjs` (installed outside the repo: `npm install --prefix ~/.cache/chimpbench/playwright playwright-core`, or `MGOGO_PLAYWRIGHT`) and use `/Applications/Google Chrome.app`.
 - Use Node 22.22.3 (`.node-version`). Node 22.19.0 passes the tests but tsx's loader does not reach worker threads there, so every worker-pool script (e-bench, e-run, field-metrics) fails with `ERR_MODULE_NOT_FOUND`.
 - The environment renderer replaces three's fog shader chunks globally. `scene.fog` must stay a `THREE.Fog`, and creature materials opt into softer mist via the `MGOGO_CREATURE` flag.
-- `artifacts/` is gitignored. It holds model receipts (rotated at 64 MB), the worker log, identity and E2E screenshots.
+- `artifacts/` is gitignored. It holds model receipts (rotated at 64 MB), the worker log, identity and E2E screenshots, and every stage's run folders. Run metadata written by `scripts/r10-night.ts` and `scripts/e-run.ts` carries this machine's host name and the repo path: never publish a run folder as it is.
 - Real inference: ~500 input tokens (hard limit 1,280), ~0.25–0.4 s. Model scores are uncalibrated softmax values.
 - GPU timer queries and `gl.finish()` do not measure GPU time on this machine (ANGLE/Metal); use `scripts/gpu-probe.mjs`. Full frames are GPU-bound at ~10–13 ms, so new GPU work needs a quality gate.
 - Overlays drawn inside the tone-mapped scene (selection ring, model rings, focal outline) take `preToneMapped()` colours from `creatures/util.ts`; raw gold goes lime under ACES.
