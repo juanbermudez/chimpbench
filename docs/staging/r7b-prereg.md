@@ -349,6 +349,27 @@ here before any result: with more than two options the distinguishability test f
 than its nominal level, not more (the runner-up is the closest of the rest); the measured noise rate stays the
 reference, as registered.
 
+**Iteration 2 of part two** (11 October 2026, 03:28 EDT; logged while iteration 1 was running and before any of its
+numbers was read; what is known is the smoke check above and the code). *Why.* The rules' own evaluation noise is
+not in the random stream: the candidate jitter (`src/sim/candidates.ts`, span 0.24) and the bout lengths
+(`src/sim/execution.ts` `boutHours`) are hashes of the animal's id and its decision count. A salt mixed into the
+stream therefore re-draws the world around the animal and nothing the animal itself adds, and every replicate of an
+option carries the same jitter while their decision counts keep step. Two options, though, start different acts, so
+their decision counts and with them their jitter part ways: a difference between options can then be repeated by all
+eight replicates and still be an accident of the hash, which no reader of a packet could learn. Iteration 1 cannot
+tell that from signal. *What.* The first 60 points of each seed's main sample in hash order (120 of the 200; chosen
+by the sampling hash, not by any result), every option, eight replicates, on the same parents. A replicate's salt s
+is mixed into the random stream exactly as in iteration 1 **and** moves the forked animal's decision count by
+1,000,003 × s before the option is applied, so its jitter and bout lengths are drawn again in every replicate
+(`scripts/r7b-forks.ts --own-noise`; with the flag off the script is iteration 1's, and a test pins both). The
+score, the horizons, the readouts and the readings F1 to F3 are unchanged and are read on these forks as well,
+beside iteration 1 restricted to the same 120 points. *The rule, made stricter now:* a question at a horizon is put
+to the user as worth a ruling (F4) only if F1 or F2 holds for it in iteration 1 **and** in iteration 2. *Written
+before the run:* where iteration 1 repeats above chance, iteration 2 will repeat less; and the eight-replicate
+winner will differ between the two sets of forks at a share of points well above what replicate noise explains.
+*Limit:* moving the decision count also changes one comparison an unweaned infant makes with its mother's count
+(`src/sim/execution.ts`, the infant asks to suckle again once), a perturbation of the size of the salt's own.
+
 ## 7. Results
 
 (To be written after the runs.)
