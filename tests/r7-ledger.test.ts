@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
 import { cutsAt, CUTS, interruptKind, tickTrigger, type CutsAt } from '../scripts/lib/shadow-tap';
 import { animalLedger, appliedOf, armLedger, endCredit, kindCredit, linesOf, targetClass, targetCredit, truthfulName, type ArmInfo, type LedgerReceipt } from '../scripts/lib/who-decided';
-import { handNumbers, runTap, teacherOf } from '../scripts/r7-ledger';
+import { armEntry, handNumbers, receiptsLedger, reportMarkdown, runTap, teacherOf } from '../scripts/r7-ledger';
 import { computeCandidates, offerTap, type OfferFate } from '../src/sim/candidates';
 import { rulesTap } from '../src/sim/decide';
 import { MAX_OPTIONS } from '../src/sim/menu';
@@ -212,6 +214,8 @@ test('the trigger of a decision point and the reading of an interrupt', () => {
   assert.equal(tickTrigger(false, false, 6, 6), 'scheduled');
   assert.equal(tickTrigger(false, false, 9, 6), 'cut-short', 'the scheduled end was later: the bout was cut short within the tick');
   assert.equal(tickTrigger(false, false, undefined, 6), 'first');
+  assert.equal(tickTrigger(false, false, 6, 6, true), 'cut-short', 'a sleeper\'s nest bout is held a tick ahead: its waking is not a scheduled end');
+  assert.equal(tickTrigger(false, true, 6, 6, true), 'interrupt', 'woken by something perceived: the interrupt names it');
   assert.equal(interruptKind('Heard Tavuni\'s travel hoo'), 'a call or travel hoo');
   assert.equal(interruptKind('Kasoko is moving off'), 'a companion moving off');
   assert.equal(interruptKind('Ebini began grooming me'), 'grooming begun on it');
@@ -227,4 +231,59 @@ test('the hand-set numbers on the path are read from the parameters and the sour
   assert.equal(by(/slot caps/).value, '3; 2; 1');
   assert.equal(by(/30 minute limit/).value, '0.5');
   for (const n of nums) assert.ok(n.where.length > 0 && ['always', 'gate on', 'gate off'].includes(n.read));
+});
+
+// --- added by the review of the stage (docs/staging/r7-ledger.md §9, amendments 8 to 11) -------------------------------
+test('an animal that died inside the window: its minutes end at its last receipt and nobody is credited with the rest', () => {
+  const log = [R(0, 1, [REST, FEED], 1), R(2, 2, [REST, FEED], 0)];   // feeding 0 to 2, then rest; it dies soon after hour 2
+  const whole = animalLedger(1, log, info(false, 0, 10)), cut = animalLedger(1, log, { ...info(false, 0, 10), end: { 1: 2 } });
+  assert.equal(whole.kind.chooser.waking, 600, 'without the end of its window the last choice is credited with 8 hours it did not live');
+  assert.equal(cut.kind.chooser.waking, 120, 'with it, only the two hours up to its last receipt');
+  assert.equal(linesOf(cut).wakingMin, 120);
+  assert.equal(animalLedger(1, [], { ...info(false, 0, 10), end: { 1: 4 } }).kind.before.unknown, 240, 'no receipt at all: the time before its death is still "before the first receipt"');
+  assert.equal(animalLedger(1, log, { ...info(false, 0, 10), end: { 2: 2 } }).kind.chooser.waking, 600, 'another animal\'s death changes nothing');
+});
+
+test('the arm files\' own list of deaths ends a focal animal\'s window; the numbers file names it and each row carries its seeds', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'r7-ledger-')), s = join(dir, 's48');
+  try {
+    mkdirSync(s);
+    const arm = (deaths: { id: number; cause: string }[]) => ({ seed: 48, burnIn: 30, days: 1, params: {}, head: 'test', focal: [{ id: 1, cls: 'adult male' }, { id: 2, cls: 'female, other' }],
+      result: { spec: { kernel: 'gliner', adapter: 'base' }, endHash: 'x', dayHashes: ['x'], deaths, rows: [], decisions: [] } });
+    const t0 = 30 * 24, lines = [R(t0, 1, [REST, FEED], 1), { ...R(t0, 1, [REST, FEED], 1), id: 2 }, { ...R(t0 + 6, 2, [REST, FEED], 0), id: 2 }];   // animal 2 is last heard of 6 hours in
+    writeFileSync(join(s, 'untuned.json'), JSON.stringify(arm([{ id: 2, cause: 'illness' }, { id: 77, cause: 'old age' }])));
+    writeFileSync(join(s, 'untuned.receipts.jsonl'), lines.map(l => JSON.stringify(l)).join('\n') + '\n');
+    writeFileSync(join(s, 'argmax.json'), JSON.stringify({ ...arm([]), result: { ...arm([]).result, spec: { kernel: 'argmax' } } }));
+    writeFileSync(join(s, 'argmax.receipts.jsonl'), lines.map(l => JSON.stringify(l)).join('\n') + '\n');
+    const e = armEntry(dir, [48, 7], 'untuned', [])!;
+    assert.deepEqual(e.died, [{ seed: 48, id: 2, cls: 'female, other', lastReceiptH: t0 + 6, cause: 'illness' }], 'the focal animal the file lists as dead; an animal outside the focal group is not this ledger\'s');
+    assert.deepEqual([e.fromDay, e.toDay, e.seeds, e.animals], [30, 31, [48], 2], 'the window and the seeds actually found are read from the files');
+    assert.equal(e.total.kind.chooser.waking, 1440 + 360, 'animal 1 the whole day, animal 2 the six hours to its last receipt');
+    assert.equal(armEntry(dir, [48], 'argmax', [])!.total.kind.chooser.waking, 2 * 1440, 'the same log with no death listed runs to the window\'s end');
+    const md = reportMarkdown(receiptsLedger([{ name: 'pilot', dir, seeds: [48, 7] }], []), [], null, params);
+    assert.match(md, /died inside their window[^\n]*untuned model, gate off, pilot, seed 48: animal 2 \(female, other; illness\), last receipt on day 30\.25 of a window that ends on day 31/);
+    assert.match(md, /### pilot: the training seeds, days 30 to 31 \(seeds 48, 7;/, 'the days of the window come from the arm files');
+    assert.match(md, /\| untuned model, gate off \| untuned model on a rules menu \|[^\n]*\| 3 \| 48; 2 \|/, 'a configuration found on one seed of two says so in its row');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('the reading of an interrupt, on the simulation\'s own reason texts', () => {
+  // the texts of src/sim's interrupt() calls, with a name in place of the animal
+  assert.equal(interruptKind('Nobody came along'), 'nobody came along', 'a failed departure is not a companion coming');
+  assert.equal(interruptKind('Tavuni gave alarm hoos'), 'a call or travel hoo');
+  assert.equal(interruptKind('Tavuni gave a travel hoo'), 'a call or travel hoo');
+  assert.equal(interruptKind('heard 2 strangers pant-hoot'), 'a call or travel hoo');
+  assert.equal(interruptKind('Ebini moved away'), 'a companion moving off');
+  assert.equal(interruptKind('Kasoko set off'), 'a companion moving off');
+  assert.equal(interruptKind('Kasoko is heading out on patrol'), 'a companion moving off');
+  assert.equal(interruptKind('Kasoko approaches to mate'), 'a companion approaching');
+  assert.equal(interruptKind('Kasoko is charging at me'), 'a display, charge or attack');
+  assert.equal(interruptKind('heard Kasoko scream'), 'a display, charge or attack');
+  assert.equal(interruptKind('strangers from the Eastern in sight'), 'weather, strangers or other animals');
+  assert.equal(interruptKind('heavy rain started'), 'weather, strangers or other animals');
+  // every reason text in the source is read by this list: a new interrupt() text must be added here and to interruptKind
+  const texts = new Set<string>();
+  for (const f of readdirSync('src/sim').filter(n => n.endsWith('.ts'))) for (const m of readFileSync(join('src/sim', f), 'utf8').matchAll(/\binterrupt\(world, [^,]+, (?:[a-zA-Z]+ \? )?([`'])((?:(?!\1).)*)\1/g)) texts.add(m[2]);
+  assert.ok(texts.size >= 30, `${texts.size} interrupt texts found in src/sim`);
+  assert.ok(texts.has('Nobody came along') && [...texts].some(t => t.endsWith('gave alarm hoos')) && [...texts].some(t => t.endsWith('moved away')));
 });

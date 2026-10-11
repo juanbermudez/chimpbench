@@ -32,6 +32,11 @@ export interface ArmInfo {
   focal: number[];
   /** The log holds a line for every act the gate kept or began (`by: 'gate'`), so nothing is hidden between its lines. */
   gateLogged?: boolean;
+  /**
+   * Animals whose window ends early, by id, in world hours: an animal that died inside the window (the run lists it; a
+   * dead animal makes no decision, so its receipts stop). Its minutes end there; the rest of the window is nobody's.
+   */
+  end?: Record<number, number>;
 }
 
 /** Who a credit goes to. `chooser`: the kernel's applied answer from a real choice (the model, or a control arm's chooser). */
@@ -120,12 +125,14 @@ export function animalLedger(id: number, receipts: LedgerReceipt[], info: ArmInf
     hidden: 0, intervalsWithHidden: 0, acts: 0, target: { chooser: 0, held: 0, 'slot-cap': 0, none: 0, fallback: 0 }, targetByClass: {}, ending: { left: 0, gone: 0, arrived: 0, fallback: 0 }, running: 0, unnamedEnded: 0,
     stayed: 0, leftWhenOffered: 0, settled: 0, settledTwoKinds: 0, settledTwoTargets: 0 };
   const min = (a: number, b: number) => Math.max(0, (b - a) * 60);
+  // the end of this animal's window: the arm's, or earlier for an animal that died inside it (never before the window's start)
+  const t1 = Math.max(info.t0, Math.min(info.t1, info.end?.[id] ?? info.t1));
   // the time before the first receipt: the act was begun before the window, and the receipts do not name it
-  add(L.kind.before, 'unknown', min(info.t0, rs.length ? Math.min(rs[0].t, info.t1) : info.t1));
+  add(L.kind.before, 'unknown', min(info.t0, rs.length ? Math.min(rs[0].t, t1) : t1));
   let prev: [string, number] | null = null, open = false;
   for (let i = 0; i < rs.length; i++) {
     const r = rs[i], next = rs[i + 1], a = appliedOf(r), credit = kindCredit(r);
-    const where: keyof Minutes = !a.opt ? 'unknown' : a.opt[0] === 'nest' ? 'nest' : 'waking', m = min(Math.max(r.t, info.t0), next ? next.t : info.t1);
+    const where: keyof Minutes = !a.opt ? 'unknown' : a.opt[0] === 'nest' ? 'nest' : 'waking', m = min(Math.max(r.t, info.t0), next ? next.t : t1);
     add(L.kind[credit], where, m);
     if (r.by !== 'gate' && r.why !== undefined) L.askedBy[r.why] = (L.askedBy[r.why] ?? 0) + 1;
     if (r.by === 'rules') L.fallbacks[r.refusal || 'rules'] = (L.fallbacks[r.refusal || 'rules'] ?? 0) + 1;

@@ -142,18 +142,21 @@ export const TRIGGER_WORDS: Record<TickTrigger, string> = {
   finished: 'the act finished early (the body or the world: arrived, crop gone, sated, partner left)',
   interrupt: 'an interrupt (something perceived)',
   scheduled: 'the bout\'s scheduled end (a hand-set bout range, or the walk of a committed trip)',
-  'cut-short': 'the bout was cut short by waking or by returning light (the body)',
+  'cut-short': 'the animal woke in its nest, or returning light cut the nest bout short (the body)',
   first: 'a first decision (a newborn)',
 };
 /**
  * The trigger of a decision point. `finished`: the animal's own flag. `newInterrupt`: an interrupt was registered since
  * its last decision point (every registered interrupt forces one). `endBefore`: the act's scheduled end as it stood at
- * the end of the previous tick (undefined for an animal that did not exist then).
+ * the end of the previous tick (undefined for an animal born since: its first decision). `woke`: asleep in its nest at
+ * the end of the previous tick and awake now; a sleeper's nest bout is held one tick ahead, so its end as it stood is
+ * "now" and would read as scheduled.
  */
-export function tickTrigger(finished: boolean, newInterrupt: boolean, endBefore: number | undefined, time: number): TickTrigger {
+export function tickTrigger(finished: boolean, newInterrupt: boolean, endBefore: number | undefined, time: number, woke = false): TickTrigger {
   if (finished) return 'finished';
   if (newInterrupt) return 'interrupt';
   if (endBefore === undefined) return 'first';
+  if (woke) return 'cut-short';
   return endBefore <= time + 1e-9 ? 'scheduled' : 'cut-short';
 }
 
@@ -172,14 +175,18 @@ export const ASK_WORDS: Record<string, string> = {
   ended: 'the act ended', 'no-intent': 'no intention yet', lead: 'a patrol lead taken by rule', phase: 'one option left by the night menu', argmax: 'fewer than two options on the menu',
 };
 
-/** A coarse reading of an interrupt's text (the animal's own percept line), for the table of what was perceived. */
+/**
+ * A coarse reading of an interrupt's text (the animal's own percept line), for the table of what was perceived. The
+ * texts are those of the simulation's interrupt() calls (tests/r7-ledger.test.ts lists them); the first rule that fits
+ * names the kind, so the narrow readings come before the wide ones ("Nobody came along" before a companion coming).
+ */
 export function interruptKind(text: string): string {
-  if (/\bhoo\b|pant-hoot|call/i.test(text)) return 'a call or travel hoo';
-  if (/moving off|set off|setting off|leaving|left\b|heading/i.test(text)) return 'a companion moving off';
-  if (/came along|joined|arriv|approach/i.test(text)) return 'a companion arriving';
+  if (/nobody came/i.test(text)) return 'nobody came along';
+  if (/\bhoos?\b|pant-hoot|call/i.test(text)) return 'a call or travel hoo';
+  if (/moving off|moved away|set off|setting off|leaving|left\b|heading/i.test(text)) return 'a companion moving off';
+  if (/came along|joined|arriv|approach/i.test(text)) return 'a companion approaching';
   if (/groom/i.test(text)) return 'grooming begun on it';
   if (/display|charg|attack|threat|fight|scream/i.test(text)) return 'a display, charge or attack';
-  if (/nobody came/i.test(text)) return 'nobody came along';
   if (/rain|storm|snake|colobus|stranger/i.test(text)) return 'weather, strangers or other animals';
   return 'other';
 }

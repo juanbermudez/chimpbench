@@ -41,7 +41,7 @@ const mainCheckout = () => { const common = git('rev-parse --git-common-dir'); r
 
 interface ArmFile {
   seed: number; burnIn: number; days: number; params: Record<string, number>; head: string; focal: { id: number; cls: string }[];
-  result: { spec: { kernel: string; adapter?: string; gate?: number; noPick?: number }; endHash: string; dayHashes: string[];
+  result: { spec: { kernel: string; adapter?: string; gate?: number; noPick?: number }; endHash: string; dayHashes: string[]; deaths?: { id: number; cause: string | null }[];
     rows: { id: number; day: number; alive: boolean; own?: { model: number; held: number; rules: number }; asked?: number; byModel?: number; heldN?: number; byRules?: number }[];
     decisions: { id: number; points: number; kernel: number; gateKept: number; interrupts?: number }[] };
 }
@@ -57,6 +57,10 @@ export function teacherOf(adapter: string | undefined, roots: string[]): string 
 export interface ArmEntry {
   arm: string; kernel: KernelKind; adapter: string | null; teacher: string | null; name: string; gate: boolean; noPick: boolean;
   seeds: number[]; animals: number; windowMinPerAnimal: number; receipts: number; heads: string[];
+  /** The window in days from the world's start, read from the arm files (the seeds of an arm share it). */
+  fromDay: number; toDay: number;
+  /** Focal animals that died inside the window (the arm file lists them): their minutes end at their last receipt, at the hour given. */
+  died: { seed: number; id: number; cls: string; lastReceiptH: number; cause: string | null }[];
   total: Omit<AnimalLedger, 'id'>; lines: FourLines;
   perAnimal: { seed: number; id: number; cls: string; lines: FourLines }[];
   /** The arm files' own counters (stage R5-gate), summed over animal-days: minutes of the 24 hours by who set the act, and the counts. null when the run has none. */
@@ -76,7 +80,8 @@ export interface ArmEntry {
 /** One arm of one set, its seeds pooled. */
 export function armEntry(dir: string, seeds: number[], arm: string, adapterRoots: string[]): ArmEntry | null {
   const animals: AnimalLedger[] = [], per: ArmEntry['perAnimal'] = [], used: number[] = [], heads: string[] = [];
-  let spec: ArmFile['result']['spec'] | null = null, windowMin = 0, receipts = 0, fromReplay = false, gateLogged = false;
+  let spec: ArmFile['result']['spec'] | null = null, windowMin = 0, receipts = 0, fromReplay = false, gateLogged = false, fromDay = 0, toDay = 0;
+  const died: ArmEntry['died'] = [];
   const counters = { animalDays: 0, own: { model: 0, held: 0, rules: 0 }, asked: 0, byModel: 0, heldN: 0, byRules: 0 }, tallies = { points: 0, gateKept: 0, interrupts: 0 as number | null };
   let haveCounters = true;
   for (const seed of seeds) {
@@ -85,7 +90,17 @@ export function armEntry(dir: string, seeds: number[], arm: string, adapterRoots
     const file = JSON.parse(readFileSync(f, 'utf8')) as ArmFile;
     const rs = readFileSync(rf, 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l) as LedgerReceipt);
     spec = file.result.spec; used.push(seed); heads.push(file.head); receipts += rs.length;
-    const info: ArmInfo = { kernel: KERNEL[spec.kernel] ?? 'model', gate: spec.gate === 1, t0: file.burnIn * 24, t1: (file.burnIn + file.days) * 24, focal: file.focal.map(x => x.id), gateLogged: rs.some(r => r.by === 'gate') };
+    // a focal animal that died inside the window makes no more decisions: its window ends at its last receipt (its last
+    // act loses the minutes between that receipt and the death; crediting anyone with the hours after the death is worse)
+    const end: Record<number, number> = {};
+    for (const d of file.result.deaths ?? []) {
+      const fo = file.focal.find(x => x.id === d.id);
+      if (!fo) continue;
+      const last = rs.reduce((t, r) => r.id === d.id && r.t > t ? r.t : t, file.burnIn * 24);
+      end[d.id] = last; died.push({ seed, id: d.id, cls: fo.cls, lastReceiptH: last, cause: d.cause });
+    }
+    const info: ArmInfo = { kernel: KERNEL[spec.kernel] ?? 'model', gate: spec.gate === 1, t0: file.burnIn * 24, t1: (file.burnIn + file.days) * 24, focal: file.focal.map(x => x.id), gateLogged: rs.some(r => r.by === 'gate'), end };
+    fromDay = file.burnIn; toDay = file.burnIn + file.days;
     if (info.gateLogged) gateLogged = true;
     windowMin = (info.t1 - info.t0) * 60;
     for (const fo of file.focal) { const L = animalLedger(fo.id, rs, info); animals.push(L); per.push({ seed, id: fo.id, cls: fo.cls, lines: linesOf(L) }); }
@@ -114,7 +129,7 @@ export function armEntry(dir: string, seeds: number[], arm: string, adapterRoots
   })() : null;
   const minutesCheck = have ? { receipts: all(total.kind.chooser) + all(total.kind.held) + all(total.kind['one-kind']), counters: counters.own.model + counters.own.held } : null;
   return { arm, kernel, adapter: spec.adapter ?? null, teacher, name: truthfulName(kernel, spec.adapter, teacher), gate: spec.gate === 1, noPick: spec.noPick === 1, seeds: used, animals: animals.length,
-    windowMinPerAnimal: windowMin, receipts, heads: [...new Set(heads)], total, lines, perAnimal: per, counters: have ? { ...counters, fromReplay } : null, kindTight, minutesCheck, tallies };
+    windowMinPerAnimal: windowMin, receipts, heads: [...new Set(heads)], fromDay, toDay, died, total, lines, perAnimal: per, counters: have ? { ...counters, fromReplay } : null, kindTight, minutesCheck, tallies };
 }
 
 export function receiptsLedger(sets: { name: string; dir: string; seeds: number[] }[], adapterRoots: string[]) {
@@ -157,7 +172,8 @@ class Agg {
     this.push('offered', c.offered.length); this.push('legal', c.legal.length); this.push('perceived', c.perceived.length); this.push('phased', c.phased.length); this.push('menu', c.menu.length); this.push('widthPossible', c.widthPossible);
     this.push('targetless', c.targetless); this.push('widthOwn', c.widthPossible - c.tripTrees.listed);
     for (const fam of MENU_FAMS) this.push(`menuFam.${fam}`, c.menu.filter(m => m.fam === fam).length);
-    for (const [name, s] of [['feedTrees', c.feedTrees], ['tripTrees', c.tripTrees], ['joinTrees', c.joinTrees], ['waters', c.waters], ['partners', c.partners]] as const) for (const [k, x] of Object.entries(s)) this.push(`${name}.${k}`, x as number);
+    // (a trip pool of -1 means the trip code was not reached, a dependent young animal: no pool to count)
+    for (const [name, s] of [['feedTrees', c.feedTrees], ['tripTrees', c.tripTrees], ['joinTrees', c.joinTrees], ['waters', c.waters], ['partners', c.partners]] as const) for (const [k, x] of Object.entries(s)) if (!(k === 'pool' && (x as number) < 0)) this.push(`${name}.${k}`, x as number);
     this.push('nestTrees.inReach', c.nestTrees.inReach); this.push('nestTrees.offered', c.nestTrees.offered);
     // kernel calls one question over the trees of a trip would take with the fan-out wrapper (src/kernel/fanout.ts fanCalls), and over the whole menu by possibility
     if (c.tripTrees.pool >= 0) for (const v of ['fan1', 'fan2'] as const) this.push(`tripCalls.${v}`, fanCalls(v, c.tripTrees.pool));
@@ -190,15 +206,21 @@ export function runTap(o: TapOpts) {
   const w = make(), P = paramsOf(w);
   for (let i = 0; i < Math.round(o.burnIn * DAY); i++) { tickWorld(w); if (o.log && i > 0 && i % (5 * DAY) === 0) o.log(`burn-in day ${i / DAY}`); }
   const startHash = worldHash(w), groups = { adults: new Agg(), asks: new Agg(), young: new Agg() };
-  const endBefore = new Map<number, number>(), consumed = new Map<number, number>();
-  for (const c of index(w).alive) { endBefore.set(c.id, ix(c).actEnd); consumed.set(c.id, ix(c).lastIntrAt); }
+  const endBefore = new Map<number, number>(), consumed = new Map<number, number>(), asleep = new Map<number, boolean>();
+  for (const c of index(w).alive) { endBefore.set(c.id, ix(c).actEnd); consumed.set(c.id, ix(c).lastIntrAt); asleep.set(c.id, ix(c).asl === 1); }
   let pending: Rec | null = null;
   const flush = () => { const r = pending; pending = null; if (!r) return; if (!r.adult) groups.young.add(r); else { groups.adults.add(r); if (ASKED(r.why)) groups.asks.add(r); } };
   rulesTap.fn = (c, list, policy) => {
     flush();
     if (!policy || !c.alive) return;
     const x = ix(c), rng = w.rng, adult = c.age >= P.rgMinAge && P.rgOn === 1;
-    const trigger = tickTrigger(x.finished, x.lastIntrAt > (consumed.get(c.id) ?? -Infinity), endBefore.get(c.id), w.time);
+    // an animal with no entry was born inside the window and has not decided yet: its first decision is no interrupt
+    // (its interrupt time is the "never" of a new animal) and no bout end
+    const born = !consumed.has(c.id);
+    // asleep in its nest at the end of the last tick and awake now: the sleep hold moved the nest bout's end a tick ahead
+    // every tick (circadian.ts), so the end "as scheduled" is now; the waking made this decision point, not a bout range
+    const woke = asleep.get(c.id) === true && x.asl !== 1 && c.action === 'nest';
+    const trigger = tickTrigger(x.finished, !born && x.lastIntrAt > consumed.get(c.id)!, born ? undefined : endBefore.get(c.id), w.time, woke);
     consumed.set(c.id, x.lastIntrAt);
     const it = x.rgIntent;
     const endedHow = !it ? 'no intention' : x.finished ? 'finished' : c.action !== it.action || c.targetId !== it.targetId ? 'another act was begun for it' : !findCandidate(list, it.action, it.targetId) ? 'no longer on the legal list' : 'still running';
@@ -209,7 +231,7 @@ export function runTap(o: TapOpts) {
   try {
     for (let i = 0; i < Math.round(o.days * DAY); i++) {
       tickWorld(w); flush();
-      for (const c of index(w).alive) endBefore.set(c.id, ix(c).actEnd);
+      for (const c of index(w).alive) { endBefore.set(c.id, ix(c).actEnd); asleep.set(c.id, ix(c).asl === 1); }
       if (o.log && (i + 1) % DAY === 0) o.log(`tapped day ${(i + 1) / DAY}: ${groups.adults.n + groups.young.n} decision points`);
     }
   } finally { rulesTap.fn = null; rgTap.fn = null; }
@@ -275,7 +297,9 @@ const sorted = (r: Record<string, number>) => Object.entries(r).sort((a, b) => b
 const WHAT: Record<string, string> = { trained: 'first adapter (`r4-rules-state`), gate off', 'trained-gate': 'first adapter (`r4-rules-state`), gate on', retrained: 'second adapter (`r4b-rules-state`), gate off', r4c: 'third adapter (`r4c-rules-state`), gate off',
   'r4c-gate': 'third adapter (`r4c-rules-state`), gate on', untuned: 'untuned model, gate off', 'untuned-gate': 'untuned model, gate on', 'trained-nopick': 'first adapter, the rules\' pick removed from its menu', argmax: 'the rules\' top option through the loop, gate off',
   'argmax-gate': 'the rules\' top option through the loop, gate on', null: 'random draw, gate off', 'null-gate': 'random draw, gate on', 'null-nopick': 'random draw, the rules\' pick removed' };
-const SET_WORDS: Record<string, string> = { standard: 'seeds no adapter was trained on, days 30 to 35', pilot: 'the training seeds, days 30 to 35', lean: 'a lean stretch of an unseen seed, days 119 to 124' };
+const SET_WORDS: Record<string, string> = { standard: 'seeds no adapter was trained on', pilot: 'the training seeds', lean: 'a lean stretch of an unseen seed' };
+/** A set's words with its window, the days read from its arm files (not typed). */
+const setWords = (name: string, arms: ArmEntry[]) => { const w = [...new Set(arms.map(a => `days ${a.fromDay} to ${a.toDay}`))].join(' and '); return [SET_WORDS[name] ?? '', w].filter(Boolean).join(', '); };
 const bracket = (lo: number | null, hi: number | null) => lo === null || hi === null ? '–' : Math.abs(hi - lo) < 0.0005 ? pct(hi) : `${pct(lo)} to ${pct(hi)}`;
 /** Line 1 of an arm: exact with the gate off; with the gate on the bracket tightened by the run's counters when it has them, else the receipts' own. */
 const kindOf = (a: ArmEntry) => a.kindTight ? bracket(a.kindTight.low, a.kindTight.high) : bracket(a.lines.kindLow, a.lines.kindHigh);
@@ -294,19 +318,22 @@ export function reportMarkdown(R: ReceiptsLedger | null, taps: TapResult[], V: V
     o.push('## 1. Today\'s baseline in four lines', '');
     if (ref) {
       const L = ref.lines, c = ref.counters;
-      o.push(`The reference configuration is the ${WHAT[ref.arm] ?? ref.arm}, on ${SET_WORDS[std.name] ?? std.name} (seeds ${ref.seeds.join(' and ')}, ${ref.animals} focal animals, ${ref.windowMinPerAnimal / 1440} days, ${ref.receipts} receipts). The name it may carry: **${ref.name}**.`, '');
+      o.push(`The reference configuration is the ${WHAT[ref.arm] ?? ref.arm}, on ${setWords(std.name, [ref]) || std.name} (seeds ${ref.seeds.join(' and ')}, ${ref.animals} focal animals, ${ref.windowMinPerAnimal / 1440} days, ${ref.receipts} receipts). The name it may carry: **${ref.name}**.`, '');
       o.push(`1. **Kind.** The model picked the kind of act from a real choice for **${kindOf(ref)} of waking minutes** (${num(L.wakingMin / ref.animals / (ref.windowMinPerAnimal / 1440), 0)} waking minutes per animal and day by the receipts).${ref.gate ? ` After each such choice the gate holds the act without asking: counting those held minutes too, ${pct(L.kindHigh)} of waking minutes were in a kind the model had picked. The receipts do not log when the gate took over, so the first figure is a bracket${ref.kindTight ? ', closed with the run\'s own counters' : ''} (the receipts alone give ${bracket(L.kindLow, L.kindHigh)}).${c ? ` Over the whole 24 hours those counters give ${pct(sh(c.own.model, c.own.model + c.own.held + c.own.rules))} under a fresh choice, ${pct(sh(c.own.held, c.own.model + c.own.held + c.own.rules))} under an intention the gate held and ${pct(sh(c.own.rules, c.own.model + c.own.held + c.own.rules))} under the rules.` : ''}` : ''}`);
       o.push(`2. **Target.** It picked the target of **${pct(L.target)} of acts** (${ref.total.target.chooser} of ${L.acts}; ${pct(L.targetOfTargeted)} of the ${L.actsWithTarget} acts that have a target). The rest: ${ref.total.target['slot-cap']} acts whose one target was fixed before it saw the menu (the slot cap and the rules' score), ${ref.total.target.none} acts with no target, ${ref.total.target.fallback} set by the rules.`);
       o.push(`3. **Ending.** No ending was its own: no kernel is asked how long to act or when to stop, and the loop set the moment of every ask. At most **${pct(L.left)} of endings** (${ref.total.ending.left} of ${L.endings}) were its choice to leave an act that was still on offer when the loop asked; ${pct(L.gone)} ended with the act no longer on offer (the body, the world or a cut of the menu), ${pct(L.endedByRules)} by the rules. Asked with its act still on offer, it stayed ${pct(L.stayedWhenOffered)} of the time.`);
       o.push('4. **Hand-set numbers still read on its path:** the table at the end of this section.', '');
     }
     for (const s of R.sets) {
-      o.push(`### ${s.name}: ${SET_WORDS[s.name] ?? ''} (seeds ${s.seeds.join(', ')})`, '');
-      o.push('| configuration | name it may carry | waking minutes whose kind it picked from a real choice | acts whose target it picked (of all; of acts with a target) | endings it chose with the act still on offer (upper bound on "its own") | stayed when its act was still on offer | receipts |', '|---|---|---|---|---|---|---|');
+      o.push(`### ${s.name}: ${setWords(s.name, s.arms)} (seeds ${s.seeds.join(', ')}; a configuration run on fewer seeds says so in its row)`, '');
+      o.push('| configuration | name it may carry | waking minutes whose kind it picked from a real choice | acts whose target it picked (of all; of acts with a target) | endings it chose with the act still on offer (upper bound on "its own") | stayed when its act was still on offer | receipts | seeds; focal animals |', '|---|---|---|---|---|---|---|---|');
       for (const a of [...s.arms].sort((x, y) => Number(x.kernel !== 'model') - Number(y.kernel !== 'model') || x.arm.localeCompare(y.arm)))
-        o.push(`| ${WHAT[a.arm] ?? a.arm} | ${a.name} | ${a.kernel === 'model' ? `${kindOf(a)}${a.gate ? ` (${pct(a.lines.kindHigh)} with the minutes the gate then held)` : ''}` : `0% (${kindOf(a)} by its chooser, which is not a model)`} | ${a.kernel === 'model' ? `${pct(a.lines.target)}; ${pct(a.lines.targetOfTargeted)}` : `0% (${pct(a.lines.target)}; ${pct(a.lines.targetOfTargeted)} by its chooser)`} | ${a.kernel === 'model' ? pct(a.lines.left) : `0% (${pct(a.lines.left)} by its chooser)`} | ${pct(a.lines.stayedWhenOffered)} | ${a.receipts} |`);
+        o.push(`| ${WHAT[a.arm] ?? a.arm} | ${a.name} | ${a.kernel === 'model' ? `${kindOf(a)}${a.gate ? ` (${pct(a.lines.kindHigh)} with the minutes the gate then held)` : ''}` : `0% (${kindOf(a)} by its chooser, which is not a model)`} | ${a.kernel === 'model' ? `${pct(a.lines.target)}; ${pct(a.lines.targetOfTargeted)}` : `0% (${pct(a.lines.target)}; ${pct(a.lines.targetOfTargeted)} by its chooser)`} | ${a.kernel === 'model' ? pct(a.lines.left) : `0% (${pct(a.lines.left)} by its chooser)`} | ${pct(a.lines.stayedWhenOffered)} | ${a.receipts} | ${a.seeds.join(', ')}; ${a.animals} |`);
       o.push('');
     }
+    // focal animals that died inside a window: a dead animal makes no decision, so nobody is credited with the rest of its window
+    const dead = R.sets.flatMap(s => s.arms.flatMap(a => a.died.map(d => `${WHAT[a.arm] ?? a.arm}, ${s.name}, seed ${d.seed}: animal ${d.id} (${d.cls}; ${d.cause ?? 'cause not recorded'}), last receipt on day ${num(d.lastReceiptH / 24, 2)} of a window that ends on day ${a.toDay}`)));
+    o.push(dead.length ? `Focal animals that died inside their window (the arm files list them; their minutes end at their last receipt and the rest of the window is credited to nobody): ${dead.join('; ')}.` : 'No focal animal died inside a window.', '');
     o.push('A bracket ("x to y") appears for gate arms only: see line 1 above. Per animal the share of waking minutes in a kind the model picked (held minutes included) runs, for the reference, from ' + (ref ? `${pct(Math.min(...ref.perAnimal.map(p => p.lines.kindHigh ?? 1)))} to ${pct(Math.max(...ref.perAnimal.map(p => p.lines.kindHigh ?? 0)))}` : '–') + '.', '');
 
     o.push('### Where the minutes and the acts went (model arms)', '');
