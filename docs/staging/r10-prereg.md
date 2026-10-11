@@ -324,6 +324,39 @@ cover `src/sim/decide.ts`. 4. The field smoke (§7, 5 to 8). 5. Results in §10;
   parameters' hash, and a run from a tree that is not clean keeps none. The warm-up packet of A8 is built on a copy of
   the world (building it leaves the world's hash unchanged, checked on the start world of seed 48: all 38 animals on
   the kernel have a real choice there, the first with 6 options).
+- **A10 (21:16, commit e7c746f; written by the second agent that reviewed the stage, §10.6). Which processes count as
+  a model process.** §4 registered "any process of the Decide Python environment". As built, a process was recognised
+  by the path of the program it runs, and on this Mac that path never names the environment: `decide-env/bin/python`
+  is a link to a Homebrew framework build, which starts again as `…/Python.framework/…/MacOS/Python`. With
+  `MGOGO_DECIDE_PYTHON` set as in §8, a process of the environment was seen only if its script had one of six names.
+  Now the path a Python was started as is read from its environment (`ps -E`: the launcher leaves it in
+  `__PYVENV_LAUNCHER__`) and counts like the program's. Shown on the real process list with a stand-in that loads
+  nothing: not seen by the first rule, seen by the new one, and the script refuses and names it. The process list is
+  read with a 256 MB buffer (past the default of 1 MB the call fails, and a failed call was read as "nothing is
+  running"; the list was 0.2 MB, and 0.6 MB with the environments, during the review), and a list that cannot be read
+  refuses the start.
+- **A11 (same commit). Signals.** §4 says SIGINT and SIGTERM mark the registry `interrupted`. As built that held only
+  while a call was waiting on a worker: a kernel that answers at once (the rules arm, `argmax-gate`, `null-gate`) never
+  lets the event loop turn, so the signal was never seen and the registry stayed at `running` (shown on the small map).
+  The day now gives the loop one turn per tick before it reads the stop request (108 ms for the 5,760 turns of a day,
+  measured). What holds now, measured with real signals on the small map: a signal sent to the script's own process
+  ends the run cleanly (exit code 130, `interrupted`, "the checkpoint of day 2 stands"). A signal sent to the whole
+  launch (Ctrl-C in its terminal, a kill of the launching command) also reaches the `tsx` launcher, which kills its
+  child with SIGKILL when the child has not acknowledged a relayed signal within 30 ms; the script's close-down (files
+  forced to disk) takes longer than that, so such a stop can end as a kill. Nothing is lost: the registry stays at
+  `running` and `--resume` continues (SIGTERM and SIGINT to the whole launch: both runs resumed onto the uninterrupted
+  run's hash). A hang-up (the terminal or session that launched the run goes away) kills it in the same way, and
+  `nohup` does not prevent it: Node restores the default handling of a signal its parent had set to "ignore".
+- **A12 (same commit). The warm-up has a time limit.** A8 put the warm-up answer "outside any time limit", so a worker
+  that hangs while it loads held the run for ever with no line in the log, and a replacement in the night has no one
+  watching it. Now a worker that has not answered its warm-up packet in ten minutes (a design assumption: about four
+  times the slowest load measured on this machine, 145 s) is stopped, the failure is written to the log, and the start
+  fails as for any other warm-up failure: at the first start the run is refused; in the night that ask goes to the
+  rules and the next ask starts another worker. The limit of 50 errors in a row still ends such a run; if every start
+  hangs that is about eight hours later (50 starts of ten minutes), which the review left as it is.
+- **A13 (21:22, commit ebf3c86).** A resume checks `--days` and `--hours` as the first start does (a mistyped `--days`
+  closed the run as `done` without a tick). While the registry says `running`, `status` prints the pid of the script's
+  own process and that `kill -TERM` to it is the clean stop.
 
 ### 10.2 Iterations (10 October 2026; no model process at any point)
 
@@ -428,13 +461,63 @@ cleanly after 2 days.
 No process of this stage is running; no model process was started. The worktree is clean at the stage's last
 commit. Outputs of the smoke are under `artifacts/r10/smoke/` in the worktree (not in git).
 
+### 10.6 Review by a second agent (10 October 2026, 20:48 to 21:30; no model process at any point)
+
+Another agent read the whole diff and tried to break the stage, then repaired what it confirmed (amendments A10 to
+A13; commits e7c746f, ebf3c86, 0d2ec45). Everything below was run by that agent: the field checks at the builder's
+head 9d3508f and again at the review's last code commit 0d2ec45, the rest at the commit named. Outputs are under
+`artifacts/r10/review/` in the worktree (not in git).
+
+| Check | Result |
+| --- | --- |
+| `tests/r10-night.test.ts` | 12 of 12 at 9d3508f; 13 of 13 at 0d2ec45 (one test added, assertions added to two) |
+| Goldens, field pin, kernel, persistence (`tests/sim-params`, `sim-track-e`, `kernel`, `persist-envelope`) | 11, 2, 15 and 14 pass at 9d3508f; the review changed nothing under `src/` |
+| `tsc --noEmit`; `gen-params --check`; the script and its test under the strict settings | clean; clean (1,046 entries); only the two errors of `scripts/lib/prescriptions.ts` |
+| Field, seed 48: the plain rules world | 4b5cc61f8ad797e0 after the burn-in, then c0c0192822501ddf and 1aa2a8d748255642 |
+| Field: the rules arm through the script | the same three hashes |
+| Field: `argmax-gate`, 2 days | 2,060 and 2,069 asks; 1,145 and 1,149 acts held; the rules settled 47 and 28; day hashes 95bfc1fd4e6ddfda and 07ec9b9f26b64f60 |
+| Field: killed with SIGKILL after 8,000 ticks, resumed | exit code 137; 1,408 journalled answers reused; end hash 07ec9b9f26b64f60 |
+| Field: replay through the observer | 2 of 2 day hashes equal, 0 of 6,423 lines differ, 0 row files differ; the resumed run replays the same way |
+| §10.3's counts of what opened the asks, the bytes per day, the projection | recounted from the review's own receipts and registry: equal (at 0.6 s an ask the projection reads 28 or 29 days, depending on the run's own seconds per day) |
+
+**The script's own resume wiring** was exercised from the command line on the small map at 9d3508f (seven days of
+`argmax-gate` after one day of burn-in; the uninterrupted run ends on 62a787fab86a357b): killed inside day 1; killed
+twice inside day 2 and once inside day 6; the newest checkpoint cut short after the run (the one before it is taken
+and day 7 is redone from its journal with no new call). Each ended on the uninterrupted run's hash, and each replay
+regenerated all 28,910 receipt lines. Random choice was stopped after day 5 by S3 (76 of 190 nights in a nest) with
+exit code 3, and a resume went on past it and said so; a budget of 0.004 hours ended a run after one day. At e7c746f
+the refusals of §10.3 were repeated from the command line (each exit code 2, nothing written), real signals and
+hang-ups were sent (A11), and a counting tap was loaded with `--taps`. One of these paths is now a test (killed inside
+day 2 and resumed, against an uninterrupted run made in the test).
+
+**Found and repaired:** the model-process check that did not see the Decide environment's own interpreter (A10);
+signals that were never seen in the arms without a model (A11); a warm-up with no time limit (A12); a resume that
+took any `--days` (A13).
+
+**Found and left as they are** (none changes a result; each matters for the launch):
+
+- A stop sent to the whole launch, or a hang-up, can end the run as a kill (A11). The run is then continued with
+  `--resume` and loses nothing but the hours until someone notices. The night should be launched from a terminal
+  window that stays open or inside a detached `screen` session (tried on the small map: the run outlived the shell
+  that launched it), not from a session that will end, and stopped with `kill -TERM` to the script's own pid.
+- Nothing stops two processes from resuming the same folder at once. A model arm is protected by the model-process
+  check once the first has started its worker; an arm without a model is not.
+- A worker that fails its warm-up again and again is retried until 50 asks in a row have failed (A12).
+- A row keeps a rounded `-0` in memory that is `0` once written (`waterDefMl`); the replay compares rows as written.
+- The builder's amendment A6 (files forced to disk on a timer, not after every answer) stands: a kill or a crash
+  loses nothing (re-measured: 1,408 of 1,408 answers reused), a power cut can lose the last seconds of answers.
+
+**Still not exercised by anyone:** everything with a real worker (§10.4, first item). The first minutes of the night
+are where a surprise would show.
+
 ## For the integrator
 
 **1. Status line for `IMPLEMENTATION_PLAN.md`, Stage R10** (replacing "In progress (10 October 2026; branch
 `r10-night`). The night itself is launched by the integrator."):
 
-> **Status**: Script built and proved without a model (10 October 2026; branch `r10-night`, agent-reported, awaiting
-> the integrator's review; `docs/staging/r10-prereg.md` §10). `scripts/r10-night.ts` puts every animal aged 8 and over
+> **Status**: Script built and proved without a model (10 October 2026; branch `r10-night`, agent-reported and
+> reviewed by a second agent, which repaired four defects (§10.6); awaiting the integrator's review;
+> `docs/staging/r10-prereg.md` §10). `scripts/r10-night.ts` puts every animal aged 8 and over
 > on one kernel (animals under 8 on the rules), journals each answer as it arrives, writes a receipt per decision
 > point and a lossless checkpoint per simulated day, resumes, reads a stop check after five days and replays through
 > the field observer. On seed 48 a rules arm through it equals the plain rules world (hashes c0c0192822501ddf,
@@ -448,7 +531,7 @@ commit. Outputs of the smoke are under `artifacts/r10/smoke/` in the worktree (n
 **2. Command line for `AGENTS.md`** (after the `scripts/r5-pilot.ts` line):
 
 ```
-pnpm exec tsx scripts/r10-night.ts run --seed 48 --arm trained-gate [--decode top] [--days 40] [--hours 10] [--out artifacts/r10/<label>] | run --resume <out> | replay <out> [--taps a.ts] | status <out> | plain --seed 48 --days 2   # stage R10 (docs/staging/r10-prereg.md): one kernel for every animal aged 8 and over in every community (animals under 8 stay on the rules), on the working base with the switches of the gate test, after 30 days of burn-in; arms are those of scripts/r5-pilot.ts (rules, argmax-gate = no model, trained-gate = r4-rules-state); every answer is journalled as it arrives, a receipt per decision point (schema r10-receipt-1: the menu with stable keys, the probabilities, the applied option, what opened the ask, acts the gate held), a lossless checkpoint per simulated day (the last two kept), --resume continues from the newest whole checkpoint and reuses journalled answers; a stop check after day 5 (starvation, reserves, nights in a nest, fallbacks) ends a hopeless run with exit code 3; replay answers from the receipts with no model, must land on every day's hash, and prints the short scorecard by value through the field observer; a model arm needs the runtime variables of HANDOFF.md, MGOGO_FT_ROOT and MGOGO_FT_ADAPTERS, refuses to start while another model process runs, and is launched from the repo root under caffeinate -i; refuses a dirty tree, reserved seeds and less than 5 GB free
+pnpm exec tsx scripts/r10-night.ts run --seed 48 --arm trained-gate [--decode top] [--days 40] [--hours 10] [--out artifacts/r10/<label>] | run --resume <out> | replay <out> [--taps a.ts] | status <out> | plain --seed 48 --days 2   # stage R10 (docs/staging/r10-prereg.md): one kernel for every animal aged 8 and over in every community (animals under 8 stay on the rules), on the working base with the switches of the gate test, after 30 days of burn-in; arms are those of scripts/r5-pilot.ts (rules, argmax-gate = no model, trained-gate = r4-rules-state); every answer is journalled as it arrives, a receipt per decision point (schema r10-receipt-1: the menu with stable keys, the probabilities, the applied option, what opened the ask, acts the gate held), a lossless checkpoint per simulated day (the last two kept), --resume continues from the newest whole checkpoint and reuses journalled answers; a stop check after day 5 (starvation, reserves, nights in a nest, fallbacks) ends a hopeless run with exit code 3; replay answers from the receipts with no model, must land on every day's hash, and prints the short scorecard by value through the field observer; a model arm needs the runtime variables of HANDOFF.md, MGOGO_FT_ROOT and MGOGO_FT_ADAPTERS, refuses to start while another model process runs (any Python started from the Decide environment), and is launched from the repo root under caffeinate -i in a terminal that stays open; kill -TERM to the script's own pid (status prints it) stops it cleanly, any other end is continued with --resume; refuses a dirty tree, reserved seeds and less than 5 GB free
 ```
 
 **3. Parameter rows for `docs/simulation.md` §17:** none. The stage adds no entry to `data/params.json` and changes
@@ -489,7 +572,8 @@ script sets them; read only."
     kernel sees it (the ledger's shadow tap). The full decision context of each ask is in `contexts/dNNN.jsonl.gz`
     under the same key (`t`, `id`, `v`) with the hash `ctx`. If the ledger needs another field, `runDay` in
     `scripts/lib/r10-run.ts` builds the line in one place.
-- Tests to run at the merge: `tests/r10-night.test.ts` (12 tests; 30 to 60 s on a busy machine), then the whole suite.
+- Tests to run at the merge: `tests/r10-night.test.ts` (13 tests; 30 to 60 s on a busy machine; one of them starts the
+  script three times as a child process and needs 5 GB free on the temporary folder's volume), then the whole suite.
 - The burned-in world is kept under `artifacts/r10/burnin/` in a file named by commit, so the first run after the
   merge burns in again (about 35 s) and should print "the burned-in world is the pilot's (hash 4b5cc61f8ad797e0)"; if
   it prints another hash, something merged has moved the simulation on the working base and the night is a different
@@ -503,6 +587,18 @@ script sets them; read only."
 - The command of §8, from the repo root. It prints a line per simulated day and one per simulated hour inside a day.
 - In the morning: `status`, the log's tail, then `replay` (no model). If the state is `interrupted` or the process is
   gone: `run --resume <out> --hours <what is left>`.
+- Launch it from a terminal window that stays open all night (review, A11): if the terminal or the session that
+  launched it goes away, the run is killed, also under `nohup`. An agent whose session ends must not be the launcher,
+  unless it starts the command of §8 inside a detached `screen` session (`screen -dmS r10 bash -c '<the exports and
+  the command>'`; `/usr/bin/screen` is on this Mac): tried in the review on the small map with a no-model arm, the run
+  went on after the launching shell had gone and the session closed when the run ended.
+- To stop it on purpose: `kill -TERM <pid>` to the script's own process (the pid is in the log line "awake: caffeinate
+  -i -w <pid>", in `run.json` under `segments`, and printed by `status` while the run is live). Ctrl-C in its terminal
+  can end as a kill instead; then the registry stays at `running` and `--resume` continues with nothing lost.
+- The model-process check counts every Python started from the Decide environment (review, A10), whatever script it
+  runs, so another agent's tokeniser or scoring script in that environment refuses the launch and is named.
+- If the first start fails after the burn-in (the worker cannot warm up within ten minutes, the adapter's hash does
+  not match), `run.json` already exists: start again with `run --resume <out>`, not with the first command.
 - Report it as a level, under the name "rules-taught model on a rules menu", with "animals under 8 years stay on the
   rules" beside every number. No comparison is a result until a fresh unseen seed has been run.
 
