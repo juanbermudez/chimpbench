@@ -41,6 +41,35 @@ export function wordingReport(rows: WordRow[], scores: Score[]) {
     meanTopProbability: { state: used.reduce((s, r) => s + Math.max(...by.get(`state|${r.id}`)!), 0) / (used.length || 1), neutral: used.reduce((s, r) => s + Math.max(...by.get(`neutral|${r.id}`)!), 0) / (used.length || 1) } };
 }
 
+/**
+ * Today's rendering scored again against scores saved before (stage R4's `all.<provider>.jsonl`): the same packets
+ * should give the same probabilities. The saved file names a second decision of one animal in one tick by the same id
+ * as the first (it was scored before stage R4 made its evaluation ids unique), while the records scored now carry
+ * `id~2` (scripts/r8-rerender.ts uniqueIds): the saved rows of the packet `state` are numbered the same way, in file
+ * order, before they are paired. Returns how many records were paired, how many of those differ in the number of
+ * options (a pairing that went wrong), how many of the new records have no saved partner, and the largest difference
+ * in any probability over the rest.
+ */
+export function againstSaved(scores: Score[], saved: Score[]): { paired: number; differentMenus: number; unpaired: number; largest: number } {
+  const seen = new Map<string, number>(), old = new Map<string, number[]>();
+  for (const s of saved) {
+    if (s.packet !== 'state') continue;
+    const n = (seen.get(s.id) ?? 0) + 1;
+    seen.set(s.id, n);
+    old.set(n === 1 ? s.id : `${s.id}~${n}`, s.probs);
+  }
+  const out = { paired: 0, differentMenus: 0, unpaired: 0, largest: 0 };
+  for (const s of scores) {
+    if (s.packet !== 'state') continue;
+    const o = old.get(s.id);
+    if (!o) { out.unpaired++; continue; }
+    out.paired++;
+    if (o.length !== s.probs.length) { out.differentMenus++; continue; }
+    out.largest = Math.max(out.largest, ...o.map((v, i) => Math.abs(v - s.probs[i])));
+  }
+  return out;
+}
+
 if (process.argv[1]?.endsWith('r8-wording-report.ts')) {
   const arg = (k: string, d: string) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
   const dir = resolve(arg('dir', 'artifacts/r8/rerender')), provider = arg('provider', 'r4-rules-state'), saved = arg('saved', ''), md = arg('md', '');
@@ -50,10 +79,8 @@ if (process.argv[1]?.endsWith('r8-wording-report.ts')) {
   // today's rendering was scored before (stage R4): the same packets should give the same probabilities
   let again = '';
   if (saved) {
-    const old = new Map((lines(resolve(saved)) as Score[]).filter(s => s.packet === 'state').map(s => [s.id, s.probs]));
-    let n = 0, worst = 0;
-    for (const s of scores) { const o = s.packet === 'state' ? old.get(s.id) : undefined; if (o && o.length === s.probs.length) { n++; worst = Math.max(worst, ...o.map((v, i) => Math.abs(v - s.probs[i]))); } }
-    again = `Today's rendering scored again: ${n} records shared with the saved scores, the largest difference in any probability ${worst.toFixed(4)}.`;
+    const a = againstSaved(scores, lines(resolve(saved)) as Score[]);
+    again = `Today's rendering scored again: ${a.paired} records paired with the saved scores (${a.unpaired} without a saved partner, ${a.differentMenus} with another number of options), the largest difference in any probability ${a.largest.toFixed(4)}.`;
   }
   const pc = (v: number | null) => v === null ? 'n/a' : v.toFixed(3);
   const out = [`# Stage R8: the wording test (${provider})`, '', `Held-out fresh draws with the rules' decision on the menu: ${r.draws}, of ${r.animals} animals. The model's top option against the rules' decision.`, '',

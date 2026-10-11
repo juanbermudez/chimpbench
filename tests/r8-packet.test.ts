@@ -11,7 +11,7 @@ import { sampleR4 } from '../scripts/r4-contexts';
 import { hashWithoutOwn, packetsOf, sampleR8, type R8Rec } from '../scripts/r8-contexts';
 import { leakedIn, rerender, uniqueIds } from '../scripts/r8-rerender';
 import { estimateByBlock } from '../scripts/r8-tokens';
-import { wordingReport } from '../scripts/r8-wording-report';
+import { againstSaved, wordingReport } from '../scripts/r8-wording-report';
 import { nearbyOrder, pickRates, wordingOnly } from '../scripts/r8-wording-probe';
 import { buildJevQuestion, buildLocalQuestion, buildOwnQuestion, decisionContextError, neutralized, optionParts, rulesWordings, situationRules, TOKEN_BUDGET_STATE, withoutOwn,
   type LocalPacket, type OwnBlock } from '../server/decide';
@@ -714,6 +714,12 @@ test('the wording test\'s files: a saved record renders twice, and the readout c
   assert.equal(rep.table[0].neutral, used.filter(r => r.chimpId % 2 === 0).length / used.length);
   assert.ok(rep.difference!.low <= rep.difference!.mean && rep.difference!.mean <= rep.difference!.high && rep.difference!.high < 0);
   assert.equal(rep.table.slice(1).reduce((s, t) => s + t.draws, 0), used.length, 'every draw has one kind');
+  // the scores saved by stage R4 name two decisions of one animal in one tick by one id; the records scored now carry `id~2`.
+  // Paired by plain id, the first decision would be compared with the second's saved scores.
+  const saved = [{ id: 'a', packet: 'state', probs: [0.9, 0.1] }, { id: 'b', packet: 'state', probs: [0.2, 0.8] }, { id: 'b', packet: 'state', probs: [0.7, 0.3] }, { id: 'b', packet: 'probe', probs: [0.5, 0.5] }];
+  const now = [{ id: 'a', packet: 'state', probs: [0.9, 0.1] }, { id: 'b', packet: 'state', probs: [0.2, 0.8] }, { id: 'b~2', packet: 'state', probs: [0.7, 0.3] }, { id: 'c', packet: 'state', probs: [1, 0] }, { id: 'a', packet: 'neutral', probs: [0.4, 0.6] }];
+  assert.deepEqual(againstSaved(now, saved), { paired: 3, differentMenus: 0, unpaired: 1, largest: 0 });
+  assert.deepEqual(againstSaved([{ id: 'b~2', packet: 'state', probs: [0.6, 0.3, 0.1] }, { id: 'b', packet: 'state', probs: [0.5, 0.5] }], saved), { paired: 2, differentMenus: 1, unpaired: 0, largest: 0.8 - 0.5 });
   // the estimate by block adds up to the estimate
   const p = rerender(recs[0]).neutral, parts = estimateByBlock(p);
   assert.equal(Math.round(Object.values(parts).reduce((s, v) => s + v, 0)), tokensOf(p));
