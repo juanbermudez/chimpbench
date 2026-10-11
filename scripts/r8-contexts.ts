@@ -18,6 +18,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { buildOwnQuestion, decisionContextError, neutralized, withoutOwn, type LocalPacket } from '../server/decide';
+import { optionKey } from '../src/kernel/decode';
 import { candidateMeta, computeCandidates, V } from '../src/sim/candidates';
 import { rulesTap } from '../src/sim/decide';
 import { dayPhase } from '../src/sim/environment';
@@ -86,7 +87,8 @@ export function sampleR8(o: SampleOpts): { recs: R8Rec[]; hash: string; decision
   const P = paramsOf(w), DAY = Math.round(24 / TICK_HOURS);
   for (let i = 0; i < Math.round(o.burnIn * DAY); i++) { tickWorld(w); o.onTick?.(w, w.tick); if (o.log && i > 0 && i % DAY === 0) o.log(`burn-in day ${i / DAY}`); }
   const recs: R8Rec[] = [], decisions: Record<string, number> = {}, skipped: Record<string, number> = {};
-  const key = (k: { action: string; targetId: number }) => `${k.action}:${k.targetId}`;
+  // an option's stable key is the decode's (stage R9, src/kernel/decode.ts optionKey: the act and its target, the pair applyDecision re-checks by)
+  const key = optionKey;
   const skip = (why: string) => { skipped[why] = (skipped[why] ?? 0) + 1; };
   let pending: { c: Chimp; req: ReturnType<typeof buildRequest>; tick: number; opened: number; act: R8Rec['act'] } | null = null;
   rulesTap.fn = (c, list, policy) => {

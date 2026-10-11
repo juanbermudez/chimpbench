@@ -14,7 +14,7 @@ import { armLedger, nightInfo, nightReceipts, type ArmLedger } from '../scripts/
 import { nightLedger } from '../scripts/r7-ledger';
 import { resultName } from '../scripts/r10-night';
 import { ARMS, armWorld } from '../scripts/r5-pilot';
-import { drawAt, heldAt } from '../src/kernel/decode';
+import { drawAt, heldAt, optionKey } from '../src/kernel/decode';
 import { nullKernel } from '../src/kernel/kernels';
 import { TICK_HOURS } from '../src/sim/state';
 import { createWorld, tickWorld } from '../src/simulation';
@@ -227,4 +227,28 @@ test('the replay reads stage R7\'s timing card through the tap hook; the script 
   assert.equal(led.status, 0, `${led.stdout}${led.stderr}`); assert.match(led.stdout, /kind of act: a fresh choice for \d+\.\d% of waking minutes; an intention the gate held \d+\.\d%/);
   const saved = JSON.parse(readFileSync(resolve(dir, 'ledger.json'), 'utf8')) as { ledger: ArmLedger; info: { gateLogged: boolean } };
   assert.ok(saved.info.gateLogged && saved.ledger.lines.kindLow === saved.ledger.lines.kindHigh && saved.ledger.total.receipts > 1000);
+});
+
+test('one stable option key (the act and its target): the decode, the night\'s receipts and packet 5\'s sampler', async () => {
+  assert.equal(optionKey({ action: 'groom', targetId: 7 }), 'groom:7');
+  // the decoder's notes against the receipts: `prev` is where the option the animal's last settled ask applied sits on this menu
+  const n = await night(HELD), last = new Map<number, AskLine>();
+  let onMenu = 0, gone = 0, none = 0;
+  for (const l of asksOf(n.lines)) {
+    const was = last.get(l.id), d = l.dec;
+    if (d) {
+      const keys = l.opts.map(o => optionKey({ action: o[0] as never, targetId: o[1] }));
+      if (!was || was.by !== 'kernel') { assert.equal(d.prev, null); none++; }
+      else {
+        const key = optionKey({ action: was.opts[was.picked][0] as never, targetId: was.opts[was.picked][1] });
+        assert.equal(d.prev, keys.indexOf(key), `animal ${l.id} at ${l.t}: the option applied last was ${key}`);
+        if (d.prev! >= 0) onMenu++; else gone++;
+      }
+    }
+    last.set(l.id, l);
+  }
+  assert.ok(onMenu > 300 && gone > 10 && none > 20, `${onMenu} on the menu, ${gone} gone, ${none} without one`);
+  // packet 5's sampler keys its options by the same function, not by a second definition
+  const sampler = readFileSync('scripts/r8-contexts.ts', 'utf8');
+  assert.ok(sampler.includes("import { optionKey } from '../src/kernel/decode';") && sampler.includes('const key = optionKey;') && !sampler.includes('`${k.action}:${k.targetId}`'));
 });
