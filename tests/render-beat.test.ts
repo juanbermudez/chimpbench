@@ -4,7 +4,7 @@ import type { Candidate } from '../src/types';
 import {
   BACK_AFTER_S, BACK_FOR_S, BEAT_S, CATCH_UP, DEPART_RADIUS_M, DEPART_WINDOW_TICKS, GLANCE_S, Gaze, INTENT_S, LATE_MAX_TICKS, LOOK_S, Phase, RUNNER_MARGIN, STAGGER_ECO_S,
   STAGGER_REAL_S, THINK_SCAN_S, WAIT_CYCLE_S, beatPhase, choseBefore, deliberating, departFirst, departFollowers, departNearestFollower, departRank, firstMove, gazeFor, lateTarget,
-  looksBack, realSeconds, restedBefore, runnerUp, staggerGap, startTime, stepLate, steppedAlready, waitLooksBack,
+  looksBack, ownsStep, realSeconds, restedBefore, runnerUp, staggerGap, startTime, stateBefore, stepLate, steppedAlready, waitLooksBack,
 } from '../src/render/creatures/beat';
 import { PATH_MOVING_MPS } from '../src/render/creatures/drawn';
 import { TICK_HOURS, createTrack, pushSample } from '../src/render/creatures/playback';
@@ -110,6 +110,14 @@ test('when the body starts: at the simulation\'s first step if it sets off from 
   assert.equal(firstMove(tail, since, PATH_MOVING_MPS, true), since - T, 'read as its own step it would count as gone');
   assert.equal(firstMove(tail, since, PATH_MOVING_MPS, false), Infinity, 'it has not moved in the new act: it waits');
   assert.equal(firstMove(nextTick, since, PATH_MOVING_MPS, false), since);
+  assert.equal(ownsStep(0, tail, since, PATH_MOVING_MPS), false, 'it was walking before: the stride into the new act is the old act\'s');
+  // The simulation moves a groomer toward its partner the moment the act starts, inside the tick that chose it, with
+  // the act's clock still at 0. The animal stood still before, so that move is the new act's own first step.
+  const dash = path([[0, 0], [0, 0], [19.4, 0], [4, 0]]);
+  assert.equal(ownsStep(0, dash, since, PATH_MOVING_MPS), true);
+  assert.equal(firstMove(dash, since, PATH_MOVING_MPS, ownsStep(0, dash, since, PATH_MOVING_MPS)), since - T, 'the body starts with that step, and the beat is counted down to it');
+  assert.equal(ownsStep(15, tail, since, PATH_MOVING_MPS), true, 'an act that has run a tick owns its step whatever came before');
+  assert.equal(stateBefore(dash, since), since - T); assert.equal(stateBefore(path([]), 3), -Infinity);
   // Movement before the act is not the act's: only steps that end at or after `since` count.
   const arrived = path([[walk, 0], [walk, 0], [0, 0], [0, 0]]);
   assert.equal(firstMove(arrived, since, PATH_MOVING_MPS), Infinity, 'it walked in before the act and has stood since');
@@ -224,7 +232,7 @@ test('the field simulation: the first step read from the position record is the 
         if (o.read === Infinity) o.read = firstMove(tr, o.since, PATH_MOVING_MPS, o.own);
       }
       if (p && p.k !== k && BODY_SIGN[c.action] === 'go' && c.carryingDeadId === undefined) {
-        const own = steppedAlready(c.actionTime);
+        const own = ownsStep(c.actionTime, tr, w.time, PATH_MOVING_MPS);
         const o: Open = { id: c.id, since: w.time, own, truth: own && stepped ? w.time - T : Infinity, read: firstMove(tr, w.time, PATH_MOVING_MPS, own), ticks: 0, tailMoved: !own && stepped, k0: k };
         open.push(o);
       }

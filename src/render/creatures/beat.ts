@@ -65,6 +65,22 @@ const TICK_S = 15;
  * the act before it finished, or applied between two ticks by the decision loop, has not run yet (actionTime 0).
  */
 export function steppedAlready(actionTime: number | undefined): boolean { return (actionTime ?? 0) >= TICK_S - 1e-6; }
+/**
+ * True when the step of the position record that ends at `since` (the state that first shows an act) belongs to that
+ * act: the act has already run a tick (steppedAlready), or the animal stood still in the step before, so any movement
+ * into `since` is the new act's own. The second case matters: the simulation moves an animal toward a grooming partner
+ * the moment the act starts, inside the tick that chose it, with the act's clock still at 0. Only a step that
+ * continues a movement already under way, with the clock at 0, is the act before finishing its last stride.
+ */
+export function ownsStep(actionTime: number | undefined, tr: Track, since: number, minMps: number): boolean {
+  return steppedAlready(actionTime) || restedBefore(tr, stateBefore(tr, since), minMps);
+}
+/** The time of the newest recorded state older than t, or -Infinity when the record does not reach back that far. */
+export function stateBefore(tr: Track, t: number): number {
+  const h = tr.hist;
+  for (let k = 0; k < tr.n; k++) { const o = ((tr.head - k + HIST) % HIST) * 4; if (h[o] < t) return h[o]; }
+  return -Infinity;
+}
 
 /**
  * When the simulation first moves the animal in an act that was first seen at `since`: the time (ecological hours) of

@@ -28,7 +28,7 @@ import { TICK_HOURS, advancePlayback, createPlayback, createTrack, pushSample, r
 import { ABOUT_MAX_RATE, BODY_SIGN, PATH_MOVING_MPS, Way, actChanged, createActTrack, pushAct, readBody, readDrawn, type ActTrack, type BodyState, type DrawnAct } from './creatures/drawn';
 import {
   DEPART_RADIUS_M, DEPART_WINDOW_TICKS, Gaze, Phase, THINK_SCAN_S, beatPhase, createBeat, deliberating, departFirst, departFollowers, departNearestFollower, departRank, firstMove,
-  LATE_MAX_TICKS, gazeFor, lateTarget, staggerGap, steppedAlready,
+  LATE_MAX_TICKS, gazeFor, lateTarget, ownsStep, staggerGap,
   realSeconds, restedBefore, runnerUp, startTime, stepLate, type Beat,
 } from './creatures/beat';
 import { Posture, intention, postureOf } from './creatures/intention';
@@ -849,7 +849,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   /** A new act: where its target and the runner-up are, and what departure it may be part of. */
   function startBeat(a: Anim) {
     const c = a.chimp, b = a.beat, sign = BODY_SIGN[c.action];
-    b.since = a.acts.since; b.phase = Phase.none; b.gaze = Gaze.none; b.moveT = Infinity; b.own = steppedAlready(c.actionTime); b.fromRest = true; b.up = false; b.looked = false;
+    b.since = a.acts.since; b.phase = Phase.none; b.gaze = Gaze.none; b.moveT = Infinity; b.own = ownsStep(c.actionTime, a.track, b.since, MOVE_MPS); b.fromRest = true; b.up = false; b.looked = false;
     b.key = -1; b.rank = 0; b.first = -1; b.followers = 0; b.backId = -1; b.goneFor = NaN; b.waiting = false; b.goalKind = 0; b.altKind = 0;
     // Urgent and pose-only acts (a charge, a call) are never waited for: no beat.
     if (!(b.since > -Infinity) || sign === 'any' || !c.alive) { b.since = -Infinity; return; }
