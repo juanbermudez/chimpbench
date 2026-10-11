@@ -110,6 +110,8 @@ export interface Row {
   status: 'legacy' | 'young' | 'live';
   /** Why a legacy site is unreachable: the switch conditions that are false on the base. */
   dead: string[];
+  /** For each path of the site, whether a switch condition that is false on the base closes it. */
+  pathDead: boolean[];
   /** The conditions that gate it on the base for an animal a kernel decides for (switches, switched-out quotas and conditions always true from KERNEL_AGE left out), over its reachable paths and sources. */
   binding: Atom[];
   /** The classes among `binding`, and among every condition as written (switches left out). */
@@ -173,7 +175,7 @@ export function buildTable(src: string, classes: Classes, overrides: Overrides =
     const plan: Row['plan'] = fixes.includes('rules') ? 'rules' : fixes.includes('drop') ? 'widen' : fixes.length ? 'keep' : 'none';
     const kinds = uniq(site.variants.map(v => kindOf(site.action as Action, (V as Record<string, number>)[v] ?? V.NONE, site.aux ? 1 : -1)));
     const dead = [...(deadFact === true ? [cls!.deadWhy ?? cls!.dead!] : []), ...uniq(site.paths.flatMap(p => deadIn(p).map(a => a.text)))];
-    return { site, kinds, cls, of, status, dead, binding, carried, written, plan };
+    return { site, kinds, cls, of, status, dead, pathDead: site.paths.map(p => deadIn(p).length > 0), binding, carried, written, plan };
   });
   for (const r of classes.rulings) for (const k of r.sites) if (!sites.some(s => s.key === k)) problems.push(`a ruling names a site that is not in the source: ${k}`);
   return { sourceHash: sha(src), classesHash: sha(classesText), base: BASE_FILE, facts, params: P as unknown as Record<string, number>, rows, classes, problems: uniq(problems), atoms };
@@ -271,7 +273,7 @@ export function tableMarkdown(T: Table): string {
     if (r.cls?.pre) o.push(`*Chosen by code before the offer:* ${r.cls.pre}`, '');
     if (r.cls?.note) o.push(`*Note:* ${r.cls.note}`, '');
     if (r.status === 'legacy') o.push(`Unreachable because: ${r.dead.map(d => d.includes(' ') && !/[=!<>|(]/.test(d) ? d : code(d)).join('; ')}.`, '');
-    for (const p of s.paths) { o.push(s.paths.length > 1 || p.label ? `Reached ${p.label ? `through ${p.label}` : 'directly'}:` : 'Conditions:'); for (const a of p.atoms) o.push(atomLine(r, a)); o.push(''); }
+    s.paths.forEach((p, k) => { o.push(s.paths.length > 1 || p.label ? `Reached ${p.label ? `through ${p.label}` : 'directly'}${r.pathDead[k] && r.status !== 'legacy' ? ' (this way is closed on the working base)' : ''}:` : 'Conditions:'); for (const a of p.atoms) o.push(atomLine(r, a)); o.push(''); });
     for (const p of s.sources) { o.push(`Where its target comes from (\`${p.label}\`):`); for (const a of p.atoms) o.push(atomLine(r, a)); o.push(''); }
     const nums = uniq([...s.paths, ...s.sources].flatMap(p => p.atoms.flatMap(a => a.numbers)));
     if (nums.length) o.push(`Number literals in its conditions: ${nums.join(', ')}.${r.status === 'live' ? ` Hand-set numbers in its advice, quota and dice conditions: ${numberCount(r)}.` : ''}`, '');

@@ -2,7 +2,7 @@
 
 Agent r12-menu-design, branch `r12-menu-design` from `track-e` a11c45c. **Design only: no simulation change, no code
 under `src/`, no model, no training, no simulation run.** Part A (sections 1 to 3) was registered on 11 October 2026,
-03:14 EDT, before any condition was classified and before any count by class existed. Part B (the design, sections 4
+03:13 EDT (commit 8e1e8e7), before any condition was classified and before any count by class existed. Part B (the design, sections 4
 onward) is written after the table and is a registration of a design, not of a run.
 
 Read first: the review of 10 October (`/Volumes/Drive/chimpbench/shots/review-2026-10-10/reports/`:
@@ -129,7 +129,8 @@ run with `offerTap` counting offers by action and variant would confirm it; it i
 
 At most three iterations of the classification, each logged here before the table is generated from it.
 
-- **Iteration 1** (11 October 2026, 03:14 EDT): the rules of §2.2 and §2.3 as written above. Applied at 03:36 EDT: every
+- **Iteration 1** (11 October 2026, 03:13 EDT): the rules of §2.2 and §2.3 as written above. Applied at 03:22 EDT (commit
+  c4b9c19): every
   one of the 369 distinct conditions classed in `data/r12-offer-classes.json`, with the ten rulings and the list of what
   stays with the rules written before any count by class was seen. `--check` on it: 0 problems; 69 sites live, 6 young
   only, 19 legacy, as expected in §2.5. Committed before the table was generated. Two things the rules of §2.2 did not
