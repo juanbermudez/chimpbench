@@ -12,7 +12,10 @@
 import type { Call, CallKind } from '../types';
 
 /** The calls whose reach is drawn and that turn listeners' heads: the loud, long-distance ones and the travel hoo
- * (design assumption; grunts, laughter, whimpers and coughs carry a few metres and stay as they were). */
+ * (design assumption; grunts, laughter, whimpers and coughs carry a few metres and stay as they were). The simulation
+ * pushes five of them to the animals inside the radius (emitCall: pant-hoot, drum, alarm hoo, scream, travel hoo); a
+ * bark has a radius but is delivered to no listener, so its arc and its listeners are drawn from the radius alone
+ * ("within earshot", the contract's wording), not from anything the simulation did with it. */
 export const REACH_KINDS: ReadonlySet<CallKind> = new Set<CallKind>(['pant-hoot', 'drum', 'scream', 'bark', 'alarm-hoo', 'travel-hoo']);
 export function drawsReach(kind: CallKind): boolean { return REACH_KINDS.has(kind); }
 
