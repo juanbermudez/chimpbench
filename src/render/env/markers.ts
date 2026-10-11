@@ -165,14 +165,21 @@ export function createBeliefMarkers(world0: World, owner: Owner, container: HTML
           clip.xy += position.xy * R * 2.0 / uViewport * clip.w;
           vQ = position.xy * R;
         } else {
+          // The line is laid out in screen space and drawn at w = 1, so its dashes are even in the perspective views
+          // too. (With the quad's ends left at their own depths the dash coordinate was interpolated in perspective:
+          // every dash slid to the far end and the animal's end of the line stayed blank.)
           vec4 from = projectionMatrix * viewMatrix * vec4( uFrom, 1.0 );
-          if ( from.w <= 0.0 || clip.w <= 0.0 ) { gl_Position = vec4( 2.0, 2.0, 2.0, 1.0 ); return; }
+          if ( from.w <= 1e-4 ) { gl_Position = vec4( 2.0, 2.0, 2.0, 1.0 ); return; }
+          // A tree behind or beside the camera: the segment is cut in front of the camera plane, so the line still
+          // leaves the animal the right way instead of vanishing.
+          float wCut = 0.1 * from.w;
+          if ( clip.w < wCut ) clip = mix( from, clip, ( from.w - wCut ) / ( from.w - clip.w ) );
           vec2 a = from.xy / from.w * uViewport * 0.5, b = clip.xy / clip.w * uViewport * 0.5;
-          vec2 dir = b - a; vLen = length( dir ); dir /= max( vLen, 1e-3 );
+          vec2 dir = b - a; float len = length( dir ); dir /= max( len, 1e-3 );
+          vLen = min( len, 4096.0 );   // never longer than a few screens: the dash arithmetic stays exact
           float t = position.x * 0.5 + 0.5;
-          clip = mix( from, clip, t );
-          clip.xy += vec2( - dir.y, dir.x ) * position.y * 3.0 * 2.0 / uViewport * clip.w;
           vQ = vec2( t * vLen, position.y * 3.0 );
+          clip = vec4( ( a + dir * vQ.x + vec2( - dir.y, dir.x ) * vQ.y ) * 2.0 / uViewport, 0.0, 1.0 );
         }
         gl_Position = clip;
       }`,
@@ -221,6 +228,8 @@ export function createBeliefMarkers(world0: World, owner: Owner, container: HTML
   container.appendChild(root);
 
   const marks = createBeliefMarks();
+  /** Screen distance (CSS px) from the animal inside which the target's line of text is not shown. Design assumption: the height of a selected animal's name tag and its stem. */
+  const LABEL_CLEAR_PX = 84;
   let worldRef = world0;
   const treeOf = (id: number) => treeById(worldRef.trees, id);
   let n = 0, nMem = 0, nOpt = 0, target = -1, lastTick = -1, lastId = -2, lastMode: ViewMode | '' = '', lastTrees: World['trees'] | null = null;
@@ -273,6 +282,13 @@ export function createBeliefMarkers(world0: World, owner: Owner, container: HTML
       if (target >= 0 && want === 1) {
         tmp.set(at[target * 3], at[target * 3 + 1], at[target * 3 + 2]).project(f.camera);
         labelOn = tmp.z < 1 && Math.abs(tmp.x) < 1 && Math.abs(tmp.y) < 1;
+        if (labelOn) {
+          // Not on top of the animal's own name tag: once the tree is within LABEL_CLEAR_PX of the animal on screen
+          // (it has arrived, or the view is zoomed far out) the tag already says what it is doing there.
+          from.copy(uniforms.uFrom.value).project(f.camera);
+          const dx = (tmp.x - from.x) * 0.5 * f.viewW, dy = (tmp.y - from.y) * 0.5 * f.viewH;
+          if (dx * dx + dy * dy < LABEL_CLEAR_PX * LABEL_CLEAR_PX) labelOn = false;
+        }
         if (labelOn) {
           const px = Math.round((tmp.x * 0.5 + 0.5) * f.viewW), py = Math.round((-tmp.y * 0.5 + 0.5) * f.viewH);
           if (px !== lpx) { lpx = px; label.style.setProperty('--ox', `${px}px`); }
