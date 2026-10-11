@@ -18,9 +18,10 @@ export const ACT_HIST = 10;
 /** A body within this distance (m) of where the simulation has the animal has arrived (a stylization: about half an
  * adult body length; the simulation's own small shuffles stay below it). */
 export const ARRIVED_M = 0.75;
-/** Vertical speed of the drawn path (m per ecological second) above which the body is climbing or coming down (a
- * stylization: well under the simulation's climbing speed, well over a branch's sway). */
-export const CLIMBING_MPS = 0.05;
+/** Speed of the drawn path (m per ecological second), over the ground or up and down, above which the body is on the
+ * move (a stylization: a seventh of the field map's walking speed, well over a shuffle on the spot). Read from the
+ * path, not from the clip, so it holds at every playback rate and whatever gait the body is drawn in. */
+export const PATH_MOVING_MPS = 0.05;
 /** Above this playback rate (ecological seconds per real second) the gap is too short to read and is not announced (a
  * stylization: at 10 min/s two ticks are three frames). The default 1 min/s and everything slower are below it. */
 export const ABOUT_MAX_RATE = 120;
@@ -100,9 +101,10 @@ export const BODY_SIGN: Record<Action, BodySign> = {
 
 /** What the drawn body is doing, as the rule needs it. The caller's object, reused. */
 export interface BodyState {
-  /** Drawn in a walking or running clip (the renderer's moving state, with its hysteresis). */
+  /** Drawn in a walking or running clip (the renderer's moving state, with its hysteresis), or its drawn path is
+   * moving over the ground faster than PATH_MOVING_MPS. */
   moving: boolean;
-  /** The drawn path is going up or down faster than CLIMBING_MPS. */
+  /** The drawn path is going up or down faster than PATH_MOVING_MPS. */
   climbing: boolean;
   /** Distance (m) from the drawn body to where the simulation has the animal now. */
   gap: number;

@@ -25,7 +25,7 @@ import { createRemains } from './creatures/remains';
 import { createPrey } from './creatures/prey';
 import { perfEnd, perfNow } from '../perf';
 import { advancePlayback, createPlayback, createTrack, pushSample, relocationJump2, type Track } from './creatures/playback';
-import { CLIMBING_MPS, actChanged, createActTrack, pushAct, readDrawn, type ActTrack, type BodyState, type DrawnAct } from './creatures/drawn';
+import { PATH_MOVING_MPS, actChanged, createActTrack, pushAct, readDrawn, type ActTrack, type BodyState, type DrawnAct } from './creatures/drawn';
 import { paramsOf } from '../sim/params';
 import { sampleSmooth } from './creatures/motion';
 import { GAITS, Regime, advancePhase, createLock, limbPhase, resetLock, solveGait, stepLock, type ContactLock, type GaitSolve } from './creatures/gait';
@@ -1552,8 +1552,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   /** What the drawn body is doing: walking, going up or down, and how far its path still is from the animal's place. */
   function bodyOf(a: Anim): BodyState {
     const c = a.chimp, tr = a.track;
-    BODY.moving = a.moving;
-    BODY.climbing = Math.abs(tr.vy) > CLIMBING_MPS * 3600;   // track velocities are metres per ecological hour
+    const on = PATH_MOVING_MPS * 3600;                        // track velocities are metres per ecological hour
+    BODY.moving = a.moving || hyp2(tr.vx, tr.vz) > on;
+    BODY.climbing = Math.abs(tr.vy) > on;
     BODY.gap = Math.hypot(tr.x - c.position[0], tr.y - Math.max(0, c.position[1] ?? 0), tr.z - c.position[2]);
     BODY.passive = a.carry !== 0 || !c.alive;
     return BODY;
