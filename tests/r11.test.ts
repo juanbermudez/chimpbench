@@ -17,9 +17,9 @@ import { beliefDraw, bruteLabel, cropOffset, entropy, milli, published, publishe
 import { DAY_TICKS } from '../scripts/lib/timing-card';
 import { calibration, rowOf, uniqueIds, type R11Row } from '../scripts/r11-assemble';
 import { SAME_MIN, type R11Rec } from '../scripts/r11-contexts';
-import { ADAPTERS, carryTally, controlArm, engineArm, engineRun, LOOP_SWITCHES, packetOf, registeredArms, SEALED_SEEDS, seedRefusal, spy, TEST_SEEDS } from '../scripts/r11-loop';
-import { auc, boot, kindPrior } from '../scripts/r11-offline';
-import { guardFails, outside } from '../scripts/r11-report';
+import { ADAPTERS, armsRefusal, carryTally, controlArm, engineArm, engineRun, LOOP_SWITCHES, packetOf, registeredArms, SEALED_SEEDS, seedRefusal, spy, TEST_SEEDS } from '../scripts/r11-loop';
+import { auc, boot, kindPrior, wordingBaseline } from '../scripts/r11-offline';
+import { guardFails, n1, nightsOf, outside, pairedNights } from '../scripts/r11-report';
 import { spreadOf } from '../scripts/r7-report';
 import { decodeDiffers, replayKernel, type Receipt } from '../scripts/r5-pilot';
 import { ARMS as CONTROL_ARMS } from '../scripts/r7-card';
@@ -236,6 +236,33 @@ test('the offline readouts and the loop\'s rules: the area under the curve, the 
   assert.equal(outside(30, 27, 46.2), 0); near(outside(18, 27, 46.2), 9, 1e-12, 'below'); near(outside(50, 27, 46.2), 3.8, 1e-9, 'above'); near(outside(0.4, 0.476, 0.476), 0.076, 1e-12, 'an anchor'); assert.equal(outside(0.01, null, 0.05), 0);
 });
 
+test('mark N1, nights in a nest under a draw (prereg §11.1), and the wording test\'s baseline (§11.4)', () => {
+  // an arm of two seeds, five animals each, five nights each; `out`: nights out of a nest as [seed, animal, how many]
+  const arm = (out: [number, number, number][] = []) => [4111, 4222].map(seed => ({ seed, card: { days: [1, 2, 3, 4, 5].flatMap(id => [0, 1, 2, 3, 4].map(day => {
+    const lost = out.find(o => o[0] === seed && o[1] === id)?.[2] ?? 0;
+    return { id, nightTicks: 1000, nestTicks: day < lost ? 850 : 950 };   // a night counts from 0.9 of its dark ticks
+  })).concat([{ id: 1, nightTicks: 0, nestTicks: 0 }]) } }));   // (a day's record with no dark tick is not a night)
+  const top = nightsOf(arm()), one = nightsOf(arm([[4111, 2, 1]])), two = nightsOf(arm([[4111, 2, 1], [4222, 5, 1]])), heavy = nightsOf(arm([[4111, 1, 3], [4111, 2, 2], [4222, 3, 3], [4222, 4, 2], [4111, 5, 1], [4222, 1, 2], [4222, 2, 1], [4111, 3, 2]]));
+  assert.deepEqual([top.inNest, top.nights, top.byAnimal.size], [50, 50, 10]); assert.deepEqual([one.inNest, two.inNest, heavy.inNest], [49, 48, 34]);
+  // the rules' spread on the test's own control arms decides the guard's line (here: mean 0.995, D about 0.023, as measured)
+  const s = spreadOf([1, 1, 1, 1, 1, 1, 0.98, 0.98]), line = s.mean! - s.D!;
+  assert.ok(line > 0.96 && line < 0.98, `the guard's line ${line}`);
+  // one night lost keeps both parts; two nights fail both: no more than one beyond the top pick, and 0.96 is under the line
+  const r1 = n1(one, top, 49 / 50, s), r2 = n1(two, top, 48 / 50, s), r8 = n1(heavy, top, 34 / 50, s);
+  assert.deepEqual([r1.h1, r1.guard, r1.met], [true, true, true]); assert.deepEqual([r2.h1, r2.guard, r2.met], [false, false, false]); assert.equal(r8.met, false);
+  assert.ok(r8.pair !== null && r8.pair.hi < 0 && r8.pair.n === 10, 'many nights lost: the paired interval over animals is wholly below 0');
+  // the top pick itself may have lost nights: the draw is judged against it (one more is allowed), and still against the rules' line
+  const r3 = n1(two, one, 48 / 50, s);
+  assert.deepEqual([r3.h1, r3.guard, r3.met], [true, false, false], 'kept against a top pick that lost one, but under the rules\' line');
+  // what cannot be read is not passed
+  assert.equal(n1(one, null, 49 / 50, s).met, null); assert.equal(n1(one, top, null, s).met, null); assert.equal(n1(one, top, 49 / 50, spreadOf([])).met, null);
+  const pd = pairedNights(one, top)!; near(pd.mean, -0.02, 1e-12, 'one night of fifty'); assert.ok(pd.lo < 0 && pd.hi > 0); assert.equal(pairedNights(one, nightsOf([])), null);
+  // stage R8's generated table: the row "all" gives the baseline; another shape gives none
+  const table = '| Kind of decision | Draws | Today\'s state-only packet | Neutral options | Difference |\n| --- | --- | --- | --- | --- |\n| all | 954 | 0.609 | 0.386 | -0.223 |\n| feeding | 291 | 0.357 | 0.213 | -0.144 |';
+  assert.deepEqual(wordingBaseline(table), { draws: 954, withWording: 0.609, neutral: 0.386 });
+  assert.equal(wordingBaseline('no table here'), null); assert.equal(wordingBaseline('| all | 954 | 0.386 | 0.609 | 0.223 |'), null, 'the neutral figure must be the lower one');
+});
+
 // ---------------------------------------------------------------------------------------------------------------------
 // the loop arm (scripts/r11-loop.ts): packet 5 reaches the kernel, the card reads the arm, the replay reproduces it
 // ---------------------------------------------------------------------------------------------------------------------
@@ -247,6 +274,13 @@ test('the registered arms, their salts, and the seeds the loop accepts', () => {
   const draw = registeredArms('draw'), none = registeredArms('none');
   assert.deepEqual(draw.fresh.slice(0, 2), ['p5b-s7-draw-1', 'p5b-s11-draw-1']); assert.deepEqual(draw.old, ['old-draw-1']); assert.equal(draw.fresh.length, 8);
   assert.ok(none.fresh.includes('p5b-s7-top') && none.fresh.includes('p5a-s11-draw-1') && none.fresh.includes('p5b-s7-draw-2') && !none.fresh.includes('p5a-s7-draw-2')); assert.deepEqual(registeredArms('top'), none);
+  // prereg §11.1 and §11.2: the top pick is primary with one draw arm per new adapter beside it; the first training seed of each arm comes first, P5b before P5a; the old adapter last, its draw arm optional
+  assert.deepEqual(none.fresh, ['p5b-s7-top', 'p5a-s7-top', 'p5b-s7-draw-1', 'p5a-s7-draw-1', 'p5b-s11-top', 'p5a-s11-top', 'p5b-s11-draw-1', 'p5a-s11-draw-1', 'p5b-s7-draw-2']);
+  assert.deepEqual([none.old, none.optional], [['old-top'], ['old-draw-1']]);
+  for (const k of ['p5b-s7', 'p5b-s11', 'p5a-s7', 'p5a-s11']) assert.ok(none.fresh.includes(`${k}-top`) && none.fresh.includes(`${k}-draw-1`), `${k}: the top pick and a draw arm beside it`);
+  // a list of names is refused before any world is built: an unknown arm, a dry-run arm in a real run, a name twice, none
+  assert.equal(armsRefusal(['p5b-s7-top', 'old-draw-1']), ''); assert.match(armsRefusal(['p5b-s7-warm']), /unknown engine arm/); assert.match(armsRefusal(['wire-p5b-top']), /belongs to the dry run/);
+  assert.match(armsRefusal(['p5b-s7-top', 'p5b-s7-top']), /twice/); assert.match(armsRefusal([]), /name the arms/); assert.equal(armsRefusal(['wire-p5b-top'], true), ''); assert.match(armsRefusal(['old-top'], true), /not part of the dry run/);
   assert.equal(registeredArms('held').fresh[2], 'p5b-s7-held-2'); assert.throws(() => registeredArms('warm'));
   // every arm has its own stream, apart from the control arms' salts, and a packet of its own kind
   const every = Object.keys(ADAPTERS).flatMap(k => ['top', 'draw-1', 'draw-2', 'held-1', 'held-2'].map(d => engineArm(`${k}-${d}`)!));

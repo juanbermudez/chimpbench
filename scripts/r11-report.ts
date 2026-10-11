@@ -3,7 +3,8 @@
 // ArmFile). The card's full tables are scripts/r7-report.ts's (--engine); this script prints what R11 registered: the
 // five timing rows and the five guards with the smallest difference D measured on the test's own worlds, the statements
 // S0 to S3 in their registered order, the ablation, lock-in in the loop, the spreads between training seeds and decode
-// salts, who decided, and which rows could show "closer to wild chimpanzees" under stage R7's amended rule.
+// salts, who decided, nights in a nest under a draw (mark N1, prereg §11.1), and where the arms stand against the
+// timing card's field anchors, as description (prereg §11.3: this stage claims nothing about wild chimpanzees).
 //
 //   pnpm exec tsx scripts/r11-report.ts [--dir artifacts/r11/loop] [--seeds 4111,4222] [--decode draw|held|top] [--offline artifacts/r11/tables/r11-offline.json] [--md artifacts/r11/tables/r11-numbers.md] [--dry]
 //   pnpm exec tsx scripts/r11-report.ts --dir <dir> --seeds <s> --engine-arg      prints the --engine value for scripts/r7-report.ts from the engine arms on file
@@ -12,7 +13,7 @@ import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { POPULATION_ONLY, SHORT_ROWS } from './lib/r7-readers';
-import { CARD_LABELS, type TaiPersistence } from './lib/timing-card';
+import { CARD_LABELS, NIGHT_IN_NEST, type TaiPersistence } from './lib/timing-card';
 import { ADAPTERS, engineArm, type R11ArmFile } from './r11-loop';
 import { ARMS as CONTROL_ARMS } from './r7-card';
 import { realization, spreadOf, told, type Spread } from './r7-report';
@@ -32,6 +33,40 @@ export function guardFails(key: string, s: Spread, vals: (number | null)[]): boo
   if (s.mean === null || s.D === null || !vals.length || vals.some(v => v === null)) return null;
   const below = vals.every(v => v! < s.mean! - s.D!), above = vals.every(v => v! > s.mean! + s.D!);
   return DOWN_ONLY.includes(key) ? below : below || above;
+}
+/** The nights of an arm, its seeds pooled: how many were spent in a nest (the card's rule: NIGHT_IN_NEST of the dark ticks), and the same per focal animal. */
+export interface Nights { inNest: number; nights: number; byAnimal: Map<string, [number, number]> }
+export function nightsOf(files: { seed: number; card: { days: { id: number; nightTicks: number; nestTicks: number }[] } }[]): Nights {
+  const byAnimal = new Map<string, [number, number]>();
+  let inNest = 0, nights = 0;
+  for (const f of files) for (const d of f.card.days) if (d.nightTicks > 0) {
+    const k = `${f.seed}:${d.id}`, g = byAnimal.get(k) ?? [0, 0], n = d.nestTicks / d.nightTicks >= NIGHT_IN_NEST ? 1 : 0;
+    g[0] += n; g[1]++; byAnimal.set(k, g); inNest += n; nights++;
+  }
+  return { inNest, nights, byAnimal };
+}
+/** Two-sided 95% points of Student's t, 1 to 30 degrees of freedom. */
+const T95 = [12.706, 4.303, 3.182, 2.776, 2.571, 2.447, 2.365, 2.306, 2.262, 2.228, 2.201, 2.179, 2.160, 2.145, 2.131, 2.120, 2.110, 2.101, 2.093, 2.086, 2.080, 2.074, 2.069, 2.064, 2.060, 2.056, 2.052, 2.048, 2.045, 2.042];
+/** Mean and 95% t interval over animals of the paired difference in the share of nights in a nest (a less b), on the animals both arms hold. */
+export function pairedNights(a: Nights, b: Nights): { mean: number; lo: number; hi: number; n: number } | null {
+  const d: number[] = [];
+  for (const [k, x] of a.byAnimal) { const y = b.byAnimal.get(k); if (y && x[1] > 0 && y[1] > 0) d.push(x[0] / x[1] - y[0] / y[1]); }
+  if (d.length < 2) return null;
+  const m = d.reduce((s, v) => s + v, 0) / d.length, sd = Math.sqrt(d.reduce((s, v) => s + (v - m) ** 2, 0) / (d.length - 1)), h = (T95[Math.min(T95.length, d.length - 1) - 1]) * sd / Math.sqrt(d.length);
+  return { mean: m, lo: m - h, hi: m + h, n: d.length };
+}
+/**
+ * Mark N1 for one draw arm (prereg §11.1), both parts fixed before any model arm: (i) stage R9's rule H1 against the same
+ * adapter's top-pick arm: no more than one night out of a nest beyond the top pick's, and the paired interval over
+ * animals of the difference in the share of nights not wholly below 0; (ii) the registered guard, for this arm alone:
+ * its share of nights in a nest (the card's value, the mean over animals) not below the rules' mean by more than D.
+ * null: a part cannot be read (no top-pick arm on file, or no spread).
+ */
+export function n1(draw: Nights, top: Nights | null, share: number | null, s: Spread | undefined): { h1: boolean | null; guard: boolean | null; met: boolean | null; pair: ReturnType<typeof pairedNights> } {
+  const pair = top ? pairedNights(draw, top) : null;
+  const h1 = top ? (draw.nights - draw.inNest) <= (top.nights - top.inNest) + 1 && !(pair !== null && pair.hi < 0) : null;
+  const guard = share !== null && s && s.mean !== null && s.D !== null ? share >= s.mean - s.D : null;
+  return { h1, guard, met: h1 === null || guard === null ? null : h1 && guard, pair };
 }
 /** Distance outside a band (0 inside it); for an anchor without a band (lo = hi) the distance to it. */
 export const outside = (v: number, lo: number | null, hi: number | null): number => Math.max(0, lo !== null ? lo - v : 0, hi !== null ? v - hi : 0);
@@ -190,7 +225,45 @@ if (process.argv[1]?.endsWith('r11-report.ts')) {
   }
 
   // -------------------------------------------------------------------------------------------------------------------
-  // 5. "closer to wild chimpanzees": which rows leave room at this unit, by stage R7's amended rule
+  // 4a. mark N1: nights in a nest under a draw (prereg §11.1)
+  // -------------------------------------------------------------------------------------------------------------------
+  {
+    const N: Record<string, Nights> = Object.fromEntries(engineNames.map(a => [a, nightsOf(F[a])])), rulesNights = rulesNames.map(a => nightsOf(F[a])), sN = S.nightsInNest;
+    const cnt = (x: Nights) => `${x.inNest} of ${x.nights}`;
+    p();
+    p('## 4a. N1: nights in a nest under a draw (prereg §11.1)');
+    p();
+    p('Stage R9 named no standard decode because a draw cost nights in a nest with the adapters taught one-hot picks. The reading registered for this stage: an adapter taught the rules\' own odds should be near-certain where the rules are (nesting at dusk), so a draw from its odds should no longer cost nests. **N1** is read per draw arm of an adapter, its seeds pooled: (i) no more than one night out of a nest beyond the same adapter\'s top-pick arm, and the paired interval over animals of the difference in the share of nights not wholly below 0 (stage R9\'s rule H1); (ii) the arm\'s share of nights in a nest not below the rules\' mean by more than D (the registered guard, for this arm alone). An adapter meets N1 when every draw arm of it on file meets both; the recipe P5b when both its trainings do.');
+    p();
+    p(`The eight rules re-draws: ${rulesNights.map(cnt).join(', ')} nights in a nest; share ${f(sN?.mean, 3)}, D ${f(sN?.D, 3)}, so the guard's line is ${f(sN && sN.mean !== null && sN.D !== null ? sN.mean - sN.D : null, 3)}. Random choice: ${['random-a', 'random-b'].map(a => cnt(nightsOf(F[a]))).join(', ')}; the rules with 10% of choices random: ${['mix10-a', 'mix10-b'].map(a => cnt(nightsOf(F[a]))).join(', ')}.`);
+    if (!engineNames.length) { p(); p('No engine arm is on file yet: N1 is not read.'); }
+  }
+  if (engineNames.length) {
+    const N: Record<string, Nights> = Object.fromEntries(engineNames.map(a => [a, nightsOf(F[a])])), sN = S.nightsInNest;
+    const cnt = (x: Nights) => `${x.inNest} of ${x.nights}`;
+    p();
+    p('| Adapter | Top-pick arm: nights in a nest | Draw arm | Its nights in a nest (share) | Draw less top pick, share of nights, paired over animals | (i) nests kept against the top pick | (ii) not below the rules\' mean − D | N1 |');
+    p('| --- | --- | --- | --- | --- | --- | --- | --- |');
+    const verdict: Record<string, boolean | null> = {};
+    for (const key of [...NEW.p5b, ...NEW.p5a, 'old'].map(keyOf)) {
+      const top = armsOf(key, 'top')[0], draws = armsOf(key, 'draw');
+      if (!top && !draws.length) continue;
+      if (!draws.length) { p(`| ${key} | ${top ? cnt(N[top]) : 'not on file'} | none on file | | | | | not read |`); verdict[key] = null; continue; }
+      const each = draws.map(a => ({ a, r: n1(N[a], top ? N[top] : null, V[a].nightsInNest ?? null, sN) }));
+      verdict[key] = each.some(x => x.r.met === null) ? null : each.every(x => x.r.met === true);
+      for (const x of each) p(`| ${key} | ${top ? cnt(N[top]) : 'not on file'} | \`${x.a}\` | ${cnt(N[x.a])} (${f(V[x.a].nightsInNest, 3)}) | ${x.r.pair ? `${f(x.r.pair.mean, 3)} (${f(x.r.pair.lo, 3)} to ${f(x.r.pair.hi, 3)}; ${x.r.pair.n} animals)` : 'not read'} | ${yn(x.r.h1)} | ${yn(x.r.guard)} | ${x.r.met === null ? 'not read' : x.r.met ? '**met**' : '**NOT MET**'} |`);
+    }
+    const recipeN1 = (arm: 'p5b' | 'p5a') => { const v = NEW[arm].map(k => verdict[keyOf(k)]); return v.some(x => x === undefined || x === null) ? null : v.every(x => x === true); };
+    const word = (v: boolean | null) => (v === null ? 'not read (a draw arm and the top-pick arm of both trainings are needed)' : v ? 'MET: for a model taught the rules\' own odds the draw no longer costs nests on these worlds' : 'NOT MET: the draw still costs nests; it stays an arm beside the top pick, whatever it does to timing');
+    p();
+    p(`- **N1 for the recipe P5b: ${word(recipeN1('p5b'))}.**`);
+    p(`- N1 for P5a (printed beside it): ${word(recipeN1('p5a'))}.`);
+    p(`- The old adapter under a draw on these worlds (an optional arm, a reference only): ${verdict[oldKey] === undefined ? 'not on file' : verdict[oldKey] === null ? 'not read' : verdict[oldKey] ? 'meets the same two parts' : 'does not meet them'}. On seeds 21 and 5 its draw arms are in stage R9's table (r9-numbers.md).`);
+    p('- N1 replaces no guard and enters no statement of §4: the guards there are read for a recipe as registered. One night is a fiftieth of an arm, so N1 can tell a draw that loses two or more nights from one that loses none; it cannot tell one lost night from none.');
+  }
+
+  // -------------------------------------------------------------------------------------------------------------------
+  // 5. the field anchors, as description (prereg §11.3): which rows leave room at this unit, by stage R7's amended rule
   // -------------------------------------------------------------------------------------------------------------------
   interface Target { id: string; metric: string; accept: { lo: number | null; hi: number | null; units: string }; role: string }
   const targets = (JSON.parse(readFileSync(resolve('data/targets.json'), 'utf8')) as { targets: Target[] }).targets, T = (id: string) => targets.find(t => t.id === id);
@@ -202,9 +275,11 @@ if (process.argv[1]?.endsWith('r11-report.ts')) {
     ...SHORT_ROWS.filter(id => !(POPULATION_ONLY as readonly string[]).includes(id) && T(id)).map(id => ({ key: id as string, name: `${id} ${T(id)!.metric}`, lo: T(id)!.accept.lo, hi: T(id)!.accept.hi, note: `${T(id)!.role} row of the short scorecard` })),
   ];
   p();
-  p('## 5. "Closer to wild chimpanzees": which rows leave room at this unit');
+  p('## 5. The field anchors, as description: which rows leave room at this unit');
   p();
-  p('Stage R7\'s rule as amended (r7-prereg.md §13a): closer to the field is the distance **outside** the band (0 anywhere inside it); an engine counts as closer on a row only if its distance outside the band is smaller than the best arm\'s of the rules-plus-random family (the rules\' mean, the three mixtures\' means, random choice\'s mean) by more than D, with all five guards held, in both training seeds. A row **leaves room** only if that best arm is still more than D outside the band. Field numbers are yardsticks here and enter nothing.');
+  p('**This stage claims nothing about wild chimpanzees (prereg §11.3).** Its claims are about timing against the rules and the control arms. Stage R7b showed that on the short scorecard an engine can be shown closer to the field on no row at ten animals, so the scorecard rows below are printed only to show that; the two anchors of the timing card (patch residency at the two Kibale sites, the Taï half-hour share) are printed as description: where each arm stands, never a result.');
+  p();
+  p('The arithmetic is stage R7\'s rule as amended (r7-prereg.md §13a): the distance **outside** the band (0 anywhere inside it); an arm is marked "nearer" on a row only if its distance outside the band is smaller than the best arm\'s of the rules-plus-random family (the rules\' mean, the three mixtures\' means, random choice\'s mean) by more than D, with all five guards held. A row **leaves room** only if that best arm is still more than D outside the band. Field numbers are yardsticks here and enter nothing.');
   p();
   p(`| Row | Band or anchor | Rules: mean | D | Distance outside the band: the rules | best of the family (which) | Leaves room | ${[...engines.keys()].join(' | ')}${engines.size ? ' |' : ''}`);
   p(`| --- | --- | --- | --- | --- | --- | --- | ${[...engines.keys()].map(() => '---').join(' | ')}${engines.size ? ' |' : ''}`);
@@ -217,11 +292,11 @@ if (process.argv[1]?.endsWith('r11-report.ts')) {
     const dist = fam.filter(([, v]) => v !== null).map(([nm, v]) => [nm, outside(v!, b.lo, b.hi)] as [string, number]), best = dist.reduce((a, c) => (c[1] < a[1] ? c : a)), leaves = s.D !== null && best[1] > s.D;
     if (leaves) room.push(b.name);
     const d = Math.abs(s.mean) >= 100 ? 0 : Math.abs(s.mean) >= 10 ? 1 : Math.abs(s.mean) >= 1 ? 2 : 3;
-    const cell = (arms: string[]) => { const v = vals(arms, b.key); if (v.some(x => x === null)) return 'no value'; const o = v.map(x => outside(x!, b.lo, b.hi)), closer = leaves && o.every(x => x < best[1] - s.D!) && arms.every(guardsHold); return `${o.map(x => f(x, d)).join(' / ')}${leaves ? (closer ? ' **closer**' : ' not closer') : ''}`; };
+    const cell = (arms: string[]) => { const v = vals(arms, b.key); if (v.some(x => x === null)) return 'no value'; const o = v.map(x => outside(x!, b.lo, b.hi)), closer = leaves && o.every(x => x < best[1] - s.D!) && arms.every(guardsHold); return `${o.map(x => f(x, d)).join(' / ')}${leaves ? (closer ? ' nearer (description)' : ' not nearer') : ''}`; };
     p(`| ${b.name} | ${b.lo === b.hi ? f(b.lo, d) : `${f(b.lo, d)} to ${f(b.hi, d)}`} (${b.note}) | ${f(s.mean, d)} | ${f(s.D, d)} | ${f(outside(s.mean, b.lo, b.hi), d)} | ${f(best[1], d)} (${best[0]}) | ${leaves ? '**yes**' : 'no'} | ${[...engines.values()].map(cell).join(' | ')}${engines.size ? ' |' : ''}`);
   }
   p();
-  p(`Rows that leave room at this unit, on this test's own control arms: ${room.length ? room.join('; ') : 'none'}. On every other row no claim of "closer" can be made at ten animals for five days, whatever an engine does. A cell marked "closer" is one adapter under one decode; the claim needs both training seeds of a recipe.`);
+  p(`Rows that leave room at this unit, on this test's own control arms: ${room.length ? room.join('; ') : 'none'}. On every other row nothing could be shown at ten animals for five days, whatever an engine does. A cell marked "nearer" is one adapter under one decode, beside an anchor: a description, not a claim of "closer to wild chimpanzees" (prereg §11.3).`);
   mkdirSync(resolve(md, '..'), { recursive: true });
   writeFileSync(resolve(md), L.join('\n') + '\n');
   console.log(`wrote ${md}: ${controlNames.length} control arms, ${engineNames.length} engine arms, seeds ${seeds.join(', ')}`);

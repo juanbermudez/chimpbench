@@ -7,6 +7,7 @@
 // table holds the floors and the labels' own numbers.
 //
 //   pnpm exec tsx scripts/r11-offline.ts [--dir artifacts/decide-ft/r11] [--providers base,r11-p5b-s7,…] [--md artifacts/r11/tables/r11-offline.md]
+//       [--wording docs/staging/r8-wording-numbers.md]   stage R8's wording test (its generated table), the baseline of §11.4
 //   … --fake <dir>   the dry run: score files written by a hash of each option's text (scripts/lib/fake-worker.mjs's rule, no
 //                    model, never a result) for the untuned model and four adapters, then this report over them
 // Intervals: 95% bootstrap over animals (2,000 resamples, fixed seed). Every result here is a "rules-taught model on a rules menu".
@@ -20,6 +21,19 @@ import { kindOfFamily } from './r4-contexts';
 import type { R11Row } from './r11-assemble';
 
 export const TRIP_TOLERANCE = 0.03, LOCK_TOLERANCE = 0.05, BOOT = 2000;
+/** A label is "clear" (the rules are near-certain) from this mass on one option (prereg §10.4 and §11.1). */
+export const CLEAR = 0.99;
+/**
+ * Stage R8's wording test, read from its generated table (the row "all"): the first adapter's top-1 agreement with the
+ * rules' decision on its own held-out fresh draws with the rules' wording and with neutral option labels. null when the
+ * table is not in this checkout or has another shape.
+ */
+export function wordingBaseline(text: string): { draws: number; withWording: number; neutral: number } | null {
+  const m = text.split('\n').map(l => l.split('|').map(c => c.trim())).find(c => c[1] === 'all');
+  if (!m) return null;
+  const draws = +m[2].replace(/,/g, ''), withWording = +m[3], neutral = +m[4];
+  return [draws, withWording, neutral].every(Number.isFinite) && neutral > 0 && neutral < withWording && withWording < 1 ? { draws, withWording, neutral } : null;
+}
 type Probs = Map<string, number[]>;
 export interface Model { label: string; provider: string; arm: Arm; scores: Record<string, Probs>; floor?: boolean }
 interface ProbeRow { id: string; rec: string; seed: number; chimpId: number; probe: string; level: number; target: string[]; options: string[] }
@@ -314,26 +328,72 @@ if (process.argv[1]?.endsWith('r11-offline.ts')) {
   }
 
   // -------------------------------------------------------------------------------------------------------------------
+  // 11. where the rules are near-certain (prereg §11.1: the offline half of "nights in a nest under a draw")
+  // -------------------------------------------------------------------------------------------------------------------
+  const certain = fresh.filter(r => Math.max(...q(r)) >= CLEAR), top = (r: R11Row) => argmax(q(r));
+  const nestCertain = certain.filter(r => (r.phase === 'dusk' || r.phase === 'night') && r.options[top(r)].family === 'nest');
+  p();
+  p('## 11. Where the rules are near-certain');
+  p();
+  p(`Stage R9 found that a draw from a hedged model's odds costs nights in a nest: it makes the occasional other choice exactly where the rules are near-certain. A model taught the rules' own odds should be near-certain there too (prereg §11.1). Held-out fresh draws on which the label puts ${CLEAR} or more on one option: ${n(certain.length)} of ${n(fresh.length)}; of them at dusk or night with that option a nest (building one, or staying in it): ${n(nestCertain.length)}. "A draw leaves it" is 1 less the mean probability on that option: how often one draw from the model's odds would take another option at such an ask. No mark reads this table; the mark is N1, in the loop.`);
+  p();
+  p('| Model | Clear draws: mean probability on the rules\' option | Share at 0.9 or more | Top pick is it | Dusk and night, a nest: mean probability on it | Share at 0.9 or more | A draw leaves it, per ask |');
+  p('| --- | --- | --- | --- | --- | --- | --- |');
+  const nearCertain: Record<string, { clear: number | null; nest: number | null }> = {};
+  for (const m of everyone) {
+    const a = scored(m, certain), b = scored(m, nestCertain);
+    if (!a.length) continue;
+    const pa = a.map(x => x.p[top(x.r)]), pb = b.map(x => x.p[top(x.r)]);
+    nearCertain[m.label] = { clear: mean(pa), nest: b.length ? mean(pb) : null };
+    p(`| ${m.label} | ${f(mean(pa))} | ${f(mean(pa.map(v => +(v >= 0.9))))} | ${f(mean(a.map(x => +(argmax(x.p) === top(x.r)))))} | ${b.length ? f(mean(pb)) : 'none'} | ${b.length ? f(mean(pb.map(v => +(v >= 0.9)))) : 'none'} | ${b.length ? f(1 - mean(pb)) : 'none'} |`);
+  }
+
+  // -------------------------------------------------------------------------------------------------------------------
+  // 12. against the wording test (prereg §11.4)
+  // -------------------------------------------------------------------------------------------------------------------
+  const wordingFile = arg('wording', 'docs/staging/r8-wording-numbers.md'), wording = existsSync(resolve(wordingFile)) ? wordingBaseline(readFileSync(resolve(wordingFile), 'utf8')) : null;
+  const hits = (m: Model) => scored(m, fresh).map(x => ({ key: animal(x.r), id: x.r.id, v: +(argmax(x.p) === x.r.rgIndex) }));
+  const pairedHits = (a: Model, b: Model) => { const bd = new Map(hits(b).map(x => [x.id, x.v])); return boot(hits(a).filter(x => bd.has(x.id)).map(x => ({ key: x.key, v: x.v - bd.get(x.id)! })), `hit:${a.label}:${b.label}`); };
+  const ceiling = mean(fresh.map(r => +(argmax(q(r)) === r.rgIndex))), chance = mean(fresh.map(r => 1 / r.options.length)), W1: Record<string, boolean | null> = {};
+  p();
+  p('## 12. Against the wording test: does the honest packet teach more from the state?');
+  p();
+  p(`${wording ? `Stage R8's wording test (\`${wordingFile}\`): the first adapter picks the rules' decision on ${f(wording.withWording)} of its ${n(wording.draws)} held-out fresh draws with the rules' own sentences on the options and on ${f(wording.neutral)} with neutral labels. That second number is this stage's baseline: what an adapter trained on the old packet reads from the state once the wording is gone (a floor for what state can teach, since that adapter was trained with the wording). It comes from other draws of the same seed and bases, so it is a yardstick beside this table, not a paired comparison.` : `Stage R8's wording table (\`${wordingFile}\`) is not in this checkout: the baseline is not read, and W1 is not read.`} On this stage's held-out fresh draws the option the rules took is the label's top option at ${f(ceiling)}: no reader of the state and the menu can agree more often than that; chance is ${f(chance)}.`);
+  p();
+  p('**W1** (prereg §11.4), per adapter: its top-1 agreement lies above the wording test\'s neutral figure with its whole interval, and above the kind-prior baseline on the same draws with a paired interval above 0. For the recipe P5b it needs both trainings. **Agreement with the rules is not the goal of this stage**: W1 says only that the honest packet teaches more from the state than the old adapter had without the wording; the marks are O1 to O4 and the loop\'s statements.');
+  p();
+  p('| Model | Top-1, the rules\' pick | Less the kind-prior baseline (paired) | Less the untuned model on the same packets (paired) | Share of the way from chance to the ceiling | W1 |');
+  p('| --- | --- | --- | --- | --- | --- |');
+  for (const m of everyone) {
+    const h = hits(m);
+    if (!h.length) continue;
+    const b = boot(h.map(x => ({ key: x.key, v: x.v })), `top:${m.label}`), u = untunedOn(m.arm), isAdapter = !m.floor && m.provider !== 'base';
+    const k = m === KP ? null : pairedHits(m, KP), d = isAdapter && u ? pairedHits(m, u) : null;
+    if (isAdapter) W1[m.label] = wording && k ? b.lo > wording.neutral && k.lo > 0 : null;
+    p(`| ${m.label} | ${ci(b)} | ${k ? ci(k) : ''} | ${d ? ci(d) : ''} | ${f((b.mean - chance) / (ceiling - chance), 2)} | ${isAdapter ? (W1[m.label] === null ? 'not read' : W1[m.label] ? 'yes' : '**no**') : ''} |`);
+  }
+
+  // -------------------------------------------------------------------------------------------------------------------
   // the marks, side by side
   // -------------------------------------------------------------------------------------------------------------------
   /** What scripts/r11-report.ts reads for statement S2 (prereg §6.2): per adapter the divergence, the kind-prior baseline's, and the marks. */
-  const summary: { fake: boolean; kindPriorDivergence: number; adapters: Record<string, { arm: Arm; seed: string; divergence: number; tripLessLabel: number | null; O1: boolean | null; O2: boolean | null; O3: boolean | null; O4: boolean | null }> } = { fake: !!fake, kindPriorDivergence: mean(divOf(KP).map(x => x.v)), adapters: {} };
+  const summary: { fake: boolean; kindPriorDivergence: number; wordingBaseline: ReturnType<typeof wordingBaseline>; adapters: Record<string, { arm: Arm; seed: string; divergence: number; tripLessLabel: number | null; O1: boolean | null; O2: boolean | null; O3: boolean | null; O4: boolean | null; W1: boolean | null; nearCertain: { clear: number | null; nest: number | null } | null }> } = { fake: !!fake, kindPriorDivergence: mean(divOf(KP).map(x => x.v)), wordingBaseline: wording, adapters: {} };
   if (adapters.length) {
     p();
     p('## 10. The offline marks (prereg §6.1), per adapter');
     p();
     p('The marks are registered for the primary arm P5b and hold only if both of its training seeds meet them; P5a is printed beside it.');
     p();
-    p('| Adapter | O1 divergence below both floors | O2 trip probability within 0.03 of the rules\' | O3 no probe the wrong way | O4 no lock-in |');
-    p('| --- | --- | --- | --- | --- |');
+    p('| Adapter | O1 divergence below both floors | O2 trip probability within 0.03 of the rules\' | O3 no probe the wrong way | O4 no lock-in | W1 more from the state than the wording test\'s baseline (a reading, §12) |');
+    p('| --- | --- | --- | --- | --- | --- |');
     const ruleShare = mean(carry.map(r => +(q(r)[r.carryOn] >= 0.9)));
     for (const m of adapters) {
       const u = untunedOn(m.arm), a = u ? paired(m, u) : null, b = paired(m, KP), t = scored(m, tripRows), dTrip = mean(t.map(x => on(x.p, tripIdx(x.r)) - on(q(x.r), tripIdx(x.r))));
       const c = scored(m, carry), dC = mean(c.map(x => x.p[x.r.carryOn] - q(x.r)[x.r.carryOn])), share = mean(c.map(x => +(x.p[x.r.carryOn] >= 0.9))), v = verdicts[m.label] ?? [];
       const yn = (b2: boolean | null) => (b2 === null ? 'not read' : b2 ? 'yes' : '**no**');
       const O1 = a ? a.hi < 0 && b.hi < 0 : null, O2 = t.length ? Math.abs(dTrip) <= TRIP_TOLERANCE : null, O3 = v.length ? !v.includes('wrong way') : null, O4 = c.length ? dC <= LOCK_TOLERANCE && share - ruleShare <= LOCK_TOLERANCE : null;
-      p(`| ${m.label} | ${yn(O1)} | ${yn(O2)} (${f(dTrip)}) | ${yn(O3)} | ${yn(O4)} (${f(dC)}; ${f(share - ruleShare)}) |`);
-      summary.adapters[m.label] = { arm: m.arm, seed: seedOf(m.label), divergence: mean(divOf(m).map(x => x.v)), tripLessLabel: t.length ? dTrip : null, O1, O2, O3, O4 };
+      p(`| ${m.label} | ${yn(O1)} | ${yn(O2)} (${f(dTrip)}) | ${yn(O3)} | ${yn(O4)} (${f(dC)}; ${f(share - ruleShare)}) | ${yn(W1[m.label] ?? null)} |`);
+      summary.adapters[m.label] = { arm: m.arm, seed: seedOf(m.label), divergence: mean(divOf(m).map(x => x.v)), tripLessLabel: t.length ? dTrip : null, O1, O2, O3, O4, W1: W1[m.label] ?? null, nearCertain: nearCertain[m.label] ?? null };
     }
   }
   mkdirSync(resolve(md, '..'), { recursive: true });
