@@ -197,3 +197,45 @@ test('a model-driven animal waiting for an answer keeps scanning; nobody else do
   assert.equal(deliberating('rules', 12.5, 'async'), false);
   assert.ok(THINK_SCAN_S < 1.5, 'quicker than the shortest ordinary hold of a gaze (secondary.ts: 1.5 s)');
 });
+
+test('the field simulation: the first step read from the position record is the step the simulation took, also when it keeps an initiator waiting', async () => {
+  // Field map, seed 48, 06:30 to 09:10, animals aged 8 and over. For every trip (travel, follow) that begins, the record
+  // kept as the frame loop keeps it must name the tick in which the simulation first moved the animal in that act:
+  // not the last stride of the act before (the act was chosen at the end of a tick), and not a start that has not
+  // happened (the initiator stands and checks for company).
+  const { createWorld, tickWorld } = await import('../src/simulation');
+  const { BODY_SIGN } = await import('../src/render/creatures/drawn');
+  const w = createWorld(48, { profile: 'field' });
+  const tracks = new Map<number, ReturnType<typeof createTrack>>(), last = new Map<number, { k: string; x: number; y: number; z: number }>();
+  interface Open { id: number; since: number; own: boolean; truth: number; read: number; ticks: number; tailMoved: boolean; k0: string }
+  const open: Open[] = [], done: Open[] = [];
+  for (let tick = 0; tick < 640; tick++) {
+    tickWorld(w);
+    for (const c of w.chimps) {
+      if (!c.alive || c.age < 8) continue;
+      const y = Math.max(0, c.position[1] ?? 0), p = last.get(c.id), k = `${c.action}>${c.targetId}`;
+      let tr = tracks.get(c.id); if (!tr) { tr = createTrack(c.position[0], y, c.position[2]); tracks.set(c.id, tr); }
+      pushSample(tr, w.time, c.position[0], y, c.position[2]);
+      const stepped = p ? Math.hypot(c.position[0] - p.x, y - p.y, c.position[2] - p.z) > PATH_MOVING_MPS * 15 : false;
+      for (const o of open) if (o.id === c.id) {
+        if (k !== o.k0) { o.ticks = 99; continue; }
+        o.ticks++;
+        if (o.truth === Infinity && stepped) o.truth = w.time - T;                       // the step of this tick starts at the state before it
+        if (o.read === Infinity) o.read = firstMove(tr, o.since, PATH_MOVING_MPS, o.own);
+      }
+      if (p && p.k !== k && BODY_SIGN[c.action] === 'go' && c.carryingDeadId === undefined) {
+        const own = steppedAlready(c.actionTime);
+        const o: Open = { id: c.id, since: w.time, own, truth: own && stepped ? w.time - T : Infinity, read: firstMove(tr, w.time, PATH_MOVING_MPS, own), ticks: 0, tailMoved: !own && stepped, k0: k };
+        open.push(o);
+      }
+      last.set(c.id, { k, x: c.position[0], y, z: c.position[2] });
+    }
+    for (let i = open.length - 1; i >= 0; i--) if (open[i].ticks >= 4) { if (open[i].ticks < 99) done.push(open[i]); open.splice(i, 1); }
+  }
+  assert.ok(done.length > 60, `trips that lasted four ticks (${done.length})`);
+  const wrong = done.filter(o => !(o.read === o.truth || Math.abs(o.read - o.truth) < 1e-9));
+  assert.equal(wrong.length, 0, `the first step is read as the simulation took it (${wrong.slice(0, 3).map(o => JSON.stringify(o)).join(' ')})`);
+  const waited = done.filter(o => o.truth > o.since + 1e-9), tails = done.filter(o => o.tailMoved);
+  assert.ok(waited.length >= 1, `some initiators were kept standing for a tick or more after their trip was first seen (${waited.length})`);
+  assert.ok(tails.length >= 1, `some trips were chosen as the act before took its last stride (${tails.length}): read as its own step, that stride would be the trip beginning`);
+});
