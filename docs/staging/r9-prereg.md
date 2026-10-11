@@ -383,6 +383,64 @@ was not run for that reason; the whole suite and the build are the integrator's 
 epoch has no rule and no arm was run with it; the decode is not wired into the app or into the two kernels that
 decide inside the tick; `activityFirst` with a decode step is keyed apart in code and has no test in the loop.
 
+### 10.4 Review by a second agent (10 October 2026, 20:35 to 21:05 EDT; before any model arm; no model process)
+
+A second agent read the whole diff, re-ran the no-model checks and tried to break the decode. **No rule of §6 was
+changed.** Its commits on this branch are the ones titled "R9 review".
+
+**Re-run and reproduced** (head 01cf588, clean tree, outputs in a scratch folder, one process at a time):
+
+- The plumbing check on seed 48: the same end hashes and the same table as `docs/staging/r9-dry.md` (only the head
+  and the wall-clock seconds columns differ). The wiring check: 298 and 380 calls, 2 of 2 replays.
+- Step 0 on seeds 21 and 5: 16 of 16 arms on their saved hashes. Beyond the hashes, all 21,015 receipts of the eight
+  saved model arms are equal to the replayed ones field by field, apart from the new `dec` record and the timing.
+- `docs/staging/r9-offline.md`, `r9-numbers.md` and `r9-seed2-numbers.md` regenerate to the same figures. A second
+  first-order replay written from scratch (another language, another random generator) agrees with every cell it
+  recomputed (trips begun, act changes and the share changed at a re-ask, four saved arms) to within 0.2.
+- The sceptic's own script, run on the saved receipts, gives his figures; with the two changes named in
+  `r9-offline.md` §1 it gives this stage's.
+- The hash behind the noise: even and uncorrelated across decision versions, salts, animals, seeds and neighbouring
+  option keys (200,000 values each), and a held draw's first ask matches the probabilities on an eight-option menu.
+- The training file `r9-seed2.sh` would use: 3,200 records, 3,122 labelled, the registered hash.
+
+**Corrected.**
+
+- The offline table called the last column of its first table "the held option is missing"; it is the option the
+  **top pick** applied last, in the saved run. The table now says so and prints the share by epoch rule and decode.
+  So the sentence of §10.2, "inside an epoch of this stage it is missing at 2.5 to 3.1% of re-asks", holds for the
+  `act` epoch on the top-pick runs. Inside a **half-hour block** the option applied last is off the menu at 26 to
+  47% of re-asks (the act ends before the half hour does), so for the `block` arm "overturned" is read on the
+  remaining re-asks only, and "stable option names are not what limits holding" is a statement about the `act`
+  epoch. No registered figure changed.
+- The offline note named one difference from the sceptic's script; there are two (the second: he counted an act
+  change at every epoch opening). His overturned shares and trip counts needed only the first.
+- `scripts/r9-run.sh wire` now unsets `MGOGO_DECIDE_SERVER`, and the wire arms refuse to run with it set: with that
+  variable the worker class joins a shared model server instead of starting the fake worker.
+- Tests added: a run stopped and resumed in the loop (the world and the decoder's notes through JSON) is the
+  uninterrupted run, and is not when the notes are lost; the no-knob scan also reads the loop's step and the arms'
+  file; the two cases below. `tests/r9-decode.test.ts` is now 11 tests.
+- Checks at the end of the review: `tests/r9-decode.test.ts` 11 of 11, `tests/kernel.test.ts` 15 of 15,
+  `tests/r5-pilot.test.ts` 5 of 5, `tests/r4b.test.ts` 8 of 8, `tests/r2-packet.test.ts` 19 of 19; `tsc --noEmit`
+  clean, and a strict type check of the stage's scripts, its test and the scripts that import `scripts/r5-pilot.ts`;
+  `gen-params --check` clean (1,046 entries). The whole suite and the build stay the integrator's.
+
+**Found and left open** (each needs a decision or more than a repair):
+
+1. **The statements of §6 can contradict each other, and the registration does not order them.** (a) Statements 1
+   and 2 can both read yes (drawing qualifies as the standard and holding also switches less by rule 2 ii): which
+   decode is then adopted is not said. (b) Statements 2 and 3 can both read yes: rule 2 i reads only nests and
+   switching, so holding can be "needed" while it fails a guard and drawing fails too; or holding switches less than
+   drawing while neither moves the first adapter's trips. The report now prints a line naming either case and, for
+   (b), names no standard. Settle the order before step 1 runs, as an amendment logged here. The reviewer's suggestion,
+   which is not a registered rule: "does no harm" comes first (3 overrides 2), and 2 refines 1.
+2. **A held draw does not hold under `activityFirst`.** Measured with a fake kernel on seed 48 (1,400 ticks, five
+   animals): with `activityFirst` 1 none of 257 asks was a re-ask inside an epoch,
+   because the key noted for the applied entry stands for a kind and never equals the animal's act; with 2, the two
+   requests of one decision share one draw. No arm of this stage uses it. Stage R10 must keep `activityFirst` 0 with
+   `draw` or `held` until a kind has a key of its own (`scripts/lib/decoder.ts` says so).
+3. `scripts/r9-run.sh dry` and `report`, and `scripts/r9-seed2.sh offline` and `report`, rewrite committed tables.
+   A model step refuses a tree that is not clean, so commit the regenerated tables before the next model step.
+
 ## For the integrator
 
 **What to launch, in order** (one model process at a time; each step holds while swap in use is above 6 GB and
@@ -394,7 +452,7 @@ scripts/r9-run.sh reference 21 && scripts/r9-run.sh reference 5 && scripts/r9-ru
 mkdir -p artifacts/r9/logs
 scripts/r9-run.sh core 21 > artifacts/r9/logs/core-21.log 2>&1    # about 1 h 40 min: r4-draw-1, r4-held, r4c-draw-1, r4c-held, r4-draw-2, r4-block, r4c-block, then their replays
 scripts/r9-run.sh core 5  > artifacts/r9/logs/core-5.log 2>&1
-scripts/r9-run.sh report                        # docs/staging/r9-numbers.md: the tables and the statements of §6
+scripts/r9-run.sh report                        # docs/staging/r9-numbers.md: the tables and the statements of §6; commit it (and r9-seed2-numbers.md after the scoring) before the next model step, which refuses a tree that is not clean
 scripts/r9-seed2.sh prepare && scripts/r9-seed2.sh train > artifacts/r9/logs/seed2-train.log 2>&1 && scripts/r9-seed2.sh offline   # about 2 h 35 min; docs/staging/r9-seed2-numbers.md
 scripts/r9-run.sh seed2 21 && scripts/r9-run.sh seed2 5 && scripts/r9-run.sh report            # about 1 h
 scripts/r9-run.sh gateoff 21 && scripts/r9-run.sh gateoff 5 && scripts/r9-run.sh report        # optional contrast, about 2 h 45 min
@@ -452,8 +510,11 @@ branch that adds readouts there (`r7-card`, `r7-ledger`, `r10-night`); both side
 > inside an epoch, where a held draw is overturned at 23% and 34% (a fresh draw changes at 33% and 44%, the top pick
 > itself at 29% and 42%), so holding is predicted to be hard to tell from drawing; with the gate off the third adapter
 > is predicted to begin about 42 trips a day under a held draw (stop line 25). The sceptic's figures reproduce with
-> one correction (20 to 24% and 26 to 34% overturned; inside an epoch the held option is missing from the menu at 3%
-> of re-asks, not 24 to 28%). Not done: the model arms (about 3 h 20 min for the core, 2 h 45 min for the gate-off
+> one correction (20 to 24% and 26 to 34% overturned; inside an act epoch the option applied last is missing from the
+> menu at 3% of re-asks on the top-pick runs, not 24 to 28%; inside a half-hour block at 26 to 47%). Reviewed by a
+> second agent before any model arm (prereg §10.4): the no-model checks, the saved hashes and every table reproduce;
+> open for a decision before step 1: the registered statements can contradict each other (1 with 2, 2 with 3) and
+> the registration does not order them; a held draw does not hold under `activityFirst`. Not done: the model arms (about 3 h 20 min for the core, 2 h 45 min for the gate-off
 > contrast), the retraining with a second training seed (about 2 h 35 min with scoring) and its loop test (about 1 h);
 > `scripts/r9-run.sh` and `scripts/r9-seed2.sh` run them one model process at a time.
 
@@ -485,4 +546,6 @@ read `docs/staging/r9-numbers.md` against `docs/staging/r9-prereg.md` §6 and §
    retired to development and fresh ones named for anything that follows.
 4. The act epoch opens at an interrupt (the brief's example); the plan's words are "held while the act lasts". The
    `whole` epoch is the other reading, offered without a rule; the offline replay predicts little difference.
+5. Before step 1 runs: the order of the statements of §6 where two read yes together (§10.4, item 1). It is a rule
+   about the pass marks, so it is logged as an amendment before any arm, or left as "no standard is named".
 
