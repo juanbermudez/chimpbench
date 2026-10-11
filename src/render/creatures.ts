@@ -156,6 +156,8 @@ export interface Anim {
   beat: Beat; late: number; intent: number; posture: number;
   /** Stage W6: going up or down its tree's trunk whatever its act (onTrunk), eased 0..1 between its branch and the bark. */
   trunkK: number; onTrunk: boolean;
+  /** Stage W6: where its body lies in its nest, kept while the drawn body is still in the nest act. */
+  nestOk: boolean; nestX: number; nestY: number; nestZ: number;
   ox: number; oz: number;          // eased layout offset (pairing, separation) added to the interpolated point
   // Gait and contacts (gait.ts), transitions (secondary.ts).
   moving: boolean; stillT: number; fastGait: boolean; turnRate: number; climbDy: number; dist: number; strides: number; poseDt: number;
@@ -392,7 +394,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       clip: '', clipT: 0, role: 0, gait: null, phase: hash01(chimp.id, 3),
       x: chimp.position[0], y: 0, z: chimp.position[2], heading: chimp.heading ?? 0, speed: 0, vel: 0, inited: false,
       track: createTrack(chimp.position[0], Math.max(0, chimp.position[1] ?? 0), chimp.position[2]), acts: createActTrack(), ox: 0, oz: 0,
-      act: chimp.action, actTarget: chimp.targetId, way: Way.none, beat: createBeat(), late: 0, intent: 0, posture: Posture.other, trunkK: 0, onTrunk: false,
+      act: chimp.action, actTarget: chimp.targetId, way: Way.none, beat: createBeat(), late: 0, intent: 0, posture: Posture.other, trunkK: 0, onTrunk: false, nestOk: false, nestX: 0, nestY: 0, nestZ: 0,
       refSpeed: 0, moveSpeed: 0, settle: 0, moving: false, stillT: 0, fastGait: false, turnRate: 0, climbDy: 0, dist: 0, strides: 0, poseDt: 0,
       gs: { f: 0, stride: 0, regime: Regime.natural }, lapse: 0, locks: [createLock(), createLock(), createLock(), createLock()], drop: 0, planted: false, bank: 0,
       inert: createInertia(POSE_SIZE), prevOut: new Float32Array(POSE_SIZE), prevCur: new Float32Array(POSE_SIZE), outVel: new Float32Array(POSE_SIZE), skip: new Uint8Array(POSE_SIZE), hold: new Float32Array(12), holdMask: 0,
@@ -1549,7 +1551,12 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       }
       // Branch placement is render-only: a.x/a.z keep tracking the sim so speed estimates stay clean.
       // (W6: in the nest once the drawn body is in the nest act, not while it is still on its way to the nest tree.)
-      if (a.act === 'nest' && c.action === 'nest' && c.nest && a.trunkK < 0.5) { const spot = nests.spotFor(c.nest.treeId, c.nest.position, a.id, V2); if (spot) { x = V2.x; z = V2.z; y = V2.y + 0.12 * a.morph.size; } }
+      // The place is remembered: the simulation clears Chimp.nest the moment the animal decides to leave, two ticks
+      // before its drawn body does, and it would be lifted out of its nest onto a branch for that long.
+      if (a.act === 'nest' && a.trunkK < 0.5) {
+        if (c.action === 'nest' && c.nest) { const spot = nests.spotFor(c.nest.treeId, c.nest.position, a.id, V2); a.nestOk = !!spot; if (spot) { a.nestX = V2.x; a.nestY = V2.y + 0.12 * a.morph.size; a.nestZ = V2.z; } }
+        if (a.nestOk) { x = a.nestX; y = a.nestY; z = a.nestZ; }
+      } else if (a.act !== 'nest') a.nestOk = false;
       bodyFrame(a, x, z, y, 0);
       return;
     }
