@@ -2,7 +2,7 @@ import type { Ctx } from './app';
 import type { Chimp, SocialPercept, World } from '../types';
 import type { DecisionTraceView } from './contracts';
 import { icon } from './icons';
-import { actionLabel, actionVerb, ago, cap, duration, esc, hhmm, pct, RELATION_LABEL, relationClass, stamp } from './format';
+import { actionLabel, actionVerb, cap, esc, hhmm, pct, RELATION_LABEL, relationClass, stamp } from './format';
 import { alphaBadge, bar, empty } from './parts';
 import { cardFromChimp, cardFromTrace, modelEngine, targetName, traceIsCurrent, type DecisionCard, type OptionRow } from './mind-card';
 
@@ -138,7 +138,7 @@ export function traceCard(ctx: Ctx, tr: DecisionTraceView, pinned: boolean, cont
   const w = ctx.world(), card = cardFromTrace(w, tr), model = tr.source === 'model';
   const agree = tr.choiceIndex >= 0 && tr.choiceIndex === tr.rulesIndex, rules = tr.options[tr.rulesIndex];
   return `<article class="trace ${pinned ? 'pinned' : ''}">
-    <header class="trace-head"><h3 class="eyebrow">${pinned ? 'Pinned decision' : 'Latest decision'}</h3><b class="mono">${stamp(w, tr.time)}</b><span class="muted">${ago(w, tr.time)}</span>${whoChip(card)}${control}</header>
+    <header class="trace-head"><h3 class="eyebrow">${pinned ? 'Pinned decision' : 'Latest decision'}</h3><b class="mono">${stamp(w, tr.time)}</b>${whoChip(card)}${control}</header>
     ${decisionLine(card)}
     ${model ? `<p class="dnote ${agree ? '' : 'diverge'}">${tr.rulesIndex < 0 ? 'The rules’ own pick is not on this menu.' : agree ? 'The rules pick the same.' : `The rules would pick ${rules ? `${esc(actionLabel(rules.action).toLowerCase())}${targetName(w, rules, tr) ? ` → ${esc(targetName(w, rules, tr))}` : ''}` : 'another option'}.`}</p>` : `<p class="dnote">${esc(card.engine.note)}</p>`}
     <h4 class="eyebrow opts-title ${model ? '' : 'by-rules'}">Options offered <span class="muted">${card.options.length} · <i class="mk-model">●</i> chosen${model ? ' · <i class="mk-rules">◆</i> rules pick' : ''}</span></h4>
@@ -155,9 +155,10 @@ export function traceCard(ctx: Ctx, tr: DecisionTraceView, pinned: boolean, cont
  */
 export function liveCard(ctx: Ctx, c: Chimp, control = ''): string {
   const w = ctx.world(), d = ctx.deps.decider, card = cardFromChimp(w, c, modelEngine(d.model, d.provider));
-  const t = c.actionTime ?? 0;
+  // No running clock here (the strip beside the tab carries "· 31 min" live): the card redraws only when the animal's
+  // decision count, act or option list changes.
   return `<article class="trace live">
-    <header class="trace-head"><h3 class="eyebrow">Now</h3><b class="mono">${stamp(w, card.time)}</b><span class="muted">${t < 60 ? 'just started' : `for ${duration(t / 3600)}`}</span>${whoChip(card)}${control}</header>
+    <header class="trace-head"><h3 class="eyebrow">Now</h3><b class="mono">since ${stamp(w, card.time)}</b>${whoChip(card)}${control}</header>
     ${decisionLine(card)}
     ${card.beaten && card.kind === 'live' ? `<p class="dnote">${BEATEN_NOTE}</p>` : card.offMenu || card.waiting ? `<p class="dnote">${esc(card.engine.note)}</p>` : ''}
     ${card.options.length ? `<h4 class="eyebrow opts-title by-rules">${card.waiting ? 'Options on the table' : 'Options weighed'} <span class="muted">${card.options.length} at its last decision point${card.pick ? ' · <i class="mk-model">●</i> under way' : ''}</span></h4>
@@ -214,8 +215,9 @@ export function mindHtml(ctx: Ctx, c: Chimp): string {
 
 export function mindKey(ctx: Ctx, c: Chimp): string {
   const d = ctx.deps.decider, traces = tracesFor(ctx, c.id), last = traces.at(-1), w = ctx.world();
-  // The live card reads the animal itself: its decision count, act and option list; times refresh once a minute.
+  // The live card reads the animal itself: its decision count, act, reason and option list. No clock term: nothing in
+  // the tab counts time, so it redraws only when one of these changes.
   return [c.id, c.controller, c.alive, w.modelPolicy.mode, d.ready, d.phase, d.roster, traces.length, last?.id, last?.applied, ctx.state.pinnedTraceId,
     ctx.state.experiment?.time, c.awaitingDecisionSince === null ? '-' : Math.floor((w.time - c.awaitingDecisionSince) * 60), d.inflightChimpId === c.id,
-    c.decisionVersion, c.action, c.targetId, c.candidates?.length ?? 0, Math.floor(w.time * 60)].join('|');
+    c.decisionVersion, c.action, c.targetId, c.reason, c.candidates?.length ?? 0, c.candidates?.[0]?.score ?? '', c.decisionSource].join('|');
 }
