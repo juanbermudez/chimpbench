@@ -15,16 +15,21 @@
 //
 //   pnpm exec tsx scripts/r11-assemble.ts [--parts artifacts/decide-ft/r11/parts] [--out artifacts/decide-ft/r11]
 //       [--train-per-world 780] [--dev-per-world 75] [--test-fresh-per-world 750] [--test-other-per-world 250] [--probes 60]
+//       [--arms p5a]   rebuild these arms only (prereg §13.1). An arm left out keeps its training and development files
+//                      and its manifest as they are on disk; the assembly renders them again all the same and stops,
+//                      before anything is written, unless what it would write for that arm is what is on file: its two
+//                      files, and its packets in the held-out file (which holds both arms' packets and is rewritten).
+// Nothing is written until every check has passed.
 import { execSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { LocalPacket } from '../server/decide';
 import type { DecisionContext } from '../src/types';
 import { PROBES } from './em-probes';
 import type { Rec } from './em-sample';
 import { removedWordingsIn } from './lib/packet-state';
-import { ARM_BANNED, ARM_WHAT, ARMS, armPacket, estimate, projectedSeconds, REAL_OVER_ESTIMATE, type Arm } from './lib/r11-packets';
+import { ARM_BANNED, ARM_DELETES, ARM_WHAT, ARMS, armPacket, estimate, isArm, projectedSeconds, REAL_OVER_ESTIMATE, type Arm } from './lib/r11-packets';
 import { argmax, entropy, softLabel } from './lib/soft-labels';
 import { kindOfFamily, TEST_SEEDS, u01 } from './r4-contexts';
 import { estimateByBlock } from './r8-tokens';
@@ -49,6 +54,20 @@ export interface R11Row {
 }
 
 const sha = (text: string) => createHash('sha256').update(text).digest('hex');
+/** The names under which an arm's packets stand in the held-out file. */
+export const heldOutNames = (arm: Arm): string[] => [arm, `${arm}NoDoing`, `${arm}Probe`];
+/**
+ * A hash per packet name of a held-out file's rows ({id, packets}): over `id`, a tab, the packet's JSON and a newline,
+ * in file order. The file holds both arms' packets, so its own hash moves when one arm is rebuilt; these do not move
+ * for the other arm.
+ */
+export function packetHashes(all: { id: string; packets: Record<string, LocalPacket> }[]): Record<string, { packets: number; sha256: string }> {
+  const h: Record<string, { n: number; hash: ReturnType<typeof createHash> }> = {};
+  for (const row of all) for (const [name, packet] of Object.entries(row.packets)) { const g = (h[name] ??= { n: 0, hash: createHash('sha256') }); g.n++; g.hash.update(`${row.id}\t${JSON.stringify(packet)}\n`); }
+  return Object.fromEntries(Object.keys(h).sort().map(k => [k, { packets: h[k].n, sha256: h[k].hash.digest('hex') }]));
+}
+/** The state of a packet without the lines an arm deletes: what that arm's packet of the same moment must be, line for line. */
+export function withoutLines(state: Record<string, unknown>, lines: string[]): Record<string, unknown> { return Object.fromEntries(Object.entries(state).filter(([k]) => !lines.includes(k))); }
 /** The second decision of an animal in one tick shares the sampler's id: it gets a suffix, in file order (as scripts/r4-evalset.ts). */
 export function uniqueIds<T extends { id: string }>(rows: T[]): T[] { const seen = new Map<string, number>(); return rows.map(r => { const n = (seen.get(r.id) ?? 0) + 1; seen.set(r.id, n); return n === 1 ? r : { ...r, id: `${r.id}~${n}` }; }); }
 const byAlias = (q: number[]) => Object.fromEntries(q.map((v, i) => [`c${i}`, +v.toFixed(6)]));
@@ -127,6 +146,17 @@ if (process.argv[1]?.endsWith('r11-assemble.ts')) {
   const arg = (k: string, d: string) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
   const parts = resolve(arg('parts', 'artifacts/decide-ft/r11/parts')), out = resolve(arg('out', 'artifacts/decide-ft/r11'));
   const per = { train: +arg('train-per-world', '780'), dev: +arg('dev-per-world', '75'), testFresh: +arg('test-fresh-per-world', '750'), testOther: +arg('test-other-per-world', '250'), probes: +arg('probes', '60') };
+  const rebuilt = arg('arms', ARMS.join(',')).split(',').filter(Boolean);
+  if (!rebuilt.length || rebuilt.some(a => !isArm(a))) throw new Error(`--arms: ${ARMS.join(' and/or ')} (got "${arg('arms', '')}")`);
+  const writes = (arm: Arm) => rebuilt.includes(arm), keptArms = ARMS.filter(a => !writes(a));
+  /** What this assembly will write, in order; nothing is written before every check has passed. */
+  const pending: [string, string][] = [], put = (file: string, text: string) => { pending.push([file, text]); };
+  /** An arm that is not rebuilt: its file on disk must be what this assembly would write. */
+  const sameOnFile = (arm: Arm, file: string, text: string) => {
+    if (!existsSync(file)) throw new Error(`${file} is not on file: the arm ${arm} is not being rebuilt (--arms ${rebuilt.join(',')}) and must exist`);
+    const onFile = sha(readFileSync(file, 'utf8'));
+    if (onFile !== sha(text)) throw new Error(`the arm ${arm} is not being rebuilt, but ${file} on disk (sha256 ${onFile}) is not what this assembly would write (${sha(text)}): its bytes would change. Nothing was written.`);
+  };
   const files = readdirSync(parts).filter(f => f.endsWith('.jsonl')).sort(), take = (id: string) => u01(`r11-take:${id.replace(/~\d+$/, '')}`);
   const chosen: Record<'train' | 'dev' | 'test', R11Rec[]> = { train: [], dev: [], test: [] }, worlds: Record<string, unknown>[] = [], taken: Record<string, Record<string, number>> = {};
   const heldOutPool: R11Rec[] = [];
@@ -176,7 +206,9 @@ if (process.argv[1]?.endsWith('r11-assemble.ts')) {
     splits: {} as Record<string, unknown> };
   if ((manifest.labelChecks as { markM1: string }).markM1 !== 'met') throw new Error(`mark M1 failed: of ${labelled} redrawn fresh draws the replay ends on the world's random state at ${rngOk}, the realised draws give the pick at ${pickOk} and the list built again is the rules' at ${listOk}; training files are not written`);
   if ((manifest.labelChecks as { markM2: string }).markM2 !== 'met' && !process.argv.includes('--allow-uncalibrated')) throw new Error(`mark M2 failed: the label is not calibrated against the rules' picks: ${JSON.stringify(calibration(everyLabelled))}; training files are not written`);
-  let removed = 0, banned = 0;
+  let removed = 0, banned = 0, oneChangeApart = 0;
+  /** Real token counts of held-out packets that this assembly replaces: removed once the new files are written. */
+  const stale: string[] = [];
   const data: Record<string, { rows: R11Row[]; ctx: DecisionContext[] }> = {};
   for (const split of ['train', 'dev', 'test'] as const) { const recs = sorted(chosen[split]); data[split] = { rows: recs.map(row), ctx: recs.map(r => r.context) }; }
   const who = (rows: R11Row[]) => new Set(rows.map(r => `${r.seed}:${r.chimpId}`));
@@ -187,16 +219,18 @@ if (process.argv[1]?.endsWith('r11-assemble.ts')) {
     byPhase: Object.fromEntries([...new Set(rows.map(r => r.phase))].map(p => [p, rows.filter(r => r.phase === p).length])), recordIdsSha256: sha(rows.map(r => r.id).sort().join('\n')), labels: labelStats(rows) });
   // training and development files, once per arm
   for (const split of ['train', 'dev'] as const) {
-    const { rows, ctx } = data[split], info: Record<string, unknown> = splitInfo(rows), arms: Record<string, unknown> = {};
+    const { rows, ctx } = data[split], info: Record<string, unknown> = splitInfo(rows), arms: Record<string, unknown> = {}, held: Record<string, LocalPacket[]> = {};
     for (const arm of ARMS) {
       const packets = ctx.map(c => armPacket(c, arm));
       for (const p of packets) { removed += removedWordingsIn(p).length; banned += ARM_BANNED[arm].filter(k => k in p.state).length; }
       const text = rows.map((r, i) => JSON.stringify({ ...r, packet: packets[i], tokens: estimate(packets[i]) })).join('\n') + '\n';
-      mkdirSync(`${out}/${arm}/contexts`, { recursive: true });
-      writeFileSync(`${out}/${arm}/contexts/${split}.jsonl`, text);
+      if (writes(arm)) put(`${out}/${arm}/contexts/${split}.jsonl`, text); else sameOnFile(arm, `${out}/${arm}/contexts/${split}.jsonl`, text);
+      held[arm] = packets;
       const day = packets.filter((_, i) => rows[i].phase === 'day');
       arms[arm] = { file: `${arm}/contexts/${split}.jsonl`, sha256: sha(text), tokens: tokenStats(packets), daytimePackets: day.length, daytimeBodyLineSaysAboutToSleep: day.filter(p => /about to sleep/.test(String(p.state.body ?? ''))).length };
     }
+    // one change apart (prereg §13.1): an arm's packet is the whole packet's (P5b's) with exactly the lines it deletes removed, line for line, the questions the same
+    for (const arm of ARMS) held[arm].forEach((p, i) => { const b = held.p5b[i]; if (JSON.stringify(p.state) !== JSON.stringify(withoutLines(b.state, ARM_DELETES[arm])) || JSON.stringify(p.questions) !== JSON.stringify(b.questions)) oneChangeApart++; });
     info.arms = arms;
     (manifest.splits as Record<string, unknown>)[split] = info;
   }
@@ -211,6 +245,7 @@ if (process.argv[1]?.endsWith('r11-assemble.ts')) {
         // the lock-in check: the same packet without the `doing` line, where carrying on is an option, and on every kept act
         if (r.carryOn >= 0 || r.label === 'kept') packets[`${arm}NoDoing`] = armPacket(ctx[i], arm, true);
       }
+      for (const arm of ARMS) for (const [mine, whole] of [[arm, 'p5b'], [`${arm}NoDoing`, 'p5bNoDoing']]) if (packets[mine] && (JSON.stringify(packets[mine].state) !== JSON.stringify(withoutLines(packets[whole].state, ARM_DELETES[arm])) || JSON.stringify(packets[mine].questions) !== JSON.stringify(packets[whole].questions))) oneChangeApart++;
       all.push({ id: r.id, packets });
       return { ...r, tokens };
     });
@@ -223,30 +258,59 @@ if (process.argv[1]?.endsWith('r11-assemble.ts')) {
         const c = structuredClone(r.context); lv.consistent(c);
         const packets = Object.fromEntries(ARMS.map(arm => [`${arm}Probe`, armPacket(c, arm)]));
         for (const q of Object.values(packets)) removed += removedWordingsIn(q).length;
+        for (const arm of ARMS) if (JSON.stringify(packets[`${arm}Probe`].state) !== JSON.stringify(withoutLines(packets.p5bProbe.state, ARM_DELETES[arm])) || JSON.stringify(packets[`${arm}Probe`].questions) !== JSON.stringify(packets.p5bProbe.questions)) oneChangeApart++;
         const id = `${r.id}|${p.id}|${li}`;
         probeRows.push({ id, rec: r.id, seed: r.seed, chimpId: r.chimpId, probe: p.id, level: li, levelName: lv.name, target: p.target, options: r.options.map(o => o.family) });
         all.push({ id, packets });
       }
     }
-    mkdirSync(`${out}/eval`, { recursive: true });
     const testText = testRows.map(r => JSON.stringify(r)).join('\n') + '\n', allText = all.map(r => JSON.stringify(r)).join('\n') + '\n', probeText = probeRows.map(r => JSON.stringify(r)).join('\n') + (probeRows.length ? '\n' : '');
-    writeFileSync(`${out}/eval/test.jsonl`, testText); writeFileSync(`${out}/eval/all.jsonl`, allText); writeFileSync(`${out}/eval/probes.jsonl`, probeText);
+    const hashes = packetHashes(all);
+    // an arm that is not rebuilt: its packets in the held-out file on disk must be the ones written now, packet for packet
+    if (keptArms.length) {
+      if (!existsSync(`${out}/eval/all.jsonl`)) throw new Error(`${out}/eval/all.jsonl is not on file: the arm ${keptArms.join(', ')} is not being rebuilt and its held-out packets must exist`);
+      const before = packetHashes(readFileSync(`${out}/eval/all.jsonl`, 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l) as { id: string; packets: Record<string, LocalPacket> }));
+      for (const arm of keptArms) for (const name of heldOutNames(arm)) if (before[name]?.sha256 !== hashes[name]?.sha256 || before[name]?.packets !== hashes[name]?.packets)
+        throw new Error(`the arm ${arm} is not being rebuilt, but its held-out packets "${name}" on disk (${before[name]?.packets ?? 0} packets, sha256 ${before[name]?.sha256 ?? 'none'}) are not what this assembly would write (${hashes[name]?.packets ?? 0}, ${hashes[name]?.sha256 ?? 'none'}): its bytes would change. Nothing was written.`);
+    }
+    // held-out packets that change: score files made from the ones on file must never be read with the new ones, and the real token counts of the old ones are stale
+    if (!existsSync(`${out}/eval/all.jsonl`) || sha(readFileSync(`${out}/eval/all.jsonl`, 'utf8')) !== sha(allText)) {
+      const scored = existsSync(`${out}/eval`) ? readdirSync(`${out}/eval`).filter(f => /^all\..+\.jsonl(\.part)?$/.test(f)) : [];
+      if (scored.length) throw new Error(`the held-out packets would change, and score files made from the ones on file are there (${scored.join(', ')}): a score file is never read with other packets. Move them away first. Nothing was written.`);
+      stale.push(...['eval/tokens.jsonl', 'eval/token-counts.json', 'eval/token-rows.jsonl'].filter(f => existsSync(`${out}/${f}`)));
+    }
+    put(`${out}/eval/test.jsonl`, testText); put(`${out}/eval/all.jsonl`, allText); put(`${out}/eval/probes.jsonl`, probeText);
     const count = (name: string) => all.filter(r => r.packets[name]).length;
-    (manifest.splits as Record<string, unknown>).test = { ...splitInfo(rows), files: { 'eval/test.jsonl': sha(testText), 'eval/all.jsonl': sha(allText), 'eval/probes.jsonl': sha(probeText) },
+    (manifest.splits as Record<string, unknown>).test = { ...splitInfo(rows), files: { 'eval/test.jsonl': sha(testText), 'eval/all.jsonl': sha(allText), 'eval/probes.jsonl': sha(probeText) }, packetsSha256: hashes,
       packetsToScore: Object.fromEntries(['p5a', 'p5b', 'p5aNoDoing', 'p5bNoDoing', 'p5aProbe', 'p5bProbe'].map(n => [n, count(n)])), probeSituations: probeCounts,
       arms: Object.fromEntries(ARMS.map(arm => [arm, { tokens: tokenStats(tok[arm]) }])) };
   }
-  manifest.removedWordingsFound = removed; manifest.bannedLinesFound = banned;
+  manifest.removedWordingsFound = removed; manifest.bannedLinesFound = banned; manifest.packetsNotOneChangeApart = oneChangeApart;
   if (removed || banned) throw new Error(`${removed} packets hold a removed wording and ${banned} a line their arm leaves out`);
+  if (oneChangeApart) throw new Error(`${oneChangeApart} packets of an arm are not the whole packet with exactly the arm's lines deleted (prereg §13.1)`);
   // the trainer's --extra, per arm: what its adapter's manifest must say about its data
+  const kept: Record<string, unknown>[] = [];
   for (const arm of ARMS) {
     const s = manifest.splits as Record<string, { records: number; recordIdsSha256: string; arms: Record<string, { sha256: string }> }>;
-    writeFileSync(`${out}/${arm}/contexts/manifest.json`, JSON.stringify({ stage: 'R11', name: manifest.name, arm, input: ARM_WHAT[arm], label_source: LABEL_SOURCE, label_note: LABEL_NOTE, labels: 'soft (a distribution over the offered options); the realised pick is kept as `pick`',
+    const extraFile = `${out}/${arm}/contexts/manifest.json`;
+    if (!writes(arm)) {
+      // an arm that is not rebuilt keeps its own manifest (the trainer's --extra), which must name the files on disk
+      const x = JSON.parse(readFileSync(extraFile, 'utf8')) as { arm: string; data_commit: string; train: { sha256: string }; dev: { sha256: string } };
+      if (x.arm !== arm || x.train.sha256 !== s.train.arms[arm].sha256 || x.dev.sha256 !== s.dev.arms[arm].sha256) throw new Error(`${extraFile} does not name the ${arm} files on disk. Nothing was written.`);
+      kept.push({ arm, assembledAt: x.data_commit, 'contexts/manifest.json': sha(readFileSync(extraFile, 'utf8')), train: s.train.arms[arm].sha256, dev: s.dev.arms[arm].sha256,
+        heldOutPackets: Object.fromEntries(heldOutNames(arm).map(n => [n, (s.test as unknown as { packetsSha256: Record<string, { sha256: string } | undefined> }).packetsSha256[n]?.sha256 ?? null])) });
+      continue;
+    }
+    put(extraFile, JSON.stringify({ stage: 'R11', name: manifest.name, arm, input: ARM_WHAT[arm], label_source: LABEL_SOURCE, label_note: LABEL_NOTE, labels: 'soft (a distribution over the offered options); the realised pick is kept as `pick`',
       data_commit: manifest.commit, worlds: worlds.map(w => ({ file: w.file, seed: w.seed, base: w.base, burnIn: w.burnIn, days: w.days, p: w.p, worldHashWithoutOwn: w.worldHashWithoutOwn })),
       train: { records: s.train.records, sha256: s.train.arms[arm].sha256, recordIdsSha256: s.train.recordIdsSha256 }, dev: { records: s.dev.records, sha256: s.dev.arms[arm].sha256, recordIdsSha256: s.dev.recordIdsSha256 },
       keptOrArrivedRowsInTraining: 0, removedWordingsFound: removed, labelChecks: manifest.labelChecks }, null, 1) + '\n');
   }
+  // which arms this assembly wrote, and for an arm it left as it was: where its files come from and that they were checked
+  manifest.assembly = { rebuilt, kept, keptNote: kept.length ? 'not rewritten: the training and development files on disk are byte for byte what this assembly would write, and the arm\'s packets in the held-out file are those on file before it' : undefined };
   if (existsSync(`${out}/manifest.json`)) manifest.previous = sha(readFileSync(`${out}/manifest.json`, 'utf8'));
-  writeFileSync(`${out}/manifest.json`, JSON.stringify(manifest, null, 1) + '\n');
-  console.log(JSON.stringify({ labelChecks: manifest.labelChecks, taken, splits: Object.fromEntries(Object.entries(manifest.splits as Record<string, { records: number }>).map(([k, v]) => [k, v.records])), removedWordingsFound: removed }, null, 1));
+  put(`${out}/manifest.json`, JSON.stringify(manifest, null, 1) + '\n');
+  for (const [file, text] of pending) { mkdirSync(resolve(file, '..'), { recursive: true }); writeFileSync(file, text); }
+  for (const f of stale) rmSync(`${out}/${f}`);
+  console.log(JSON.stringify({ labelChecks: manifest.labelChecks, taken, splits: Object.fromEntries(Object.entries(manifest.splits as Record<string, { records: number }>).map(([k, v]) => [k, v.records])), removedWordingsFound: removed, packetsNotOneChangeApart: oneChangeApart, assembly: manifest.assembly, written: pending.map(([f]) => f.replace(`${out}/`, '')), staleTokenCountsRemoved: stale }, null, 1));
 }

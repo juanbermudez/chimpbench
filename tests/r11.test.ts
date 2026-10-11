@@ -4,19 +4,21 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test, { after } from 'node:test';
-import type { LocalPacket } from '../server/decide';
+import { buildOwnQuestion, type LocalPacket } from '../server/decide';
 import { focalSet } from '../scripts/em-loop';
 import type { Scorer } from '../scripts/ft-society';
 import { glinerKernel } from '../scripts/lib/kernels';
 import { ARM_BANNED, armPacket, ARMS } from '../scripts/lib/r11-packets';
 import { beliefDraw, bruteLabel, cropOffset, entropy, milli, published, publishedWin, realisedPick, softLabel, type Belief, type LabelInput } from '../scripts/lib/soft-labels';
 import { DAY_TICKS } from '../scripts/lib/timing-card';
-import { calibration, rowOf, uniqueIds, type R11Row } from '../scripts/r11-assemble';
+import { calibration, packetHashes, rowOf, uniqueIds, type R11Row } from '../scripts/r11-assemble';
 import { SAME_MIN, type R11Rec } from '../scripts/r11-contexts';
+import { baselineFault, baselinePackets, baselineReport, BASELINE_PACKETS, OLD_ADAPTER } from '../scripts/r11-baseline';
+import { costs, MEASURED, scaled, type TokenSet } from '../scripts/r11-costs';
 import { ADAPTERS, armsRefusal, carryTally, controlArm, engineArm, engineRun, LOOP_SWITCHES, packetOf, registeredArms, SEALED_SEEDS, seedRefusal, spy, TEST_SEEDS, warmUpPacket } from '../scripts/r11-loop';
 import { auc, boot, kindPrior, wordingBaseline } from '../scripts/r11-offline';
 import { guardFails, n1, nightsOf, outside, pairedNights } from '../scripts/r11-report';
@@ -25,7 +27,7 @@ import { decodeDiffers, replayKernel, type Receipt } from '../scripts/r5-pilot';
 import { ARMS as CONTROL_ARMS } from '../scripts/r7-card';
 import { OWN_INSTRUCTION } from '../src/kernel/packet-own';
 import { createWorld, tickWorld } from '../src/simulation';
-import type { World } from '../src/types';
+import type { DecisionContext, World } from '../src/types';
 import { worldHash } from './fixtures/golden';
 
 const tmp = mkdtempSync(join(tmpdir(), 'r11-'));
@@ -159,32 +161,69 @@ test('rows: a label only on a fresh draw, sums to one, and the option that carri
   assert.ok(calibration(hard).every(g => g.z === 0 && g.realised === g.label));
 });
 
-test('P5a is packet 5 short without the lines `lately` and `last`; nothing else differs but the memory line', () => {
-  const { s48, s21 } = sampled(), recs = [...s48, ...s21];
-  let lately = 0, last = 0, doing = 0, memoryDiffers = 0;
+/** The lines of a packet's state in their order, without the two lines P5a deletes. */
+const lessTheTwoLines = (p: LocalPacket) => Object.entries(p.state).filter(([k]) => k !== 'lately' && k !== 'last');
+/** P5a against P5b for one context, line for line; returns what P5b carried. Throws on any other difference. */
+function strictPair(ctx: DecisionContext, noDoing: boolean, what: string): { b: LocalPacket; a: LocalPacket } {
+  const b = armPacket(ctx, 'p5b', noDoing), a = armPacket(ctx, 'p5a', noDoing), rest = lessTheTwoLines(b);
+  // P5b is the builder's own packet 5 short, untouched by this stage
+  assert.equal(JSON.stringify(b), JSON.stringify(buildOwnQuestion(ctx, { variant: 'short', without: noDoing ? ['doing'] : [] })), `${what}: P5b is packet 5 short`);
+  // line for line: P5a's lines are P5b's lines in P5b's order, each with P5b's text, less `lately` and `last`
+  assert.deepEqual(Object.keys(a.state), rest.map(([k]) => k), `${what}: the same lines in the same order`);
+  for (const [k, v] of rest) assert.deepEqual(a.state[k], v, `${what}: the line ${k}`);
+  assert.equal(JSON.stringify(a.state), JSON.stringify(Object.fromEntries(rest)), `${what}: the state, byte for byte`);
+  assert.equal(JSON.stringify(a.questions), JSON.stringify(b.questions), `${what}: the same instruction and the same options`);
+  // exactly those two lines are gone and nothing came back in their place
+  assert.equal(Object.keys(b.state).length - Object.keys(a.state).length, +('lately' in b.state) + +('last' in b.state), `${what}: only the two lines are gone`);
+  for (const k of ARM_BANNED.p5a) assert.ok(!(k in a.state), `${what}: P5a carries ${k}`);
+  assert.equal('doing' in a.state, !noDoing && 'doing' in b.state);
+  return { b, a };
+}
+
+test('P5a is strict (prereg §13.1): the P5b packet of the same moment with exactly the lines `lately` and `last` deleted, line for line, for every record', () => {
+  const { s48, s21 } = sampled(), recs = [...s48, ...s21], grooming = /^(?:Groomed|Was groomed by|Pant-grunted to) /;
+  let lately = 0, last = 0, noLast = 0, doing = 0, memory = 0, givenBack = 0, givenBackWithoutLast = 0;
   for (const r of recs) {
-    const b = armPacket(r.context, 'p5b'), a = armPacket(r.context, 'p5a');
-    if ('lately' in b.state) lately++; if ('last' in b.state) last++; if ('doing' in b.state) doing++;
-    for (const k of ARM_BANNED.p5a) assert.ok(!(k in a.state), `P5a carries ${k}`);
-    assert.deepEqual(a.questions, b.questions, 'the same instruction and the same neutral options');
-    assert.equal(a.questions.action.instructions, OWN_INSTRUCTION);
-    for (const k of new Set([...Object.keys(a.state), ...Object.keys(b.state)])) {
-      if (k === 'lately' || k === 'last') continue;
-      if (k === 'memories') { if (JSON.stringify(a.state[k]) !== JSON.stringify(b.state[k])) memoryDiffers++; continue; }
-      assert.deepEqual(a.state[k], b.state[k], `the line ${k}`);
+    for (const noDoing of [false, true]) {
+      const { b, a } = strictPair(r.context, noDoing, `${r.id}${noDoing ? ', without doing' : ''}`);
+      assert.equal(a.questions.action.instructions, OWN_INSTRUCTION);
+      assert.ok(!JSON.stringify(a).includes('urgent') && !/needed now|eases hunger|kcal an hour/.test(JSON.stringify(b)), 'none of the rules\' wording');
+      if (noDoing) continue;
+      if ('lately' in b.state) lately++; if ('last' in b.state) last++; else noLast++; if ('doing' in b.state) doing++; if ('memories' in b.state) memory++;
+      // neither arm carries a grooming or greeting memory: packet 5 short says those in `last`, and P5a gets nothing back for it
+      assert.ok(!(a.state.memories as string[] | undefined)?.some(m => grooming.test(m)), `${r.id}: P5a carries a grooming or greeting memory`);
+      // the builder's own ablation (the P5a first registered) is not this packet: it gives a memory line back on some records
+      const w = buildOwnQuestion(r.context, { variant: 'short', without: ['lately', 'last'] });
+      if (JSON.stringify(w.state.memories) !== JSON.stringify(a.state.memories)) givenBack++;
     }
-    for (const arm of ARMS) { const n = armPacket(r.context, arm, true); assert.ok(!('doing' in n.state)); assert.deepEqual(n.questions, b.questions); }
-    assert.ok(!JSON.stringify(a).includes('urgent') && !/needed now|eases hunger|kcal an hour/.test(JSON.stringify(b)), 'none of the rules\' wording');
+    // the same moment with no social timing to show, so that P5b has no `last` line at all (as 112 of 3,120 training rows): the
+    // memory of a grooming is still dropped in both arms, and P5a is still P5b less the lines it has
+    const bare: DecisionContext = { ...r.context, own: { ...r.context.own, aggression: undefined }, social: r.context.social.map(({ groomedH: _g, groomedByH: _b, greetedH: _p, ...p }) => p) };
+    const quiet = strictPair(bare, false, `${r.id}, no social timing`);
+    assert.ok(!('last' in quiet.b.state), 'no social timing, no `last` line');
+    assert.ok(!(quiet.a.state.memories as string[] | undefined)?.some(m => grooming.test(m)));
+    if (JSON.stringify(buildOwnQuestion(bare, { variant: 'short', without: ['lately', 'last'] }).state.memories) !== JSON.stringify(quiet.a.state.memories)) givenBackWithoutLast++;
   }
-  assert.ok(lately > 0.5 * recs.length && last > 0 && doing > 0.8 * recs.length, `the lines are there to leave out: lately ${lately}, last ${last}, doing ${doing} of ${recs.length}`);
-  assert.ok(memoryDiffers > 0, 'without `last` the grooming and greeting memories it replaces can come back');
+  assert.ok(lately > 0.5 * recs.length && last > 0 && doing > 0.8 * recs.length, `the lines are there to delete: lately ${lately}, last ${last}, doing ${doing} of ${recs.length}`);
+  assert.ok(memory > 0, 'some records carry a memory line, the same one in both arms');
+  assert.ok(givenBack > 0 && givenBackWithoutLast > 0, `the builder's own \`without\` gives a memory line back (${givenBack} records; ${givenBackWithoutLast} with no \`last\` line), so this test can fail`);
+  console.log(`P5a strict: ${recs.length} records; P5b carries lately in ${lately}, last in ${last} (none in ${noLast}), a memory line in ${memory}; the builder's own ablation would differ in ${givenBack}, and in ${givenBackWithoutLast} of the same records once they have no \`last\` line`);
   assert.throws(() => armPacket({ ...recs[0].context, packet: 4 }, 'p5b'), /packet 5 context/);
 });
 
-test('the files and their manifest: fresh draws only in training, hashes of what was written, the held-out set', () => {
+const SMALL = ['--parts', PARTS, '--out', OUT, '--train-per-world', '40', '--dev-per-world', '8', '--test-fresh-per-world', '40', '--test-other-per-world', '15', '--probes', '4', '--allow-uncalibrated'];
+let assembledSmall = false;
+/** The files of a small sample, assembled once for the tests below. */
+function assembled(): void {
+  if (assembledSmall) return;
   sampled();
-  const r = tsx('scripts/r11-assemble.ts', '--parts', PARTS, '--out', OUT, '--train-per-world', '40', '--dev-per-world', '8', '--test-fresh-per-world', '40', '--test-other-per-world', '15', '--probes', '4', '--allow-uncalibrated');
+  const r = tsx('scripts/r11-assemble.ts', ...SMALL);
   assert.equal(r.status, 0, `${r.stdout}${r.stderr}`);
+  assembledSmall = true;
+}
+
+test('the files and their manifest: fresh draws only in training, hashes of what was written, the held-out set', () => {
+  assembled();
   const m = JSON.parse(readFileSync(join(OUT, 'manifest.json'), 'utf8'));
   assert.equal(m.stage, 'R11'); assert.equal(m.name, 'rules-taught model on a rules menu'); assert.equal(m.labelChecks.markM1, 'met'); assert.equal(m.removedWordingsFound, 0); assert.equal(m.bannedLinesFound, 0);
   assert.equal(m.labelChecks.replayEndsOnTheWorldsRandomState, m.labelChecks.redrawn); assert.equal(m.labelChecks.calibration.length, 6);
@@ -214,6 +253,138 @@ test('the files and their manifest: fresh draws only in training, hashes of what
   for (const x of testRows) { const p = byId.get(x.id)!; assert.ok(p.p5a && p.p5b); assert.equal(!!p.p5bNoDoing, x.carryOn >= 0 || x.label === 'kept'); if (p.p5bNoDoing) assert.ok(!('doing' in p.p5bNoDoing.state) && !('doing' in p.p5aNoDoing.state)); }
   assert.equal(all.length, testRows.length + probes.length); assert.ok(probes.every(x => byId.get(x.id)!.p5aProbe && byId.get(x.id)!.p5bProbe));
   assert.equal(m.splits.test.packetsToScore.p5b, testRows.length);
+  // one change apart, in the files themselves (prereg §13.1): a P5a row is the P5b row with the two lines deleted from its packet, and nothing else
+  assert.equal(m.packetsNotOneChangeApart, 0);
+  const strict = (a: LocalPacket, b: LocalPacket, what: string) => { assert.equal(JSON.stringify(a.state), JSON.stringify(Object.fromEntries(lessTheTwoLines(b))), `${what}: the state`); assert.equal(JSON.stringify(a.questions), JSON.stringify(b.questions), `${what}: the questions`); };
+  for (const split of ['train', 'dev']) {
+    const a = read<R11Row & { packet: LocalPacket }>(join(OUT, 'p5a', 'contexts', `${split}.jsonl`)), b = read<R11Row & { packet: LocalPacket }>(join(OUT, 'p5b', 'contexts', `${split}.jsonl`));
+    assert.equal(a.length, b.length);
+    a.forEach((x, i) => { strict(x.packet, b[i].packet, `${split} ${x.id}`); const { packet: _p, tokens: _t, ...ra } = x, { packet: _q, tokens: _u, ...rb } = b[i]; assert.deepEqual(ra, rb, 'the same record, label and options'); });
+  }
+  let pairs = 0;
+  for (const x of all) for (const [mine, whole] of [['p5a', 'p5b'], ['p5aNoDoing', 'p5bNoDoing'], ['p5aProbe', 'p5bProbe']]) if (x.packets[mine]) { strict(x.packets[mine], x.packets[whole], `${x.id} ${mine}`); pairs++; }
+  assert.ok(pairs > all.length);
+  // the manifest's hash per packet name is the hash of those packets in the file
+  assert.deepEqual(m.splits.test.packetsSha256, packetHashes(all));
+  assert.deepEqual(m.assembly.rebuilt, ['p5b', 'p5a']); assert.deepEqual(m.assembly.kept, []);
+
+  // rebuilding one arm (--arms p5a): the other arm's files are not written, and are checked against what would be written
+  const small = SMALL;
+  const P5B = ['p5b/contexts/train.jsonl', 'p5b/contexts/dev.jsonl', 'p5b/contexts/manifest.json'], P5A = ['p5a/contexts/train.jsonl', 'p5a/contexts/dev.jsonl'];
+  const state = (files: string[]) => files.map(f => ({ f, sha: sha(readFileSync(join(OUT, f), 'utf8')), at: statSync(join(OUT, f)).mtimeMs }));
+  const b0 = state(P5B), a0 = state(P5A), firstManifest = readFileSync(join(OUT, 'manifest.json'), 'utf8'), again = tsx('scripts/r11-assemble.ts', ...small, '--arms', 'p5a');
+  assert.equal(again.status, 0, `${again.stdout}${again.stderr}`);
+  assert.deepEqual(state(P5B), b0, 'P5b\'s files are not touched: the same bytes and the same time of writing');
+  assert.deepEqual(state(P5A).map(x => x.sha), a0.map(x => x.sha), 'P5a rebuilt from the same records is the same file');
+  assert.ok(state(P5A).every((x, i) => x.at > a0[i].at), 'P5a\'s files were written again');
+  const m2 = JSON.parse(readFileSync(join(OUT, 'manifest.json'), 'utf8'));
+  assert.deepEqual(m2.assembly.rebuilt, ['p5a']); assert.equal(m2.assembly.kept.length, 1); assert.equal(m2.assembly.kept[0].arm, 'p5b'); assert.equal(m2.assembly.kept[0].train, b0[0].sha); assert.equal(m2.assembly.kept[0].assembledAt, m.commit);
+  assert.equal(m2.assembly.kept[0].heldOutPackets.p5b, m.splits.test.packetsSha256.p5b.sha256);
+  assert.deepEqual(m2.splits.test.packetsSha256, m.splits.test.packetsSha256); assert.equal(m2.previous, sha(firstManifest));
+  // a P5b file that is not what the assembly would write stops it before anything is written: its training file, then its held-out packets
+  const refuses = (file: string, change: (text: string) => string, what: RegExp) => {
+    const path = join(OUT, file), text = readFileSync(path, 'utf8'), before = state([...P5A, 'manifest.json', 'eval/test.jsonl']);
+    writeFileSync(path, change(text));
+    const r = tsx('scripts/r11-assemble.ts', ...small, '--arms', 'p5a');
+    writeFileSync(path, text);
+    assert.notEqual(r.status, 0, `${file} changed and the assembly went ahead`); assert.match(r.stderr, what);
+    assert.deepEqual(state([...P5A, 'manifest.json', 'eval/test.jsonl']), before, 'nothing was written');
+  };
+  refuses('p5b/contexts/dev.jsonl', t => t.replace('"me":"', '"me":" '), /p5b is not being rebuilt, but .*dev\.jsonl on disk .* its bytes would change/);
+  refuses('eval/all.jsonl', t => t.replace('"p5b":{"state":{"me":"', '"p5b":{"state":{"me":" '), /its held-out packets "p5b" on disk .* its bytes would change/);
+  assert.match(tsx('scripts/r11-assemble.ts', ...small, '--arms', 'p5c').stderr, /--arms: p5b and\/or p5a/);
+});
+
+test('the like-for-like wording baseline (prereg §13.2): the first adapter\'s own packet with the rules\' wording and with neutral options, its files, its table and its line beside W1', () => {
+  const { s21 } = sampled();
+  // per context: (a) is the packet the loop's old arm sends; (b) has the options and the instruction of the P5b packet of the same moment and none of the rules' wording
+  let reworded = 0, urgent = 0;
+  for (const r of s21) {
+    const b = baselinePackets(r.context), whole = armPacket(r.context, 'p5b');
+    assert.equal(baselineFault(b, whole), '', r.id);
+    assert.equal(JSON.stringify(b.oldState), JSON.stringify(packetOf('state', r.context)), 'the first adapter\'s own packet, as the loop sends it');
+    assert.equal(JSON.stringify(b.oldNeutral.questions), JSON.stringify(whole.questions), 'the options and the instruction of P5b');
+    assert.match(b.oldState.questions.action.instructions, /^You are a field primatologist/); assert.equal(b.oldNeutral.questions.action.instructions, OWN_INSTRUCTION);
+    for (const k of ['doing', 'asked because', 'lately', 'last']) assert.ok(!(k in b.oldState.state) && !(k in b.oldNeutral.state), `the state-only packet carries no ${k} line`);
+    assert.ok(!('urgent' in b.oldNeutral.state));
+    const { urgent: _u, ...rest } = b.oldState.state; assert.deepEqual(b.oldNeutral.state, rest, 'the same state lines but for `urgent`');
+    urgent += +('urgent' in b.oldState.state); reworded += Object.keys(whole.questions.action.criteria).filter(k => b.oldState.questions.action.criteria[k] !== b.oldNeutral.questions.action.criteria[k]).length;
+  }
+  assert.ok(reworded > s21.length && urgent > 0, `the two renderings differ: ${reworded} options reworded, ${urgent} urgent lines removed`);
+  // a pair that is not like for like is named: the rules' wording left on the options, a state line changed, another menu
+  const c0 = s21[0].context, b0 = baselinePackets(c0), w0 = armPacket(c0, 'p5b');
+  assert.match(baselineFault({ oldState: b0.oldState, oldNeutral: b0.oldState }, w0), /options or the instruction of the neutral rendering/);
+  assert.match(baselineFault({ oldState: b0.oldState, oldNeutral: { ...b0.oldNeutral, state: { ...b0.oldNeutral.state, now: 'noon' } } }, w0), /differ by more than the `urgent` line/);
+  assert.match(baselineFault({ oldState: b0.oldState, oldNeutral: { ...b0.oldNeutral, state: { ...b0.oldNeutral.state, note: 'eases hunger — needed now' } } }, w0), /rules' wording/);
+  assert.throws(() => baselinePackets({ ...c0, packet: 4 }), /packet 5 context/);
+
+  // the numbers, on a case made by hand: four draws of two animals, the wording right on three and the neutral rendering on one
+  const row = (id: string, chimpId: number, rgIndex: number, fams: string[], soft: number[]): R11Row => ({ id, split: 'test', seed: 21, base: 'W50', tick: 0, time: 30, hour: 12, phase: 'day', chimpId, cls: '', age: 20, sex: 'male', why: 'ended', label: 'fresh', rgIndex, pick: `c${rgIndex}`, rulesIndex: rgIndex,
+    soft: Object.fromEntries(soft.map((v, i) => [`c${i}`, v])), options: fams.map((f, i) => ({ alias: `c${i}`, action: 'rest', targetId: -1, family: f })), act: { action: 'rest', targetId: -1, seconds: 0, finished: false, onMenu: true }, carryOn: -1, tokens: 0 });
+  const hand = [row('a', 1, 0, ['rest', 'food-trip'], [0.8, 0.2]), row('b', 1, 1, ['rest', 'food-trip'], [0.4, 0.6]), row('c', 2, 0, ['travel-home', 'rest'], [1, 0]), row('d', 2, 1, ['feed', 'greet'], [0.5, 0.5]), row('e', 2, 0, ['feed', 'rest'], [1, 0])];
+  const scores = { oldState: new Map([['a', [0.7, 0.3]], ['b', [0.2, 0.8]], ['c', [0.9, 0.1]], ['d', [0.6, 0.4]]]), oldNeutral: new Map([['a', [0.4, 0.6]], ['b', [0.5, 0.5]], ['c', [0.6, 0.4]], ['d', [0.7, 0.3]]]) };
+  const rep = baselineReport(hand, scores);
+  assert.deepEqual([rep.draws, rep.animals, rep.unscored], [4, 2, 1]);
+  near(rep.oldState.top1.mean, 0.75, 1e-12, 'with the wording'); near(rep.oldNeutral.top1.mean, 0.25, 1e-12, 'neutral'); near(rep.difference.mean, -0.5, 1e-12, 'the paired difference');
+  assert.ok(rep.difference.lo <= rep.difference.mean && rep.difference.mean <= rep.difference.hi);
+  // by kind of the rules' pick (stage R4's kinds: a trip to food is feeding)
+  assert.deepEqual(rep.byKind.map(k => [k.kind, k.draws, k.oldState, k.oldNeutral]), [['feeding', 1, 1, 0], ['travel', 1, 1, 1], ['rest', 1, 1, 0], ['social', 1, 0, 0]]);
+  assert.equal(rep.trips.menus, 2); near(rep.trips.labelMass, 0.4, 1e-12, 'the label on the trip'); near(rep.oldState.trip.mean, 0.55, 1e-12, 'the adapter on the trip'); near(rep.oldState.trip.lessLabel.mean, 0.15, 1e-12, 'less the label');
+  assert.ok(rep.oldState.divergence.mean > 0 && rep.oldNeutral.divergence.mean > rep.oldState.divergence.mean);
+  assert.throws(() => baselineReport(hand, { oldState: new Map([['a', [1]]]), oldNeutral: new Map([['a', [1]]]) }), /1 probabilities for the 2 options/);
+
+  // the files: one row per held-out fresh draw, in the held-out file's order, with both renderings; the manifest names what was checked
+  assembled();
+  const freshIds = read<R11Row>(join(OUT, 'eval', 'test.jsonl')).filter(x => x.label === 'fresh' && x.soft).map(x => x.id);
+  const r1 = tsx('scripts/r11-baseline.ts', 'render', '--dir', OUT, '--parts', PARTS);
+  assert.equal(r1.status, 0, `${r1.stdout}${r1.stderr}`);
+  const text = readFileSync(join(OUT, 'eval', 'baseline.jsonl'), 'utf8'), rows = text.split('\n').filter(Boolean).map(l => JSON.parse(l) as { id: string; packets: Record<string, LocalPacket> }), bm = JSON.parse(readFileSync(join(OUT, 'eval', 'baseline.manifest.json'), 'utf8'));
+  assert.deepEqual(rows.map(x => x.id), freshIds); assert.ok(rows.every(x => Object.keys(x.packets).join() === BASELINE_PACKETS.join()));
+  assert.equal(bm.sha256, sha(text)); assert.equal(bm.draws, freshIds.length); assert.equal(bm.packetsToScore, 2 * freshIds.length); assert.equal(bm.adapter, OLD_ADAPTER); assert.equal(bm.checks.rulesWordingInNeutral, 0);
+  const p5b = new Map(read<{ id: string; packets: Record<string, LocalPacket> }>(join(OUT, 'eval', 'all.jsonl')).map(x => [x.id, x.packets.p5b]));
+  for (const x of rows) assert.equal(JSON.stringify(x.packets.oldNeutral.questions), JSON.stringify(p5b.get(x.id)!.questions));
+  // the dry path: the same renderings into another folder, a score file by the fake worker's rule, the table, and the line beside W1
+  const DRYB = join(tmp, 'dry-baseline'), md = join(tmp, 'tables', 'baseline.md');
+  assert.equal(tsx('scripts/r11-baseline.ts', 'render', '--dir', OUT, '--parts', PARTS, '--out', DRYB).status, 0);
+  assert.equal(readFileSync(join(DRYB, 'baseline.jsonl'), 'utf8'), text, 'the same packets wherever they are written');
+  const r2 = tsx('scripts/r11-baseline.ts', 'report', '--dir', OUT, '--scores', DRYB, '--fake', '--md', md, '--wording', join(tmp, 'none.md'));
+  assert.equal(r2.status, 0, `${r2.stdout}${r2.stderr}`);
+  const table = readFileSync(md, 'utf8'), scored = read<{ id: string; packet: string; provider: string; probs: number[] }>(join(DRYB, `baseline.${OLD_ADAPTER}.jsonl`));
+  assert.equal(scored.length, 2 * freshIds.length); assert.ok(scored.every(x => x.provider === OLD_ADAPTER && Math.abs(sum(x.probs) - 1) < 1e-4));
+  assert.match(table, /DRY RUN/); assert.match(table, /A description beside the reading W1, never a mark/); assert.match(table, /neutral less wording, paired on the same draws/); assert.match(table, new RegExp(`scored on both renderings: ${freshIds.length} of`));
+  assert.equal(JSON.parse(readFileSync(md.replace(/\.md$/, '.json'), 'utf8')).draws, freshIds.length);
+  // a fake score file is never written into the stage's own folder, and with no score file the table says so
+  assert.match(tsx('scripts/r11-baseline.ts', 'report', '--dir', OUT, '--fake', '--md', md).stderr, /never writes into the stage's own eval folder/);
+  assert.equal(tsx('scripts/r11-baseline.ts', 'report', '--dir', OUT, '--md', join(tmp, 'tables', 'none.md')).status, 0); assert.match(readFileSync(join(tmp, 'tables', 'none.md'), 'utf8'), /\*\*Not on file\.\*\*/);
+  // the offline table: with the baseline's scores named, the line beside W1 and a row per model; without them, "not on file"; W1 itself is untouched
+  const off = join(tmp, 'tables', 'offline.md'), r3 = tsx('scripts/r11-offline.ts', '--dir', OUT, '--fake', join(tmp, 'dry-offline'), '--baseline', DRYB, '--md', off, '--wording', join(tmp, 'none.md'));
+  assert.equal(r3.status, 0, `${r3.stdout}${r3.stderr}`);
+  const offText = readFileSync(off, 'utf8'), offJson = JSON.parse(readFileSync(off.replace(/\.md$/, '.json'), 'utf8'));
+  assert.match(offText, /\*\*Like for like \(prereg §13\.2\): a description; W1 above stays as registered\.\*\*/); assert.match(offText, /\| r11-p5b-s7 \| [0-9.]+ \| -?[0-9.]+ \(-?[0-9.]+ to -?[0-9.]+\) \| -?[0-9.]+ \(/);
+  assert.equal(offJson.likeForLike.draws, freshIds.length); assert.ok(offJson.adapters['r11-p5a-s11'].lessTheFirstAdapter.neutral.lo <= offJson.adapters['r11-p5a-s11'].lessTheFirstAdapter.neutral.hi);
+  assert.equal(offJson.adapters['r11-p5b-s7'].W1, null, 'W1 is not read without stage R8\'s table, whatever the baseline says');
+  const r4 = tsx('scripts/r11-offline.ts', '--dir', OUT, '--fake', join(tmp, 'dry-offline'), '--md', off, '--wording', join(tmp, 'none.md'));
+  assert.equal(r4.status, 0, `${r4.stdout}${r4.stderr}`); assert.match(readFileSync(off, 'utf8'), /\*\*Like for like \(prereg §13\.2\): not on file\.\*\*/); assert.equal(JSON.parse(readFileSync(off.replace(/\.md$/, '.json'), 'utf8')).likeForLike, null);
+  // packets that would differ from those a score file on hand was made from are refused
+  writeFileSync(join(DRYB, 'baseline.jsonl'), text.replace('"me":"', '"me":" '));
+  assert.match(tsx('scripts/r11-baseline.ts', 'render', '--dir', OUT, '--parts', PARTS, '--out', DRYB).stderr, /is on file with a score file, and the held-out records now give other packets/);
+});
+
+test('the projected model time (scripts/r11-costs.ts): a measured range scaled by the packets\' real length, between in proportion and the power 1.5', () => {
+  assert.deepEqual(scaled([0.6, 0.607], 354.6, 354.6), [0.6, 0.607]);
+  const shorter = scaled([0.6, 0.607], 300, 354.6), longer = scaled([0.324, 0.5], 500, 340);
+  near(shorter[0], 0.6 * Math.pow(300 / 354.6, 1.5), 1e-12, 'a shorter packet, low end: the power'); near(shorter[1], 0.607 * 300 / 354.6, 1e-12, 'a shorter packet, high end: in proportion');
+  near(longer[0], 0.324 * 500 / 340, 1e-12, 'a longer packet, low end: in proportion'); near(longer[1], 0.5 * Math.pow(500 / 340, 1.5), 1e-12, 'a longer packet, high end: the power');
+  const set = (name: string, packets: number, mean: number): TokenSet => ({ set: name, packets, median: Math.round(mean), p95: Math.round(mean * 1.3), max: Math.round(mean * 1.6), mean, over_1280: 0 });
+  const sets = ['p5b', 'p5a'].flatMap(a => { const m = a === 'p5b' ? 350 : 300; return [set(`${a}, training`, 3120, m), set(`${a}, development`, 300, m), set(`${a}, held-out fresh draws`, 1500, m), set(`${a}, every held-out row`, 2000, m), set(`${a} without doing`, 1340, m), set(`${a} probes`, 1080, m)]; });
+  const c = costs(sets);
+  assert.equal(c.baseline, null); assert.equal(c.p5bScoredMeanTokens, 350); assert.equal(c.scoring[0].packets, 4420); assert.deepEqual(c.scoring[0].sPerPacket, MEASURED.scoreS); assert.equal(c.scoring[2].packets, 8840);
+  near(c.training[0].seconds[0], 3 * 3120 * 0.6 * Math.pow(350 / 354.6, 1.5) + 4 * 300 * MEASURED.devS + MEASURED.loadAndRestS, 1e-9, 'a P5b training, low end');
+  assert.ok(c.training[1].seconds[1] < c.training[0].seconds[0], 'a shorter packet trains faster'); assert.ok(c.scoring[1].seconds[1] < c.scoring[0].seconds[1]);
+  const withOld = costs([...sets, set('oldState, held-out fresh draws', 1500, 480), set('oldNeutral, held-out fresh draws', 1500, 420)]);
+  assert.equal(withOld.baseline!.packets, 3000); assert.equal(withOld.baseline!.meanTokens, 450);
+  near(withOld.baseline!.withLoad[1], 3000 * 0.5 * Math.pow(450 / 350, 1.5) + MEASURED.loadS[1], 1e-9, 'the baseline step, high end, with one model load');
+  assert.throws(() => costs(sets.slice(1)), /no token counts for "p5b, training"/);
 });
 
 test('the offline readouts and the loop\'s rules: the area under the curve, the bootstrap, the kind-prior baseline, a guard, the distance outside a band', () => {

@@ -3,7 +3,7 @@
 //
 //   pnpm exec tsx scripts/r11-data-report.ts [--manifest artifacts/decide-ft/r11/manifest.json] [--md artifacts/r11/tables/r11-data.md] [--json artifacts/r11/tables/r11-manifest.json]
 import { execSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { R4_REAL_TOKENS, R4_S_PER_EXAMPLE, REAL_OVER_ESTIMATE, TOKEN_POWER } from './lib/r11-packets';
 
@@ -68,6 +68,12 @@ if (process.argv[1]?.endsWith('r11-data-report.ts')) {
   p();
   p(`Per training world the first ${m.perWorld.train} labelled fresh draws of train animals and the first ${m.perWorld.dev} of dev animals, in a fixed hash order; per held-out world the first ${m.perWorld.testFresh} labelled fresh draws and the first ${m.perWorld.testOther} kept or arrived records. Both arms hold the same records in the same order; only the packet differs.`);
   p();
+  p(`The arms: ${Object.entries(m.input as Record<string, string>).map(([a, w]) => `**${a}**: ${w}`).join('. ')}.${m.packetsNotOneChangeApart !== undefined ? ` Packets of an arm that are not the whole packet (p5b) of the same moment with exactly that arm's lines deleted, line for line, over every file: ${m.packetsNotOneChangeApart}.` : ''}`);
+  if (m.assembly?.kept?.length) {
+    p();
+    for (const k of m.assembly.kept) p(`This assembly rebuilt ${m.assembly.rebuilt.join(', ')} only. **${k.arm} was not rewritten**: its training and development files are those assembled at head ${k.assembledAt}, checked byte for byte against what this assembly would write, and its packets in the held-out file (which holds both arms and was rewritten) are the ones on file before: ${Object.entries(k.heldOutPackets as Record<string, string | null>).filter(([, v]) => v).map(([n, v]) => `${n} \`${String(v).slice(0, 12)}…\``).join(', ')}.`);
+  }
+  p();
   p('| Split | Records | Fresh | Kept | Arrived | Animals | Seeds | By world | By light phase |');
   p('| --- | --- | --- | --- | --- | --- | --- | --- | --- |');
   const kv = (o: Record<string, number>) => Object.entries(o).map(([k, v]) => `${k} ${n(v)}`).join(', ');
@@ -79,6 +85,14 @@ if (process.argv[1]?.endsWith('r11-data-report.ts')) {
   p('| --- | --- |');
   for (const split of ['train', 'dev']) for (const arm of Object.keys(m.splits[split].arms)) p(`| \`${m.splits[split].arms[arm].file}\` | \`${m.splits[split].arms[arm].sha256}\` |`);
   if (m.splits.test) for (const [k, v] of Object.entries(m.splits.test.files as Record<string, string>)) p(`| \`${k}\` | \`${v}\` |`);
+  if (m.splits.test?.packetsSha256) {
+    p();
+    p('The held-out file holds both arms\' packets, so its hash moves when one arm is rebuilt. Per packet name (over the id, a tab, the packet\'s JSON and a newline, in file order):');
+    p();
+    p('| Packets in `eval/all.jsonl` | Count | sha256 |');
+    p('| --- | --- | --- |');
+    for (const [k, v] of Object.entries(m.splits.test.packetsSha256 as Record<string, { packets: number; sha256: string }>)) p(`| ${k} | ${n(v.packets)} | \`${v.sha256}\` |`);
+  }
   p();
   p(`Sorted record ids, sha256: train \`${m.splits.train.recordIdsSha256}\`, dev \`${m.splits.dev.recordIdsSha256}\`${m.splits.test ? `, held out \`${m.splits.test.recordIdsSha256}\`` : ''}. Removed wordings found in any packet: ${m.removedWordingsFound}. Lines an arm leaves out, found in its packets: ${m.bannedLinesFound}.`);
   p();
@@ -112,7 +126,12 @@ if (process.argv[1]?.endsWith('r11-data-report.ts')) {
   p();
   p('## 5. Length of each arm\'s packets, by block (the project\'s estimate; training file)');
   p();
-  p(`The estimate is \`estimateInputTokens\` (words times a fitted rate per kind of text). Real counts were not taken: no process of the model's environment was started. Stage R8 measured real over estimate at 0.84 and 0.85 for packet 5 short; the projection below uses ${REAL_OVER_ESTIMATE}.`);
+  // real counts by the tokenizer alone (training/decide_ft/r11_tokens.py), read only when they are of these very files
+  const realFile = resolve(arg('real', resolve(file, '..', 'eval/token-counts.json')));
+  const realAll = existsSync(realFile) ? JSON.parse(readFileSync(realFile, 'utf8')) as { files: Record<string, string>; sets: { set: string; packets: number; median: number; p95: number; max: number; mean: number; over_1280: number }[]; packets: number; largest: number; over_1280: number } : null;
+  const realFresh = !!realAll && Object.keys(m.splits.train.arms).every(a => ['train', 'dev'].every(sp => realAll.files[m.splits[sp].arms[a].file] === m.splits[sp].arms[a].sha256)) && (!m.splits.test || realAll.files['eval/all.jsonl'] === m.splits.test.files['eval/all.jsonl']);
+  const real = realFresh ? realAll : null, realOf = (name: string) => real?.sets.find(x => x.set === name);
+  p(`The estimate is \`estimateInputTokens\` (words times a fitted rate per kind of text). ${real ? 'Real counts were taken by the tokenizer alone (no model weights loaded; `training/decide_ft/r11_tokens.py`) and stand in the last rows; every set and the model time they project to are in [r11-costs.md](r11-costs.md).' : realAll ? 'The real counts on file are of other files than these (the files were assembled again since): take them again with `scripts/r11-run.sh tokens`.' : 'Real counts have not been taken for these files (`scripts/r11-run.sh tokens`: the tokenizer alone, no model weights).'} Stage R8 measured real over estimate at 0.84 and 0.85 for packet 5 short; the projection below uses ${REAL_OVER_ESTIMATE}.`);
   p();
   const arms = Object.keys(m.splits.train.arms), T = (a: string) => m.splits.train.arms[a].tokens, blocks = [...new Set(arms.flatMap(a => Object.keys(T(a).meanByBlock)))];
   p(`| Block | ${arms.map(a => `${a}: mean tokens per packet (packets carrying it)`).join(' | ')} |`);
@@ -122,10 +141,13 @@ if (process.argv[1]?.endsWith('r11-data-report.ts')) {
   p(`| median (95th percentile, largest) | ${arms.map(a => `${T(a).estimate.median} (${T(a).estimate.p95}, ${T(a).estimate.max})`).join(' | ')} |`);
   p(`| projected real tokens: median (95th, largest) | ${arms.map(a => `${T(a).projectedReal.median} (${T(a).projectedReal.p95}, ${T(a).projectedReal.max})`).join(' | ')} |`);
   if (m.splits.test) p(`| held-out packets, estimate: median (95th, largest) | ${arms.map(a => { const t = m.splits.test.arms[a].tokens.estimate; return `${t.median} (${t.p95}, ${t.max})`; }).join(' | ')} |`);
+  if (real) for (const [label, name] of [['training file', 'training'], ['development file', 'development'], ['held-out fresh draws', 'held-out fresh draws']]) p(`| **real tokens**, ${label}: median (95th, largest) | ${arms.map(a => { const t = realOf(`${a}, ${name}`); return t ? `**${t.median}** (${t.p95}, ${t.max})` : 'not counted'; }).join(' | ')} |`);
   p();
-  p('No packet is near the hard limit of 1,280 tokens.');
+  p(real ? `Of the ${n(real.packets)} packets counted (both arms' training, development and held-out packets, the packets without \`doing\`, the probes${real.sets.some(x => x.set.startsWith('old')) ? ', the like-for-like baseline\'s two renderings' : ''}) the largest has ${n(real.largest)} real tokens; over the hard limit of 1,280: ${real.over_1280}.` : 'No packet is near the hard limit of 1,280 tokens.');
   p();
   p('## 6. Projected cost of one training run (to be replaced by the measured cost)');
+  p();
+  p('This is the projection made before any model ran, from the estimate and stage R4\'s run. The cost since measured on the real model (prereg §12.4) and what it projects to with real token counts are in [r11-costs.md](r11-costs.md), which is the table to plan a night from.');
   p();
   p(`From stage R4's run: ${R4_S_PER_EXAMPLE} s per example at about ${R4_REAL_TOKENS} real tokens (${n(R4_RUN.training)} s of training in ${n(R4_RUN.wall)} s of wall time for ${n(R4_RUN.examples)} examples), time growing as tokens to the power ${TOKEN_POWER}. Per example the projection is ${R4_S_PER_EXAMPLE} × (${REAL_OVER_ESTIMATE} × estimate ÷ ${R4_REAL_TOKENS})^${TOKEN_POWER}, averaged over the file. The load and the four development passes are scaled from R4's ${n(R4_RUN.wall - R4_RUN.training)} s by the same ratio.`);
   p();
