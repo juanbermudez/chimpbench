@@ -40,6 +40,9 @@ and feels. A virtual field observer scores behaviour against 150 cited field tar
 ### 2.1 What 10 and 11 October 2026 established
 
 Fourteen stage branches were merged into `track-e` on 11 October. Each line names its document under `docs/staging/`.
+In these lines "the first adapter" is `r4-rules-state`. Inside the simulation every figure for it and for its second
+training seed is a result of a **rules-taught model on a rules menu**, and "the untuned model" is the **untuned model
+on a rules menu**. On the wild Taï record the menu is the record's own, and each adapter is named by what taught it.
 
 - **The review (10 October).** A read-only review found that no kernel had ever chosen a tree (the menu held exactly
   one feeding option on 99.6% of asks) and that 35% of the first adapter's training labels were acts the gate kept or
@@ -49,7 +52,8 @@ Fourteen stage branches were merged into `track-e` on 11 October. Each line name
   to 50.8 trees on average and the menu shows 0.74. `r7-ledger.md`; the timing card: `r7-prereg.md`.
 - **The wording test.** The first adapter picks the rules' decision on 0.609 of 954 held-out fresh draws with the
   packet it was trained on, and on 0.386 with neutral option labels (chance 0.186, the untuned model 0.286). More than
-  half of what it learned over chance was read from the rules' own sentences. `r8-wording-numbers.md`.
+  half of what it learned over chance was read from the rules' own sentences. `r8-wording-numbers.md`; chance and
+  the untuned model: `r4-numbers.md` and `r8-prereg.md` §10a.
 - **Draw and hold.** Neither decode becomes the standard. A seeded draw brings the first adapter's switching and
   trips toward the rules' and fails "does no harm" (nights in a nest, reserves); a held draw is worse. The top pick
   stays, with a draw arm beside it in every later engine test. `r9-prereg.md` §10.6, `r9-numbers.md`.
@@ -74,9 +78,10 @@ Fourteen stage branches were merged into `track-e` on 11 October. Each line name
   party size only. On the Taï development part no kernel reaches the simple rule "the partner it groomed first most
   often before" (0.353; the untuned model 0.301, the Ngogo-taught adapter 0.319, the rules-taught adapters 0.261 to
   0.289). `rw2-prereg.md` (the plain page and §8.4).
-- **The viewer fixes merged (W1 to W5).** Travelling animals walk at every speed; a watching speed exists (Watch 4×,
-  key 2); no white-out facing a low sun; the young have eyes; a selected animal shows its reason and an "about to"
-  tag; grooming pairs on the ground move. Frame time is unchanged. Plan, "Stages W1 to W5".
+- **The viewer fixes merged (W1 to W5).** Travelling adults on the ground are drawn walking at Real time, at Watch 4×
+  and at 1 min/s (the three speeds checked); a watching speed exists (Watch 4×, key 2); no white-out facing a low
+  sun; the young have eyes; a selected animal shows its reason and an "about to" tag; grooming pairs on the ground
+  move. Frame time is unchanged. What they left open is in AGENTS.md, "Open issues". Plan, "Stages W1 to W5".
 
 ### 2.2 Running or queued (true at 16:45 EDT on 11 October 2026; this part goes stale within a day)
 
@@ -84,6 +89,8 @@ Fourteen stage branches were merged into `track-e` on 11 October. Each line name
 draws only, the rules' own odds as labels; `docs/staging/r11-prereg.md`). It was launched at 16:21 EDT in a detached
 `screen` session named `r11chain`, from the frozen checkout `.claude/worktrees/bench-r11` (5b5a506). Nothing has
 been read. Expect it to end on the morning of 12 October: 11 to 15 hours, more with the optional steps and swap holds.
+**Read `state` first (next line). If it no longer says `running`, the rest of this paragraph is history: go to §5,
+task 1.**
 
 - **To check it, only read.** `cat .claude/worktrees/bench-r11/artifacts/r11-chain/status.log` (a START and an END
   line per step, with its exit code) and `cat …/r11-chain/state` (`running`, `failed` or `done`). Each step's output
@@ -121,6 +128,12 @@ of the first clone macOS had evicted 14,230 of 18,704 files (the git pack among 
    `pnpm install`. Node 22.19.0 passes the tests and breaks every worker-pool script. The whole suite last ran at
    7f9ec5b: 1,280 tests, all passing (`/Volumes/Drive/chimpbench/shots/watch-2026-10-11/stale-docs-from-pre-push-check.md`).
    Stages RW2 and R11 have added tests since, and no whole-suite run on the present head is on record.
+   **To run the app with no model at all** (the way to look at it while the chain of §2.2 runs): `MGOGO_NO_MODEL=1 fnm
+   exec --using=22.22.3 -- pnpm exec vite --host 127.0.0.1 --port 5181 --strictPort`, then open
+   `http://127.0.0.1:5181/?provider=server` (another free port if that one is taken). `MGOGO_NO_MODEL=1` starts no
+   Python worker. `?provider=server` keeps the page from downloading and loading the in-browser model, which is the
+   default (about 872 MB, on the GPU when the browser has one); the rules then decide for every animal. Every other
+   command is in AGENTS.md, "Commands".
 2. **Not in git; copy by hand, never to a public place:** `data/raw/` (12 folders of downloaded field datasets with
    their `PROVENANCE.md`; it holds location-sensitive raw coordinates and animal identities: never commit or publish
    them); `artifacts/validation/c7a-field1y.json` (`tests/guide-data.test.ts` skips its scorecard check without it);
@@ -137,12 +150,14 @@ of the first clone macOS had evicted 14,230 of 18,704 files (the git pack among 
      `MGOGO_GHN_ROOT=/Volumes/Drive/chimpbench/GHN`, `MGOGO_DECIDE_PYTHON=/Volumes/Drive/chimpbench/decide-env/bin/python`,
      `HF_HOME=/Volumes/Drive/chimpbench/hf-cache`, `HF_HUB_CACHE=/Volumes/Drive/chimpbench/hf-cache/hub`. The offline
      flags are set by the code. Adapters: `MGOGO_FT_ROOT` (the folder that holds `adapters/<name>`) and
-     `MGOGO_FT_ADAPTERS`. `training/decide_ft/r4_py.sh <script>` sets them all; `parity.py` must print `PARITY OK`.
+     `MGOGO_FT_ADAPTERS`. `training/decide_ft/r4_py.sh <script>` sets the four variables and a default
+     `MGOGO_FT_ROOT`; `parity.py` must print `PARITY OK`.
    - **Measured here:** 0.44 s per decision at 467 tokens for the untuned model, and the packet's length is the only
      speed lever (plan, "What the review changed"); 0.52 s a call over the population run; a worker holds 1.97 GB at
      rest and 3.16 GB at peak (6 October) and loads the model on its first batch, in 55 to 220 s; a training runs at
      0.6 s an example and 6.1 GiB (`r11-prereg.md` §12).
-   - **Through the app:** the four variables, then `fnm exec --using=22.22.3 -- pnpm exec vite --host 127.0.0.1 --port
+   - **Through the app** (this starts a model process: never while the chain of §2.2 or any other model step is
+     running): the four variables, then `fnm exec --using=22.22.3 -- pnpm exec vite --host 127.0.0.1 --port
      5183 --strictPort` and `node scripts/verify-browser.mjs http://127.0.0.1:5183` (all 20 checks passed on
      6 October 2026). Everything else runs with `MGOGO_NO_MODEL=1`.
 4. **Browser scripts** (`scripts/shot.mjs`, `verify-browser.mjs`, the probes) load Playwright through
@@ -156,14 +171,16 @@ of the first clone macOS had evicted 14,230 of 18,704 files (the git pack among 
 
 ## 4. Branch map and frozen checkouts
 
-**`main` is never committed to.** It moves only by fast-forward to a tested `track-e` head, on the user's word
-(6 October: "merge and push to main, and make sure these issues get addresssed and we move faster parelalizing more
-work to get closer to the real results"; `docs/staging/handoff-2026-10-05.md` §2.2). Deploys stay held.
+**`main` is never committed to.** Since 6 October every push has moved it together with `track-e`, by fast-forward
+to the same commit. The user's instruction of 6 October: "merge and push to main, and make sure these issues get
+addresssed and we move faster parelalizing more work to get closer to the real results"
+(`docs/staging/handoff-2026-10-05.md` §2.2, which reads it as: the integrator may merge finished, tested work into
+`main` and push it). Deploys stay held.
 
 | Branch or checkout | Head | State |
 | --- | --- | --- |
 | `main`, and `track-e` on the remote | 7f9ec5b | Equal. Pushed on 11 October 2026 at 14:59 EDT, at the user's request |
-| `track-e` (local, the integration branch; the main checkout is on it) | 5718008 when this was written | **51 commits ahead of the remote, not pushed:** stage R11's preparation, stage RW2, their merges and RW2's model scores |
+| `track-e` (local, the integration branch; the main checkout is on it) | 5718008 when this was written | **51 commits ahead of the remote, not pushed:** stage R11's preparation, stage RW2, their merges and RW2's model scores. Count again before trusting this: `git rev-list --count origin/track-e..track-e` |
 | `docs-refresh` | this file's branch | The shared documents brought up to date; to be merged by the integrator |
 | `r7-card`, `r7-ledger`, `r7b-forks`, `r8-packet5`, `r9-draw-hold`, `r10-night`, `r11-honest-retrain`, `r12-menu-design`, `rw2-wild-records`, `w1-travel-walk` to `w5-grooming` | | Merged into `track-e` on 11 October (R7 to R10 and W1 to W5 through `integrate-t1`). Keep the worktrees `r4-train`, `r4b-retrain`, `r5-pilot` and `r11-honest-retrain`: their `artifacts/` hold adapters and receipts that are not in git |
 | `w6-decision-beat` to `w10-calls-map` | | In progress (§2.2); not merged |
@@ -185,7 +202,7 @@ work to get closer to the real results"; `docs/staging/handoff-2026-10-05.md` §
    range (no personal data, no raw rows), and only the two branches by name (§4).
 4. **Put §6 to the user**, the ten rulings first. Nothing of stage R12 is built before them.
 5. **Then, one model process at a time:** the next population run, registered first, with the first of stage R11's
-   adapters on a fresh unseen seed (`r10-prereg.md` §10.8); the Taï grooming adapter if the user agrees (§6); the real
+   adapters on a fresh unseen seed (`r10-prereg.md` §8 and §10.8); the Taï grooming adapter if the user agrees (§6); the real
    token count and time of stage R12's two short calls (`r12-prereg.md`, "For the integrator", item 3).
 6. **Small repairs on record:** the model-process guard of `scripts/r9-run.sh` and `scripts/r9-seed2.sh` looks by the
    interpreter's path only (AGENTS.md, "Gotchas"); the population script does not yet log items 3 to 8 of the
@@ -205,6 +222,8 @@ work to get closer to the real results"; `docs/staging/handoff-2026-10-05.md` §
 - **A Taï grooming adapter** (separate, small, named) and whether its two targets, T-HUN-9 and T-END-12, count as
   compromised for it or are only flagged (`rw2-prereg.md` §10.1).
 - **The viewer:** the default layout, life-size animals, and whether the close view opens at the watching speed.
+- **The Ngogo fission paper and its supplement** are still not obtained: only the user can save them
+  (`docs/datasets.md`, row 24).
 - **Deploys:** still held. Also unanswered: the repository has no LICENSE file and states no terms of use.
 
 ## 7. Rules in one breath (details: `docs/staging/handoff-2026-10-05.md` §2 and AGENTS.md)
