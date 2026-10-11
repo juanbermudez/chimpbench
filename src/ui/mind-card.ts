@@ -1,5 +1,6 @@
 import type { Action, Candidate, Chimp, World } from '../types';
 import type { DecisionTraceView } from './contracts';
+import { DEFAULT_PROVIDER_CONFIG } from '../providers/config';
 
 // The Mind tab's decision card as data (pure, no DOM; stage W4). Every living animal carries the options it weighed at
 // its last decision point (Chimp.candidates: action, target, the rules' score, a reason sentence) and the reason of the
@@ -9,6 +10,10 @@ import type { DecisionTraceView } from './contracts';
 
 /** The published base model the app loads (src/decision.ts MODEL_NAME, server/local-worker.ts LOCAL_MODEL). */
 export const BASE_MODEL = 'fastino/GLiNER2.5-Decide';
+/** The same published base as the browser provider loads it and reports it: its community ONNX export, pinned by
+ * revision (src/providers/config.ts). Not tuned either, so it carries the same name. A public config that points the
+ * browser at another model is named by that model's identifier. */
+export const BASE_MODEL_ONNX = DEFAULT_PROVIDER_CONFIG.browser.model;
 
 /**
  * Who chose, in the names fixed by IMPLEMENTATION_PLAN.md "User decisions (10 October 2026)": today's app is an
@@ -23,7 +28,7 @@ export const RULES_ENGINE: Engine = { id: 'rules', label: 'Rules', note: 'The si
  * model by itself, so anything that is not the published base or Jev is named by its own identifier. */
 export function modelEngine(model?: string, provider?: string): Engine {
   if (provider === 'jev' || /^jev/i.test(model ?? '')) return { id: 'general', label: 'General model (Jev) on a rules menu', note: 'A general model picked among options the rules listed and worded.' };
-  if (!model || model === BASE_MODEL) return { id: 'untuned', label: 'Untuned model on a rules menu', note: 'GLiNER2.5-Decide as published, never trained on chimpanzees, picked among options the rules listed and worded.' };
+  if (!model || model === BASE_MODEL || model === BASE_MODEL_ONNX) return { id: 'untuned', label: 'Untuned model on a rules menu', note: 'GLiNER2.5-Decide as published, never trained on chimpanzees, picked among options the rules listed and worded.' };
   return { id: 'other-model', label: `Model ${model} on a rules menu`, note: 'A model other than the published base picked among options the rules listed and worded.' };
 }
 
@@ -55,8 +60,9 @@ export interface DecisionCard {
   pick: OptionRow | null;
   /** The best of the others, by the chooser's own values, at most two. */
   over: OptionRow[];
-  /** The pick is not the best by those values: another option has more (the rules' policy can keep an act under way
-   * instead of taking the top score; a draw from a model's probabilities can land below the top). */
+  /** The pick is not the best by those values: another option has more. The rules' own policy does not always take
+   * the top score (src/sim/rg.ts: it can keep an act under way, and a fresh choice by an animal old enough is a draw
+   * weighted by the scores); a draw from a model's probabilities can land below the top too. */
   beaten: boolean;
   /** Which value ranks the options: the model's probability when a model answered, otherwise the rules' score. */
   by: 'score' | 'probability';

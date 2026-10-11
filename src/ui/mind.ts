@@ -26,8 +26,10 @@ function pickLabel(world: World, tr: DecisionTraceView, i: number) {
 
 const rowLabel = (r: OptionRow) => `${actionLabel(r.action)}${r.target ? ` <i>→ ${esc(r.target)}</i>` : ''}`;
 const rowValue = (r: OptionRow, by: DecisionCard['by']) => by === 'probability' ? `${((r.probability ?? 0) * 100).toFixed(0)}%` : r.score.toFixed(2);
-/** Why the act under way can sit below another option on the live list. */
-const BEATEN_NOTE = 'Not the best score on this list: the rules’ policy can keep an act under way instead of taking the top score.';
+/** Why the act under way can sit below another option on the live list: the rules' own policy (src/sim/rg.ts) keeps an
+ * act while nothing salient changes and otherwise, for an animal old enough, draws among the options with odds set by
+ * their scores. The interface cannot tell which of the two happened, so the note names both. */
+const BEATEN_NOTE = 'Not the best score on this list. The rules do not always take the top score: they can keep an act under way, and a fresh choice can be a draw weighted by the scores.';
 
 /** The decision in one line: the pick over its runners-up, each with the chooser's own value, then the reason in print. */
 function decisionLine(card: DecisionCard): string {
