@@ -243,35 +243,43 @@ test('readBody reads the drawn path: on the move, going up or down, the gap, and
   assert.equal(out.moving, true, 'drawn in a walking clip'); assert.equal(out.gap, 0);
 });
 
-test('a ground forager creeping as it feeds is announced only until its drawn time is inside the act', () => {
+test('a ground forager creeping as it feeds is not announced; a walk in is, and only until the body has only a shuffle left', () => {
   const out: DrawnAct = { action: 'rest', targetId: -1, about: false };
   const tr = fill([['play', 19], ['play', 19], ['forage', -1]]);
   const since = tr.t[tr.head];
-  // Inside the playback lag the body is still in the act before; the simulation has crept on.
+  // The simulation creeps on from the first tick, eating. Inside the playback lag the body is drawn at the old spot,
+  // already in the feeding clip (the clip follows the simulation's act), metres behind: that is the act, not a wait.
   pushAct(tr, since + T, 'forage', -1);
   readDrawn(tr, since - 0.9 * T, body({ gap: 2.2, shuffling: true }), 1, out);
-  assert.deepEqual(out, { action: 'play', targetId: 19, about: true });
-  // Its drawn time reaches the act: it creeps along feeding, metres behind the simulation, and that is the act.
+  assert.deepEqual(out, { action: 'forage', targetId: -1, about: false });
+  assert.ok(Number.isNaN(tr.shown), 'not noted as begun inside the lag: the simulation may still walk it off');
   readDrawn(tr, since + 0.1 * T, body({ gap: 3.1, moving: true, shuffling: true }), 1, out);
   assert.deepEqual(out, { action: 'forage', targetId: -1, about: false });
-  assert.equal(tr.shown, since, 'noted as begun');
-  readDrawn(tr, since + 3 * T, body({ gap: 3.1, moving: true, shuffling: true }), 1, out);
-  assert.equal(out.about, false);
+  assert.equal(tr.shown, since, 'noted as begun once its drawn time is inside the act');
+  readDrawn(tr, since + 3 * T, body({ gap: 3.1, moving: true }), 1, out);
+  assert.equal(out.about, false, 'and not announced again');
   // By distance alone it would have been announced for the whole window.
   assert.equal(aboutTo('forage', since, since + 3 * T, body({ gap: 3.1, moving: true }), 1), true);
-  assert.equal(bodyShows('forage', body({ gap: 3.1, shuffling: true })), false, 'not before its drawn time is inside the act');
-  assert.equal(bodyShows('forage', body({ gap: 3.1, shuffling: true }), true), true);
+  assert.equal(aboutTo('forage', since, since + 3 * T, body({ gap: 3.1, moving: true, shuffling: true }), 1), false);
+  // Had it set off at a walk inside the lag instead, it is announced until only a shuffle is left.
+  const walk = fill([['rest', -1], ['rest', -1], ['forage', 100300]]), s2 = walk.t[walk.head];
+  readDrawn(walk, s2 - 1.9 * T, body({ gap: 0, shuffling: true }), 1, out); assert.equal(out.about, false, 'nothing has moved yet');
+  pushAct(walk, s2 + T, 'forage', 100300);
+  readDrawn(walk, s2 - 0.9 * T, body({ gap: 5 }), 1, out); assert.equal(out.about, true, 'the simulation walked it 5 m: the body has that to play');
+  readDrawn(walk, s2 + 0.5 * T, body({ gap: 2.5, moving: true }), 1, out); assert.equal(out.about, true);
+  readDrawn(walk, s2 + 1.2 * T, body({ gap: 1.4, moving: true, shuffling: true }), 1, out); assert.equal(out.about, false, 'the last short step is not waited for');
   // A trip never begins by shuffling.
-  assert.equal(bodyShows('travel', body({ gap: 3.1, shuffling: true }), true), false);
+  assert.equal(bodyShows('forage', body({ gap: 3.1, shuffling: true })), true);
+  assert.equal(bodyShows('travel', body({ gap: 3.1, shuffling: true })), false);
 });
 
-test('the field simulation through the frame loop\'s own parts: ground foragers are not announced once their drawn time is inside the act; walks to a crown still are', () => {
+test('the field simulation through the frame loop\'s own parts: animals that start feeding on the ground where they are are never announced; walks and climbs to a crown still are', () => {
   // Field map, seed 48, 06:30 to 09:10, two frames per tick, animals aged 8 and over. The clip state is left out
   // (false): the rule reads the path.
   const w = createWorld(48, { profile: 'field' }), P = paramsOf(w), jump2 = relocationJump2(P);
   const pb = createPlayback(), tracks = new Map<number, Track>(), acts = new Map<number, ActTrack>(), fromGround = new Map<string, boolean>();
   const b = body(), out: DrawnAct = { action: 'rest', targetId: -1, about: false };
-  let groundStarts = 0, groundInAct = 0, groundInLag = 0, crownInAct = 0, byDistance = 0;
+  let groundStarts = 0, groundAbout = 0, crownInAct = 0, crownInLag = 0, byDistance = 0;
   for (let tick = 0; tick < 640; tick++) {
     tickWorld(w);
     for (let f = 0; f < 2; f++) {
@@ -290,20 +298,21 @@ test('the field simulation through the frame loop\'s own parts: ground foragers 
         const since = actSince(at);
         if (since === -Infinity) continue;
         const key = `${c.id}@${since}`;
-        if (!fromGround.has(key)) { fromGround.set(key, y < 0.05); if (c.targetId < 0 && y < 0.05) groundStarts++; }
+        // "Where it is": on the ground, and neither of the two steps before the act was faster than a feeding shuffle
+        // (it did not walk or come down into the act; such an arrival is rightly announced while the body plays it).
+        if (!fromGround.has(key)) { const here = y < 0.05 && shuffles(tr, SHUFFLE_SHARE * P.walkMps); fromGround.set(key, here); if (c.targetId < 0 && here) groundStarts++; }
         readBody(b, tr, c.position[0], y, c.position[2], false, false, P.walkMps);
         const inAct = rt >= since, onGround = c.targetId < 0 && fromGround.get(key) === true;
         // What distance alone would say (the rule as first built), before the record is touched by readDrawn.
-        if (onGround && inAct && at.shown !== since && aboutTo('forage', since, rt, { ...b, shuffling: false }, 1)) byDistance++;
+        if (onGround && at.shown !== since && aboutTo('forage', since, rt, { ...b, shuffling: false }, 1)) byDistance++;
         readDrawn(at, rt, b, 1, out);
         if (!out.about) continue;
-        if (onGround) { if (inAct) groundInAct++; else groundInLag++; } else if (c.targetId >= 0 && inAct) crownInAct++;
+        if (onGround) groundAbout++; else if (c.targetId >= 0) { if (inAct) crownInAct++; else crownInLag++; }
       }
     }
   }
-  assert.ok(groundStarts >= 3, `animals started foraging on the ground (${groundStarts})`);
+  assert.ok(groundStarts >= 2, `animals started foraging on the ground where they were (${groundStarts})`);
   assert.ok(byDistance > 0, `by distance alone they would be announced while already feeding (${byDistance} half-ticks)`);
-  assert.equal(groundInAct, 0, 'never "about to forage" over a ground forager whose drawn time is inside the act');
-  assert.ok(groundInLag > 0, 'still announced while the body is in the act before');
-  assert.ok(crownInAct > 20, `a walk or a climb to a crown is still announced (${crownInAct} half-ticks)`);
+  assert.equal(groundAbout, 0, 'never "about to forage" over an animal feeding on the ground where it is');
+  assert.ok(crownInLag > 20 && crownInAct > 20, `a walk or a climb to a crown is still announced (${crownInLag} half-ticks inside the lag, ${crownInAct} after it)`);
 });

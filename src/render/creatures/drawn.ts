@@ -158,27 +158,27 @@ export function readBody(out: BodyState, tr: Track, x: number, y: number, z: num
 }
 
 /**
- * True when the body shows the act: it has set off (a trip), or it is where the animal is (a stationary act).
- * inAct: the body's drawn time has reached the state that first showed the act. A stationary act is then also shown
- * by a body with only a shuffle left to play: the simulation's ground foragers eat as they creep along, so the body
- * trails them by metres while it is already feeding, and "about to forage" over it would be false.
+ * True when the body shows the act: it has set off (a trip), or it is where the animal is (a stationary act). A
+ * stationary act is also shown by a body with only a shuffle left to play: the simulation's ground foragers eat as
+ * they creep along, so the body trails them by metres while the act is already under way (and the body is already
+ * drawn in the act's clip, which follows the simulation's act), and "about to forage" over it would be false.
  */
-export function bodyShows(action: Action, body: BodyState, inAct = false): boolean {
+export function bodyShows(action: Action, body: BodyState): boolean {
   const sign = BODY_SIGN[action];
-  return sign === 'go' ? body.moving || body.climbing : sign === 'stay' ? body.gap <= ARRIVED_M || (inAct && body.shuffling) : true;
+  return sign === 'go' ? body.moving || body.climbing : sign === 'stay' ? body.gap <= ARRIVED_M || body.shuffling : true;
 }
 
 /**
  * True while the simulation has begun an act that the drawn body has not. `since`: when the act was first seen;
  * `renderT`: the body's drawn time; `shown`: the body has already been seen to begin this act.
  * A trip is announced while the body neither walks nor comes down; a stationary act while the body is still away
- * from where the animal is (and has more than a shuffle left to play, once its drawn time is inside the act). It ends
- * when the body shows the act, and at the latest ABOUT_TICKS of drawn time after the state that first showed it.
+ * from where the animal is and has more than a shuffle left to play. It ends when the body shows the act, and at the
+ * latest ABOUT_TICKS of drawn time after the state that first showed it.
  */
 export function aboutTo(action: Action, since: number, renderT: number, body: BodyState, rate: number, shown = false): boolean {
   if (shown || body.passive || rate > ABOUT_MAX_RATE) return false;
   if (!(renderT < since + ABOUT_TICKS * TICK_HOURS)) return false;
-  return !bodyShows(action, body, renderT >= since);
+  return !bodyShows(action, body);
 }
 
 /** What the renderer reports for one drawn animal (CreatureLayer.drawnAct). The object is the caller's and is reused. */
@@ -200,8 +200,7 @@ export function readDrawn(tr: ActTrack, renderT: number, body: BodyState, rate: 
   let about = false;
   if (tr.n > 0) {
     const since = actSince(tr), action = tr.action[h];
-    const inAct = renderT >= since;
-    if (since > -Infinity && tr.shown !== since && !body.passive && bodyShows(action, body, inAct) && (BODY_SIGN[action] !== 'stay' || inAct)) tr.shown = since;
+    if (since > -Infinity && tr.shown !== since && !body.passive && bodyShows(action, body) && (BODY_SIGN[action] !== 'stay' || renderT >= since)) tr.shown = since;
     about = aboutTo(action, since, renderT, body, rate, tr.shown === since)
       // Held through the playback lag once announced: there the body can stand where the animal is for a moment (the
       // foot of the tree it is about to climb) before the simulation's next move reaches it.
