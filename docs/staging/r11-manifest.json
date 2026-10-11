@@ -1,0 +1,1210 @@
+{
+ "stage": "R11",
+ "name": "rules-taught model on a rules menu",
+ "label_source": "the rules kernel's own choice at fresh draws of the Track E stack (rgChoice on the working base), as a distribution over the menu shown: the candidate jitter and the belief draw redrawn through the simulation's own menu code, the redraws that offer the same menu counted (scripts/r11-contexts.ts labelData); acts the gate kept and trips that arrived are not labels",
+ "label_note": "An engine trained on these labels inherits the rules' judgment, more faithfully than from one-hot picks: it is a scaffold. Name of every result: \"rules-taught model on a rules menu\".",
+ "input": {
+  "p5b": "packet 5, short: neutral options, doing, asked because, companions' acts, lately, last",
+  "p5a": "packet 5, short, strict: the P5b packet with exactly the lines lately and last deleted, nothing given back (prereg §13.1)"
+ },
+ "commit": "f283408",
+ "dirty": false,
+ "perWorld": {
+  "train": 780,
+  "dev": 75,
+  "testFresh": 750,
+  "testOther": 250,
+  "probes": 60
+ },
+ "worlds": [
+  {
+   "file": "s21-W25.jsonl",
+   "seed": 21,
+   "base": "W25",
+   "paramsFile": "docs/staging/integrator-kit/params/M6-W25.json",
+   "switches": {
+    "observeV5": 1,
+    "menuParity": 1
+   },
+   "burnIn": 12,
+   "days": 6,
+   "p": 0.09,
+   "records": 1834,
+   "labels": {
+    "fresh": 1182,
+    "kept": 518,
+    "arrived": 134
+   },
+   "animals": 38,
+   "freshWithLabel": 1182,
+   "freshWithoutLabel": {},
+   "replayEndsOnTheWorldsRandomState": 1182,
+   "realisedDrawsGiveThePick": 1182,
+   "rebuiltAtTheTrueVersion": 1182,
+   "redrawRule": {
+    "min": 2000,
+    "target": 500,
+    "max": 20000
+   },
+   "redraws": {
+    "total": 5233374,
+    "meanPerDraw": 4428,
+    "atTheCap": 52
+   },
+   "shareOfRedrawsOfferingTheSameMenu": {
+    "mean": 0.3267,
+    "q05": 0.0271,
+    "q25": 0.1124,
+    "median": 0.2263,
+    "q75": 0.453
+   },
+   "sameMenuRedraws": {
+    "atLeast500": 1130,
+    "from100to499": 47,
+    "under100NoLabel": 5
+   },
+   "freshWithABeliefDraw": 1133,
+   "pickIsTopPublishedScore": 1156,
+   "why": {
+    "light": 96,
+    "kept": 518,
+    "arrived": 134,
+    "interrupt": 428,
+    "period": 45,
+    "ended": 260,
+    "need-bucket": 223,
+    "max-age": 125,
+    "patrol": 4,
+    "hunt": 1
+   },
+   "worldHashWithoutOwn": "71881e409fef6eb9",
+   "checked": true,
+   "seconds": 248,
+   "sha256": "a6fb42ce2c3d892a8e7157a5efee54b61a60b4fb880b0dcc8c09a6f96aa30fe3"
+  },
+  {
+   "file": "s21-W50.jsonl",
+   "seed": 21,
+   "base": "W50",
+   "paramsFile": "docs/staging/integrator-kit/params/M6-W50.json",
+   "switches": {
+    "observeV5": 1,
+    "menuParity": 1
+   },
+   "burnIn": 6,
+   "days": 6,
+   "p": 0.09,
+   "records": 1936,
+   "labels": {
+    "fresh": 1272,
+    "kept": 520,
+    "arrived": 144
+   },
+   "animals": 38,
+   "freshWithLabel": 1272,
+   "freshWithoutLabel": {},
+   "replayEndsOnTheWorldsRandomState": 1272,
+   "realisedDrawsGiveThePick": 1272,
+   "rebuiltAtTheTrueVersion": 1272,
+   "redrawRule": {
+    "min": 2000,
+    "target": 500,
+    "max": 20000
+   },
+   "redraws": {
+    "total": 6097169,
+    "meanPerDraw": 4793,
+    "atTheCap": 89
+   },
+   "shareOfRedrawsOfferingTheSameMenu": {
+    "mean": 0.3221,
+    "q05": 0.0181,
+    "q25": 0.1019,
+    "median": 0.2214,
+    "q75": 0.4405
+   },
+   "sameMenuRedraws": {
+    "atLeast500": 1183,
+    "from100to499": 78,
+    "under100NoLabel": 11
+   },
+   "freshWithABeliefDraw": 1217,
+   "pickIsTopPublishedScore": 1243,
+   "why": {
+    "light": 92,
+    "kept": 520,
+    "period": 46,
+    "interrupt": 487,
+    "need-bucket": 210,
+    "arrived": 144,
+    "ended": 312,
+    "max-age": 122,
+    "patrol": 3
+   },
+   "worldHashWithoutOwn": "d7e771095498f3f8",
+   "checked": true,
+   "seconds": 265,
+   "sha256": "3f3a8c733c46ed065dd9a3a25b3ed8f412d0b48a30dbc45e4becb697a3b9c84f"
+  },
+  {
+   "file": "s48-W25.jsonl",
+   "seed": 48,
+   "base": "W25",
+   "paramsFile": "docs/staging/integrator-kit/params/M6-W25.json",
+   "switches": {
+    "observeV5": 1,
+    "menuParity": 1
+   },
+   "burnIn": 12,
+   "days": 6,
+   "p": 0.09,
+   "records": 1984,
+   "labels": {
+    "fresh": 1269,
+    "arrived": 146,
+    "kept": 569
+   },
+   "animals": 38,
+   "freshWithLabel": 1269,
+   "freshWithoutLabel": {},
+   "replayEndsOnTheWorldsRandomState": 1269,
+   "realisedDrawsGiveThePick": 1269,
+   "rebuiltAtTheTrueVersion": 1269,
+   "redrawRule": {
+    "min": 2000,
+    "target": 500,
+    "max": 20000
+   },
+   "redraws": {
+    "total": 5488107,
+    "meanPerDraw": 4325,
+    "atTheCap": 68
+   },
+   "shareOfRedrawsOfferingTheSameMenu": {
+    "mean": 0.3682,
+    "q05": 0.0234,
+    "q25": 0.1182,
+    "median": 0.2535,
+    "q75": 0.526
+   },
+   "sameMenuRedraws": {
+    "atLeast500": 1201,
+    "from100to499": 53,
+    "under100NoLabel": 15
+   },
+   "freshWithABeliefDraw": 1184,
+   "pickIsTopPublishedScore": 1236,
+   "why": {
+    "light": 85,
+    "arrived": 146,
+    "need-bucket": 195,
+    "ended": 300,
+    "interrupt": 541,
+    "kept": 569,
+    "max-age": 97,
+    "period": 42,
+    "patrol": 6,
+    "hunt": 3
+   },
+   "worldHashWithoutOwn": "2d54352dab733974",
+   "checked": true,
+   "seconds": 236,
+   "sha256": "e54354e2a4aa4dc28e74a2968d187dad4fd376566c962b0fe58b81c6c7ffcc82"
+  },
+  {
+   "file": "s48-W50.jsonl",
+   "seed": 48,
+   "base": "W50",
+   "paramsFile": "docs/staging/integrator-kit/params/M6-W50.json",
+   "switches": {
+    "observeV5": 1,
+    "menuParity": 1
+   },
+   "burnIn": 6,
+   "days": 6,
+   "p": 0.09,
+   "records": 2079,
+   "labels": {
+    "fresh": 1323,
+    "arrived": 141,
+    "kept": 615
+   },
+   "animals": 38,
+   "freshWithLabel": 1323,
+   "freshWithoutLabel": {},
+   "replayEndsOnTheWorldsRandomState": 1323,
+   "realisedDrawsGiveThePick": 1323,
+   "rebuiltAtTheTrueVersion": 1323,
+   "redrawRule": {
+    "min": 2000,
+    "target": 500,
+    "max": 20000
+   },
+   "redraws": {
+    "total": 6057184,
+    "meanPerDraw": 4578,
+    "atTheCap": 63
+   },
+   "shareOfRedrawsOfferingTheSameMenu": {
+    "mean": 0.3346,
+    "q05": 0.0266,
+    "q25": 0.1044,
+    "median": 0.2257,
+    "q75": 0.4475
+   },
+   "sameMenuRedraws": {
+    "atLeast500": 1260,
+    "from100to499": 56,
+    "under100NoLabel": 7
+   },
+   "freshWithABeliefDraw": 1219,
+   "pickIsTopPublishedScore": 1291,
+   "why": {
+    "light": 84,
+    "interrupt": 571,
+    "arrived": 141,
+    "kept": 615,
+    "hunt": 1,
+    "ended": 314,
+    "need-bucket": 205,
+    "period": 43,
+    "max-age": 99,
+    "patrol": 6
+   },
+   "worldHashWithoutOwn": "9836311fc1703b9e",
+   "checked": true,
+   "seconds": 270,
+   "sha256": "6e958b3e446789fa6fca2435c1c5e07b906510f4237a535ba70aa7b90fd991fe"
+  },
+  {
+   "file": "s7-W25.jsonl",
+   "seed": 7,
+   "base": "W25",
+   "paramsFile": "docs/staging/integrator-kit/params/M6-W25.json",
+   "switches": {
+    "observeV5": 1,
+    "menuParity": 1
+   },
+   "burnIn": 12,
+   "days": 6,
+   "p": 0.09,
+   "records": 2013,
+   "labels": {
+    "fresh": 1279,
+    "arrived": 156,
+    "kept": 578
+   },
+   "animals": 38,
+   "freshWithLabel": 1279,
+   "freshWithoutLabel": {},
+   "replayEndsOnTheWorldsRandomState": 1279,
+   "realisedDrawsGiveThePick": 1279,
+   "rebuiltAtTheTrueVersion": 1279,
+   "redrawRule": {
+    "min": 2000,
+    "target": 500,
+    "max": 20000
+   },
+   "redraws": {
+    "total": 5334178,
+    "meanPerDraw": 4171,
+    "atTheCap": 59
+   },
+   "shareOfRedrawsOfferingTheSameMenu": {
+    "mean": 0.3706,
+    "q05": 0.0258,
+    "q25": 0.1294,
+    "median": 0.2605,
+    "q75": 0.5425
+   },
+   "sameMenuRedraws": {
+    "atLeast500": 1220,
+    "from100to499": 41,
+    "under100NoLabel": 18
+   },
+   "freshWithABeliefDraw": 1196,
+   "pickIsTopPublishedScore": 1249,
+   "why": {
+    "period": 63,
+    "light": 97,
+    "need-bucket": 225,
+    "interrupt": 500,
+    "max-age": 97,
+    "arrived": 156,
+    "kept": 578,
+    "ended": 295,
+    "patrol": 2
+   },
+   "worldHashWithoutOwn": "b0b52e8ae4f851c5",
+   "checked": true,
+   "seconds": 264,
+   "sha256": "6d12bfae020befbf18a9fa8f44a9d081f5bde6940d4630017a94254d768a0923"
+  },
+  {
+   "file": "s7-W50.jsonl",
+   "seed": 7,
+   "base": "W50",
+   "paramsFile": "docs/staging/integrator-kit/params/M6-W50.json",
+   "switches": {
+    "observeV5": 1,
+    "menuParity": 1
+   },
+   "burnIn": 6,
+   "days": 6,
+   "p": 0.09,
+   "records": 1801,
+   "labels": {
+    "fresh": 1106,
+    "kept": 561,
+    "arrived": 134
+   },
+   "animals": 38,
+   "freshWithLabel": 1106,
+   "freshWithoutLabel": {},
+   "replayEndsOnTheWorldsRandomState": 1106,
+   "realisedDrawsGiveThePick": 1106,
+   "rebuiltAtTheTrueVersion": 1106,
+   "redrawRule": {
+    "min": 2000,
+    "target": 500,
+    "max": 20000
+   },
+   "redraws": {
+    "total": 4321102,
+    "meanPerDraw": 3907,
+    "atTheCap": 43
+   },
+   "shareOfRedrawsOfferingTheSameMenu": {
+    "mean": 0.3717,
+    "q05": 0.0332,
+    "q25": 0.1396,
+    "median": 0.2535,
+    "q75": 0.5345
+   },
+   "sameMenuRedraws": {
+    "atLeast500": 1063,
+    "from100to499": 35,
+    "under100NoLabel": 8
+   },
+   "freshWithABeliefDraw": 1047,
+   "pickIsTopPublishedScore": 1086,
+   "why": {
+    "light": 80,
+    "kept": 561,
+    "interrupt": 387,
+    "ended": 228,
+    "need-bucket": 224,
+    "period": 69,
+    "arrived": 134,
+    "max-age": 107,
+    "patrol": 10,
+    "hunt": 1
+   },
+   "worldHashWithoutOwn": "e289aad502d48f5a",
+   "checked": true,
+   "seconds": 179,
+   "sha256": "aed3c0ce3659d931498854635c0e8725731161d3a92eb21c41b4f3f70917863b"
+  }
+ ],
+ "taken": {
+  "s21-W25.jsonl": {
+   "testFresh": 750,
+   "testOther": 250,
+   "keptOrArrivedOffTheMenu": 62
+  },
+  "s21-W50.jsonl": {
+   "testFresh": 750,
+   "testOther": 250,
+   "keptOrArrivedOffTheMenu": 66
+  },
+  "s48-W25.jsonl": {
+   "train": 780,
+   "trainAvailable": 1092,
+   "dev": 75,
+   "devAvailable": 162
+  },
+  "s48-W50.jsonl": {
+   "train": 780,
+   "trainAvailable": 1151,
+   "dev": 75,
+   "devAvailable": 165
+  },
+  "s7-W25.jsonl": {
+   "train": 780,
+   "trainAvailable": 909,
+   "dev": 75,
+   "devAvailable": 352
+  },
+  "s7-W50.jsonl": {
+   "train": 780,
+   "trainAvailable": 824,
+   "dev": 75,
+   "devAvailable": 274
+  }
+ },
+ "labelChecks": {
+  "freshDraws": 7431,
+  "redrawn": 7431,
+  "notRedrawn": {},
+  "replayEndsOnTheWorldsRandomState": 7431,
+  "realisedDrawsGiveThePick": 7431,
+  "rebuiltAtTheTrueVersion": 7431,
+  "markM1": "met",
+  "menuTooRareForALabel": 64,
+  "labelled": 7367,
+  "calibration": [
+   {
+    "group": "feeding options",
+    "n": 7355,
+    "realised": 0.293,
+    "label": 0.2897,
+    "z": 1.28,
+    "within3": true
+   },
+   {
+    "group": "travel options",
+    "n": 3645,
+    "realised": 0.2274,
+    "label": 0.2309,
+    "z": -1,
+    "within3": true
+   },
+   {
+    "group": "rest options",
+    "n": 7365,
+    "realised": 0.3662,
+    "label": 0.3664,
+    "z": -0.09,
+    "within3": true
+   },
+   {
+    "group": "social options",
+    "n": 6408,
+    "realised": 0.2631,
+    "label": 0.2646,
+    "z": -0.54,
+    "within3": true
+   },
+   {
+    "group": "trips to food (day and dawn menus)",
+    "n": 4372,
+    "realised": 0.2303,
+    "label": 0.2286,
+    "z": 0.45,
+    "within3": true
+   },
+   {
+    "group": "carrying on the act in progress",
+    "n": 4510,
+    "realised": 0.5523,
+    "label": 0.5488,
+    "z": 1.08,
+    "within3": true
+   }
+  ],
+  "calibrationOfTheFixedMenuColumn": [
+   {
+    "group": "feeding options",
+    "n": 7355,
+    "realised": 0.293,
+    "label": 0.256,
+    "z": 14,
+    "within3": false
+   },
+   {
+    "group": "travel options",
+    "n": 3645,
+    "realised": 0.2274,
+    "label": 0.237,
+    "z": -2.61,
+    "within3": true
+   },
+   {
+    "group": "rest options",
+    "n": 7365,
+    "realised": 0.3662,
+    "label": 0.3845,
+    "z": -6.55,
+    "within3": false
+   },
+   {
+    "group": "social options",
+    "n": 6408,
+    "realised": 0.2631,
+    "label": 0.2791,
+    "z": -5.47,
+    "within3": false
+   },
+   {
+    "group": "trips to food (day and dawn menus)",
+    "n": 4372,
+    "realised": 0.2303,
+    "label": 0.1515,
+    "z": 20.15,
+    "within3": false
+   },
+   {
+    "group": "carrying on the act in progress",
+    "n": 4510,
+    "realised": 0.5523,
+    "label": 0.5635,
+    "z": -3.26,
+    "within3": false
+   }
+  ],
+  "markM2": "met",
+  "realisedJitterOfMenuOptions": {
+   "affiliative": {
+    "options": 8560,
+    "mean": 0.0062,
+    "shareAboveZero": 0.5382
+   },
+   "feed": {
+    "options": 7397,
+    "mean": 0.0167,
+    "shareAboveZero": 0.5994
+   },
+   "rest": {
+    "options": 6510,
+    "mean": -0.0007,
+    "shareAboveZero": 0.4963
+   },
+   "food-trip": {
+    "options": 5056,
+    "mean": 0.0651,
+    "shareAboveZero": 0.9045
+   },
+   "aggression": {
+    "options": 4903,
+    "mean": 0.0035,
+    "shareAboveZero": 0.5166
+   },
+   "call": {
+    "options": 2873,
+    "mean": 0.0006,
+    "shareAboveZero": 0.5057
+   },
+   "social-move": {
+    "options": 2682,
+    "mean": 0.0038,
+    "shareAboveZero": 0.5242
+   },
+   "greet": {
+    "options": 2022,
+    "mean": 0.0007,
+    "shareAboveZero": 0.5054
+   },
+   "other": {
+    "options": 1815,
+    "mean": 0.0024,
+    "shareAboveZero": 0.5019
+   },
+   "nest": {
+    "options": 1333,
+    "mean": -0.0001,
+    "shareAboveZero": 0.5011
+   },
+   "drink": {
+    "options": 928,
+    "mean": 0.0374,
+    "shareAboveZero": 0.7328
+   },
+   "mating": {
+    "options": 343,
+    "mean": 0.0025,
+    "shareAboveZero": 0.5423
+   },
+   "care": {
+    "options": 192,
+    "mean": 0.0063,
+    "shareAboveZero": 0.5469
+   }
+  }
+ },
+ "splits": {
+  "train": {
+   "records": 3120,
+   "fresh": 3120,
+   "kept": 0,
+   "arrived": 0,
+   "animals": 61,
+   "seeds": [
+    7,
+    48
+   ],
+   "byWorld": {
+    "s7-W25": 780,
+    "s7-W50": 780,
+    "s48-W25": 780,
+    "s48-W50": 780
+   },
+   "byPhase": {
+    "dawn": 329,
+    "day": 2470,
+    "dusk": 210,
+    "night": 111
+   },
+   "recordIdsSha256": "5b82f3c928530835536ddac8eb43f0005568ab574b5cbefaa5e14c8356412102",
+   "labels": {
+    "fresh": 3120,
+    "options": {
+     "median": 6,
+     "mean": 6.0606
+    },
+    "entropy": {
+     "mean": 0.3812,
+     "median": 0.3014,
+     "q1": 0,
+     "q3": 0.6846
+    },
+    "massOnTheRealisedPick": 0.7775,
+    "labelTopIsTheRealisedPick": 0.8378,
+    "chance": 0.18,
+    "meanTopMass": 0.8343,
+    "clear": 0.3962,
+    "topUnderHalf": 0.0692,
+    "withABeliefDraw": 2911,
+    "l1FixedMenuAgainstLabel": 0.1195,
+    "sameMenuRedraws": {
+     "median": 500,
+     "under500": 125
+    },
+    "redrawsPerDraw": {
+     "mean": 4139
+    },
+    "picksByKind": {
+     "rest": 1101,
+     "feeding": 939,
+     "travel": 364,
+     "social": 716
+    },
+    "labelMassByKind": {
+     "feeding": 0.2975,
+     "social": 0.2356,
+     "rest": 0.3488,
+     "travel": 0.118
+    },
+    "tripMenus": {
+     "n": 1858,
+     "rulesTookATrip": 0.2174,
+     "labelMassOnTrips": 0.2224,
+     "fixedMenuMassOnTrips": 0.1482
+    },
+    "carryOnMenus": {
+     "n": 1935,
+     "rulesCarriedOn": 0.5597,
+     "labelMassOnCarryingOn": 0.5528,
+     "labelAt90": 0.4279
+    }
+   },
+   "arms": {
+    "p5b": {
+     "file": "p5b/contexts/train.jsonl",
+     "sha256": "38bddc0dfba750d294734fa1bd94b154e1338483a1fd3711fc959c38fea3a1cd",
+     "tokens": {
+      "packets": 3120,
+      "estimate": {
+       "median": 409,
+       "p95": 540,
+       "max": 643,
+       "mean": 416.1
+      },
+      "projectedReal": {
+       "ratio": 0.85,
+       "median": 348,
+       "p95": 459,
+       "max": 547
+      },
+      "meanByBlock": {
+       "options": 88.8,
+       "nearby": 64.7,
+       "lately": 56.4,
+       "body": 53.8,
+       "last": 33.3,
+       "now": 30.7,
+       "me": 29.7,
+       "doing": 17.8,
+       "asked because": 11.8,
+       "instruction": 8.5,
+       "memories": 7.7,
+       "feeling": 6.9,
+       "(constant)": 5.7,
+       "events": 0
+      },
+      "packetsCarryingBlock": {
+       "me": 3120,
+       "feeling": 2484,
+       "doing": 3120,
+       "body": 3120,
+       "now": 3120,
+       "nearby": 2845,
+       "lately": 3120,
+       "last": 3008,
+       "memories": 1272,
+       "asked because": 2572,
+       "events": 6
+      },
+      "projectedSecondsPerExample": 0.599
+     },
+     "daytimePackets": 2470,
+     "daytimeBodyLineSaysAboutToSleep": 365
+    },
+    "p5a": {
+     "file": "p5a/contexts/train.jsonl",
+     "sha256": "93e5c7f53ae60fafccb76f639b5670fa228b59ba7ed4bb0bd2cd638f4026d85e",
+     "tokens": {
+      "packets": 3120,
+      "estimate": {
+       "median": 318,
+       "p95": 433,
+       "max": 539,
+       "mean": 326.4
+      },
+      "projectedReal": {
+       "ratio": 0.85,
+       "median": 270,
+       "p95": 368,
+       "max": 458
+      },
+      "meanByBlock": {
+       "options": 88.8,
+       "nearby": 64.7,
+       "body": 53.8,
+       "now": 30.7,
+       "me": 29.7,
+       "doing": 17.8,
+       "asked because": 11.8,
+       "instruction": 8.5,
+       "memories": 7.7,
+       "feeling": 6.9,
+       "(constant)": 5.7,
+       "events": 0
+      },
+      "packetsCarryingBlock": {
+       "me": 3120,
+       "feeling": 2484,
+       "doing": 3120,
+       "body": 3120,
+       "now": 3120,
+       "nearby": 2845,
+       "memories": 1272,
+       "asked because": 2572,
+       "events": 6
+      },
+      "projectedSecondsPerExample": 0.417
+     },
+     "daytimePackets": 2470,
+     "daytimeBodyLineSaysAboutToSleep": 365
+    }
+   }
+  },
+  "dev": {
+   "records": 300,
+   "fresh": 300,
+   "kept": 0,
+   "arrived": 0,
+   "animals": 15,
+   "seeds": [
+    7,
+    48
+   ],
+   "byWorld": {
+    "s7-W25": 75,
+    "s7-W50": 75,
+    "s48-W25": 75,
+    "s48-W50": 75
+   },
+   "byPhase": {
+    "dawn": 38,
+    "day": 226,
+    "dusk": 20,
+    "night": 16
+   },
+   "recordIdsSha256": "a9ff17ae15e716ad5d2265243fa8f9ea0635b93bff68b1b0d91b56c88f51a616",
+   "labels": {
+    "fresh": 300,
+    "options": {
+     "median": 5,
+     "mean": 5.5667
+    },
+    "entropy": {
+     "mean": 0.364,
+     "median": 0.2493,
+     "q1": 0,
+     "q3": 0.6668
+    },
+    "massOnTheRealisedPick": 0.792,
+    "labelTopIsTheRealisedPick": 0.8567,
+    "chance": 0.1983,
+    "meanTopMass": 0.8409,
+    "clear": 0.4133,
+    "topUnderHalf": 0.0767,
+    "withABeliefDraw": 280,
+    "l1FixedMenuAgainstLabel": 0.1038,
+    "sameMenuRedraws": {
+     "median": 572,
+     "under500": 9
+    },
+    "redrawsPerDraw": {
+     "mean": 3988
+    },
+    "picksByKind": {
+     "feeding": 81,
+     "rest": 133,
+     "travel": 30,
+     "social": 56
+    },
+    "labelMassByKind": {
+     "rest": 0.4343,
+     "feeding": 0.2752,
+     "travel": 0.0975,
+     "social": 0.193
+    },
+    "tripMenus": {
+     "n": 167,
+     "rulesTookATrip": 0.2515,
+     "labelMassOnTrips": 0.2346,
+     "fixedMenuMassOnTrips": 0.1661
+    },
+    "carryOnMenus": {
+     "n": 184,
+     "rulesCarriedOn": 0.587,
+     "labelMassOnCarryingOn": 0.5943,
+     "labelAt90": 0.4837
+    }
+   },
+   "arms": {
+    "p5b": {
+     "file": "p5b/contexts/dev.jsonl",
+     "sha256": "42a5b00b4bbaad456c46bad0c3f803008dd94b7bb68f384d9b09e73709286019",
+     "tokens": {
+      "packets": 300,
+      "estimate": {
+       "median": 390,
+       "p95": 542,
+       "max": 639,
+       "mean": 398.9
+      },
+      "projectedReal": {
+       "ratio": 0.85,
+       "median": 332,
+       "p95": 461,
+       "max": 543
+      },
+      "meanByBlock": {
+       "options": 83.8,
+       "nearby": 59.8,
+       "lately": 55.9,
+       "body": 50.2,
+       "last": 30.7,
+       "now": 30.5,
+       "me": 29,
+       "doing": 17.9,
+       "asked because": 12.3,
+       "instruction": 8.5,
+       "memories": 8.2,
+       "feeling": 6.4,
+       "(constant)": 5.7
+      },
+      "packetsCarryingBlock": {
+       "me": 300,
+       "feeling": 235,
+       "doing": 300,
+       "asked because": 251,
+       "body": 300,
+       "now": 300,
+       "lately": 300,
+       "last": 292,
+       "memories": 132,
+       "nearby": 257
+      },
+      "projectedSecondsPerExample": 0.564
+     },
+     "daytimePackets": 226,
+     "daytimeBodyLineSaysAboutToSleep": 33
+    },
+    "p5a": {
+     "file": "p5a/contexts/dev.jsonl",
+     "sha256": "613faac8b26c4d89eda725cb5b7b88f2e5f20892943604190de29c550c270e81",
+     "tokens": {
+      "packets": 300,
+      "estimate": {
+       "median": 310,
+       "p95": 446,
+       "max": 525,
+       "mean": 312.2
+      },
+      "projectedReal": {
+       "ratio": 0.85,
+       "median": 264,
+       "p95": 379,
+       "max": 446
+      },
+      "meanByBlock": {
+       "options": 83.8,
+       "nearby": 59.8,
+       "body": 50.2,
+       "now": 30.5,
+       "me": 29,
+       "doing": 17.9,
+       "asked because": 12.3,
+       "instruction": 8.5,
+       "memories": 8.2,
+       "feeling": 6.4,
+       "(constant)": 5.7
+      },
+      "packetsCarryingBlock": {
+       "me": 300,
+       "feeling": 235,
+       "doing": 300,
+       "asked because": 251,
+       "body": 300,
+       "now": 300,
+       "memories": 132,
+       "nearby": 257
+      },
+      "projectedSecondsPerExample": 0.391
+     },
+     "daytimePackets": 226,
+     "daytimeBodyLineSaysAboutToSleep": 33
+    }
+   }
+  },
+  "test": {
+   "records": 2000,
+   "fresh": 1500,
+   "kept": 427,
+   "arrived": 73,
+   "animals": 38,
+   "seeds": [
+    21
+   ],
+   "byWorld": {
+    "s21-W25": 1000,
+    "s21-W50": 1000
+   },
+   "byPhase": {
+    "dawn": 173,
+    "day": 1607,
+    "dusk": 169,
+    "night": 51
+   },
+   "recordIdsSha256": "3e9f0beacb77bab33bf5beeddd67d4d57309165849b2945824aac1af568e942c",
+   "labels": {
+    "fresh": 1500,
+    "options": {
+     "median": 6,
+     "mean": 5.9673
+    },
+    "entropy": {
+     "mean": 0.3762,
+     "median": 0.2647,
+     "q1": 0,
+     "q3": 0.6851
+    },
+    "massOnTheRealisedPick": 0.7845,
+    "labelTopIsTheRealisedPick": 0.8393,
+    "chance": 0.1833,
+    "meanTopMass": 0.8367,
+    "clear": 0.4187,
+    "topUnderHalf": 0.0733,
+    "withABeliefDraw": 1432,
+    "l1FixedMenuAgainstLabel": 0.1256,
+    "sameMenuRedraws": {
+     "median": 500,
+     "under500": 75
+    },
+    "redrawsPerDraw": {
+     "mean": 4455
+    },
+    "picksByKind": {
+     "rest": 560,
+     "travel": 169,
+     "feeding": 417,
+     "social": 354
+    },
+    "labelMassByKind": {
+     "feeding": 0.2785,
+     "social": 0.2341,
+     "rest": 0.369,
+     "travel": 0.1184
+    },
+    "tripMenus": {
+     "n": 913,
+     "rulesTookATrip": 0.2202,
+     "labelMassOnTrips": 0.2212,
+     "fixedMenuMassOnTrips": 0.1447
+    },
+    "carryOnMenus": {
+     "n": 913,
+     "rulesCarriedOn": 0.5225,
+     "labelMassOnCarryingOn": 0.5233,
+     "labelAt90": 0.4272
+    }
+   },
+   "files": {
+    "eval/test.jsonl": "ea3fa99a0c53d18a135fdc784a87d752d109f70bc1857521cdcb23cf00e56546",
+    "eval/all.jsonl": "db5a5866b7b82415a176f6b0f7a24d6abab53ad65f0241e28afeaf83e6de1771",
+    "eval/probes.jsonl": "44b5b354a4c9206f1b10993d754495bb20cca3651c4fba68e626ed72b0bf5ae3"
+   },
+   "packetsSha256": {
+    "p5a": {
+     "packets": 2000,
+     "sha256": "f63437c843eb4cf6780334f3948c54ca0891a5315647621b8d108415dd6a70d5"
+    },
+    "p5aNoDoing": {
+     "packets": 1340,
+     "sha256": "e03b385fde71279771ac90524bc183a017a3a18e36bca1ccf277a4ff5972c48a"
+    },
+    "p5aProbe": {
+     "packets": 1080,
+     "sha256": "3149600cdb7f316c1f78e20b8278cb9894c9a54575255cb0dc81fb11b78084fb"
+    },
+    "p5b": {
+     "packets": 2000,
+     "sha256": "266c101146f474f0ddd7bd9ee8455f95a35d1f27fea12d26f36dcd6b4f42544e"
+    },
+    "p5bNoDoing": {
+     "packets": 1340,
+     "sha256": "cba8ff9d377acda043d24bfc371b4098474ded7a2482ea7526e355deb0774828"
+    },
+    "p5bProbe": {
+     "packets": 1080,
+     "sha256": "d90d17e4a5c6472a6db2e6b502b8d6e1d7f4266ab188fc5bb82f797d8b68a656"
+    }
+   },
+   "packetsToScore": {
+    "p5a": 2000,
+    "p5b": 2000,
+    "p5aNoDoing": 1340,
+    "p5bNoDoing": 1340,
+    "p5aProbe": 1080,
+    "p5bProbe": 1080
+   },
+   "probeSituations": {
+    "deficit": 60,
+    "reserves": 60,
+    "sleep": 60,
+    "light": 60,
+    "heat": 60,
+    "water": 60
+   },
+   "arms": {
+    "p5b": {
+     "tokens": {
+      "packets": 2000,
+      "estimate": {
+       "median": 396,
+       "p95": 531,
+       "max": 658,
+       "mean": 401.3
+      },
+      "projectedReal": {
+       "ratio": 0.85,
+       "median": 337,
+       "p95": 451,
+       "max": 559
+      },
+      "meanByBlock": {
+       "options": 88.5,
+       "nearby": 56.9,
+       "lately": 56.6,
+       "body": 52.2,
+       "last": 31.8,
+       "now": 31.1,
+       "me": 29.9,
+       "doing": 16.9,
+       "asked because": 9.3,
+       "instruction": 8.5,
+       "memories": 7.2,
+       "feeling": 6.5,
+       "(constant)": 5.7,
+       "events": 0.1
+      },
+      "packetsCarryingBlock": {
+       "me": 2000,
+       "feeling": 1545,
+       "doing": 2000,
+       "body": 2000,
+       "now": 2000,
+       "nearby": 1733,
+       "lately": 2000,
+       "last": 1912,
+       "memories": 761,
+       "asked because": 1342,
+       "events": 7
+      },
+      "projectedSecondsPerExample": 0.568
+     }
+    },
+    "p5a": {
+     "tokens": {
+      "packets": 2000,
+      "estimate": {
+       "median": 306,
+       "p95": 427,
+       "max": 542,
+       "mean": 312.9
+      },
+      "projectedReal": {
+       "ratio": 0.85,
+       "median": 260,
+       "p95": 363,
+       "max": 461
+      },
+      "meanByBlock": {
+       "options": 88.5,
+       "nearby": 56.9,
+       "body": 52.2,
+       "now": 31.1,
+       "me": 29.9,
+       "doing": 16.9,
+       "asked because": 9.3,
+       "instruction": 8.5,
+       "memories": 7.2,
+       "feeling": 6.5,
+       "(constant)": 5.7,
+       "events": 0.1
+      },
+      "packetsCarryingBlock": {
+       "me": 2000,
+       "feeling": 1545,
+       "doing": 2000,
+       "body": 2000,
+       "now": 2000,
+       "nearby": 1733,
+       "memories": 761,
+       "asked because": 1342,
+       "events": 7
+      },
+      "projectedSecondsPerExample": 0.392
+     }
+    }
+   }
+  }
+ },
+ "removedWordingsFound": 0,
+ "bannedLinesFound": 0,
+ "packetsNotOneChangeApart": 0,
+ "assembly": {
+  "rebuilt": [
+   "p5a"
+  ],
+  "kept": [
+   {
+    "arm": "p5b",
+    "assembledAt": "1fd98ee",
+    "contexts/manifest.json": "6a6736dceba98ddeb5c19e27ac37c833f6ae9dcd664fe35b0dc57e37cc512a0a",
+    "train": "38bddc0dfba750d294734fa1bd94b154e1338483a1fd3711fc959c38fea3a1cd",
+    "dev": "42a5b00b4bbaad456c46bad0c3f803008dd94b7bb68f384d9b09e73709286019",
+    "heldOutPackets": {
+     "p5b": "266c101146f474f0ddd7bd9ee8455f95a35d1f27fea12d26f36dcd6b4f42544e",
+     "p5bNoDoing": "cba8ff9d377acda043d24bfc371b4098474ded7a2482ea7526e355deb0774828",
+     "p5bProbe": "d90d17e4a5c6472a6db2e6b502b8d6e1d7f4266ab188fc5bb82f797d8b68a656"
+    }
+   }
+  ],
+  "keptNote": "not rewritten: the training and development files on disk are byte for byte what this assembly would write, and the arm's packets in the held-out file are those on file before it"
+ },
+ "previous": "78a2f1968a360d5d4ff0499b52904db321a21799d248b62f46bbe63350e75630"
+}

@@ -41,6 +41,7 @@ import { familyOf } from './em-sample';
 import { Worker, type Scorer } from './ft-society';
 import { newDecoder, newTally, tallyAsk, type DecodeRecord, type DecodeTally, type HarnessDecode } from './lib/decoder';
 import { glinerKernel } from './lib/kernels';
+import type { LocalPacket } from '../server/decide';
 import { buildStateOnlyQuestion, tokensOf } from './lib/packet-state';
 
 export const DAY = Math.round(24 / TICK_HOURS), TICK_MIN = TICK_HOURS * 60;
@@ -74,6 +75,12 @@ export interface Receipt {
   index: number | null; p: number[] | null; picked: number; sha: string; tokens: number; ms: number;
   /** Stage R9: what the decode step did at this ask (mode, salt, hold, epoch, the draw or the noise); only in arms that have one. */
   dec?: DecodeRecord;
+  /**
+   * Stage R11 (docs/staging/r11-prereg.md §6.2, lock-in in the loop; only in arms run with `carryOn`): the position on the
+   * menu of the option that carries on the act in progress when the animal was asked; -1 when that act had ended, could
+   * not go on or is not offered.
+   */
+  cur?: number;
 }
 /** Stage R9: the receipts of two logs (a run and its replay) that differ in the option applied or in the decode's record. 0: the decode is reproduced from what the receipts hold. */
 export function decodeDiffers(a: Receipt[], b: Receipt[]): number {
@@ -175,7 +182,14 @@ export function armWorld(base: World, spec: ArmSpec): World {
 }
 
 export async function runArm(base: World, name: string, spec: ArmSpec, days: number, focalIds: { id: number; cls: string }[], kernel: Kernel | null,
-  opts: { receipts?: (r: Receipt) => void; replay?: { missing: number; menuDiffers: number }; guard?: GuardedScorer; log?: (s: string) => void } = {}): Promise<ArmResult> {
+  opts: { receipts?: (r: Receipt) => void; replay?: { missing: number; menuDiffers: number }; guard?: GuardedScorer; log?: (s: string) => void;
+    /**
+     * Stage R11 (all absent: this function as it was). `packet`: the text packet the arm's kernel is sent, for the receipt's
+     * hash and token estimate (default: the state-only packet). `carryOn`: each receipt also notes where on the menu the act
+     * in progress stands (Receipt.cur). `attach`: called once with the arm's world; what it returns is called after every
+     * tick, once the tick's acts are set (stage R7's card and row readers: scripts/r7-card.ts armReaders); it must only read.
+     */
+    packet?: (request: KernelRequest) => LocalPacket; carryOn?: boolean; attach?: (w: World) => { after(): void } } = {}): Promise<ArmResult> {
   if (days > MAX_DAYS) throw new Error(`at most ${MAX_DAYS} days per run (docs/staging/r5-pilot-prereg.md)`);
   if ((spec.kernel === 'rules') !== (kernel === null)) throw new Error(`arm ${name}: a kernel is needed for every arm but the rules`);
   const w = armWorld(base, spec), P = paramsOf(w), idx0 = index(w), t0 = Date.now(), startHash = worldHash(w);
@@ -189,11 +203,14 @@ export async function runArm(base: World, name: string, spec: ArmSpec, days: num
     act: c.action as string, changes: 0, kindChanges: 0, dec: newTally() }]; }));
   // stage R9: the arm's decode step (it keeps its own notes per animal, outside the world)
   const decoder = spec.decode && kernel ? newDecoder(spec.decode) : null;
-  const ms: number[] = [], last = new Map<number, { ms: number; answer: KernelAnswer | null; sha: string; tokens: number }>();
+  const ms: number[] = [], last = new Map<number, { ms: number; answer: KernelAnswer | null; sha: string; tokens: number; cur: number }>();
+  const hook = opts.attach?.(w);
+  /** Stage R11: the option that carries on the act in progress, from the animal's own packet line (`own.doing` without an end word: the act goes on while it waits). */
+  const carryOf = (request: KernelRequest): number => { const d = request.context.own?.doing, c = index(w).byId.get(request.context.chimpId); return d && d.ended === undefined && c && c.action === d.action ? request.options.findIndex(o => o.action === c.action && o.targetId === c.targetId) : -1; };
   // the kernel, timed, with its raw answer kept for the receipt
   const timed: Kernel | null = kernel && { ...kernel, async decide(request, env) {
-    const s = performance.now(), packet = buildStateOnlyQuestion(request.context);
-    const rec = { ms: 0, answer: null as KernelAnswer | null, sha: createHash('sha256').update(JSON.stringify(packet)).digest('hex').slice(0, 16), tokens: tokensOf(packet) };
+    const s = performance.now(), packet = opts.packet ? opts.packet(request) : buildStateOnlyQuestion(request.context);
+    const rec = { ms: 0, answer: null as KernelAnswer | null, sha: createHash('sha256').update(JSON.stringify(packet)).digest('hex').slice(0, 16), tokens: tokensOf(packet), cur: opts.carryOn ? carryOf(request) : -1 };
     last.set(request.context.chimpId, rec);
     try { rec.answer = await kernel.decide(request, env); return rec.answer; } finally { rec.ms = performance.now() - s; ms.push(rec.ms); }
   } };
@@ -225,9 +242,10 @@ export async function runArm(base: World, name: string, spec: ArmSpec, days: num
         opts.receipts?.({ tick: w.tick, t: +req.context.time.toFixed(6), id: r.chimpId, v: req.context.version, phase: req.context.environment.phase, n: req.options.length, rulesIndex: req.rulesIndex,
           opts: req.options.map(o => [o.action, o.targetId]), fam, by: r.by, refusal: r.refusal, detail: r.refusal === 'invalid-context' && r.detail === 'body' ? `body: ${bodyFieldError(req.context.body)}` : r.detail,
           index: a && typeof a.index === 'number' ? a.index : null, p: a && Array.isArray(a.probabilities) ? a.probabilities as number[] : null, picked: r.by === 'kernel' ? r.index : -1,
-          sha: l?.sha ?? '', tokens: l?.tokens ?? 0, ms: l ? +l.ms.toFixed(1) : 0, ...(record ? { dec: record } : {}) });
+          sha: l?.sha ?? '', tokens: l?.tokens ?? 0, ms: l ? +l.ms.toFixed(1) : 0, ...(record ? { dec: record } : {}), ...(opts.carryOn ? { cur: l?.cur ?? -1 } : {}) });
       }
     }
+    hook?.after();
     // measurement only: nothing below writes the world
     const env = w.environment, light = env.daylight >= 0.5, night = env.daylight <= 0.03, day = Math.floor(i / DAY), endOfDay = (i + 1) % DAY === 0;
     for (const f of focalIds) {
