@@ -1,0 +1,52 @@
+{
+ "about": "Stage R12 (docs/staging/r12-prereg.md section 5): the inputs of the two-call cost estimate. One real decision point (the packet 5 example printed in docs/staging/r8-prereg.md section 10.4, record 48-W50-1670-12, short variant: 362 real tokens by the model's tokenizer, counted in stage R8) rendered as today's single call, as the two calls of this design and as one long call. State lines are the real packet's. The kind labels and the target lists are this design's and are composed by hand in the label grammar of R8 (illustrative, not sampled). scripts/r12-offer-table.ts --calls applies the project's estimator (estimateInputTokens) to each packet and the measured time law to the result.",
+ "law": {
+  "seconds": 0.443, "tokens": 467, "power": 1.5,
+  "source": "the review's speed measurement of 10 October 2026 (model-speed-probe.json: untuned base, 64 held-out packets, one at a time): 0.443 s at a median of 467 tokens; by token tercile 0.34 s at 396, 0.442 s at 466, 0.54 s at 541; a trimmed state of 407 tokens took 0.339 s",
+  "measured": [[396, 0.34], [407, 0.339], [466, 0.442], [541, 0.54]]
+ },
+ "realTokens": { "packet": "one-short", "tokens": 362, "source": "docs/staging/r8-prereg.md section 10.4 (the short variant of the same moment); the mean over 2,572 packets is 0.856 (docs/staging/r8-tokens-day2.md)" },
+ "asks": [
+  { "perAnimalDay": 54.3, "source": "a 2-day no-model population night with the gate on, field map, seed 48 (docs/staging/r10-prereg.md section 10, proof 6)" },
+  { "perAnimalDay": 56.9, "source": "the rules' own gate in a rules world, seeds 48 and 7 (docs/staging/r7-ledger-numbers.md section 2)" }
+ ],
+ "animals": 38,
+ "nightHours": 10,
+ "second": [
+  { "share": 0.39, "what": "measured with kinds first on the rules' menu (activityFirst 2: 1.37 to 1.41 calls a decision, docs/staging/r2-prereg.md result 3)" },
+  { "share": 0.55, "what": "assumed for the possibility menu (not measured)" },
+  { "share": 0.7, "what": "assumed for the possibility menu, high (not measured)" }
+ ],
+ "placeShare": { "share": 0.6, "what": "assumed: of the second calls, the share over trees or waters (the long target list); the rest are over partners (not measured)" },
+ "instruction": "Choose what this wild chimpanzee does next, from what it perceives, feels and remembers.",
+ "state": {
+  "me": "Nkeru, adult female, 33 y; rank 3 of 7 females; mother of a dependent infant; playful",
+  "doing": "feeding in the Chrysophyllum albidum, 11 min",
+  "asked because": "Ugazi gave a travel hoo",
+  "body": "severe energy shortfall: about 390 kcal still to find, about to sleep; stomach full; warm; slightly sleepy",
+  "now": "full daylight; cloudy, 23 °C; party of 4 with 0 adult males",
+  "nearby": ["Wakiro: my offspring, infant male, 1 m, close bond, following me", "Dembiri: my offspring, adolescent male, 2 m, close bond, resting", "Ugazi: my offspring, juvenile female, 3 m, close bond, travelling southeast"],
+  "lately": "eating as fast as when I began; my last trip gave less than I expected; 4 of my last 8 trips ended in a feed; fed in 4 crowns since leaving my nest",
+  "last": ["groomed Dembiri 5 h ago", "groomed by Dembiri 5 h ago", "groomed Ugazi 12 min ago", "groomed by Ugazi 12 min ago"]
+ },
+ "packets": [
+  { "name": "one-short", "what": "Today's shape: one call, packet 5 short, the rules' menu (the real packet)", "role": "one",
+   "lines": ["me", "doing", "asked because", "body", "now", "nearby", "lately", "last"],
+   "options": ["Rest here", "Feed in the Chrysophyllum albidum, 3 m (2,300 kcal of fruit there)", "Go with Ugazi to the Pterygota mildbraedii, 80 m southeast (250 kcal of fruit there when I saw it 6 h ago, may have changed; 1 other going there)", "Groom Dembiri", "Play with Ugazi"] },
+  { "name": "kinds", "what": "Call 1: what kind of thing next (every line of the state; one short entry per kind possible now, \"Carry on\" first)", "role": "first",
+   "lines": ["me", "doing", "asked because", "body", "now", "nearby", "lately", "last"],
+   "options": ["Carry on", "Feed on something else here", "Go to food elsewhere", "Rest", "Groom someone", "Play"] },
+  { "name": "places", "what": "Call 2 after \"Go to food elsewhere\": which place (body, foraging and place lines; eight trees by the shortlist rule, labels as R8 writes them)", "role": "second-place",
+   "lines": ["me", "doing", "asked because", "body", "now", "lately"], "chosen": "going to food elsewhere",
+   "options": ["With Ugazi to the Pterygota mildbraedii, 80 m southeast (250 kcal of fruit there when I saw it 6 h ago, may have changed; 1 other going there)", "The Uvariopsis congensis, 90 m west (1,100 kcal of fruit there when I saw it 2 h ago; fed there today)", "The Ficus natalensis, 120 m north (2,200 kcal of fruit there when I saw it 3 h ago)", "The Celtis durandii, 260 m northeast (600 kcal of fruit there when I saw it 1 day ago, may have changed)", "The Ficus mucuso, 340 m south (3,400 kcal of fruit there when I saw it 2 days ago, may have changed)", "The Mimusops bagshawei, 720 m east (900 kcal of fruit there when I saw it 4 days ago, may have changed)", "The Pseudospondias microcarpa, 1,400 m northwest (1,800 kcal of fruit there when I saw it 6 days ago, may have changed)", "The Ficus sansibarica, 2,100 m southwest (2,600 kcal of fruit there when I saw it 8 days ago, may have changed)"] },
+  { "name": "places-short", "what": "The same call with short target labels (species, distance, direction, crop and age only)", "role": "second-place-short",
+   "lines": ["me", "doing", "asked because", "body", "now", "lately"], "chosen": "going to food elsewhere",
+   "options": ["With Ugazi: Pterygota mildbraedii, 80 m southeast (250 kcal, 6 h ago)", "Uvariopsis congensis, 90 m west (1,100 kcal, 2 h ago; fed there today)", "Ficus natalensis, 120 m north (2,200 kcal, 3 h ago)", "Celtis durandii, 260 m northeast (600 kcal, 1 day ago)", "Ficus mucuso, 340 m south (3,400 kcal, 2 days ago)", "Mimusops bagshawei, 720 m east (900 kcal, 4 days ago)", "Pseudospondias microcarpa, 1,400 m northwest (1,800 kcal, 6 days ago)", "Ficus sansibarica, 2,100 m southwest (2,600 kcal, 8 days ago)"] },
+  { "name": "partners", "what": "Call 2 after \"Groom someone\": which partner (company and social-timing lines; every community member in view)", "role": "second-partner",
+   "lines": ["me", "doing", "asked because", "now", "nearby", "last"], "chosen": "going to groom someone",
+   "options": ["Wakiro", "Dembiri", "Ugazi"] },
+  { "name": "one-long", "what": "For comparison: one call holding every kind and every target (15 options; today's validation allows 8)", "role": "long",
+   "lines": ["me", "doing", "asked because", "body", "now", "nearby", "lately", "last"],
+   "options": ["Carry on", "Feed on leaves and pith here", "Rest here", "Groom Wakiro", "Groom Dembiri", "Groom Ugazi", "Play with Ugazi", "Go with Ugazi to the Pterygota mildbraedii, 80 m southeast (250 kcal of fruit there when I saw it 6 h ago, may have changed; 1 other going there)", "Go to the Uvariopsis congensis, 90 m west (1,100 kcal of fruit there when I saw it 2 h ago; fed there today)", "Go to the Ficus natalensis, 120 m north (2,200 kcal of fruit there when I saw it 3 h ago)", "Go to the Celtis durandii, 260 m northeast (600 kcal of fruit there when I saw it 1 day ago, may have changed)", "Go to the Ficus mucuso, 340 m south (3,400 kcal of fruit there when I saw it 2 days ago, may have changed)", "Go to the Mimusops bagshawei, 720 m east (900 kcal of fruit there when I saw it 4 days ago, may have changed)", "Go to the Pseudospondias microcarpa, 1,400 m northwest (1,800 kcal of fruit there when I saw it 6 days ago, may have changed)", "Go to the Ficus sansibarica, 2,100 m southwest (2,600 kcal of fruit there when I saw it 8 days ago, may have changed)"] }
+ ]
+}

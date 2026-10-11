@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { atomIndex, offerSites } from '../scripts/lib/offer-sites';
 import { scanSource } from '../scripts/lib/valuation';
-import { buildTable, readBase, readClasses, readSource, SOURCE, tableMarkdown, type Classes } from '../scripts/r12-offer-table';
+import { buildTable, callCosts, CALLS_FILE, callsMarkdown, readBase, readClasses, readSource, SOURCE, tableMarkdown, type CallExamples, type Classes } from '../scripts/r12-offer-table';
 import { CANDIDATES_OPTS } from '../scripts/valuation-ledger';
 
 // Stage R12 (docs/staging/r12-prereg.md §2): the reader of offer sites and their gates on a small source text, then
@@ -167,4 +168,17 @@ test('every distinct condition is indexed with the sites that carry it', () => {
   const ix = atomIndex(T.rows.map(r => r.site));
   assert.equal(ix.size, T.atoms.size);
   assert.equal(ix.get('c.alive')!.length, T.rows.length, 'every site stands behind the animal being alive');
+});
+
+test('the cost of the two calls: the estimator on the example packets, one real count as the anchor, the measured law', () => {
+  const E = JSON.parse(readFileSync(new URL(`../${CALLS_FILE}`, import.meta.url), 'utf8')) as CallExamples;
+  const { ratio, rows, secondsAt } = callCosts(E), at = (role: string) => rows.find(r => r.role === role)!;
+  assert.equal(Math.round(at('one').real), E.realTokens.tokens, 'the anchor packet comes out at its real count');
+  assert.ok(ratio > 0.7 && ratio < 1, `the estimate runs high, as stage R8 found (${ratio})`);
+  for (const [tokens, seconds] of E.law.measured) assert.ok(Math.abs(secondsAt(tokens) - seconds) / seconds < 0.08, `the law at ${tokens} tokens`);
+  assert.ok(at('first').real < at('one').real, 'the kinds call is shorter than today\'s packet');
+  assert.ok(at('second-partner').real < at('second-place-short').real && at('second-place-short').real < at('second-place').real);
+  assert.ok(at('long').real > at('one').real && rows.every(r => r.options >= 2));
+  assert.ok(rows.filter(r => r.role !== 'long').every(r => r.options <= 8), 'every call of the design fits the eight options a request may hold');
+  assert.equal(callsMarkdown(E), callsMarkdown(E));
 });
