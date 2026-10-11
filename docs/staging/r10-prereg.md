@@ -352,7 +352,7 @@ prints are in `scripts/lib/prescriptions.ts`, which this stage does not touch).
 | 5 | Field: rules arm against the plain world | **Equal.** `plain`: after 30 days 4b5cc61f8ad797e0, then c0c0192822501ddf and 1aa2a8d748255642. The rules arm through the script: the same three (heads 554d3e7 and a886f30) |
 | 6 | Field: `argmax-gate`, 2 days | Day hashes 95bfc1fd4e6ddfda and 07ec9b9f26b64f60. Per day: **2,060 and 2,069 asks** (54.3 per animal on the kernel and day), the kernel's choice settled 2,013 and 2,041, the rules 47 and 28 (every one `not-applied`), **1,145 and 1,149 acts held by the gate** (30.2 per animal and day), no death, no timeout. No-model wall time 4.2 and 3.6 s a day; the whole process 12.3 s; largest memory 410 MB |
 | 7 | Field: killed and resumed | The run killed with SIGKILL after 8,000 ticks (inside day 2; exit code 137) and resumed: 3 files of the day set aside, **1,408 journalled answers reused**, end hash **07ec9b9f26b64f60**, the uninterrupted run's |
-| 8 | Field: replay through the observer | The receipts reproduce the run: 2 of 2 day hashes equal, 0 asks without a receipt, 0 menus differ, 0 of 6,423 receipt lines differ when regenerated (each with its context's hash), 0 row files differ; 13 s with the observer and the truth readouts, 394 MB. The resumed run replays the same way. 13 of the 15 rows had a value after two days (no contest and no detected conflict fell in the window for T-SOC-14 and T-SOC-10) |
+| 8 | Field: replay through the observer | The receipts reproduce the run: 2 of 2 day hashes equal, 0 asks without a receipt, 0 menus differ, 0 of 6,423 receipt lines differ when regenerated (each with its context's hash), 0 row files differ; 13 s with the observer and the truth readouts (394 MB at its largest, measured on the same replay at head 9530214). The resumed run replays the same way. 13 of the 15 rows had a value after two days (no contest and no detected conflict fell in the window for T-SOC-14 and T-SOC-10) |
 
 **What a day of a whole population writes** (proof 6, bytes per simulated day): receipts 1.21 MB; journal 0.24 MB;
 contexts 6.2 MB as written, 0.68 MB once gzipped at the day's end; rows 27 kB; summary under 1 kB; a checkpoint
@@ -449,8 +449,8 @@ script sets them; read only."
 
 **4. Merge notes.**
 
-- New files only, except `src/sim/decide.ts` (+16 lines: the `loopTap` export, one call in `decisionPoint`, three in
-  `loopGate`). A conflict is likely there if `r7-ledger` adds its shadow tap or another stage edits `loopGate`; the
+- New files only, except `src/sim/decide.ts` (14 lines added, 2 changed: the `loopTap` export, one call in
+  `decisionPoint`, three in `loopGate`). A conflict is likely there if `r7-ledger` adds its shadow tap or another stage edits `loopGate`; the
   calls are independent of any other change and can be kept beside it.
 - `scripts/r5-pilot.ts`, `scripts/lib/kernels.ts` and `src/kernel/*` are untouched. The script imports `ARMS`,
   `armWorld` and `GuardedScorer` from `scripts/r5-pilot.ts`; an arm added there by another stage is accepted by
