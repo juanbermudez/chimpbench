@@ -8,6 +8,8 @@
 //
 //   pnpm exec tsx scripts/r11-offline.ts [--dir artifacts/decide-ft/r11] [--providers base,r11-p5b-s7,…] [--md artifacts/r11/tables/r11-offline.md]
 //       [--wording docs/staging/r8-wording-numbers.md]   stage R8's wording test (its generated table), the baseline of §11.4
+//       [--baseline <dir>]   the folder holding the like-for-like baseline's score file (prereg §13.2; scripts/r11-baseline.ts,
+//                            baseline.r4-rules-state.jsonl); default <dir>/eval. With --fake it is read only when named.
 //   … --fake <dir>   the dry run: score files written by a hash of each option's text (scripts/lib/fake-worker.mjs's rule, no
 //                    model, never a result) for the untuned model and four adapters, then this report over them
 // Intervals: 95% bootstrap over animals (2,000 resamples, fixed seed). Every result here is a "rules-taught model on a rules menu".
@@ -69,7 +71,7 @@ const armOf = (provider: string): Arm | null => (/p5a/.test(provider) ? 'p5a' : 
 const seedOf = (provider: string) => provider.match(/-s(\d+)/)?.[1] ?? '';
 
 /** The fake worker's rule (scripts/lib/fake-worker.mjs), salted by a name so two "adapters" differ: never a model, never a result. */
-function fakeProbs(packet: LocalPacket, salt: string): number[] {
+export function fakeProbs(packet: LocalPacket, salt: string): number[] {
   const hash = (t: string) => { let h = 0x811c9dc5; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 0x01000193); } return (h >>> 0) % 7; };
   const w = Object.values(packet.questions.action.criteria).map(t => 1 + hash(`${salt}|${t}`)), z = w.reduce((a, b) => a + b, 0);
   return w.map(v => v / z);
@@ -373,12 +375,40 @@ if (process.argv[1]?.endsWith('r11-offline.ts')) {
     if (isAdapter) W1[m.label] = wording && k ? b.lo > wording.neutral && k.lo > 0 : null;
     p(`| ${m.label} | ${ci(b)} | ${k ? ci(k) : ''} | ${d ? ci(d) : ''} | ${f((b.mean - chance) / (ceiling - chance), 2)} | ${isAdapter ? (W1[m.label] === null ? 'not read' : W1[m.label] ? 'yes' : '**no**') : ''} |`);
   }
+  // like for like (prereg §13.2): the first adapter on these same draws, on its own packet with the rules' wording and with neutral
+  // options. A description beside W1: it decides nothing, and W1 above stays as registered.
+  const OLD = 'r4-rules-state', baseDir = arg('baseline', fake ? '' : `${dir}/eval`), baseFile = baseDir ? `${resolve(baseDir)}/baseline.${OLD}.jsonl` : '';
+  let likeForLike: { draws: number; withWording: { mean: number; lo: number; hi: number }; neutral: { mean: number; lo: number; hi: number }; difference: { mean: number; lo: number; hi: number } } | null = null;
+  const lessOld: Record<string, { neutral: { mean: number; lo: number; hi: number }; wording: { mean: number; lo: number; hi: number } }> = {};
+  p();
+  if (baseFile && existsSync(baseFile)) {
+    const old: Record<string, Probs> = {};
+    for (const s of read<{ id: string; packet: string; probs: number[] }>(baseFile)) (old[s.packet] ??= new Map()).set(s.id, s.probs);
+    const both = fresh.filter(r => old.oldState?.has(r.id) && old.oldNeutral?.has(r.id));
+    const oldHit = (r: R11Row, name: string) => { const pr = old[name].get(r.id)!; if (pr.length !== r.options.length) throw new Error(`the baseline: ${pr.length} probabilities for the ${r.options.length} options of ${r.id}`); return +(argmax(pr) === r.rgIndex); };
+    const over = (v: (r: R11Row) => number, tag: string) => boot(both.map(r => ({ key: animal(r), v: v(r) })), `like:${tag}`);
+    likeForLike = { draws: both.length, withWording: over(r => oldHit(r, 'oldState'), 'wording'), neutral: over(r => oldHit(r, 'oldNeutral'), 'neutral'), difference: over(r => oldHit(r, 'oldNeutral') - oldHit(r, 'oldState'), 'difference') };
+    p(`**Like for like (prereg §13.2): a description; W1 above stays as registered.** The first adapter (\`${OLD}\`) scored on ${both.length === fresh.length ? 'these same' : `${n(both.length)} of these`} ${n(fresh.length)} fresh draws, on its own state-only packet: top-1 ${ci(likeForLike.withWording)} with the rules' wording on the options and ${ci(likeForLike.neutral)} with neutral options (paired difference ${ci(likeForLike.difference)})${wording ? `; on stage R4's draws the same two figures were ${f(wording.withWording)} and ${f(wording.neutral)}` : ''}. That adapter was trained with the wording, on one-hot picks with kept acts among its labels, and never saw the neutral rendering. The whole table is in [r11-baseline.md](r11-baseline.md).`);
+    const mine = everyone.filter(m => !m.floor && hits(m).length);
+    if (mine.length) {
+      p();
+      p('| Model, on its own arm\'s packets | Top-1, the rules\' pick | Less the first adapter with neutral options (paired on the same draws) | Less the first adapter with the rules\' wording (paired) |');
+      p('| --- | --- | --- | --- |');
+      const ids = new Set(both.map(r => r.id)), byId = new Map(both.map(r => [r.id, r]));
+      for (const m of mine) {
+        const h = hits(m).filter(x => ids.has(x.id)), less = (name: string) => boot(h.map(x => ({ key: x.key, v: x.v - oldHit(byId.get(x.id)!, name) })), `like:${m.label}:${name}`);
+        const a = less('oldNeutral'), b = less('oldState');
+        if (m.provider !== 'base') lessOld[m.label] = { neutral: a, wording: b };
+        p(`| ${m.label} | ${f(mean(h.map(x => x.v)))} | ${ci(a)} | ${ci(b)} |`);
+      }
+    }
+  } else p(`**Like for like (prereg §13.2): not on file.** The first adapter (\`${OLD}\`) scored on these same draws, on its own packet with the rules' wording and with neutral options, is an optional model step (\`scripts/r11-run.sh baseline\`). It is a description beside W1; W1 is read against the yardstick above either way.`);
 
   // -------------------------------------------------------------------------------------------------------------------
   // the marks, side by side
   // -------------------------------------------------------------------------------------------------------------------
   /** What scripts/r11-report.ts reads for statement S2 (prereg §6.2): per adapter the divergence, the kind-prior baseline's, and the marks. */
-  const summary: { fake: boolean; kindPriorDivergence: number; wordingBaseline: ReturnType<typeof wordingBaseline>; adapters: Record<string, { arm: Arm; seed: string; divergence: number; tripLessLabel: number | null; O1: boolean | null; O2: boolean | null; O3: boolean | null; O4: boolean | null; W1: boolean | null; nearCertain: { clear: number | null; nest: number | null } | null }> } = { fake: !!fake, kindPriorDivergence: mean(divOf(KP).map(x => x.v)), wordingBaseline: wording, adapters: {} };
+  const summary: { fake: boolean; kindPriorDivergence: number; wordingBaseline: ReturnType<typeof wordingBaseline>; likeForLike: typeof likeForLike; adapters: Record<string, { arm: Arm; seed: string; divergence: number; tripLessLabel: number | null; O1: boolean | null; O2: boolean | null; O3: boolean | null; O4: boolean | null; W1: boolean | null; nearCertain: { clear: number | null; nest: number | null } | null; lessTheFirstAdapter: (typeof lessOld)[string] | null }> } = { fake: !!fake, kindPriorDivergence: mean(divOf(KP).map(x => x.v)), wordingBaseline: wording, likeForLike, adapters: {} };
   const beforeTen = L.length;
   if (adapters.length) {
     p();
@@ -395,7 +425,7 @@ if (process.argv[1]?.endsWith('r11-offline.ts')) {
       const yn = (b2: boolean | null) => (b2 === null ? 'not read' : b2 ? 'yes' : '**no**');
       const O1 = a ? a.hi < 0 && b.hi < 0 : null, O2 = t.length ? Math.abs(dTrip) <= TRIP_TOLERANCE : null, O3 = v.length ? !v.includes('wrong way') : null, O4 = c.length ? dC <= LOCK_TOLERANCE && share - ruleShare <= LOCK_TOLERANCE : null;
       p(`| ${m.label} | ${yn(O1)} | ${yn(O2)} (${f(dTrip)}) | ${yn(O3)} | ${yn(O4)} (${f(dC)}; ${f(share - ruleShare)}) | ${yn(W1[m.label] ?? null)} |`);
-      summary.adapters[m.label] = { arm: m.arm, seed: seedOf(m.label), divergence: mean(divOf(m).map(x => x.v)), tripLessLabel: t.length ? dTrip : null, O1, O2, O3, O4, W1: W1[m.label] ?? null, nearCertain: nearCertain[m.label] ?? null };
+      summary.adapters[m.label] = { arm: m.arm, seed: seedOf(m.label), divergence: mean(divOf(m).map(x => x.v)), tripLessLabel: t.length ? dTrip : null, O1, O2, O3, O4, W1: W1[m.label] ?? null, nearCertain: nearCertain[m.label] ?? null, lessTheFirstAdapter: lessOld[m.label] ?? null };
     }
   }
   L.splice(afterNine, 0, ...L.splice(beforeTen));   // section 10 goes back before sections 11 and 12
