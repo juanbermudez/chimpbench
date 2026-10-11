@@ -1249,7 +1249,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     }
     const g = ctx.groundHeight(x, z);
     const clip = a.clip;
-    const align = clip === 'walk' || clip === 'gallop' || clip === 'sneak' || clip === 'stand' || clip === 'drink' || clip === 'hunt' || clip === 'charge' || clip === 'crouch' || clip === 'dead' || clip === 'sleep' || clip === 'rest' || (clip === 'listen' && a.role !== Listen.tall) ? 0.85 : 0.4;
+    // A receiver lying down to be groomed (stage W5) follows the slope as the other lying clips do: at the seated
+    // clips' 0.4 a prone body stays near level and one end of it hangs in the air on a hillside.
+    const lying = clip === 'groomee' && (a.role === GROOMEE.prone || a.role === GROOMEE.side);
+    const align = clip === 'walk' || clip === 'gallop' || clip === 'sneak' || clip === 'stand' || clip === 'drink' || clip === 'hunt' || clip === 'charge' || clip === 'crouch' || clip === 'dead' || clip === 'sleep' || clip === 'rest' || lying || (clip === 'listen' && a.role !== Listen.tall) ? 0.85 : 0.4;
     if (!a.planted) a.drop *= 0.8;
     bodyFrame(a, x, z, g + a.drop, align);
   }
