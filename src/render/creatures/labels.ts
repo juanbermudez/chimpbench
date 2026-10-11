@@ -47,10 +47,9 @@ const CALL_TEXT: Record<CallKind, string> = { 'pant-hoot': 'pant-hoot', 'pant-gr
 // animal, model-controlled animals and the alpha. Action categories are told apart by glyph, not by colour.
 const STYLE = `
 .crl-root{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:3;contain:strict}
-.crl{position:absolute;left:0;top:0;padding:2px 7px 2px 5px;border-radius:6px;
+.crl{position:absolute;left:0;top:0;display:flex;align-items:center;gap:5px;padding:2px 7px 2px 5px;border-radius:6px;
   background:rgba(20,20,22,.9);color:#ececee;border:1px solid rgba(255,255,255,.09);box-shadow:0 1px 3px rgba(0,0,0,.45);
   font:500 11px/1.25 var(--font-ui,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif);white-space:nowrap;will-change:transform,opacity;transition:opacity .25s}
-.crl-row{display:flex;align-items:center;gap:5px}
 .crl.sel{border-color:rgba(226,191,121,.36)}
 .crl.hov{background:rgba(36,36,40,.96);border-color:rgba(255,255,255,.3)}
 .crl.sel.hov{border-color:rgba(226,191,121,.62)}
@@ -70,9 +69,12 @@ const STYLE = `
 .crl-act.soon svg{opacity:.45}
 .crl-act.soon span{padding-bottom:1px;border-bottom:1px dashed rgba(255,255,255,.5)}
 .crl-act.soon i{color:#97979c}
-.crl-why{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;max-width:236px;margin:2px 0 1px 12px;white-space:normal;
+/* The reason line: one element, moved into the selected animal's label, which then wraps it onto a second line. Zero
+   width with a 100% minimum: it adds nothing to the label's own width and then fills it, so the label stays as wide as
+   its first line (at least 216 px) and the sentence wraps inside it, at most three lines. */
+.crl.why{flex-wrap:wrap;row-gap:1px;min-width:216px}
+.crl-why{flex:0 0 auto;width:0;min-width:100%;box-sizing:border-box;max-height:3.9em;overflow:hidden;padding:0 0 1px 12px;margin-right:-5px;white-space:normal;
   font-size:10.5px;line-height:1.3;font-weight:400;color:#b8b8bd}
-.crl-why:empty{display:none}
 .crl-voc{display:flex;align-items:center;gap:3px;color:#97979c;font-size:10.5px;font-style:italic}
 .crl-voc svg{stroke:currentColor}
 .crl::after{content:"";position:absolute;left:50%;bottom:-4px;width:6px;height:6px;margin-left:-3px;transform:rotate(45deg);background:inherit;border-right:1px solid rgba(255,255,255,.09);border-bottom:1px solid rgba(255,255,255,.09)}
@@ -84,11 +86,11 @@ const STYLE = `
 `;
 
 interface Slot {
-  el: HTMLDivElement; chip: HTMLSpanElement; name: HTMLSpanElement; rank: HTMLSpanElement; act: HTMLSpanElement; voc: HTMLSpanElement; why: HTMLDivElement;
+  el: HTMLDivElement; chip: HTMLSpanElement; name: HTMLSpanElement; rank: HTMLSpanElement; act: HTMLSpanElement; voc: HTMLSpanElement;
   used: boolean; visible: boolean; pulseAt: number; width: number; h: number; hov: boolean;
   // Last written content and style, so unchanged labels cost no DOM writes (and no style invalidation).
   id: number; name$: string; color: string; rank$: string; act$: string; vocal: string; sel: boolean; model: boolean; tx: number; ty: number; op: number;
-  soon: boolean; why$: string;
+  soon: boolean;
 }
 interface Banner { el: HTMLDivElement; key: string; visible: boolean; width: number; tx: number; ty: number; op: number; }
 type Rect = { x0: number; y0: number; x1: number; y1: number };
@@ -117,16 +119,19 @@ export function createLabels(container: HTMLElement) {
     const rank = document.createElement('span'); rank.className = 'crl-rank';
     const act = document.createElement('span'); act.className = 'crl-act';
     const voc = document.createElement('span'); voc.className = 'crl-voc';
-    // One row (spark, community chip, name, rank, act, call) and, for the selected animal only, the reason under it.
-    const row = document.createElement('div'); row.className = 'crl-row';
-    const why = document.createElement('div'); why.className = 'crl-why';
-    row.insertAdjacentHTML('beforeend', AI_ICON);
-    row.append(chip, name, rank, act, voc);
-    el.append(row, why);
+    el.insertAdjacentHTML('beforeend', AI_ICON);
+    el.append(chip, name, rank, act, voc);
     root.appendChild(el);
-    slots.push({ el, chip, name, rank, act, voc, why, used: false, visible: false, pulseAt: -99, width: 0, h: 20, hov: false,
-      id: -1, name$: '', color: '', rank$: '', act$: '', vocal: '', sel: false, model: false, tx: NaN, ty: NaN, op: -1, soon: false, why$: '' });
+    slots.push({ el, chip, name, rank, act, voc, used: false, visible: false, pulseAt: -99, width: 0, h: 20, hov: false,
+      id: -1, name$: '', color: '', rank$: '', act$: '', vocal: '', sel: false, model: false, tx: NaN, ty: NaN, op: -1, soon: false });
   }
+  // The selected animal's reason line (stage W4): one element for the whole overlay, attached to whichever label is the
+  // selected animal's, so the other labels keep their six children and their per-frame style cost. Its text is
+  // rewritten at most four times a second: at watching speeds decisions are seconds apart and it is immediate, at
+  // 1 day/s the sentence would change every frame, unreadably, and each change is a layout.
+  const whyEl = document.createElement('div'); whyEl.className = 'crl-why';
+  let whyOwner: Slot | null = null, why$ = '', whyAt = -1e9;
+  const WHY_EVERY = 0.25;
   const banners: Banner[] = [];
   for (let i = 0; i < MAX_BANNERS; i++) {
     const el = document.createElement('div');
@@ -295,7 +300,7 @@ export function createLabels(container: HTMLElement) {
     }
     for (const c of chosen) { const s = slotOf.get(c.a.id); if (s) s.used = true; }
     slotOf.forEach(dropUnused);
-    let free = 0;
+    let free = 0, whySeen = false;
     for (const c of chosen) {
       let s = slotOf.get(c.a.id);
       if (!s) {
@@ -314,7 +319,12 @@ export function createLabels(container: HTMLElement) {
       const sel = a === focal, model = chimp.controller === 'model' && world.modelPolicy.mode !== 'off';
       const soon = c.detail && !!about && about(a);
       const why = sel && chimp.alive ? chimp.reason ?? '' : '';
-      if (s.why$ !== why) { s.why$ = why; s.why.textContent = why; }
+      if (why) {
+        whySeen = true;
+        const moved = whyOwner !== s || s.id !== chimp.id;   // another label, or this slot now names another animal
+        if (whyOwner !== s) { whyOwner?.el.classList.remove('why'); s.el.appendChild(whyEl); s.el.classList.add('why'); whyOwner = s; }
+        if (why$ !== why && (moved || frame.elapsed - whyAt >= WHY_EVERY)) { why$ = why; whyAt = frame.elapsed; whyEl.textContent = why; }
+      }
       if (s.id !== chimp.id || s.name$ !== chimp.name || s.color !== a.troopColor || s.rank$ !== rank || s.act$ !== act || s.vocal !== vocal || s.sel !== sel || s.model !== model || s.soon !== soon) {
         s.id = chimp.id; s.name$ = chimp.name; s.color = a.troopColor; s.rank$ = rank; s.act$ = act; s.vocal = vocal; s.sel = sel; s.model = model; s.soon = soon;
         s.chip.style.background = a.troopColor;
@@ -337,6 +347,8 @@ export function createLabels(container: HTMLElement) {
       place(s, c.x, c.y - 8, dimmed ? 0.35 : c.pri >= 40 ? 1 : 0.86);
       if (!s.visible) { s.el.style.display = ''; s.visible = true; }
     }
+    // No label for the selected animal this frame (off screen, dead, nobody selected): the reason line leaves the overlay.
+    if (!whySeen && whyOwner) { whyOwner.el.classList.remove('why'); whyEl.remove(); whyOwner = null; why$ = ''; }
     for (const s of slots) if (!s.used && s.visible) { s.el.style.display = 'none'; s.visible = false; s.id = -1; }
   }
   /** Chimp id whose label hit box (at least 32 px tall, padded) contains (x, y) in container CSS px, else −1. Labels
