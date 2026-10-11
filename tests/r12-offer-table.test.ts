@@ -140,7 +140,7 @@ test('the table regenerates to the same text, and its first page is counted', ()
   assert.equal(a, b);
   assert.ok(!/UNCLASSIFIED|## Problems/.test(a));
   const live = T.rows.filter(r => r.status === 'live').length;
-  assert.match(a, new RegExp(`\\| \\*\\*Live for an animal a kernel decides for\\*\\* \\| \\*\\*${live}\\*\\* \\|`));
+  assert.ok(a.includes(`| **Live for an animal the model decides for (aged 8 or over)** | **${live}** |`));
   assert.equal(T.rows.length, T.rows.filter(r => r.status === 'legacy').length + T.rows.filter(r => r.status === 'young').length + live);
 });
 
