@@ -100,7 +100,8 @@ export function createSky(uniforms: SharedUniforms, owner: Owner): SkyRig {
     uMoonLight: { value: 0 }, uNightTint: { value: new THREE.Color('#0b1426') }, uSkyGain: { value: 0.5 },
     uSkyCeil: { value: SKY_CEILING }, uDiscCeil: { value: SUN_DISC_CEILING },
     // Stage W2: the horizon colour (= the fog colour), the height of the band painted with it (sine of elevation), the
-    // dome's luminance floor (a colour whose luminance is the floor) and uDome, 0 while the image-based light renders.
+    // dome's luminance floor (a colour whose luminance is the floor) and uDome, which switches the band, the floor and
+    // the massif off for the image-based light and for the orthographic strategy view.
     uHorizon: { value: new THREE.Color() }, uHorizonBand: { value: HORIZON_BAND_CLEAR }, uSkyFloor: { value: new THREE.Color(0, 0, 0) }, uDome: { value: 1 },
     uMountain: { value: 1 },
   });
@@ -240,7 +241,11 @@ export function createSky(uniforms: SharedUniforms, owner: Owner): SkyRig {
       horizonColor(altDeg, dayLevel, overcast, rain, fogColor);
       overcastDome.copy(fogColor).multiplyScalar(OVERCAST_DOME);
       overcastIbl.setRGB(0.05, 0.058, 0.062).multiplyScalar(0.06 + dayLevel * 0.94).lerp(tmpA.setRGB(0.012, 0.014, 0.02), rain * 0.5 * dayLevel);
-      skyU.uOvercastColor.value = overcastDome;
+      // The strategy camera is orthographic: it has no horizon and shows the dome only as the backdrop round the whole
+      // map, so the horizon band, the floor and the massif are for perspective views; that backdrop keeps its old look.
+      const dome = perspective ? 1 : 0;
+      skyU.uDome.value = dome;
+      skyU.uOvercastColor.value = dome ? overcastDome : overcastIbl;
 
       // Lightning: new strike time from the sim, or a fallback cadence in storms if the sim has no strikes.
       if (Number.isNaN(lastLightning)) lastLightning = env.lightningAt;   // don't flash for a strike older than the view
@@ -333,7 +338,7 @@ export function createSky(uniforms: SharedUniforms, owner: Owner): SkyRig {
         // the viewer sees of the sky, and the light on the forest, the water and wet leaves stays what it was.
         skyU.showSunDisc.value = 0; skyU.uSkyCeil.value = 1e6; skyU.uDome.value = 0; skyU.uOvercastColor.value = overcastIbl;
         const next = pmrem.fromScene(envScene, 0, 0.1, 1000);
-        skyU.showSunDisc.value = 1; skyU.uSkyCeil.value = SKY_CEILING; skyU.uDome.value = 1; skyU.uOvercastColor.value = overcastDome;
+        skyU.showSunDisc.value = 1; skyU.uSkyCeil.value = SKY_CEILING; skyU.uDome.value = dome; skyU.uOvercastColor.value = dome ? overcastDome : overcastIbl;
         envTarget?.dispose();
         envTarget = next;
         scene.environment = envTarget.texture;
