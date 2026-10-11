@@ -402,10 +402,10 @@ No process of the model's Python environment was started at any point; the R9 ch
 | Step | Head, tree | When | What |
 | --- | --- | --- | --- |
 | sampling, six worlds | 7774a25, clean | 03:22 to 03:46 | `scripts/r11-contexts.ts` per world with `--check` (179 to 270 s each) |
-| assembly and data tables | c8d4cfb, clean | 03:53 to 03:56 | `scripts/r11-run.sh assemble` (first run at 63d1aaf to read the tables; one row was added to the data table and it was run again; the files on hand are the second run's) |
+| assembly and data tables | 1fd98ee, clean | 04:14 to 04:17 | `scripts/r11-run.sh assemble`. Run three times (63d1aaf at 03:49, c8d4cfb at 03:53, 1fd98ee), each time after a row or a table was added to the data report and never after a change to a label or a packet; the training, development and held-out files of the last two runs have the same hashes |
 | dry run, seed 48 | c8d4cfb, clean | 03:56 to 03:57 | `scripts/r11-run.sh dry` |
 | control arms, seeds 4111 and 4222 | 8d91c8b, clean | 03:57 to 04:01 | `scripts/r11-run.sh controls <seed>`: the first run ever made on these seeds |
-| tables | 75968b7 | 04:08 | `scripts/r11-run.sh report`, then `publish` (first at 8d91c8b, 04:02; again after the card's heading was made to say whose test it is) |
+| tables | 1fd98ee | 04:18 | `scripts/r11-run.sh report`, then `publish` (first at 8d91c8b, 04:02; again when the card's heading was made to say whose test it is, and after the last assembly) |
 
 Tables, each generated from JSON by a script: [r11-data.md](r11-data.md) and [r11-manifest.json](r11-manifest.json)
 (the data), [r11-offline.md](r11-offline.md) (the offline floors; no adapter yet), [r11-card.md](r11-card.md) (stage
@@ -439,6 +439,10 @@ Every number in §10.4 to §10.8 is copied from the generated tables named above
   the kept rows). What it does show: a rules-taught model that judged a trip by the state alone, with no knowledge
   that the trip on the menu is the best of about fifty by a jittered score, would under-trip by a third. The menu
   tells the model something about the jitter, and an honest label has to carry that.
+- **The mechanism, measured** ([r11-data.md](r11-data.md) §2): the jitter is uniform on ±0.12 before the menu is cut,
+  but the trip that reached the menu was scored with a mean jitter of +0.065 and a positive one on 0.904 of menus
+  (5,056 trip options); a drink +0.037 (0.733), a feeding option +0.017 (0.599); rest, a nest, a greeting or a call
+  0.000 to +0.001 (0.50). The more targets a kind of act is chosen from, the more its place on the menu says.
 - **How noisy the rules' choice really is, given what the model is shown.** The label's top option is the one the
   rules took at 0.838 of training draws; the mean of the label's top mass is 0.834 (held out 0.837). So no reader of
   the state and the menu, however good, can agree with the rules' realised pick more than about 0.84 of the time, and

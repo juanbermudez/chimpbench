@@ -7,7 +7,7 @@
   "p5b": "packet 5, short: neutral options, doing, asked because, companions' acts, lately, last",
   "p5a": "packet 5, short, without the lines lately and last"
  },
- "commit": "c8d4cfb",
+ "commit": "1fd98ee",
  "dirty": false,
  "perWorld": {
   "train": 780,
@@ -552,7 +552,74 @@
     "within3": false
    }
   ],
-  "markM2": "met"
+  "markM2": "met",
+  "realisedJitterOfMenuOptions": {
+   "affiliative": {
+    "options": 8560,
+    "mean": 0.0062,
+    "shareAboveZero": 0.5382
+   },
+   "feed": {
+    "options": 7397,
+    "mean": 0.0167,
+    "shareAboveZero": 0.5994
+   },
+   "rest": {
+    "options": 6510,
+    "mean": -0.0007,
+    "shareAboveZero": 0.4963
+   },
+   "food-trip": {
+    "options": 5056,
+    "mean": 0.0651,
+    "shareAboveZero": 0.9045
+   },
+   "aggression": {
+    "options": 4903,
+    "mean": 0.0035,
+    "shareAboveZero": 0.5166
+   },
+   "call": {
+    "options": 2873,
+    "mean": 0.0006,
+    "shareAboveZero": 0.5057
+   },
+   "social-move": {
+    "options": 2682,
+    "mean": 0.0038,
+    "shareAboveZero": 0.5242
+   },
+   "greet": {
+    "options": 2022,
+    "mean": 0.0007,
+    "shareAboveZero": 0.5054
+   },
+   "other": {
+    "options": 1815,
+    "mean": 0.0024,
+    "shareAboveZero": 0.5019
+   },
+   "nest": {
+    "options": 1333,
+    "mean": -0.0001,
+    "shareAboveZero": 0.5011
+   },
+   "drink": {
+    "options": 928,
+    "mean": 0.0374,
+    "shareAboveZero": 0.7328
+   },
+   "mating": {
+    "options": 343,
+    "mean": 0.0025,
+    "shareAboveZero": 0.5423
+   },
+   "care": {
+    "options": 192,
+    "mean": 0.0063,
+    "shareAboveZero": 0.5469
+   }
+  }
  },
  "splits": {
   "train": {
@@ -1092,5 +1159,5 @@
  },
  "removedWordingsFound": 0,
  "bannedLinesFound": 0,
- "previous": "acaaf2510dadb03679d4bea9974c46a54ad62b497c28cacb1fb89228fbd484c3"
+ "previous": "7bc2cf9aff6ded316238f8a4d5b99a3744d60b547456acdc971daa48c43b065f"
 }
