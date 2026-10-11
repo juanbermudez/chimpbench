@@ -3,6 +3,8 @@ import test from 'node:test';
 import { SPEED_PRESETS } from '../src/clock';
 import { GAITS, Regime, solveClimb, solveGait, type GaitSolve } from '../src/render/creatures/gait';
 import { ADULT_BODY_M, SMALL_MAP_RATE, lapseRate, referenceRate, smallMapPace, walkPace } from '../src/render/creatures/pace';
+import { CLIPS, Pw, type PoseCtx } from '../src/render/creatures/poses';
+import { LIMB, PI, createPose } from '../src/render/creatures/rig';
 import { DEFAULT_PARAMS, resolveParams } from '../src/sim/params';
 
 // Stage W1: the pace a world's walk is read at (creatures/pace.ts), the watching speed and the climbing cadence cap.
@@ -66,4 +68,52 @@ test('the climbing cadence stops at the cap the gait table names, with the same 
   assert.equal(r, Regime.timelapse);
   for (let i = 0; i < 40; i++) { r = solveClimb(c, edge * (1 + (i % 2 ? 0.05 : -0.05)), r, g()).regime; assert.equal(r, Regime.timelapse); }
   assert.equal(solveClimb(c, edge * 0.8, r, g()).regime, Regime.natural);
+});
+
+// The stop (poses.ts PoseCtx.settle): what the creature layer feeds the gait clips while a stopped walker still counts as moving.
+const poseCtx = (over: Partial<PoseCtx> = {}): PoseCtx => ({
+  t: 1, freq: 1.2, time: 3, phase: 0, speedU: 0.7, seed: 0.3, stage: 'adult', male: true, age: 20, injury: 0, mood: 'calm', energy: 1, vocal: null,
+  hasTarget: false, tx: 0, ty: 0, tz: 0, tdist: 99, tsize: 1, role: 0, inTree: false, wet: 0, stride: 0.6, lp: 0.6, lapse: 0, settle: 0,
+  pb: new Float32Array(15), hasBones: false, pairT: 0, side: 1, ...over,
+});
+const posed = (clip: string, c: PoseCtx): Float32Array => { const p = createPose(); CLIPS[clip](new Pw().bind(p).reset(), c); return p.v; };
+const ikY = (v: Float32Array, limb: number) => v[PI.ik + limb * 5 + 1], ikZ = (v: Float32Array, limb: number) => v[PI.ik + limb * 5 + 2];
+const planted = (v: Float32Array, limb: number) => v[PI.contact + limb];
+
+test('a stopped walker puts its swinging hand or foot down where it is; a walk in progress keeps its full swing', () => {
+  // Swing heights the gait clips had before this stage (poses.ts quadGait: hands, feet), in unit body lengths.
+  const swing: Record<string, [number, number]> = { walk: [0.075, 0.07], sneak: [0.075, 0.07], gallop: [0.13, 0.12] };
+  for (const clip of ['walk', 'sneak', 'gallop']) {
+    const peak = [0, 0, 0, 0], airborne = [0, 0, 0, 0];
+    for (let k = 0; k < 400; k++) {
+      const phase = k / 400;
+      const going = posed(clip, poseCtx({ phase })), half = posed(clip, poseCtx({ phase, settle: 0.5 })), down = posed(clip, poseCtx({ phase, settle: 1 }));
+      for (let l = 0; l < 4; l++) {
+        const lift = ikY(going, l) - ikY(down, l);
+        assert.equal(planted(down, l), 1, `${clip}: settled, limb ${l} counts as planted at phase ${phase}`);
+        assert.equal(ikZ(down, l), ikZ(going, l), `${clip}: the limb comes down where its swing had reached, it is not moved`);
+        if (planted(going, l)) assert.equal(lift, 0, `${clip}: a limb already in stance is untouched`);
+        else { airborne[l]++; assert.ok(lift >= 0); peak[l] = Math.max(peak[l], lift); }
+        assert.ok(Math.abs((ikY(half, l) - ikY(down, l)) - lift / 2) < 1e-6, `${clip}: half settled, half the swing height`);
+        assert.equal(planted(half, l), planted(going, l), `${clip}: not counted as planted until it is down`);
+      }
+    }
+    for (let l = 0; l < 4; l++) {
+      assert.ok(airborne[l] > 0, `${clip}: limb ${l} swings during a cycle`);
+      assert.ok(Math.abs(peak[l] - swing[clip][l < 2 ? 0 : 1]) < 1e-3, `${clip}: limb ${l} swings ${peak[l]} high while walking, as before`);
+    }
+  }
+});
+
+test('a stopped biped (the swagger of a display) puts its raised foot down too', () => {
+  let airborne = 0;
+  for (let k = 0; k < 200; k++) {
+    const phase = k / 200, going = posed('swagger', poseCtx({ phase })), down = posed('swagger', poseCtx({ phase, settle: 1 }));
+    for (const l of [LIMB.legL, LIMB.legR]) {
+      assert.equal(planted(down, l), 1);
+      assert.ok(Math.abs(ikY(down, l) - 0.08) < 1e-6, 'the foot is at its stance height');
+      if (!planted(going, l)) { airborne++; assert.ok(ikY(going, l) >= ikY(down, l)); }
+    }
+  }
+  assert.ok(airborne > 0);
 });
