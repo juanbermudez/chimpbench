@@ -88,7 +88,7 @@ function progressLine(reg: Registry, s: DaySummary, startedMs: number, hours: nu
   const fit = hours === null ? '' : `; ${Math.max(0, Math.floor((hours * 3600 - (Date.now() - startedMs) / 1000) / (pace * 1.1)))} more days fit the ${hours} h`;
   const per = s.asks ? `${s.msMean === null ? 'no new call' : `${(s.msMean / 1000).toFixed(2)} s an ask (median ${((s.msMedian ?? 0) / 1000).toFixed(2)}, 95th ${((s.msP95 ?? 0) / 1000).toFixed(2)})`}` : 'no asks';
   return `day ${s.day}/${reg.daysAsked} (simulated day ${reg.burnInDays + s.day}): ${s.asks} asks, ${per}, kernel settled ${s.kernel}, the rules ${s.asks - s.kernel}${fb ? ` (${fb})` : ''}, gate held ${s.held}${s.reused ? `, ${s.reused} answers reused from the journal` : ''}, `
-    + `timeouts ${s.timeouts}, deaths ${s.deaths.length}${s.deaths.length ? ` (${s.deaths.map(d => `${d.name} ${d.cause ?? 'unknown'}`).join(', ')})` : ''}, living ${s.living} (${s.driven} on the kernel; ${s.under} under ${reg.minAge} on the rules), `
+    + `timeouts ${s.timeouts}, deaths ${s.deaths.length}${s.deaths.length ? ` (${s.deaths.map(d => `${d.name} ${d.cause ?? 'unknown'}`).join(', ')})` : ''}, living ${s.living} (${reg.kernel === 'rules' ? 'the rules decide for every animal' : `${s.driven} on the kernel; ${s.under} under ${reg.minAge} on the rules`}), `
     + `day took ${(s.wallSeconds / 60).toFixed(1)} min (kernel ${(s.kernelSeconds / 60).toFixed(1)}), rss ${s.rssMB} MB, hash ${s.hash}; at this pace day ${reg.daysAsked} ends ${clock(eta)}${fit}`;
 }
 
@@ -274,6 +274,11 @@ function status(a: Args): number {
     for (const x of d) for (const [k, v] of Object.entries(x.fallbacks)) fb[k] = (fb[k] ?? 0) + v;
     console.log(`asks ${asks} (${(asks / d.length).toFixed(0)} a day), kernel settled ${sum(x => x.kernel)}, the rules ${asks - sum(x => x.kernel)}${Object.keys(fb).length ? ` (${Object.entries(fb).map(([k, v]) => `${k} ${v}`).join(', ')})` : ''}, gate held ${sum(x => x.held)}; ${calls ? (ks / calls).toFixed(2) : 'no'} s a call; timeouts ${sum(x => x.timeouts)}; worker starts ${sum(x => x.workerStarts)}`);
     console.log(`deaths ${sum(x => x.deaths.length)}${sum(x => x.deaths.length) ? ` (${d.flatMap(x => x.deaths).map(x => `${x.name} ${x.cause ?? 'unknown'}`).join(', ')})` : ''}; living ${d[d.length - 1].living}; wall ${(sum(x => x.wallSeconds) / 3600).toFixed(2)} h; last hash ${d[d.length - 1].hash}`);
+  }
+  if (d.length && reg.kernel !== 'gliner' && reg.kernel !== 'rules') {
+    // what a model would need for the same days: this run's asks per day at a model's seconds per ask, plus this run's own (no-model) seconds per day
+    const perDay = asks / d.length, own = sum(x => x.wallSeconds) / d.length, at = [0.44, 0.5, 0.6].map(sec => ({ sec, min: (perDay * sec + own) / 60 }));
+    console.log(`projection for a model on these days: ${perDay.toFixed(0)} asks a day (${(perDay / d[d.length - 1].driven).toFixed(1)} per animal on the kernel) and ${own.toFixed(0)} s a day without a model; at ${at.map(x => `${x.sec} s an ask ${x.min.toFixed(1)} min a simulated day, ${Math.floor(600 / x.min)} days in 10 hours`).join('; at ')}`);
   }
   const v = reg.stopCheck;
   console.log(v ? `stop check after day ${v.day}: starvation ${v.starved} (limit ${STOP.starved}); reserves ${v.reservePctDay?.toFixed(3) ?? 'no value'}% a day (floor ${STOP.reservePctDay}); nights in a nest ${v.nights[0]} of ${v.nights[1]} (floor ${STOP.nights}); rules share ${v.fallbackShare === null ? 'no asks' : (100 * v.fallbackShare).toFixed(2) + '%'} (limit ${100 * STOP.fallbacks}%); timeouts ${v.timeoutShare === null ? 'no asks' : (100 * v.timeoutShare).toFixed(2) + '%'} (limit ${100 * STOP.timeouts}%): ${v.stop ? `STOP: ${v.reasons.join('; ')}` : 'went on'}` : `stop check: not reached (it is read after day ${STOP.day})`);

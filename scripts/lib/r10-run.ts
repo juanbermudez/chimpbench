@@ -438,11 +438,15 @@ export function readLines<T>(file: string): T[] {
 }
 
 /**
- * The files of one day, open for appending: journal (each answer as it arrives, flushed before the next call),
- * receipts (each tick's lines, flushed), contexts (with the receipts; gzipped when the day closes).
+ * The files of one day, open for appending: journal (each answer as it arrives, written and fsynced before the next
+ * call: it is what a resume reads), receipts (each tick's lines, written at once; fsynced when SYNC_EVERY_MS have
+ * passed since the last time and when the day closes: a process that dies loses nothing written, and after a power cut
+ * the day is redone from the journal anyway), contexts (with the receipts; gzipped when the day closes). The field smoke
+ * of stage R10 measured about 8 ms per fsync on the project's volume, 65 s a simulated day when every tick was fsynced.
  */
+export const SYNC_EVERY_MS = 2000;
 export class DayFiles implements Sink {
-  private jf: number; private rf: number; private cf: number | null;
+  private jf: number; private rf: number; private cf: number | null; private synced = Date.now();
   bytes = { journal: 0, receipts: 0, contexts: 0 };
   readonly files: { journal: string; receipts: string; contexts: string; rows: string };
   /** `sync` false skips the fsync after each write (tests of long runs; a real run keeps it). */
@@ -453,7 +457,10 @@ export class DayFiles implements Sink {
     this.jf = openSync(this.files.journal, 'a'); this.rf = openSync(this.files.receipts, 'a'); this.cf = contexts ? openSync(this.files.contexts, 'a') : null;
   }
   arrival(a: Arrival): void { this.bytes.journal += writeSync(this.jf, JSON.stringify(a) + '\n'); if (this.sync) fsyncSync(this.jf); }
-  lines(lines: Line[]): void { this.bytes.receipts += writeSync(this.rf, lines.map(l => JSON.stringify(l) + '\n').join('')); if (this.sync) { fsyncSync(this.rf); if (this.cf !== null) fsyncSync(this.cf); } }
+  lines(lines: Line[]): void {
+    this.bytes.receipts += writeSync(this.rf, lines.map(l => JSON.stringify(l) + '\n').join(''));
+    if (this.sync && Date.now() - this.synced >= SYNC_EVERY_MS) { fsyncSync(this.rf); if (this.cf !== null) fsyncSync(this.cf); this.synced = Date.now(); }
+  }
   context(c: { t: number; id: number; v: number; ctx: string; context: DecisionContext }): void { if (this.cf !== null) this.bytes.contexts += writeSync(this.cf, JSON.stringify(c) + '\n'); }
   /** Closes the day: the rows, then the contexts gzipped (the plain copy is replaced by the .gz). */
   close(rows: Row[] | null): void {
