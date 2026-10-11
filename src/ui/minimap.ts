@@ -3,6 +3,8 @@ import type { Chimp, Troop, World } from '../types';
 import { esc, troopShort } from './format';
 import { icon } from './icons';
 import { MAP_ZOOM_MAX, clampView, fromMap, layerOffset, toMap, wheelFactor, zoomAbout, type MapView } from './map-view';
+import { ARC_LIFE_S, arcAlpha, arcRadius } from '../render/callreach';
+import { ACT_PATROLLING, ACT_TRAVELLING, GOAL_CALL, GOAL_NONE, TRAIL_SAMPLES, createPartyMap, heardLevel, trailPoints, updatePartyMap } from '../render/env/party-map';
 
 // Canvas minimap: static habitat layer cached per world, dynamic layer
 // (territories, parties, individuals, stimuli, selection, night tint) redrawn
@@ -16,6 +18,16 @@ import { MAP_ZOOM_MAX, clampView, fromMap, layerOffset, toMap, wheelFactor, zoom
 // (map-view.ts) places every mark and inverts the click; marker sizes stay in screen pixels. The habitat layer is
 // drawn for the current view only once it settles: during a drag, a wheel burst or a button's glide the cached
 // layers are drawn scaled into place, and the view's own layer is built on the next frame after it stops.
+
+//
+// Stage W10 (field map only; the 160 m map is drawn as before): the card also shows what the parties are doing. Each
+// party leaves a trail of its last half simulated hour in its community's colour, a travelling party has a tick the
+// way it is heading and a dashed line to the tree (or to the call) most of its members are walking to, a party
+// holding a model-driven animal has a gold ring, and a long call draws an arc that grows to its audible radius, the
+// parties inside it flashing as it passes. What a party says is worked out by render/env/party-map.ts (the same
+// reading the 3D map uses, from this card's own tracker); the marks are map conventions, stylizations. The arc is
+// drawn on the camera overlay, which is the only canvas redrawn every frame while a call is fresh; the trails and
+// ticks are part of the ordinary redraw (the interface tick). Nothing here allocates per draw.
 
 const STEP = 2;          // zoom per button press or key
 const DRAG_PX = 4;       // movement before a press on the zoomed map becomes a pan
@@ -34,6 +46,9 @@ const A02 = 0, A06 = 1, A14 = 2, A20 = 3, A35 = 4, A55 = 5, A95 = 6, A100 = 7;
 const styles = new Map<string, string[]>();
 const rgba = (hex: string, i: number) => { let s = styles.get(hex); if (!s) { s = ALPHAS.map(a => hexA(hex, a)); styles.set(hex, s); } return s[i]; };
 const NO_DASH: number[] = [];
+// The call colour of the 3D view (creatures/fx.ts pant-hoot rings) at fixed opacities, as ready strings.
+const HOOT = ['rgba(255,227,163,.18)', 'rgba(255,227,163,.36)', 'rgba(255,227,163,.6)', 'rgba(255,227,163,.9)'];
+const hoot = (a: number) => HOOT[a >= 0.75 ? 3 : a >= 0.5 ? 2 : a >= 0.25 ? 1 : 0];
 // Lookups by plain loops: find() with a closure per call would allocate in the per-frame redraw.
 function troopOf(w: World, id: number): Troop | undefined { const ts = w.troops; for (let i = 0; i < ts.length; i++) if (ts[i].id === id) return ts[i]; return undefined; }
 function chimpOf(w: World, id: number): Chimp | undefined { const cs = w.chimps; for (let i = 0; i < cs.length; i++) if (cs[i].id === id) return cs[i]; return undefined; }
@@ -77,16 +92,82 @@ export function createMinimap(root: HTMLElement, ctx: Ctx) {
   const mx = (w: World, x: number) => toMap(x, view.x, view.zoom, w.size, W);
   const mz = (w: World, z: number) => toMap(z, view.z, view.zoom, w.size, H);
 
+  // Stage W10: this card's own tracker of the parties and the calls (field map only).
+  const pm = createPartyMap();
+  const trailPts = new Float32Array((TRAIL_SAMPLES + 1) * 3), goalDash = [0, 0];
+  const clockS = () => performance.now() / 1000;
+  /** True while a call's arc is still being drawn. */
+  function arcsLive(now: number): boolean {
+    const log = pm.calls;
+    return log.n > 0 && now - log.at[(log.next - 1 + log.cap) % log.cap] < ARC_LIFE_S;
+  }
+  /** Call arcs, on the camera overlay: each grows to the call's audible radius and fades (render/callreach.ts). */
+  function drawArcs(w: World, now: number) {
+    const log = pm.calls, k = W / 300;
+    v.lineWidth = 1.3 * k;
+    for (let i = 0; i < log.n; i++) {
+      const s = (log.next - 1 - i + 2 * log.cap) % log.cap, age = now - log.at[s];
+      if (age >= ARC_LIFE_S) break;
+      const a = arcAlpha(age);
+      if (a <= 0.02) continue;
+      v.strokeStyle = hoot(a);
+      v.beginPath(); v.arc(mx(w, log.x[s]), mz(w, log.z[s]), Math.max(0.5, arcRadius(log.radius[s], age) / w.size * W * view.zoom), 0, Math.PI * 2); v.stroke();
+    }
+  }
+  /** Trails, goal lines, heading ticks, gold rings and heard flashes of every party (under the animals' dots). */
+  function drawParties(w: World, k: number, hi: number | null) {
+    const now = clockS(), tr = pm.trails;
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    for (let i = 0; i < pm.n; i++) {
+      const m = pm.marks[i], t = troopOf(w, m.troopId);
+      if (!t) continue;
+      const dim = hi !== null && hi !== m.troopId, x = mx(w, m.x), z = mz(w, m.z);
+      // Trail: oldest to newest, fainter with age.
+      let n = trailPoints(tr, m.slot, w.time, trailPts);
+      if (n > 0) { trailPts[n * 3] = m.x; trailPts[n * 3 + 1] = m.z; trailPts[n * 3 + 2] = 0; n++; }
+      g.lineWidth = 1.1 * k;
+      for (let j = 0; j + 1 < n; j++) {
+        const age = trailPts[j * 3 + 2];
+        g.strokeStyle = rgba(t.color, dim ? A06 : age < 0.3 ? A55 : age < 0.6 ? A35 : A20);
+        g.beginPath(); g.moveTo(mx(w, trailPts[j * 3]), mz(w, trailPts[j * 3 + 1])); g.lineTo(mx(w, trailPts[j * 3 + 3]), mz(w, trailPts[j * 3 + 4])); g.stroke();
+      }
+      // Goal: dashes to the tree, or to the place of the call, most members are walking to.
+      if (m.goalKind !== GOAL_NONE && !dim) {
+        const toCall = m.goalKind === GOAL_CALL, gx = mx(w, m.goalX), gz = mz(w, m.goalZ);
+        g.strokeStyle = g.fillStyle = toCall ? HOOT[3] : 'rgba(236,236,238,.7)'; g.lineWidth = 0.9 * k;
+        goalDash[0] = 2.5 * k; goalDash[1] = 2.5 * k; g.setLineDash(goalDash);
+        g.beginPath(); g.moveTo(x, z); g.lineTo(gx, gz); g.stroke(); g.setLineDash(NO_DASH);
+        g.fillRect(gx - 1.3 * k, gz - 1.3 * k, 2.6 * k, 2.6 * k);
+      }
+      // Heading tick of a travelling or patrolling party (map north is up: x east, z south).
+      if ((m.activity === ACT_TRAVELLING || m.activity === ACT_PATROLLING) && (m.headX !== 0 || m.headZ !== 0)) {
+        const r0 = 4 * k, r1 = 10 * k, hx = m.headX, hz = m.headZ, tx = x + hx * r1, tz = z + hz * r1;
+        g.strokeStyle = dim ? rgba(t.color, A20) : m.goalKind === GOAL_CALL ? HOOT[3] : 'rgba(236,236,238,.92)'; g.lineWidth = 1.3 * k;
+        g.beginPath(); g.moveTo(x + hx * r0, z + hz * r0); g.lineTo(tx, tz);
+        g.moveTo(tx - (hx * 0.8 + hz * 0.6) * 3.2 * k, tz - (hz * 0.8 - hx * 0.6) * 3.2 * k); g.lineTo(tx, tz); g.lineTo(tx - (hx * 0.8 - hz * 0.6) * 3.2 * k, tz - (hz * 0.8 + hx * 0.6) * 3.2 * k); g.stroke();
+      }
+      // A member is driven by the decision model: a gold ring (the interface's accent for it).
+      if (m.model && !dim) { g.strokeStyle = 'rgba(226,191,121,.95)'; g.lineWidth = 1.2 * k; g.beginPath(); g.arc(x, z, 4.6 * k, 0, Math.PI * 2); g.stroke(); }
+      // Heard a call in the last few seconds: a ring in the call's colour, fading.
+      const heard = heardLevel(m.heardAt, now);
+      if (heard > 0 && !dim) { g.strokeStyle = hoot(heard); g.lineWidth = 1.6 * k; g.beginPath(); g.arc(x, z, 6.2 * k, 0, Math.PI * 2); g.stroke(); }
+    }
+  }
+
   // Camera footprint (scene.getFootprint): the ground the unobstructed view covers, and the focus as a dot that stays
   // visible when the footprint is a few pixels (close views on the 8 km field map). Neutral white: gold is the selection.
-  let fpVersion = -1, fpWorld: World | null = null, fpView = -1;
+  let fpVersion = -1, fpWorld: World | null = null, fpView = -1, arcsDrawn = false;
   function drawFootprint(w: World) {
     const fp = ctx.deps.getScene()?.getFootprint?.();
-    if (!fp) { if (fpVersion !== -1) { v.clearRect(0, 0, viewCanvas.width, viewCanvas.height); fpVersion = -1; } return; }
-    if (fp.version === fpVersion && fpWorld === w && fpView === viewVer) return;
+    // Stage W10: while a call's arc is live the overlay is redrawn every frame (and once more to clear the last one).
+    const now = clockS(), live = w.size > 1000 && arcsLive(now);
+    if (!fp) { if (fpVersion !== -1 || live || arcsDrawn) { v.clearRect(0, 0, viewCanvas.width, viewCanvas.height); fpVersion = -1; if (live) drawArcs(w, now); arcsDrawn = live; } return; }
+    if (fp.version === fpVersion && fpWorld === w && fpView === viewVer && !live && !arcsDrawn) return;
     fpVersion = fp.version; fpWorld = w; fpView = viewVer;
     const k = W / 300, p = fp.pts;
     v.clearRect(0, 0, W, H);
+    if (live) drawArcs(w, now);
+    arcsDrawn = live;
     v.beginPath(); v.moveTo(mx(w, p[0]), mz(w, p[1]));
     for (let i = 1; i < 4; i++) v.lineTo(mx(w, p[i * 2]), mz(w, p[i * 2 + 1]));
     v.closePath();
@@ -185,6 +266,7 @@ export function createMinimap(root: HTMLElement, ctx: Ctx) {
       g.strokeStyle = rgba(t.color, A35); g.lineWidth = k;
       g.beginPath(); g.arc(mx(w, p.center[0]), mz(w, p.center[2]), Math.max(4 * k, (r + 2) / w.size * W * zoom), 0, Math.PI * 2); g.stroke();
     }
+    if (w.size > 1000) drawParties(w, k, hi);   // stage W10: trails, goals, headings, heard (field map)
     for (let i = 0; i < w.stimuli.length; i++) {
       const s = w.stimuli[i], x = mx(w, s.position[0]), z = mz(w, s.position[2]);
       g.strokeStyle = 'rgba(226,191,121,.9)'; g.lineWidth = 1.4 * k; stimDash[0] = 3 * k; stimDash[1] = 2 * k; g.setLineDash(stimDash);
@@ -319,6 +401,9 @@ export function createMinimap(root: HTMLElement, ctx: Ctx) {
       prepare(w);
       if (anim.on) stepGlide(w, now);
       settle(w, now);
+      // Stage W10: follow the parties and the calls (a pointer comparison on most frames; the marks refresh a few times
+      // a second inside), and redraw at once when a call has just been given, so the parties that heard it show.
+      if (w.size > 1000) { const next = pm.calls.next; updatePartyMap(pm, w, now / 1000); if (pm.calls.next !== next) drawnVer = -1; }
       if (drawnVer !== viewVer) draw(w);
       drawFootprint(w);
     },
@@ -328,6 +413,7 @@ export function createMinimap(root: HTMLElement, ctx: Ctx) {
       if (cssW < 1 || cssH < 1) return;
       size();
       prepare(w);
+      if (w.size > 1000) updatePartyMap(pm, w, clockS());
       draw(w);
       const hi = ctx.state.highlightTroopId;
       const lk = `${hi}:${w.troops.map(t => t.id + t.name).join()}`;

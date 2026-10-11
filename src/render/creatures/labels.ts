@@ -8,11 +8,20 @@
 // (Chimp.reason; the other labels stay one line). An act the simulation has begun and the drawn body has not
 // (creatures/drawn.ts: bodies are drawn two ticks behind) reads "about to travel" in its own style until the body
 // starts it. The wording and the style are interface conventions, not observations.
+// Stage W10 (field map only; the 160 m map keeps its banners): a banner says what its party is doing instead of
+// repeating the community's name, which its colour already gives: an activity glyph, the size, the activity and, when
+// the party feeds in a tree, the species ("3 · FEEDING · FICUS MUCUSO"); a spark when a member is driven by the
+// decision model and a sound glyph for a few seconds after its members heard a call. The selected animal's tag is
+// placed before the banners and drawn above them, and a banner that would cover it moves below its party or is
+// dropped. On the map (overview) a banner sits above its party's marker instead of on it. Interface conventions.
 import * as THREE from 'three';
-import type { Action, CallKind, World } from '../../types';
+import type { Action, CallKind, Chimp, World } from '../../types';
 import type { Anim, CreatureFrame } from '../creatures';
 import type { PartyView } from './social';
 import { inLabelBox } from './pick';
+import { overviewWeight, partyMarkerPx } from '../env/field';
+import { ACTIVITY_NAMES, ACT_FEEDING, HEARD_SHOW_S, createSummary, summarizeParty, treeOf } from '../env/party-map';
+import { arrivalDelay, createCallLog, logSlot, noteCalls } from '../callreach';
 
 const MAX_LABELS = 40;
 const MAX_BANNERS = 12;
@@ -40,6 +49,16 @@ const CAT_ICON: Record<Cat, string> = {
   repro: '<circle cx="6" cy="6" r="3"/>',
   dead: '<path d="M3 6h6" stroke-width="1.6"/>',
 };
+// Stage W10: the banner's glyph per map activity (party-map.ts ACT_* order), the name tags' own glyphs.
+const ACTIVITY_CAT: Cat[] = ['food', 'move', 'rest', 'aff', 'agon'];
+/** Party kinds the simulation names more exactly than the five activities do. */
+const KIND_WORD: Record<string, string> = { hunting: 'hunting', nesting: 'nesting', consort: 'consortship' };
+/** Height (m) of the map's party markers above the ground: the canopy top plus 4 m is 19 to 26 m up on the field map
+ * (render/env/overview.ts); the banner is offset by the marker's own size, so a few metres do not matter. */
+const MAP_LIFT_M = 22;
+/** Frame height (m) above which only the selected animal's party keeps its banner: with kilometres in view the banners
+ * would cover the markers, which say the same in glyphs (design assumption). */
+const BANNER_MAX_FRAME_M = 2600;
 const CALL_TEXT: Record<CallKind, string> = { 'pant-hoot': 'pant-hoot', 'pant-grunt': 'pant-grunt', scream: 'scream', 'food-grunt': 'food grunt', bark: 'bark', 'alarm-hoo': 'alarm hoo', drum: 'drumming', whimper: 'whimper', laugh: 'laughing', 'travel-hoo': 'travel hoo', cough: 'coughing' };
 
 // Neutral near-black chrome matching the app's UI tokens (src/style.css :root): surfaces #141416/#18181b, hairline
@@ -83,6 +102,12 @@ const STYLE = `
   box-shadow:0 1px 3px rgba(0,0,0,.4);will-change:transform,opacity;transition:opacity .25s}
 .crl-ban b{font-weight:700}
 .crl-ban span{opacity:.72;font-weight:600}
+.crl-ban svg{width:11px;height:11px;flex:none;fill:currentColor;stroke:currentColor}
+.crl-ban .crl-ban-ai{width:9px;height:9px;stroke:none}
+.crl-ban .crl-ban-heard{display:none;fill:none;margin-left:-1px}
+.crl-ban.heard .crl-ban-heard{display:block}
+.crl-ban.w10{gap:5px;padding:2px 7px 2px 5px}
+.crl-root.w10 .crl.sel{z-index:2}
 `;
 
 interface Slot {
@@ -92,7 +117,7 @@ interface Slot {
   id: number; name$: string; color: string; rank$: string; act$: string; vocal: string; sel: boolean; model: boolean; tx: number; ty: number; op: number;
   soon: boolean;
 }
-interface Banner { el: HTMLDivElement; key: string; visible: boolean; width: number; tx: number; ty: number; op: number; }
+interface Banner { el: HTMLDivElement; key: string; visible: boolean; width: number; tx: number; ty: number; op: number; heard: boolean; }
 type Rect = { x0: number; y0: number; x1: number; y1: number };
 /** Constant inline transform; per-frame positions arrive as --lx/--ly (see place()). */
 const LABEL_TRANSFORM = 'translate3d(var(--lx,0px),var(--ly,0px),0) translate(-50%,-100%)';
@@ -137,7 +162,7 @@ export function createLabels(container: HTMLElement) {
     const el = document.createElement('div');
     el.className = 'crl-ban'; el.style.display = 'none'; el.style.transform = LABEL_TRANSFORM;
     root.appendChild(el);
-    banners.push({ el, key: '', visible: false, width: 0, tx: NaN, ty: NaN, op: -1 });
+    banners.push({ el, key: '', visible: false, width: 0, tx: NaN, ty: NaN, op: -1, heard: false });
   }
   // Label widths arrive from a ResizeObserver after layout (no forced synchronous layout in the frame).
   const sized = new Map<Element, Slot | Banner>();
@@ -214,35 +239,115 @@ export function createLabels(container: HTMLElement) {
     if (op !== t.op) { t.op = op; t.el.style.opacity = String(op); }
   }
 
+  // Stage W10: what each banner's party is doing (party-map.ts), and which parties have just heard a call: a small log
+  // of the calls seen and, per party id, the real time the call's arc reached it. Nothing is allocated per frame.
+  const SUM = createSummary(), members: Chimp[] = [];
+  const callLog = createCallLog(16), partyHeard = new Map<number, number>();
+  let rootW10 = false;
+  function partyOf(world: World, p: PartyView): World['parties'][number] | undefined {
+    const ps = world.parties;
+    for (let i = 0; i < ps.length; i++) if (ps[i].id === p.id && ps[i].troopId === p.troopId) return ps[i];
+    return undefined;
+  }
+  /** Notes new calls: a party with a member inside a call's radius has heard it once the arc gets there. */
+  function noteHeardParties(world: World, parties: PartyView[], anims: Map<number, Anim>, now: number) {
+    const added = noteCalls(callLog, world.calls, world.time, now);
+    for (let k = 0; k < added; k++) {
+      const s = logSlot(callLog, k), r = callLog.radius[s];
+      for (const p of parties) {
+        const q = partyOf(world, p);
+        if (!q) continue;
+        let near = Infinity;
+        for (let j = 0; j < q.members.length; j++) {
+          const c = q.members[j] === callLog.caller[s] ? undefined : anims.get(q.members[j])?.chimp;
+          if (c && c.alive) near = Math.min(near, Math.hypot(c.position[0] - callLog.x[s], c.position[2] - callLog.z[s]));
+        }
+        if (near <= r) partyHeard.set(p.id, now + arrivalDelay(near, r));
+      }
+    }
+    if (partyHeard.size > 96) partyHeard.clear();
+  }
+  const SOUND_ICON = '<svg class="crl-ban-heard" viewBox="0 0 12 12" stroke-width="1.4" stroke-linecap="round"><path d="M3 4.5v3M5.5 3v6M8 2v8M10.5 4v4"/></svg>';
+
   /** about (stage W4, optional): true while the simulation has begun an act the animal's drawn body has not started. */
   function update(frame: CreatureFrame, animList: Anim[], anims: Map<number, Anim>, world: World, camera: THREE.Camera, parties: PartyView[], pulse: (id: number, t: number) => number, about?: (a: Anim) => boolean) {
     // No layout reads in the frame: the viewport size comes with the frame, widths from the ResizeObserver.
     const w = frame.viewW ?? 1440, h = frame.viewH ?? 800;
     readOccluders(frame.elapsed);
     placed.length = 0; rectN = 0;
-    // Party banners first (RTS): they anchor the scene's social structure. Collisions are tested with the
-    // banner's measured width (estimated from its text until it has been shown once), and a banner element
-    // is only written when its party is actually placed.
+    // Stage W10: the selected animal's tag comes first: its rectangle is reserved before any banner is placed, so no
+    // banner sits on it (banners used to be placed first and are later in the DOM, so they covered it).
+    const focal = frame.selectedId != null ? anims.get(frame.selectedId) : undefined;
+    const fieldMap = world.size > 1000;
+    if (fieldMap !== rootW10) { rootW10 = fieldMap; root.classList.toggle('w10', fieldMap); }
+    const cam = camera as THREE.OrthographicCamera;
+    // 0..1: how far the view has become the map, where a party is drawn as a marker above the canopy (overview.ts).
+    // There a name tag stands above its animal's party marker instead of on it: lifted by the marker's height over
+    // the ground and by its radius on screen (the selected animal's party; 14 px for the others).
+    const mapW = fieldMap && cam.isOrthographicCamera ? overviewWeight((cam.top - cam.bottom) / cam.zoom, false) : 0;
+    let focalPx = 14;
+    if (mapW > 0 && focal) for (const q of world.parties) if (q.id === focal.chimp.partyId && q.troopId === focal.chimp.troopId) { focalPx = partyMarkerPx(q.members.length) + 4; break; }
+    if (fieldMap && focal && focal.visible && focal.fade <= 0.6) {
+      V.set(focal.head.x, focal.top + 0.18 * focal.morph.size + MAP_LIFT_M * mapW, focal.head.z).project(camera);
+      if (V.z <= 1 && Math.abs(V.x) <= 1.1 && Math.abs(V.y) <= 1.1) {
+        const x = (V.x * 0.5 + 0.5) * w, y = (-V.y * 0.5 + 0.5) * h - mapW * focalPx, prev = slotOf.get(focal.id);
+        const bw = prev && prev.width ? prev.width : 216, bh = prev && prev.h > 19 ? prev.h : 19;
+        const r = rect(x - bw / 2, y - bh - 8, x + bw / 2, y);
+        if (!hits(r, occluders)) placed.push(r);
+      }
+    }
+    // Party banners (RTS): they anchor the scene's social structure. Collisions are tested with the banner's measured
+    // width (estimated from its text until it has been shown once), and a banner element is only written when its
+    // party is actually placed.
+    if (fieldMap && !frame.closeView) noteHeardParties(world, parties, anims, frame.elapsed);
+    const modelOn = world.modelPolicy.mode !== 'off';
+    const farMap = fieldMap && cam.isOrthographicCamera && (cam.top - cam.bottom) / cam.zoom > BANNER_MAX_FRAME_M;
     let bi = 0;
     if (!frame.closeView) for (const p of parties) {
       if (bi >= banners.length) break;
-      V.set(p.x, p.y + 1.5, p.z - p.r).project(camera);
+      if (farMap && !(focal && focal.chimp.partyId === p.id && focal.chimp.troopId === p.troopId)) continue;
+      // The party's anchor on screen: the far edge of its outline in the strategy view, its marker on the map.
+      V.set(p.x, p.y + 1.5 + MAP_LIFT_M * mapW, p.z - p.r * (1 - mapW)).project(camera);
       if (V.z > 1 || Math.abs(V.x) > 1.05 || Math.abs(V.y) > 1.05) continue;
-      const x = (V.x * 0.5 + 0.5) * w, y = (-V.y * 0.5 + 0.5) * h;
-      const key = `${p.id}|${p.kind}|${p.phase ?? ''}|${p.count}|${p.color}`;
+      const x = (V.x * 0.5 + 0.5) * w, y0 = (-V.y * 0.5 + 0.5) * h - mapW * (partyMarkerPx(p.count) + 8);
+      let key: string, text = '', icon = '', model = false;
+      if (fieldMap) {
+        const q = partyOf(world, p);
+        members.length = 0;
+        if (q) for (let j = 0; j < q.members.length; j++) { const c = anims.get(q.members[j])?.chimp; if (c) members.push(c); }
+        summarizeParty(members, members.length, modelOn, SUM);
+        const species = SUM.activity === ACT_FEEDING && SUM.feedTree >= 0 ? treeOf(world, SUM.feedTree)?.species ?? '' : '';
+        const word = (p.phase && PHASE_TEXT[p.phase]) || KIND_WORD[p.kind] || ACTIVITY_NAMES[SUM.activity];
+        text = species ? `${word} · ${species}` : word; icon = CAT_ICON[ACTIVITY_CAT[SUM.activity]]; model = SUM.model;
+        key = `${p.id}|${p.count}|${p.color}|${text}|${SUM.activity}|${model ? 1 : 0}`;
+      } else key = `${p.id}|${p.kind}|${p.phase ?? ''}|${p.count}|${p.color}`;
       let troopName = 'Community';
-      for (const t of world.troops) if (t.id === p.troopId) troopName = t.name;
+      if (!fieldMap) for (const t of world.troops) if (t.id === p.troopId) troopName = t.name;
       const kind = (p.phase && PHASE_TEXT[p.phase]) || (KIND_TEXT[p.kind] ?? p.kind);
-      const bw = bannerWidth.get(key) ?? 22 + 7.2 * (troopName.length + kind.length + 4);
-      const r = rect(x - bw / 2, y - 18, x + bw / 2, y);
-      if (hits(r, occluders) || hits(r, placed)) continue;
+      const bw = bannerWidth.get(key) ?? (fieldMap ? 44 + 6.8 * (text.length + 2) : 22 + 7.2 * (troopName.length + kind.length + 4));
+      let y = y0, r = rect(x - bw / 2, y - 18, x + bw / 2, y);
+      if (hits(r, occluders) || hits(r, placed)) {
+        if (!fieldMap) continue;
+        // Second place: below the party (its near edge in the strategy view, under its marker on the map).
+        V.set(p.x, p.y + 0.2 + MAP_LIFT_M * mapW, p.z + p.r * (1 - mapW)).project(camera);
+        y = (-V.y * 0.5 + 0.5) * h + 24 + mapW * (partyMarkerPx(p.count) + 12);
+        rectN--; r = rect(x - bw / 2, y - 18, x + bw / 2, y);
+        if (hits(r, occluders) || hits(r, placed)) { rectN--; continue; }
+      }
       placed.push(r);
       const b = banners[bi++];
       if (key !== b.key) {
         b.key = key;
         b.el.style.background = p.color;
-        b.el.innerHTML = `<b>${troopName}</b><span>${kind} · ${p.count}</span>`;
+        if (fieldMap) {
+          b.el.className = b.heard ? 'crl-ban w10 heard' : 'crl-ban w10';
+          b.el.innerHTML = `<svg viewBox="0 0 12 12">${icon}</svg>${model ? '<svg class="crl-ban-ai" viewBox="0 0 10 10"><path d="M5 0l1.2 3.8L10 5 6.2 6.2 5 10 3.8 6.2 0 5l3.8-1.2Z"/></svg>' : ''}<b>${p.count}</b><span>${text}</span>${SOUND_ICON}`;
+        } else b.el.innerHTML = `<b>${troopName}</b><span>${kind} · ${p.count}</span>`;
         b.width = 0;
+      }
+      if (fieldMap) {
+        const at = partyHeard.get(p.id), heard = at !== undefined && frame.elapsed >= at && frame.elapsed < at + HEARD_SHOW_S;
+        if (heard !== b.heard) { b.heard = heard; b.el.classList.toggle('heard', heard); }
       }
       const dimmed = frame.highlightTroopId != null && frame.highlightTroopId !== p.troopId;
       place(b, x, y, dimmed ? 0.3 : 0.92);
@@ -251,16 +356,15 @@ export function createLabels(container: HTMLElement) {
     for (let i = bi; i < banners.length; i++) if (banners[i].visible) { banners[i].el.style.display = 'none'; banners[i].visible = false; banners[i].key = ''; }
 
     cand.length = 0;
-    const focal = frame.selectedId != null ? anims.get(frame.selectedId) : undefined;
     let hovered: Anim | null = null, hoverD = 34 * 34;
     for (const a of animList) {
       if (!a.visible || a.fade > 0.6) continue;
-      V.set(a.head.x, a.top + 0.18 * a.morph.size, a.head.z).project(camera);
+      V.set(a.head.x, a.top + 0.18 * a.morph.size + MAP_LIFT_M * mapW, a.head.z).project(camera);
       if (V.z > 1 || V.x < -1.1 || V.x > 1.1 || V.y < -1.1 || V.y > 1.1) continue;
-      const x = (V.x * 0.5 + 0.5) * w, y = (-V.y * 0.5 + 0.5) * h;
+      const sel = a === focal;
+      const x = (V.x * 0.5 + 0.5) * w, y = (-V.y * 0.5 + 0.5) * h - mapW * (sel ? focalPx : 14);
       const md = (x - mouseX) ** 2 + (y - mouseY + 12) ** 2;
       if (md < hoverD) { hoverD = md; hovered = a; }
-      const sel = a === focal;
       let alpha = false;
       for (const t of world.troops) if (t.alphaId === a.id) { alpha = true; break; }
       const party = !!focal && a.chimp.partyId === focal.chimp.partyId && a.chimp.troopId === focal.chimp.troopId && focal.chimp.partyId >= 0;
