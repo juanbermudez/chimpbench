@@ -5,13 +5,18 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test, { after } from 'node:test';
 import { newDecoder, type DecodeRecord, type HarnessDecode } from '../scripts/lib/decoder';
+import type { CardReadout } from '../scripts/lib/r10-card-tap';
+import cardTap from '../scripts/lib/r10-card-tap';
 import { decodeWords, nightDecode } from '../scripts/lib/r10-decode';
 import { replayRun, replayReport } from '../scripts/lib/r10-read';
-import { comparable, DAY, DayFiles, meterStart, MIN_AGE, readCkpt, RECEIPT_SCHEMA, runDay, writeCkpt, writeRegistry, type AskLine, type DaySummary, type Engine, type Line, type Registry, type Row } from '../scripts/lib/r10-run';
+import { comparable, DAY, DayFiles, meterStart, MIN_AGE, readCkpt, RECEIPT_SCHEMA, runDay, writeCkpt, writeRegistry, type AskLine, type DaySummary, type Engine, type HeldLine, type Line, type Registry, type Row } from '../scripts/lib/r10-run';
+import { armLedger, nightInfo, nightReceipts, type ArmLedger } from '../scripts/lib/who-decided';
+import { nightLedger } from '../scripts/r7-ledger';
 import { resultName } from '../scripts/r10-night';
 import { ARMS, armWorld } from '../scripts/r5-pilot';
 import { drawAt, heldAt } from '../src/kernel/decode';
 import { nullKernel } from '../src/kernel/kernels';
+import { TICK_HOURS } from '../src/sim/state';
 import { createWorld, tickWorld } from '../src/simulation';
 import type { World } from '../src/types';
 
@@ -29,7 +34,7 @@ const tmp = mkdtempSync(join(tmpdir(), 'r10-wiring-'));
 after(() => rmSync(tmp, { recursive: true, force: true }));
 const ARM = 'null-gate';
 const start = (): Engine => { const world = armWorld(base(), ARMS[ARM]); return { world, day: 0, meter: meterStart(world) }; };
-const asksOf = (lines: Line[]) => lines.filter((l): l is AskLine => l.k === 'ask');
+const asksOf = (lines: Line[]) => lines.filter((l): l is AskLine => l.k === 'ask'), heldOf = (lines: Line[]) => lines.filter((l): l is HeldLine => l.k === 'held');
 
 function registry(startHash: string, days: DaySummary[], decodeSpec: HarnessDecode | null): Registry {
   const spec = ARMS[ARM];
@@ -141,4 +146,85 @@ test('held is refused together with the kinds-first menu, by the engine and from
   assert.equal(rules.status, 2); assert.match(rules.stderr, /the rules arm has no kernel answer to decode/);
   const unknown = cli(...common, '--arm', ARM, '--decode', 'warm', '--out', resolve(tmp, 'refused-mode'));
   assert.equal(unknown.status, 2); assert.match(unknown.stderr, /unknown decode mode "warm"/);
+});
+
+test('the "who decided" ledger reads a night\'s log: triggers, the gate\'s held acts and their timing, against the run\'s own tally', async () => {
+  const n = await night(HELD), asks = asksOf(n.lines), held = heldOf(n.lines);
+  assert.ok(asks.length > 1000 && held.length > 300, `${asks.length} asks, ${held.length} held`);
+  const receipts = nightReceipts(n.lines), info = nightInfo({ ...n.reg, burnInDays: n.t0 / 24 }, n.lines);
+  assert.deepEqual([info.kernel, info.gate, info.gateLogged, info.t0, info.t1], ['random', true, true, n.t0, n.t0 + 24]);
+  assert.deepEqual(info.focal, [...new Set(n.rows.filter(r => r.driven).map(r => r.id))].sort((a, b) => a - b), 'every animal on the kernel has lines');
+  // names: an ask's trigger is the gate's reason; a held line is the gate's own line with the one act as its menu
+  assert.deepEqual(receipts.filter(r => r.by !== 'gate').map(r => r.why), asks.map(l => l.trig.gate), 'with the gate on every ask says why the gate opened it');
+  assert.deepEqual(receipts.filter(r => r.by === 'gate').map(r => [r.refusal, r.opts, r.fam, r.picked, r.v]), held.map(l => [l.how, [l.act], [l.fam], 0, l.v]));
+  // timing: between two lines of an animal the version rises by one for the act the earlier line set; a larger step is
+  // an interrupt that reached the animal while it waited, so it only ever sits before an ask, never before a held line
+  let steps = 0, extra = 0, extraBeforeHeld = 0, askThenHeld = 0;
+  for (const id of info.focal) {
+    const mine = n.lines.filter(l => l.id === id);
+    for (let i = 1; i < mine.length; i++) {
+      const gap = mine[i].v - mine[i - 1].v - 1;
+      assert.ok(gap >= 0, `animal ${id}: version ${mine[i - 1].v} then ${mine[i].v}`);
+      steps++; if (gap > 0) { extra++; if (mine[i].k === 'held') extraBeforeHeld++; }
+      if (mine[i].k === 'held' && mine[i - 1].k === 'ask') askThenHeld++;
+    }
+  }
+  assert.ok(steps > 1500 && askThenHeld > 100, `${steps} steps, ${askThenHeld} asks followed by a held act`);
+  assert.equal(extraBeforeHeld, 0, 'a held line carries the version the gate ran at: nothing is hidden before it');
+  const L: ArmLedger = armLedger(receipts, info), t = L.total, lines = L.lines;
+  assert.equal(t.hidden > 0, extra > 0); assert.equal(t.intervalsWithHidden, extra);
+  // had the held lines carried the version after the act was set (as first built), each one after an ask would read as a hidden event
+  const late = armLedger(receipts.map(r => r.by === 'gate' ? { ...r, v: r.v + 1 } : r), info);
+  assert.ok(late.total.hidden >= askThenHeld && late.total.hidden > 10 * t.hidden, `${late.total.hidden} hidden events with the late version (${askThenHeld} asks are followed by a held act), ${t.hidden} as logged`);
+  // the bracket is closed: every minute under the chooser is certainly under its fresh choice
+  assert.ok(lines.kindLow !== null && lines.kindLow > 0.2 && lines.kindLow === lines.kindHigh, `fresh choice ${lines.kindLow} to ${lines.kindHigh} of waking minutes`);
+  assert.ok(lines.held !== null && lines.held > 0.1, `held ${lines.held}`);
+  // every minute of the window is someone's
+  const all = (m: { waking: number; nest: number; unknown: number }) => m.waking + m.nest + m.unknown, sum = all(t.kind.chooser) + all(t.kind.held) + all(t.kind['one-kind']) + all(t.kind.fallback) + all(t.kind.before);
+  assert.ok(Math.abs(sum - info.focal.length * 1440) < 1e-6, `${sum} minutes over ${info.focal.length} animals`);
+  // against the run's own tally (the meter's minutes by who set the act, counted tick by tick with no receipt): the same
+  // split to within a tick per line, the ledger's intervals starting one tick before the meter's
+  const meter = { model: 0, held: 0, rules: 0 };
+  for (const r of n.rows.filter(x => x.driven)) { meter.model += r.own.model; meter.held += r.own.held; meter.rules += r.own.rules; }
+  const ledger = { model: all(t.kind.chooser) + all(t.kind['one-kind']), held: all(t.kind.held), rules: all(t.kind.fallback) + all(t.kind.before) };
+  for (const k of ['model', 'held', 'rules'] as const) assert.ok(Math.abs(ledger[k] - meter[k]) <= 0.02 * info.focal.length * 1440, `${k}: ledger ${ledger[k].toFixed(1)} min, the run's meter ${meter[k].toFixed(1)}`);
+  assert.equal(t.receipts, n.lines.length);
+  assert.equal(Object.values(t.askedBy).reduce((a, b) => a + b, 0), asks.length, 'every ask has a trigger');
+  assert.ok(t.askedBy.interrupt > 0 && t.askedBy.ended > 0 && t.askedBy['no-intent'] > 0, JSON.stringify(t.askedBy));
+  assert.ok(t.target.held > 0 && t.ending.arrived > 0, 'trips the gate turned into feeding: the tree is the held trip\'s, the trip ended by arriving');
+  assert.equal(TICK_HOURS * 60, 0.25);
+  // the same from the run folder, as scripts/r7-ledger.ts night reads it (the registry's window starts at day 0 here)
+  const fromFolder = nightLedger(n.dir);
+  assert.equal(fromFolder.ledger.total.receipts, n.lines.length); assert.equal(fromFolder.ledger.lines.kindLow, fromFolder.ledger.lines.kindHigh);
+  assert.deepEqual(fromFolder.ledger.total.askedBy, t.askedBy);
+});
+
+test('the replay reads stage R7\'s timing card through the tap hook; the script runs, replays and is read by the ledger from the command line', async () => {
+  // the card as a tap of the engine's replay
+  const n = await night(TOP), rep = await replayRun(n.dir, { field: false, taps: [cardTap(n.reg)] });
+  assert.ok(rep.ok, 'the card reads only: the replay still lands on the run\'s hash');
+  const card = rep.taps.card as CardReadout;
+  assert.equal(card.counts.animals, n.rows.filter(r => r.driven).length, 'read on the animals aged 8 and over');
+  assert.ok(card.counts.animalDays > card.counts.animals - 1 && card.summary.actChanges! > 10 && card.summary.switchesPerWakingHour! > 0 && card.summary.nightsInNest !== null);
+  // the card's act changes are the engine's own count for the same animals and day
+  const mine = n.rows.filter(r => r.driven && r.alive), meterChanges = mine.reduce((s, r) => s + r.actChanges, 0) / mine.length;
+  assert.ok(Math.abs(card.summary.actChanges! - meterChanges) < 0.15 * meterChanges, `card ${card.summary.actChanges} act changes per animal-day, the meter ${meterChanges}`);
+  const md = replayReport(n.reg, rep);
+  assert.ok(md.includes('## The timing card (stage R7), by value') && md.includes('C1 act changes per animal-day') && !md.includes('## Tap: card'));
+  // the script itself: a held night for the half hour, its replay with the card, and the ledger on its folder
+  const dir = resolve(tmp, 'cli'), cli = (script: string, ...args: string[]) => spawnSync(process.execPath, ['--import', 'tsx', resolve(script), ...args], { encoding: 'utf8', timeout: 240_000 });
+  const run = cli('scripts/r10-night.ts', 'run', '--profile', 'compressed', '--burn-in', '0', '--seed', '48', '--arm', ARM, '--decode', 'held', '--hold', 'block', '--days', '1', '--out', dir, '--allow-dirty', '--burnin-dir', resolve(tmp, 'cli-burnin'), '--no-contexts');
+  assert.equal(run.status, 0, `${run.stdout}${run.stderr}`);
+  const reg = JSON.parse(readFileSync(resolve(dir, 'run.json'), 'utf8')) as Registry;
+  assert.deepEqual([reg.state, reg.receiptSchema, reg.decodeSpec, reg.decode], ['done', 'r10-receipt-2', { mode: 'held', salt: 1, hold: 'block' }, 'held (a draw held for the half hour, salt 1)']);
+  assert.ok(readCkpt(resolve(dir, 'ckpt', 'd001.json.gz')).dec, 'the day\'s checkpoint holds the decoder\'s notes');
+  const replayed = cli('scripts/r10-night.ts', 'replay', dir, '--no-field');
+  assert.equal(replayed.status, 0, `${replayed.stdout}${replayed.stderr}`); assert.match(replayed.stdout, /the receipts reproduce the run: 1 of 1 day hashes equal, 0 missing, 0 menus differ, 0 of \d+ lines differ/);
+  const out = JSON.parse(readFileSync(resolve(dir, 'replay', 'replay.json'), 'utf8')) as { ok: boolean; taps: { card: CardReadout } };
+  assert.ok(out.ok && out.taps.card.counts.animals > 20 && out.taps.card.summary.actChanges! > 10);
+  assert.ok(readFileSync(resolve(dir, 'replay', 'replay.md'), 'utf8').includes('## The timing card (stage R7), by value'));
+  const led = cli('scripts/r7-ledger.ts', 'night', dir);
+  assert.equal(led.status, 0, `${led.stdout}${led.stderr}`); assert.match(led.stdout, /kind of act: a fresh choice for \d+\.\d% of waking minutes; an intention the gate held \d+\.\d%/);
+  const saved = JSON.parse(readFileSync(resolve(dir, 'ledger.json'), 'utf8')) as { ledger: ArmLedger; info: { gateLogged: boolean } };
+  assert.ok(saved.info.gateLogged && saved.ledger.lines.kindLow === saved.ledger.lines.kindHigh && saved.ledger.total.receipts > 1000);
 });

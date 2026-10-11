@@ -13,9 +13,11 @@ export interface LedgerReceipt {
   /** Who chose in the end, why the rules did ('' when the kernel's answer was applied), and the position applied (-1: the rules). */
   by: 'kernel' | 'rules' | 'gate'; refusal: string; picked: number;
   /**
-   * Not in the saved receipts; read when a later run logs them (docs/staging/r7-ledger.md, "For the integrator").
+   * Not in the saved receipts of stages R5 to R5-gate; a population night logs them (scripts/lib/r10-run.ts, schema
+   * r10-receipt-2; `nightReceipts` below turns its lines into these).
    * `by: 'gate'`: a line for an act the loop's gate kept or began without asking; `opts` holds that one act, `picked` 0,
-   * `refusal` 'kept' or 'arrived'. `why`: the trigger of the ask (the gate's reason, or the trigger of the decision point).
+   * `refusal` 'kept' or 'arrived'; its `v` is the decision version when the gate ran, as an ask's is.
+   * `why`: the trigger of the ask (the gate's reason, or the trigger of the decision point).
    */
   why?: string;
 }
@@ -30,7 +32,12 @@ export interface ArmInfo {
   t0: number; t1: number;
   /** The focal animals (an animal with no receipt still owns the whole window as time before its first receipt). */
   focal: number[];
-  /** The log holds a line for every act the gate kept or began (`by: 'gate'`), so nothing is hidden between its lines. */
+  /**
+   * The log holds a line for every act the gate kept or began (`by: 'gate'`), so no act is hidden between its lines:
+   * every interval under the chooser is certainly under its fresh choice, and a decision version that still passes
+   * without a line is an interrupt that reached the animal while it waited for an answer (src/sim/events.ts interrupt),
+   * as with the gate off.
+   */
   gateLogged?: boolean;
   /**
    * Animals whose window ends early, by id, in world hours: an animal that died inside the window (the run lists it; a
@@ -140,8 +147,9 @@ export function animalLedger(id: number, receipts: LedgerReceipt[], info: ArmInf
     // hidden events: the version rises by one for the applied answer; anything more passed without a receipt
     const hidden = next ? Math.max(0, next.v - r.v - 1) : null;
     if (hidden !== null) { L.hidden += hidden; if (hidden > 0) L.intervalsWithHidden++; }
-    // minutes certainly under the fresh choice: gate off, every decision point is a receipt; gate on, only an interval with no hidden event
-    if (credit === 'chooser' && (!info.gate || hidden === 0 || (info.gateLogged === true && hidden === null))) add(L.certain, where, m);
+    // minutes certainly under the fresh choice: gate off, or gate on with a line for every act it held, every decision
+    // point is a line; gate on without those lines, only an interval with no hidden event
+    if (credit === 'chooser' && (!info.gate || info.gateLogged === true || hidden === 0)) add(L.certain, where, m);
     // the act it is in when asked, still on offer: did it stay or leave?
     if (prev && r.by === 'kernel' && r.opts.some(o => o[0] === prev![0] && o[1] === prev![1])) { if (a.opt && keyOf(a.opt) === keyOf(prev)) L.stayed++; else L.leftWhenOffered++; }
     // acts: a new one starts when the applied option changes (an unnamed option is always a new act)
@@ -224,6 +232,46 @@ export function linesOf(t: Omit<AnimalLedger, 'id'>): FourLines {
     acts: t.acts, actsWithTarget: targeted, target: share(t.target.chooser, t.acts), targetOfTargeted: share(t.target.chooser, targeted),
     endings, left: share(t.ending.left, endings), gone: share(t.ending.gone, endings), arrived: share(t.ending.arrived, endings), endedByRules: share(t.ending.fallback, endings),
     stayedWhenOffered: share(t.stayed, t.stayed + t.leftWhenOffered) };
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// A population night's log (stage R10; scripts/lib/r10-run.ts Line, schema r10-receipt-2)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/** An ask line of a night's receipts, as far as the ledger reads it: the menu as [act, target, variant, aux] and the trigger under `trig`. */
+export interface NightAsk { k: 'ask'; t: number; id: number; v: number; opts: [string, number, ...number[]][]; fam: string[]; rulesIndex: number; by: 'kernel' | 'rules'; refusal: string; picked: number; trig: { why: string; intr: string; gate: string } }
+/** A held line: an act the loop's gate kept or began without asking, `v` the decision version when the gate ran. */
+export interface NightHeld { k: 'held'; t: number; id: number; v: number; how: 'kept' | 'arrived'; act: [string, number]; fam: string }
+
+/**
+ * A night's receipt lines as the ledger's receipts. An ask: the menu cut to [act, target], and `why` the trigger of the
+ * ask, which is the gate's reason when the gate ran ('no-intent', 'interrupt', 'ended', 'need-bucket', …) and the
+ * trigger of the decision point otherwise ('interrupt', 'finished', 'bout-end', 'waiting'). A held line: `by: 'gate'`
+ * with the one act as its menu, `picked` 0 and `refusal` 'kept' or 'arrived'. Decision versions are passed on as
+ * logged: both kinds of line carry the version at the decision point.
+ */
+export function nightReceipts(lines: readonly (NightAsk | NightHeld)[]): LedgerReceipt[] {
+  return lines.map((l): LedgerReceipt => l.k === 'held'
+    ? { t: l.t, id: l.id, v: l.v, opts: [[l.act[0], l.act[1]]], fam: [l.fam], rulesIndex: -1, by: 'gate', refusal: l.how, picked: 0 }
+    : { t: l.t, id: l.id, v: l.v, opts: l.opts.map(o => [o[0], o[1]]), fam: l.fam, rulesIndex: l.rulesIndex, by: l.by, refusal: l.refusal, picked: l.picked, why: l.trig.gate || l.trig.why });
+}
+
+/** What the ledger needs to know of a night besides its lines (scripts/lib/r10-run.ts Registry and DaySummary have it all). */
+export interface NightRun {
+  kernel: string; switches: { kernelGate: number }; burnInDays: number;
+  days: { deaths: { id: number; t?: number | null }[] }[];
+}
+const NIGHT_KERNEL: Record<string, KernelKind> = { gliner: 'model', argmax: 'rules-top', null: 'random' };
+/**
+ * The ledger's description of a night: the window in world hours (from the end of the burn-in, whole days), every
+ * animal with a line as a focal animal (an animal on the kernel is asked or held many times a day), the gate's lines
+ * logged whenever the gate was on, and each dead animal's window ended at its death.
+ */
+export function nightInfo(run: NightRun, lines: readonly (NightAsk | NightHeld)[]): ArmInfo {
+  const end: Record<number, number> = {};
+  for (const d of run.days) for (const x of d.deaths) if (typeof x.t === 'number') end[x.id] = x.t;
+  const gate = run.switches.kernelGate === 1, t0 = run.burnInDays * 24;
+  return { kernel: NIGHT_KERNEL[run.kernel] ?? 'model', gate, t0, t1: t0 + run.days.length * 24, focal: [...new Set(lines.map(l => l.id))].sort((a, b) => a - b), gateLogged: gate, end };
 }
 
 /**

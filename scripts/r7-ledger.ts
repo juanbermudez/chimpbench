@@ -10,6 +10,9 @@
 //       with no tap and compares the end hashes. One simulation at a time.
 //   pnpm exec tsx scripts/r7-ledger.ts report [--dir artifacts/r7/ledger] [--md docs/staging/r7-ledger-numbers.md]
 //       The numbers file, from the JSON of the two parts and of scripts/valuation-ledger.ts. Nothing in it is typed.
+//   pnpm exec tsx scripts/r7-ledger.ts night <run folder of scripts/r10-night.ts> [--out <run folder>/ledger.json]
+//       The same three credits for a population night, from its receipts (schema r10-receipt-2: the trigger of each ask
+//       and a line for every act the gate held are in the log, so the fresh-choice share is a number, not a bracket).
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -26,7 +29,8 @@ import { index, ix, TICK_HOURS } from '../src/sim/state';
 import { createWorld, tickWorld } from '../src/simulation';
 import { worldHash } from '../tests/fixtures/golden';
 import { ASK_CLASS, ASK_WORDS, CUTS, CUT_WORDS, cutsAt, interruptKind, tickTrigger, TRIGGER_WORDS, type Cut, type CutsAt, type TickTrigger } from './lib/shadow-tap';
-import { animalLedger, linesOf, totalOf, truthfulName, type AnimalLedger, type ArmInfo, type FourLines, type KernelKind, type LedgerReceipt } from './lib/who-decided';
+import { readReceipts, readRegistry } from './lib/r10-run';
+import { animalLedger, armLedger, linesOf, nightInfo, nightReceipts, totalOf, truthfulName, type AnimalLedger, type ArmInfo, type ArmLedger, type FourLines, type KernelKind, type LedgerReceipt } from './lib/who-decided';
 import type { Valuation } from './valuation-ledger';
 import { valuationMarkdown } from './valuation-ledger';
 
@@ -431,6 +435,16 @@ export function reportMarkdown(R: ReceiptsLedger | null, taps: TapResult[], V: V
 }
 
 // =====================================================================================================================
+// A population night (stage R10): the ledger from its run folder
+// =====================================================================================================================
+
+/** The ledger of a night's run folder: its registry and receipts read, every animal on the kernel a focal animal. */
+export function nightLedger(root: string): { label: string; name: string; arm: string; decode: string; days: number; info: ArmInfo; ledger: ArmLedger } {
+  const reg = readRegistry(root), lines = readReceipts(root, reg.days.length), info = nightInfo(reg, lines);
+  return { label: reg.label, name: reg.name, arm: reg.arm, decode: reg.decode, days: reg.days.length, info, ledger: armLedger(nightReceipts(lines), info) };
+}
+
+// =====================================================================================================================
 
 function main() {
   const args = process.argv.slice(2), cmd = args[0], arg = (k: string, d: string) => { const i = args.indexOf(`--${k}`); return i >= 0 && i + 1 < args.length ? args[i + 1] : d; };
@@ -462,7 +476,17 @@ function main() {
     const pf = arg('params-file', taps[0]?.paramsFile ?? 'docs/staging/integrator-kit/params/M6-W50.json');
     const text = reportMarkdown(R, taps, V, JSON.parse(readFileSync(resolve(ROOT, pf), 'utf8')) as Overrides), md = arg('md', '');
     if (md) { writeFileSync(resolve(md), text + '\n'); console.log(`wrote ${resolve(md)}`); } else console.log(text);
-  } else { console.error('usage: r7-ledger.ts receipts | tap --seed 48|7 [--check] | report [--md file]'); process.exit(1); }
+  } else if (cmd === 'night') {
+    if (!args[1] || args[1].startsWith('--')) { console.error('usage: r7-ledger.ts night <run folder> [--out file]'); process.exit(1); }
+    const root = resolve(args[1]), n = nightLedger(root), l = n.ledger.lines, t = n.ledger.total, out = resolve(arg('out', join(root, 'ledger.json')));
+    writeFileSync(out, JSON.stringify({ tool: 'r7-ledger night', date: new Date().toISOString(), head: git('rev-parse --short HEAD'), ...n }, null, 1) + '\n');
+    console.log(`${n.label}: ${n.name}; ${n.days} days, ${n.info.focal.length} animals on the kernel, ${t.receipts} lines (gate ${n.info.gate ? 'on, its held acts logged' : 'off'})`);
+    console.log(`kind of act: a fresh choice for ${pct(l.kindLow)}${l.kindLow === l.kindHigh ? '' : ` to ${pct(l.kindHigh)}`} of waking minutes; an intention the gate held ${pct(l.held)}`);
+    console.log(`target: the chooser's for ${pct(l.target)} of ${l.acts} acts (${pct(l.targetOfTargeted)} of the ${l.actsWithTarget} with a target)`);
+    console.log(`endings (${l.endings}): left with the act still on offer ${pct(l.left)}, no longer on offer ${pct(l.gone)}, arrived ${pct(l.arrived)}, by the rules ${pct(l.endedByRules)}`);
+    console.log(`asked because: ${Object.entries(t.askedBy).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(', ') || 'no asks'}; interrupts that reached a waiting animal: ${t.hidden}`);
+    console.log(`wrote ${out}`);
+  } else { console.error('usage: r7-ledger.ts receipts | tap --seed 48|7 [--check] | report [--md file] | night <run folder>'); process.exit(1); }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();
