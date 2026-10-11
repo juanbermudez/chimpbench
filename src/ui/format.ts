@@ -79,6 +79,13 @@ const ACTION_SOON: Partial<Record<Action, string>> = { share: 'share meat', guar
 /** "About to travel": an act the simulation has begun and the drawn body has not started (stage W4; the renderer
  * reports it, contracts.ts DrawnActView). The plain verb (actionVerb) takes over when the body starts. */
 export const actionSoon = (a: Action) => `About to ${ACTION_SOON[a] ?? a}`;
+/** The words that lead the verb while an animal's drawn body is on its way to an act (stage W6), by the renderer's code
+ * (contracts.ts DrawnActView.way; the same words as the name tags, render/creatures/drawn.ts WAY_WORDS: a test keeps
+ * the two lists equal). */
+const WAY_LEAD = ['', 'About to', 'Going to', 'Walking to', 'Climbing to', 'Coming down to'];
+/** "Walking to drink", "Climbing to feed", "About to travel": the act as the drawn body stands to it. An animal on its
+ * way to a crown goes to feed (the tag's wording). */
+export const actionOnWay = (a: Action, way: number) => `${WAY_LEAD[way] ?? WAY_LEAD[1]} ${a === 'forage' && way >= 2 ? 'feed' : ACTION_SOON[a] ?? a}`;
 export const actionLabel = (a: Action) => a === 'pant-grunt' ? 'Pant-grunt' : cap(a.replace('-', ' '));
 
 export const RELATION_LABEL: Record<Relation, string> = {

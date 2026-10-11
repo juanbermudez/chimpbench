@@ -4,6 +4,10 @@
 // "travelling" over an animal still sitting, "resting" over one still walking in, "grooming" over one walking up to
 // its partner. Each drawn animal keeps the act and target of its last few tick states (a fixed ring, written only
 // when a tick has run or a decision landed), and readDrawn() says whether the newest act is still ahead of the body.
+// Stage W6: the body waits with the tag. The renderer chooses poses from the act this record says the body is in
+// (creatures.ts), so a pose no longer strikes while the tag still reads "about to"; a stationary act is announced until
+// the body's own drawn time has reached it; and an approach is named for what the body does ("walking to drink",
+// "climbing to feed") for as long as it lasts, however long the walk.
 // Reads the World only; no three.js. The wording, the window and the thresholds are interface conventions
 // (stylizations), not observations of chimpanzees.
 import type { Action } from '../../types';
@@ -11,8 +15,9 @@ import { HIST, type Track } from './playback';
 
 const TICK_HOURS = 15 / 3600;   // one simulation tick (playback.ts TICK_HOURS)
 
-/** Drawn time after the state that first showed an act within which the body may still be getting to it: 6 ticks, so
- * with the two ticks of playback lag an act is announced for at most 2 simulated minutes (a stylization). */
+/** Drawn time after the state that first showed a trip within which a body that has not set off is still announced: 6
+ * ticks, so with the two ticks of playback lag "about to travel" stands for at most 2 simulated minutes; after that the
+ * wait is the act (a stylization). Stage W6: a stationary act has no such limit while the body is on its way to it. */
 export const ABOUT_TICKS = 6;
 /** Tick states kept: the window, the two ticks of lag, the state before the act, and one to spare. */
 export const ACT_HIST = 10;
@@ -34,16 +39,23 @@ export const PATH_MOVING_MPS = 0.05;
 export const ABOUT_MAX_RATE = 120;
 
 /**
- * The act and target of an animal's last tick states, newest at `head`. Two notes keep the announcement steady:
+ * The act and target of an animal's last tick states, newest at `head`. Notes kept beside the ring:
+ * `since`, when the newest act was first seen, with the act and target before it (`was`, `wasTarget`): written when the
+ * act changes, so they outlast the ring (stage W6: a walk to water takes far more than ten ticks);
  * `shown`, the start time of the act the body has already been seen to begin (an act is announced once, not again
- * each time the animal moves within it), and `told`, the start time of the act that has been announced (inside the
- * playback lag an announcement is not withdrawn because the body happens to stand where the animal is for a moment).
+ * each time the animal moves within it) and `shownAt`, the drawn time at which that was seen;
+ * `told`, the start time of the act that has been announced; `left`, the start time of the stationary act on whose way
+ * the body has been seen to move (a pause on the way then reads "going to", not "about to").
  * Fixed size: nothing is allocated after creation.
  */
-export interface ActTrack { t: Float64Array; action: Action[]; target: Int32Array; head: number; n: number; shown: number; told: number }
+export interface ActTrack {
+  t: Float64Array; action: Action[]; target: Int32Array; head: number; n: number; shown: number; told: number;
+  since: number; was: Action; wasTarget: number; shownAt: number; left: number;
+}
 
 export function createActTrack(): ActTrack {
-  return { t: new Float64Array(ACT_HIST), action: new Array<Action>(ACT_HIST).fill('rest'), target: new Int32Array(ACT_HIST).fill(-1), head: 0, n: 0, shown: NaN, told: NaN };
+  return { t: new Float64Array(ACT_HIST), action: new Array<Action>(ACT_HIST).fill('rest'), target: new Int32Array(ACT_HIST).fill(-1), head: 0, n: 0, shown: NaN, told: NaN,
+    since: -Infinity, was: 'rest', wasTarget: -1, shownAt: NaN, left: NaN };
 }
 
 /**
@@ -51,12 +63,31 @@ export function createActTrack(): ActTrack {
  * two ticks changes the act without moving the clock, and the act then counts as first seen at that time.
  */
 export function pushAct(tr: ActTrack, t: number, action: Action, targetId: number): void {
-  if (tr.n > 0 && tr.t[tr.head] === t) { tr.action[tr.head] = action; tr.target[tr.head] = targetId; return; }
+  const changed = actChanged(tr, action, targetId);
   // A rewound world (another simulation opened) starts the record again.
-  if (tr.n > 0 && t < tr.t[tr.head]) { tr.n = 0; tr.shown = NaN; tr.told = NaN; }
-  tr.head = (tr.head + 1) % ACT_HIST;
-  tr.t[tr.head] = t; tr.action[tr.head] = action; tr.target[tr.head] = targetId;
-  if (tr.n < ACT_HIST) tr.n++;
+  if (tr.n > 0 && t < tr.t[tr.head]) { tr.n = 0; tr.shown = NaN; tr.told = NaN; tr.shownAt = NaN; tr.left = NaN; tr.since = -Infinity; }
+  const had = tr.n > 0, endedAct = tr.action[tr.head], endedTarget = tr.target[tr.head], endedSince = tr.since;
+  if (had && tr.t[tr.head] === t) { tr.action[tr.head] = action; tr.target[tr.head] = targetId; }
+  else {
+    tr.head = (tr.head + 1) % ACT_HIST;
+    tr.t[tr.head] = t; tr.action[tr.head] = action; tr.target[tr.head] = targetId;
+    if (tr.n < ACT_HIST) tr.n++;
+  }
+  if (!changed) return;
+  // The start of the newest act and the act the body is still in, kept beside the ring (the ring forgets them after
+  // ten states). The body is in the act that just ended when it was seen to begin it (or when that act is older than
+  // the record); an act it never began (the animal changed its mind on the way) leaves the note on the act before.
+  // A record that does not reach back to another state (it has just begun) cannot call its act new.
+  if (!had || actBefore(tr) < 0) { tr.since = -Infinity; return; }
+  // An urgent or pose-only act (a call, a display, a charge) is drawn the moment the simulation begins it, so it is
+  // also over the moment the simulation ends it: the body does not go on calling while it waits for its next act. It
+  // stands (or sits in its tree), which is what a trip that has not set off looks like.
+  if (BODY_SIGN[endedAct] === 'any') { tr.was = 'travel'; tr.wasTarget = -1; }
+  else if (!(endedSince > -Infinity) || tr.shown === endedSince) { tr.was = endedAct; tr.wasTarget = endedTarget; }
+  // It had set off for the act it now gives up (it was walking or climbing to it): the body is in neither that act nor
+  // the one before. It is on the move: the same neutral standing and walking poses.
+  else if (tr.left === endedSince) { tr.was = 'travel'; tr.wasTarget = -1; }
+  tr.since = t;
 }
 /** True when the newest state does not show this act and target (the caller then records it). */
 export function actChanged(tr: ActTrack, action: Action, targetId: number): boolean {
@@ -64,9 +95,15 @@ export function actChanged(tr: ActTrack, action: Action, targetId: number): bool
 }
 
 /**
- * When the act of the newest state was first seen (its act and target unchanged since), in ecological hours.
- * −Infinity when the record does not reach back to another act: the act is older than the record, or the record has
- * just begun, and either way it cannot be called new.
+ * When the act of the newest state was first seen, in ecological hours, from the note written when it began: it holds
+ * for as long as the act lasts (stage W6). −Infinity when the record began with this act: its start was not seen.
+ */
+export function actStart(tr: ActTrack): number { return tr.n === 0 ? -Infinity : tr.since; }
+
+/**
+ * When the act of the newest state was first seen (its act and target unchanged since), in ecological hours, read from
+ * the ring alone. −Infinity when the ring does not reach back to another act: the act is older than the ring, or the
+ * record has just begun (actStart keeps the start of a long act).
  */
 export function actSince(tr: ActTrack): number {
   if (tr.n === 0) return -Infinity;
@@ -113,6 +150,8 @@ export interface BodyState {
   moving: boolean;
   /** The drawn path is going up or down faster than PATH_MOVING_MPS. */
   climbing: boolean;
+  /** Stage W6, optional: that vertical movement is downward (the tag then reads "coming down to", not "climbing to"). */
+  down?: boolean;
   /** Distance (m) from the drawn body to where the simulation has the animal now. */
   gap: number;
   /** The simulation moved the animal no faster than a feeding shuffle over the two ticks the body still has to play
@@ -151,6 +190,7 @@ export function readBody(out: BodyState, tr: Track, x: number, y: number, z: num
   const on = PATH_MOVING_MPS * 3600;   // track velocities are metres per ecological hour
   out.moving = clipMoving || Math.sqrt(tr.vx * tr.vx + tr.vz * tr.vz) > on;
   out.climbing = Math.abs(tr.vy) > on;
+  out.down = tr.vy < -on;
   out.gap = Math.hypot(tr.x - x, tr.y - y, tr.z - z);
   out.shuffling = shuffles(tr, SHUFFLE_SHARE * walkMps);
   out.passive = passive;
@@ -158,28 +198,46 @@ export function readBody(out: BodyState, tr: Track, x: number, y: number, z: num
 }
 
 /**
- * True when the body shows the act: it has set off (a trip), or it is where the animal is (a stationary act). A
+ * True when the body shows the act: it has set off (a trip), or it is where the animal is and has stopped (a stationary act). A
  * stationary act is also shown by a body with only a shuffle left to play: the simulation's ground foragers eat as
  * they creep along, so the body trails them by metres while the act is already under way (and the body is already
  * drawn in the act's clip, which follows the simulation's act), and "about to forage" over it would be false.
  */
 export function bodyShows(action: Action, body: BodyState): boolean {
   const sign = BODY_SIGN[action];
-  return sign === 'go' ? body.moving || body.climbing : sign === 'stay' ? body.gap <= ARRIVED_M || body.shuffling : true;
+  // (W6: there, and no longer walking: a body within reach of its place but still in its last strides has not begun
+  // the act, or the tag would turn a moment before the pose can.)
+  return sign === 'go' ? body.moving || body.climbing : sign === 'stay' ? (body.gap <= ARRIVED_M && !body.moving && !body.climbing) || body.shuffling : true;
 }
 
 /**
  * True while the simulation has begun an act that the drawn body has not. `since`: when the act was first seen;
  * `renderT`: the body's drawn time; `shown`: the body has already been seen to begin this act.
- * A trip is announced while the body neither walks nor comes down; a stationary act while the body is still away
- * from where the animal is and has more than a shuffle left to play. It ends when the body shows the act, and at the
- * latest ABOUT_TICKS of drawn time after the state that first showed it.
+ * A trip is announced while the body neither walks nor comes down, at the latest ABOUT_TICKS of drawn time after the
+ * state that first showed it. A stationary act is announced until the body's own drawn time has reached the act (stage
+ * W6: the pose waits for the same moment, so nothing is early), and after that for as long as the body is still away
+ * from where the animal is with more than a shuffle left to play: a walk to water of ten minutes is an approach for
+ * ten minutes (stage W6; the limit of six ticks made it read "drinking" over a walking animal).
  */
 export function aboutTo(action: Action, since: number, renderT: number, body: BodyState, rate: number, shown = false): boolean {
-  if (shown || body.passive || rate > ABOUT_MAX_RATE) return false;
-  if (!(renderT < since + ABOUT_TICKS * TICK_HOURS)) return false;
-  return !bodyShows(action, body);
+  if (shown || body.passive || rate > ABOUT_MAX_RATE || !(since > -Infinity)) return false;
+  const sign = BODY_SIGN[action];
+  if (sign === 'go') return renderT < since + ABOUT_TICKS * TICK_HOURS && !bodyShows(action, body);
+  return sign === 'stay' && (renderT < since || !bodyShows(action, body));
 }
+
+/**
+ * What the body is doing about an act it has not begun (stage W6): nothing to say (`none`); it has not set off
+ * (`soon`, "about to drink"); it is walking there, climbing up to it or coming down to it; or it has set off and
+ * stands for a moment on the way (`going`). Codes, so the per-frame record holds a number.
+ */
+export const Way = { none: 0, soon: 1, going: 2, walking: 3, climbing: 4, down: 5 } as const;
+export type WayCode = typeof Way[keyof typeof Way];
+/** The words that lead the verb for each code ('' for none). An interface wording (a stylization). */
+export const WAY_WORDS: readonly string[] = ['', 'about to', 'going to', 'walking to', 'climbing to', 'coming down to'];
+/** The verb after those words. An animal walking or climbing to a crown goes to feed; the tag's own "forage" stays for
+ * an act that has not set off, as stage W4 worded it. */
+export function wayVerb(action: Action, way: number, verb: string): string { return action === 'forage' && way >= Way.going ? 'feed' : verb; }
 
 /** What the renderer reports for one drawn animal (CreatureLayer.drawnAct). The object is the caller's and is reused. */
 export interface DrawnAct {
@@ -187,6 +245,9 @@ export interface DrawnAct {
   action: Action; targetId: number;
   /** The simulation has begun a newer act (the animal's own Chimp.action and targetId) that the body has not started. */
   about: boolean;
+  /** Stage W6: how the body stands to that newer act (Way: not set off, walking to it, climbing to it, coming down to
+   * it, paused on the way); Way.none exactly when `about` is false. */
+  way: number;
 }
 
 /**
@@ -197,19 +258,22 @@ export interface DrawnAct {
  */
 export function readDrawn(tr: ActTrack, renderT: number, body: BodyState, rate: number, out: DrawnAct): DrawnAct {
   const h = tr.head;
-  let about = false;
+  let about = false, way: number = Way.none;
   if (tr.n > 0) {
-    const since = actSince(tr), action = tr.action[h];
-    if (since > -Infinity && tr.shown !== since && !body.passive && bodyShows(action, body) && (BODY_SIGN[action] !== 'stay' || renderT >= since)) tr.shown = since;
-    about = aboutTo(action, since, renderT, body, rate, tr.shown === since)
-      // Held through the playback lag once announced: there the body can stand where the animal is for a moment (the
-      // foot of the tree it is about to climb) before the simulation's next move reaches it.
-      || (tr.told === since && tr.shown !== since && renderT < since && !body.passive && rate <= ABOUT_MAX_RATE);
-    if (about) tr.told = since;
+    const since = tr.since, action = tr.action[h], sign = BODY_SIGN[action];
+    if (since > -Infinity && tr.shown !== since && !body.passive && bodyShows(action, body) && (sign !== 'stay' || renderT >= since)) { tr.shown = since; tr.shownAt = renderT; }
+    about = aboutTo(action, since, renderT, body, rate, tr.shown === since);
+    if (about) {
+      tr.told = since;
+      // On its way: the drawn path walks or climbs faster than a feeding shuffle. Only a stationary act has a way to it.
+      const moving = sign === 'stay' && !body.shuffling && (body.moving || body.climbing);
+      if (moving) tr.left = since;
+      way = !moving ? (tr.left === since ? Way.going : Way.soon) : !body.climbing ? Way.walking : body.down ? Way.down : Way.climbing;
+    }
   }
-  const before = about ? actBefore(tr) : -1;
-  out.about = before >= 0;
-  out.action = before >= 0 ? tr.action[before] : tr.action[h];
-  out.targetId = before >= 0 ? tr.target[before] : tr.target[h];
+  out.about = about;
+  out.way = way;
+  out.action = about ? tr.was : tr.action[h];
+  out.targetId = about ? tr.wasTarget : tr.target[h];
   return out;
 }
