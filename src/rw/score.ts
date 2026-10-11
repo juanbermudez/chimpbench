@@ -28,13 +28,21 @@ export interface RecordScore {
   /** Inner-kernel calls the answer took (1 unless the kernel fans out; 0 when refused). */
   calls: number;
 }
-export interface RunOptions {
+/** What the scorer reads of a choice besides its packet: the key, the individual it clusters by and the two cuts. */
+export type ScoredChoice = Pick<WildChoice, 'key' | 'focal' | 'preceded' | 'partStratum'>;
+export interface RunOptions<C extends ScoredChoice = WildChoice> {
   seed?: number; shuffle?: number;
   /** The kernel's probabilities are a distribution over the options (the null kernel, a model's softmax), so log loss is defined. */
   distribution?: boolean;
   /** Requests asked at once (a kernel that batches its calls gathers them); 1 by default. */
   concurrency?: number;
-  onPacket?: (choice: WildChoice, packet: WildPacket) => void;
+  onPacket?: (choice: C, packet: WildPacket) => void;
+  /**
+   * Stage RW2 (docs/staging/rw2-prereg.md §5): another record's packet builder and its own validation. Left out, this
+   * is stage RW's wild packet of an Ngogo choice, unchanged.
+   */
+  build?: (choice: C, o: { seed: number; shuffle: number }) => WildPacket;
+  check?: (request: WildPacket['request']) => string;
 }
 
 const EPS = 1e-12, FLOOR = 1e-9;
@@ -55,10 +63,11 @@ export function scoreAnswer(answer: unknown, packet: WildPacket, distribution: b
 }
 
 /** Runs a kernel (sync or async) over the choices under one shuffle. Records come back in the order given. */
-export async function runKernel(kernel: WildKernel, choices: WildChoice[], opts: RunOptions = {}): Promise<RecordScore[]> {
+export async function runKernel<C extends ScoredChoice = WildChoice>(kernel: WildKernel, choices: C[], opts: RunOptions<C> = {}): Promise<RecordScore[]> {
   const seed = opts.seed ?? DEFAULT_SEED, shuffle = opts.shuffle ?? 0, width = Math.max(1, opts.concurrency ?? 1), out: RecordScore[] = [];
-  const one = async (choice: WildChoice): Promise<RecordScore> => {
-    const packet = buildWildPacket(choice, { seed, shuffle }), bad = wildRequestError(packet.request);
+  const build = opts.build ?? ((c: C, o: { seed: number; shuffle: number }) => buildWildPacket(c as unknown as WildChoice, o)), check = opts.check ?? wildRequestError;
+  const one = async (choice: C): Promise<RecordScore> => {
+    const packet = build(choice, { seed, shuffle }), bad = check(packet.request);
     if (bad) throw new Error(`wild packet failed its own validation: ${bad}`);
     if (!packet.labels.length) throw new Error('wild choice without a label in its set (not an eligible record)');
     opts.onPacket?.(choice, packet);

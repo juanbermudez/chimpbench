@@ -1,0 +1,272 @@
+{
+ "about": "Stage RW2 (docs/staging/rw2-prereg.md): counts and hashes of the derived wild records. Written by scripts/rw2/rw2_ingest.py; no row, no animal code, no date. The derived records themselves stay under artifacts/rw2 (gitignored).",
+ "datasets": {
+  "budongo-scans": {
+   "neverCalled": [
+    "a choice record",
+    "a stay-or-leave or join record",
+    "a time series of 15-minute steps",
+    "a membership-change rate",
+    "a duration of a party"
+   ],
+   "source": {
+    "doi": "10.5061/dryad.51b68",
+    "license": "CC0 1.0"
+   },
+   "status": "yardstick only: not a choice record",
+   "what": "who was recorded together at a scan, among adults resident all year, within 35 to 50 m of an unnamed focal animal",
+   "years": {
+    "2008": {
+     "emptyRows": 131,
+     "individualColumns": 29,
+     "nonEmptyRows": 10616,
+     "partySizeAmongYearRoundAdults": {
+      "max": 20,
+      "mean": 4.76,
+      "median": 3.0,
+      "q1": 2,
+      "q3": 7
+     },
+     "partySizeOverAllRows": {
+      "mean": 4.71,
+      "median": 3
+     },
+     "rows": 10747,
+     "rowsWithAValue2": 0,
+     "sealedRowBlockFrom": 8001,
+     "sha256": "6d093919b8c8ff3aa727dfef2df25d72bd16d3e92a740b60a964a735a8ba9bab",
+     "shareOfNonEmptyRowsWithOneAdult": 0.204
+    },
+    "2009": {
+     "emptyRows": 199,
+     "individualColumns": 30,
+     "nonEmptyRows": 12935,
+     "partySizeAmongYearRoundAdults": {
+      "max": 27,
+      "mean": 5.15,
+      "median": 4,
+      "q1": 2,
+      "q3": 7
+     },
+     "partySizeOverAllRows": {
+      "mean": 5.08,
+      "median": 3.0
+     },
+     "rows": 13134,
+     "rowsWithAValue2": 201,
+     "sealedRowBlockFrom": 9201,
+     "sha256": "e0674c6862bb8542e4696d436a5562bb14f8f77d5c5e5666b1d223f72586f7c9",
+     "shareOfNonEmptyRowsWithOneAdult": 0.228
+    }
+   }
+  },
+  "kanyawara-coalition": {
+   "events": 122,
+   "parts": {
+    "development": {
+     "coalitionSizes": {
+      "2": 10,
+      "3": 3
+     },
+     "dateAndMemberSetUnits": 13,
+     "dates": 11,
+     "eligible": 29,
+     "eligibleKeysSha256": "406330126c311f13dd27a23cf664b3badc3aa39c946c33471158020d523eb23a",
+     "eligibleParticipants": 13,
+     "eligibleWithMoreThan8Options": 9,
+     "eligibleWithPreviousPeriodBonds": 18,
+     "events": 13,
+     "labelsPerEligibleRecord": {
+      "1": 20,
+      "2": 9
+     },
+     "leftOut": {},
+     "memberRecords": 29,
+     "months": 5,
+     "opened": true,
+     "optionsPerEligibleRecord": {
+      "max": 12,
+      "mean": 6.62,
+      "median": 7,
+      "min": 2
+     },
+     "rows": 173
+    },
+    "sealed": {
+     "dates": 27,
+     "events": 36,
+     "eventsOf2018And2019": 15,
+     "months": 18,
+     "opened": false,
+     "rows": 525
+    },
+    "train": {
+     "coalitionSizes": {
+      "2": 65,
+      "3": 5,
+      "4": 1,
+      "5": 2
+     },
+     "dateAndMemberSetUnits": 66,
+     "dates": 62,
+     "eligible": 145,
+     "eligibleKeysSha256": "51379d8b2ce418648964cac24a666c42abf39a911aa373b779f4719dbecb41d7",
+     "eligibleParticipants": 20,
+     "eligibleWithMoreThan8Options": 55,
+     "eligibleWithPreviousPeriodBonds": 107,
+     "events": 73,
+     "labelsPerEligibleRecord": {
+      "1": 116,
+      "2": 15,
+      "3": 4,
+      "4": 10
+     },
+     "leftOut": {
+      "same-day-repeat": 14
+     },
+     "memberRecords": 159,
+     "months": 33,
+     "opened": true,
+     "optionsPerEligibleRecord": {
+      "max": 16,
+      "mean": 7.74,
+      "median": 7,
+      "min": 2
+     },
+     "rows": 1117
+    }
+   },
+   "source": {
+    "doi": "10.5061/dryad.44j0zpchh",
+    "files": [
+     "analysis2_datashare.csv",
+     "analysis1_datashare.csv"
+    ],
+    "license": "CC0 1.0",
+    "sha256": [
+     "c5655bcdb1e2f287f1adbd2c5d34cb8bf431d5ac310517b721a96eb8f8efa080",
+     "29cbd25e7e31403076f95f6b54a8420b8b1d2e82ba4177c6288d83742e5f31df"
+    ]
+   },
+   "splitRule": {
+    "name": "fox2022-coal-v1",
+    "sha256": "5442b8d47c3847ecee1bb1c151c4ad149078660faf67baa04592bef122ab2bcf"
+   },
+   "status": "symmetric record of co-participation: a small test, never a teacher",
+   "what": "given that a joint attack by adult females happened, which of the adult females present attacked alongside a participant"
+  },
+  "tai-groom": {
+   "choosers": 20,
+   "communityDays": 440,
+   "communityDaysWithTwoParts": 28,
+   "events": 1372,
+   "parts": {
+    "development": {
+     "choosers": 14,
+     "eligible": 329,
+     "eligibleChoosers": 13,
+     "eligibleKeysSha256": "bec7a0b4579f3e4589f61c2a1da02c75947f767601a73fc2c59953c435eef6f1",
+     "eligibleWithMoreThan8Options": 59,
+     "events": 353,
+     "eventsByChooserSex": {
+      "f": 40,
+      "m": 313
+     },
+     "eventsWithMoreThan8Options": 64,
+     "labelsPerEligibleRecord": {
+      "1": 329
+     },
+     "leftOut": {
+      "same-day": 24
+     },
+     "leftOutBySameDayRule": 24,
+     "opened": true,
+     "optionRows": 1935,
+     "optionsPerEvent": {
+      "max": 13,
+      "mean": 5.48,
+      "median": 5,
+      "min": 2
+     },
+     "records": 353,
+     "strata": {
+      "seen animals, January and February 2015": 148,
+      "unseen animals, January and February 2015": 42,
+      "unseen animals, before 2015": 163
+     }
+    },
+    "sealed": {
+     "choosers": 20,
+     "eligibleIfEveryEventHasALabel": 420,
+     "events": 420,
+     "eventsByChooserSex": {
+      "f": 77,
+      "m": 343
+     },
+     "eventsWithMoreThan8Options": 77,
+     "leftOutBySameDayRule": 0,
+     "opened": false,
+     "optionRows": 2361,
+     "optionsPerEvent": {
+      "max": 13,
+      "mean": 5.62,
+      "median": 5.0,
+      "min": 2
+     },
+     "strata": {
+      "seen animals, from March 2015": 181,
+      "unseen animals, before March 2015": 199,
+      "unseen animals, from March 2015": 40
+     }
+    },
+    "train": {
+     "choosers": 11,
+     "eligible": 557,
+     "eligibleChoosers": 11,
+     "eligibleKeysSha256": "d84e91f6a7aca27dfa27706aa31d806c5b35f65519813e99ffa6eb97225fe87c",
+     "eligibleWithMoreThan8Options": 115,
+     "events": 599,
+     "eventsByChooserSex": {
+      "f": 62,
+      "m": 537
+     },
+     "eventsWithMoreThan8Options": 124,
+     "labelsPerEligibleRecord": {
+      "1": 557
+     },
+     "leftOut": {
+      "same-day": 42
+     },
+     "leftOutBySameDayRule": 42,
+     "opened": true,
+     "optionRows": 3485,
+     "optionsPerEvent": {
+      "max": 13,
+      "mean": 5.82,
+      "median": 6,
+      "min": 2
+     },
+     "records": 599,
+     "strata": {
+      "train": 599
+     }
+    }
+   },
+   "rankLinkMaxResidual": 0.0,
+   "rankLinkPairs": 116,
+   "source": {
+    "doi": "10.5061/dryad.t8c88vh",
+    "file": "Data+Model2.csv",
+    "license": "CC0 1.0",
+    "sha256": "e48d7271ef9e1998479ad51f593722245270e29bf14a64ae8376dcac01ba3327"
+   },
+   "splitRule": {
+    "name": "tai-groom-split-v1",
+    "sha256": "6e2a9390059f202095e680ef56c33cf57d0708db8a62f0ab57a587e7b53707b8"
+   },
+   "status": "choice record",
+   "what": "the first adult the animal groomed, among the analysed adults in sight, in a session it started with at least two of them present"
+  }
+ },
+ "version": "rw2-v1"
+}
