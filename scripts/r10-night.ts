@@ -322,7 +322,7 @@ function status(a: Args): number {
   }
   if (d.length && reg.kernel !== 'gliner' && reg.kernel !== 'rules') {
     // what a model would need for the same days: this run's asks per day at a model's seconds per ask, plus this run's own (no-model) seconds per day
-    const perDay = asks / d.length, own = sum(x => x.wallSeconds) / d.length, at = [0.44, 0.5, 0.6].map(sec => ({ sec, min: (perDay * sec + own) / 60 }));
+    const perDay = asks / d.length, own = sum(x => x.wallSeconds) / d.length, at = [0.44, 0.5, 0.6, 0.76].map(sec => ({ sec, min: (perDay * sec + own) / 60 })); // 0.44 offline; 0.46 to 0.62 the loop's medians; 0.76 the slowest mean per call of R5-gate's windows (1,377 calls in 1,050 s, two timeouts in it)
     console.log(`projection for a model on these days: ${perDay.toFixed(0)} asks a day (${(perDay / d[d.length - 1].driven).toFixed(1)} per animal on the kernel) and ${own.toFixed(0)} s a day without a model; at ${at.map(x => `${x.sec} s an ask ${x.min.toFixed(1)} min a simulated day, ${Math.floor(600 / x.min)} days in 10 hours`).join('; at ')}`);
   }
   const v = reg.stopCheck;
