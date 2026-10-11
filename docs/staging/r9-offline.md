@@ -17,7 +17,7 @@ His rule: the noise of a held draw is kept until the held option is missing from
 | third adapter, gate off | 21 | 232.8 | 39.8% | 27.1% | 144.4 | 172.9 | 133.5 | 63.2 | 48.7 | 42.9 |
 | third adapter, gate off | 5 | 157.9 | 45.5% | 26.0% | 98.2 | 115.0 | 89.9 | 44.0 | 36.6 | 31.8 |
 
-One difference from his script: there, an option that left the menu and came back inside an epoch was given new noise; here an option's noise is fixed by its key for the whole epoch (the decode of prereg §1), so a returning option cannot re-roll. His "missing from the next menu" was stated as one range; the column above gives it per arm, over every pair of consecutive asks of an animal.
+Two differences from his script. (1) There, an option that left the menu and came back inside an epoch was given new noise; here an option's noise is fixed by its key for the whole epoch (the decode of prereg §1), so a returning option cannot re-roll: this moves the overturned share. (2) There, every opening of an epoch counted as an act change (and as a trip begun when the option was a trip), also when the option taken was the one held before (an opening after 60 minutes); here a change is counted only when the applied option changes: this lowers the held draw's act changes by less than one a day and moves no other column at the precision shown. With both changes made in a copy of his script it gives the figures above. His "missing from the next menu" was stated as one range; the column above gives it per arm, over every pair of consecutive asks of an animal.
 
 ## 2. This stage's epochs (the predictions for the arms)
 
@@ -25,29 +25,29 @@ The `act` epoch of every ask is the one step 0 recorded while it replayed the sa
 
 Both seeds pooled (50 animal-days an arm).
 
-| Saved arm | asks a day | epochs opened a day: first | act replaced | arrived | interrupt | of those, the act was also replaced | after a fallback | re-asks a day | re-asks as a share of asks | at a re-ask the held option is missing |
+| Saved arm | asks a day | epochs opened a day: first | act replaced | arrived | interrupt | of those, the act was also replaced | after a fallback | re-asks a day | re-asks as a share of asks | at a re-ask the option applied last (the top pick, as run) is missing |
 |---|---|---|---|---|---|---|---|---|---|---|
 | first adapter (`r4-rules-state`), gate on | 53.9 | 0.2 | 14.6 | 0.5 | 16.3 | 3.7 | 0.2 | 22.3 | 41.3% | 2.5% |
 | third adapter (`r4c-rules-state`), gate on | 63.3 | 0.2 | 16.8 | 1.2 | 28.4 | 9.1 | 0.7 | 16.8 | 26.5% | 3.1% |
 | first adapter, gate off | 95.9 | 0.2 | 24.8 | 0.0 | 28.7 | 4.6 | 0.8 | 42.1 | 44.0% | 3.1% |
 | third adapter, gate off | 195.4 | 0.1 | 72.9 | 0.0 | 94.2 | 23.3 | 10.0 | 28.0 | 14.3% | 3.0% |
 
-The applied option changes at a re-ask with the option applied last still on the menu (for `held` this is "the held draw is overturned"):
+The applied option changes at a re-ask with the option applied last still on the menu (for `held` this is "the held draw is overturned"). The last two columns: the share of re-asks at which the option applied last is not on the menu at all, by epoch rule. For the top pick these are the saved run's own acts and menus. For a held draw the walk asks about an option the saved run did not apply, on the menus the top pick's states produced, so its figure under `act` and `whole` is first order and likely too high (in a run the animal would be doing that act); under `block` the option is missing as often for the top pick itself, because the act ends before the half hour does:
 
-| Saved arm | epoch | re-asks a day with it on the menu | top pick | draw | held |
-|---|---|---|---|---|---|
-| first adapter (`r4-rules-state`), gate on | act | 21.7 | 29.2% | 32.7% | 23.3% |
-| first adapter (`r4-rules-state`), gate on | block | 19.7 | 29.4% | 45.0% | 26.3% |
-| first adapter (`r4-rules-state`), gate on | whole | 33.8 | 35.3% | 42.7% | 29.5% |
-| third adapter (`r4c-rules-state`), gate on | act | 16.3 | 41.8% | 44.3% | 33.7% |
-| third adapter (`r4c-rules-state`), gate on | block | 20.1 | 32.5% | 53.0% | 32.2% |
-| third adapter (`r4c-rules-state`), gate on | whole | 33.2 | 40.4% | 52.0% | 36.2% |
-| first adapter, gate off | act | 40.8 | 22.7% | 33.2% | 19.8% |
-| first adapter, gate off | block | 50.5 | 32.8% | 48.1% | 27.4% |
-| first adapter, gate off | whole | 63.5 | 31.3% | 43.1% | 26.7% |
-| third adapter, gate off | act | 27.2 | 22.9% | 31.5% | 20.8% |
-| third adapter, gate off | block | 94.8 | 32.6% | 52.0% | 29.7% |
-| third adapter, gate off | whole | 85.0 | 33.8% | 46.9% | 28.5% |
+| Saved arm | epoch | re-asks a day | re-asks a day with it on the menu (top pick) | changed: top pick | draw | held | missing at a re-ask: top pick (as run) | held (first order) |
+|---|---|---|---|---|---|---|---|---|
+| first adapter (`r4-rules-state`), gate on | act | 22.3 | 21.7 | 29.2% | 32.7% | 23.3% | 2.5% | 11.3% |
+| first adapter (`r4-rules-state`), gate on | block | 28.4 | 19.7 | 29.4% | 45.0% | 26.3% | 30.6% | 29.2% |
+| first adapter (`r4-rules-state`), gate on | whole | 34.8 | 33.8 | 35.3% | 42.7% | 29.5% | 2.9% | 14.3% |
+| third adapter (`r4c-rules-state`), gate on | act | 16.8 | 16.3 | 41.8% | 44.3% | 33.7% | 3.1% | 15.1% |
+| third adapter (`r4c-rules-state`), gate on | block | 37.8 | 20.1 | 32.5% | 53.0% | 32.2% | 46.8% | 43.5% |
+| third adapter (`r4c-rules-state`), gate on | whole | 35.8 | 33.2 | 40.4% | 52.0% | 36.2% | 7.3% | 19.9% |
+| first adapter, gate off | act | 42.1 | 40.8 | 22.7% | 33.2% | 19.8% | 3.1% | 11.9% |
+| first adapter, gate off | block | 68.4 | 50.5 | 32.8% | 48.1% | 27.4% | 26.2% | 28.0% |
+| first adapter, gate off | whole | 65.8 | 63.5 | 31.3% | 43.1% | 26.7% | 3.5% | 14.7% |
+| third adapter, gate off | act | 28.0 | 27.2 | 22.9% | 31.5% | 20.8% | 3.0% | 13.2% |
+| third adapter, gate off | block | 167.9 | 94.8 | 32.6% | 52.0% | 29.7% | 43.5% | 45.6% |
+| third adapter, gate off | whole | 95.3 | 85.0 | 33.8% | 46.9% | 28.5% | 10.8% | 23.7% |
 
 Changes of the applied option and trips begun, per animal and day:
 
