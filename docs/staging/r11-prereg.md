@@ -1016,12 +1016,67 @@ leaves the world's hash unchanged. Logged at 14:42 EDT, before the dry run and t
 Not run on the real model through the loop: an engine arm on a test seed is a result, and the pieces are each
 exercised (the helper by today's population night, the worker and packet 5 by the smoke run above).
 
+### 12.6 After the repairs: the checks, the measured costs, and what changes in the launch order
+
+**Checks at head c9f5eb0, the tree clean, no model.**
+
+| What | When | Result |
+| --- | --- | --- |
+| `scripts/r11-run.sh dry` (seed 48, the fake worker) | 14:42 to 14:48 (another session's tests had the load at 31) | the worker is warmed before it serves; all ten verdicts hold, 6 of 6 replays; the six engine arms and the rules arm end on the same hashes as the dry runs of 12:05 and 12:25, before the loop changed |
+| `tests/r11.test.ts` | 14:53 to 14:54 | 11 of 11 (the last one now also builds the warm-up packet of each kind and checks the world is untouched) |
+| `tsc --noEmit`; the changed loop script and its test under the same strict options | 14:39 | clean |
+| `training/decide_ft/test_soft_loss.py` | 14:55 | 9 of 9 |
+| a warm-up packet on the saved burn-ins of seeds 4111 and 4222, each kind of packet | 14:39 | found on both; the worlds' hashes unchanged |
+| wrong and half-made states of `scripts/r11-run.sh`: a cut-short adapter under `train`, `offline`, `loop`, `arms`, `check`; the hold with scripted swap readings | 12:20; 13:49 | each says what it found and starts nothing; the hold waits 0, 5, 8 and at most 30 minutes |
+| `scripts/r11-run.sh check` | 14:13 | no other model process, the tree clean |
+
+The whole test suite and the build were not run (as the rules of the stage say). `track-e` is still at 241bceb and
+merges with this head without conflict (in memory); it changes nothing under `training/`.
+
+**Measured costs and what they project to.** Measured on 11 October between 14:16 and 14:34, with other sessions
+at work on the machine; a projection is arithmetic on a measurement and is given as a range.
+
+| Step | Measured | Projected |
+| --- | --- | --- |
+| One P5b training (3 epochs of 3,120 rows, four development passes of 300) | 0.6 to 0.607 s an example at a mean of 354.6 tokens; 0.765 s a development row; footprint 6.14 GiB | 1 h 46 min to 1 h 49 min (0.578 to 0.593 s an example) |
+| One P5a training | not measured: from P5b by the packets' length (0.472 to 0.518 s an example) | 1 h 30 min to 1 h 37 min |
+| All four trainings | | 6 h 32 min to 6 h 51 min |
+| Offline scoring, an adapter on its arm's 4,420 packets | 0.324 to 0.5 s a packet in batches of 8 (the worker's batch; the scorer's second 64) | P5b 23 to 36 min, P5a 20 to 31 min; the untuned model on both arms 44 to 67 min |
+| Offline scoring, a night | a model load took 220 to 309 s today | night one 1 h 31 min to 2 h 30 min; night two 46 min to 1 h 18 min |
+| A loop arm on one seed | 0.319 to 0.331 s an ask (P5b); stage R9's arms asked 1,316 to 1,937 times | P5b 7.0 to 10.7 min, P5a 6.1 to 9.3 min, the old adapter 11.7 to 18.2 min (as stage R9 measured it) |
+| The loop, one seed | | night one 47 to 79 min; night two 27 to 45 min |
+| **Night one** (two trainings, offline, both seeds) | | **6 h 21 min to 8 h 34 min** |
+| **Night two** | | **4 h 57 min to 6 h 14 min** |
+| **Both** | | **11 h 18 min to 14 h 48 min**, and at most 45 and 30 minutes of swap holds |
+
+The review's arithmetic (about twelve hours, night one 6 h 50 min) stands at the low end. A training is some ten
+minutes longer than it estimated, because the four development passes run at training precision and cost 15 minutes
+a training; offline scoring may take up to 50 minutes longer on night one.
+
+**What changes in the launch order** (the commands and their order stay as the review wrote them):
+
+1. The frozen checkout must hold this section's head or a later one. An earlier head lacks the five repairs.
+2. Parity is met at this head (§12.4). Running it again on the frozen checkout costs under three minutes.
+3. The first minutes of each step say whether it is healthy. A training: "loss self-check passed" twice within a
+   minute of the first step, then "s/example" near 0.6 (P5b) or 0.5 (P5a) and a footprint near 6 GiB. A loop step:
+   "worker warm: the model answered its first packet in N s" before the first day line, and "0 timeouts" on the day
+   lines. An offline step: its first progress line may take five minutes (the load), the later ones about 30 s each.
+4. Both nights fit in one stretch of 11 to 15 hours if they are chained; the second night's runs are fixed whether
+   or not night one is read first (§11.2).
+5. After the first training swap is likely to stand above 6 GB (it rose by 1.9 GB in the smoke run and stayed). Each
+   later model step then holds for five minutes and goes ahead; that is expected and says so on the step's first line.
+
+**Still not verified.** The speed of a P5a training (projected from P5b). A whole epoch of soft-label training: the
+smoke run showed 328 examples. The warmed loop on the real model (§12.5). Whether an adapter trained this way is any
+good is the night's result, not this check's.
+
 ## For the integrator
 
-*(Rewritten by the reviewer on 11 October 2026 after §11; the builder's notes are kept where they still hold.)*
+*(Rewritten by the reviewer on 11 October 2026 after §11; the builder's notes are kept where they still hold. The times were replaced on 11 October at 14:56 by the measurements of §12.6, after a smoke run on the real model; the frozen checkout must hold head c9f5eb0 or later.)*
 
 **Read first.** (1) Nothing here is a result about an engine: the stage delivers data, a trainer, a loop arm, the
-control arms and the reports. No model was loaded and the trainer has never been executed. (2) The label is not the
+control arms and the reports. No adapter of this stage exists; the trainer has run only as a smoke test on the real
+model (§12: 164 rows into a scratch adapter, since deleted). (2) The label is not the
 one registered at 03:05: §10.1 says why, the two marks that guard it (M1, M2) are met, and the review re-derived it by
 a second route (§11.5). (3) Four amendments were logged before any model run (§11.1 to §11.4): the top pick is the
 primary decode with a draw arm beside it and a mark for nights in a nest under a draw (N1); the order of the trainings
@@ -1062,19 +1117,19 @@ scripts/r11-run.sh dry              # no model, about a minute: the whole path o
 scripts/r11-run.sh parity p5b && scripts/r11-run.sh parity p5a
 
 # 3. night one: the first training seed of each arm (§11.2)
-scripts/r11-run.sh train p5b 7      # about 1 h 40 min. Its first lines must show "loss self-check passed"; its "s/example" line replaces every estimate here
-scripts/r11-run.sh train p5a 7      # about 1 h 20 min
-scripts/r11-run.sh offline          # about 1 h 40 min: the untuned model on both arms' packets (about 50 min), then each adapter on file (about 28 min P5b, 23 min P5a); decides O1 to O4 and W1 for one training
-scripts/r11-run.sh loop 4111        # about 1 h: p5b-s7-top, p5a-s7-top, p5b-s7-draw-1, p5a-s7-draw-1, p5b-s7-draw-2, then old-top, then their replays
-scripts/r11-run.sh loop 4222        # about 1 h
+scripts/r11-run.sh train p5b 7      # about 1 h 50 min (0.6 s an example measured). Its first lines must show "loss self-check passed" twice; its "s/example" line should read about 0.6
+scripts/r11-run.sh train p5a 7      # about 1 h 35 min (projected from P5b by the packets' length)
+scripts/r11-run.sh offline          # 1 h 30 to 2 h 30 min: the untuned model on both arms' packets (45 to 65 min), then each adapter on file (25 to 35 min P5b, 20 to 30 min P5a); decides O1 to O4 and W1 for one training
+scripts/r11-run.sh loop 4111        # 50 to 80 min; each worker must print "worker warm" before its first day line: p5b-s7-top, p5a-s7-top, p5b-s7-draw-1, p5a-s7-draw-1, p5b-s7-draw-2, then old-top, then their replays
+scripts/r11-run.sh loop 4222        # 50 to 80 min
 scripts/r11-run.sh report           # no model, a minute: what one training of each arm shows (§11.2 says what may be said)
 
 # 4. night two: the second training seeds
-scripts/r11-run.sh train p5b 11     # about 1 h 40 min
-scripts/r11-run.sh train p5a 11     # about 1 h 20 min
-scripts/r11-run.sh offline          # about 50 min: scores only the two new adapters; the marks O1 to O4 and W1 can now be read
-scripts/r11-run.sh loop 4111        # about 40 min: only the arms not on file (the four of training seed 11)
-scripts/r11-run.sh loop 4222        # about 40 min
+scripts/r11-run.sh train p5b 11     # about 1 h 50 min
+scripts/r11-run.sh train p5a 11     # about 1 h 35 min
+scripts/r11-run.sh offline          # 45 to 80 min: scores only the two new adapters; the marks O1 to O4 and W1 can now be read
+scripts/r11-run.sh loop 4111        # 30 to 45 min: only the arms not on file (the four of training seed 11)
+scripts/r11-run.sh loop 4222        # 30 to 45 min
 scripts/r11-run.sh arms 4111 old-draw-1 && scripts/r11-run.sh arms 4222 old-draw-1   # optional, about 15 min each: the reference for N1
 
 # 5. the result (no model)
@@ -1082,15 +1137,18 @@ scripts/r11-run.sh report           # r11-offline.md, r11-card.md, r11-numbers.m
 scripts/r11-run.sh publish          # copies the tables to docs/staging; then commit them on a branch (never from the frozen checkout's detached head onto track-e)
 ```
 
-- **Time in all:** training about 6 h, offline scoring about 2 h 30 min, the loop about 3 h 20 min (30 minutes more
-  with the optional arm): about twelve hours of model time, so two nights. Night one alone is about 6 h 50 min.
-- **How the estimates were made** (arithmetic, not measurements). Training: the stage's time law (stage R4's 0.85 s an
+- **Time in all** (§12.6, from a smoke run on the real model): the four trainings 6 h 32 min to 6 h 51 min; night one
+  6 h 21 min to 8 h 34 min, night two 4 h 57 min to 6 h 14 min, both 11 h 18 min to 14 h 48 min (30 minutes more with the
+  optional arm), and at most 45 and 30 minutes of swap holds. The two nights can be chained into one stretch.
+- **How the review's estimates were made** (arithmetic, before the measurements of §12.6; kept for the record). Training: the stage's time law (stage R4's 0.85 s an
   example at 450 real tokens, time as tokens to the power 1.5) on the real token counts of §11.7, plus four passes
   over the 300 development rows. Offline: stage R4's 0.59 s a packet at 452 real tokens, scaled the same way; an arm
   has 4,420 packets to score, the untuned model both arms'. Loop: stage R9's arms took 0.57 to 0.66 s an ask at 467
   tokens and 1,350 to 1,830 asks an arm and seed, which scales to about 10 minutes an arm and seed for P5b, 8 for P5a
   and 15 for the old adapter. The builder's loop figure (1 h 10 min a seed) used 0.28 s an ask and is too low.
-- **A step cut short.** Training: delete the half-made folder under `adapters/` and run the step again (the script
+- **A step cut short.** An adapter counts as trained only with its `manifest.json`, the trainer's last write: weights
+  without one are named a training cut short by `check`, and `offline`, `loop` and `arms` leave them out and say so.
+  Training: delete the half-made folder under `adapters/` and run the step again (the script
   refuses to overwrite). Offline: run `offline` again (a `.part` file is not read). Loop: run `loop <seed>` again; it
   skips the arms on file and replays any arm whose replay is missing.
 - **One seed first:** `R11_SEEDS=4111 scripts/r11-run.sh report` reads seed 4111 alone.
@@ -1132,9 +1190,15 @@ read, say that P5a still carries one memory line (§11.5).
 > a nest under a draw" is a mark (49 of 50 keeps it); the trainings run p5b 7, p5a 7, p5b 11, p5a 11, and one
 > training per arm carries no registered statement; the stage claims nothing about wild chimpanzees; W1 reads the
 > honest packet against the wording test's 0.386. The review repaired seven defects of the run script, the largest
-> that an arm whose adapter was missing would have been answered by the untuned model. *Open*: four trainings (about
-> 6 h), offline scoring (about 2 h 30 min), the loop arms (about 3 h 20 min); the trainer has never been executed;
-> P5a still carries one memory line; the like-for-like wording baseline is not built.
+> that an arm whose adapter was missing would have been answered by the untuned model. A last check on the real
+> model (§12) found five more faults and repaired them before any training: a training cut short would have been
+> scored and looped as a trained adapter; the loop's first ask raced its 120-second limit while the model loaded
+> (220 s measured), so a first arm could lose choices to the rules; the swap hold cost half an hour a step for
+> nothing. Its smoke run passed: token parity in both arms, the soft loss redone by hand from the logged logits,
+> 0.6 s an example at 6.1 GiB, the saved adapter loaded again with the same development loss, one probability per
+> option. No packet is over 562 real tokens. *Open*: four trainings (6 h 30 to 6 h 50 min), offline scoring (2 h 15
+> to 3 h 50 min), the loop arms (2 h 30 to 4 h 10 min), so 11 to 15 hours in all; P5a still carries one memory line;
+> the like-for-like wording baseline is not built.
 
 `AGENTS.md`, Commands, after the `r10-night.ts` line:
 
@@ -1145,12 +1209,13 @@ scripts/r11-run.sh sample | assemble | controls <seed> | dry | report | publish 
 `AGENTS.md`, Gotchas, two lines:
 
 > - A label "with the jitter averaged out" must redraw the menu too (stage R11): each kind of act reaches the rules' menu by its best jittered target, so redrawing the offered options' jitter alone understates whatever was selected (trips: 0.15 against the rules' 0.23). `scripts/r11-contexts.ts` redraws by decision version through `computeCandidates` and `rgMenu`. A guard that looks for a model process by the interpreter's path does not see a started one on this machine (it is listed under the framework's path): look for the script names as well (`scripts/r11-run.sh` `model_procs`).
-> - The scoring worker answers with the untuned model when none of the adapters it was told to load is found (`training/decide_ft/adapters.py`): a harness must check the worker's ready line for the arm's adapter before the first ask (`scripts/r11-loop.ts`, `scripts/r10-night.ts`). The tool shell (zsh) does not split an unquoted variable into words: a loop that passes `$a` to a script hands it one argument.
+> - The scoring worker answers with the untuned model when none of the adapters it was told to load is found (`training/decide_ft/adapters.py`): a harness must check the worker's ready line for the arm's adapter before the first ask (`scripts/r11-loop.ts`, `scripts/r10-night.ts`). The worker also loads the model on its first batch (55 to 220 s on this machine, more than the loop's 120 s an ask): a harness warms every worker with one packet no one applies, outside that limit (`warmedWorker` in `scripts/lib/r10-run.ts`). The trainers write `manifest.json` last: an adapter folder with weights and no manifest is a training cut short. The tool shell (zsh) does not split an unquoted variable into words: a loop that passes `$a` to a script hands it one argument.
 
 `HANDOFF.md`, next steps: "R11: after the population run, the launch order at the end of
 `docs/staging/r11-prereg.md` from a frozen detached checkout (night one: check, parity, train p5b 7, train p5a 7,
 offline, loop 4111, loop 4222, report; night two: the trainings with seed 11, offline, both loops again, report,
-publish). The decode is the top pick with a draw arm beside it; leave `R11_DECODE` unset."
+publish). The decode is the top pick with a draw arm beside it; leave `R11_DECODE` unset. The smoke run of §12 passed
+and its times stand in the launch order: night one 6 h 20 to 8 h 35 min, night two 5 h to 6 h 15 min."
 
 `docs/simulation.md`: **no rows.** The stage adds no parameter and no switch.
 
