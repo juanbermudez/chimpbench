@@ -232,7 +232,7 @@ animal-day), `scripts/r9-loop.ts` (the arms, step 0, the plumbing check), `scrip
 `scripts/r9-report.ts` (§5 and §6 as functions with tests), `scripts/r9-run.sh`, `scripts/r9-seed2.sh`,
 `scripts/r9-seed-spread.ts` (§8), `tests/r9-decode.test.ts`.
 
-- **Iteration 0 (logged 10 October 2026, 20:07 EDT, before it runs; no model, this agent).**
+- **Iteration 0 (logged 10 October 2026, 20:06 EDT, before it runs; no model, this agent).**
   (a) `scripts/r9-run.sh dry`: the plumbing check on seed 48 (one day on the rules, then one day per arm, five focal
   animals): a kernel that is certain (the rules' top option, probability 1) and one with even odds (the null kernel),
   under `top`, `draw` (two salts), `held` with both epochs, gate on and off; every arm replayed from its receipts.
