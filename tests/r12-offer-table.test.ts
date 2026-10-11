@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { atomIndex, offerSites } from '../scripts/lib/offer-sites';
 import { scanSource } from '../scripts/lib/valuation';
-import { buildTable, callCosts, CALLS_FILE, callsMarkdown, readBase, readClasses, readSource, SOURCE, tableMarkdown, type CallExamples, type Classes } from '../scripts/r12-offer-table';
+import { buildTable, callCosts, CALLS_FILE, callsMarkdown, PAGE_WORDS, readBase, readClasses, readSource, SOURCE, tableMarkdown, twoMinutePage, type CallExamples, type Classes } from '../scripts/r12-offer-table';
 import { CANDIDATES_OPTS } from '../scripts/valuation-ledger';
 
 // Stage R12 (docs/staging/r12-prereg.md §2): the reader of offer sites and their gates on a small source text, then
@@ -140,8 +140,29 @@ test('the table regenerates to the same text, and its first page is counted', ()
   assert.equal(a, b);
   assert.ok(!/UNCLASSIFIED|## Problems/.test(a));
   const live = T.rows.filter(r => r.status === 'live').length;
-  assert.ok(a.includes(`| **Live for an animal the model decides for (aged 8 or over)** | **${live}** |`));
+  assert.ok(a.includes(`| **Live for an animal the model decides for** | **${live}** |`));
   assert.equal(T.rows.length, T.rows.filter(r => r.status === 'legacy').length + T.rows.filter(r => r.status === 'young').length + live);
+});
+
+test('the two-minute page is short, carries every ruling in one sentence, and says what each proposed drop waits for', () => {
+  const md = tableMarkdown(T), page = twoMinutePage(md);
+  assert.ok(page.words > 0 && page.words <= PAGE_WORDS, `the two-minute page holds ${page.words} words of running text (at most ${PAGE_WORDS})`);
+  for (const r of classes.rulings) { assert.ok(r.short && r.short.split(/\s+/).length <= 45, r.title); assert.ok(page.text.includes(r.short), r.title); assert.ok(!page.text.includes(r.recommend), `the long form of "${r.title}" belongs to section 2`); assert.ok(md.includes(r.recommend), r.title); }
+  assert.ok(page.text.includes(classes.staysShort));
+  // a drop that waits for a teacher says so, and the counts on the page are those of the rows
+  const live = T.rows.filter(r => r.status === 'live'), drops = (r: typeof live[number]) => r.binding.map(a => r.of(a)!).filter(k => k.fix === 'drop');
+  const widened = live.filter(r => r.plan === 'widen'), now = widened.filter(r => drops(r).some(k => !k.needs)).length, wild = widened.filter(r => !drops(r).some(k => !k.needs) && drops(r).some(k => k.needs === 'wild')).length;
+  assert.ok(page.text.includes(`${widened.length} would be offered more widely (${now} at once, ${wild} only for the pairs a wild record covers, ${widened.length - now - wild} only if body outcomes are allowed as a teacher)`), 'the split of the widened places is computed');
+  assert.ok(now >= 1 && wild >= 1 && widened.length - now - wild >= 1);
+  const nest = T.rows.find(r => r.site.key === 'offerOwnNest/nest/NONE#2')!;
+  assert.ok(drops(nest).length > 0 && drops(nest).every(k => k.needs === 'body'), 'a nest whenever possible waits for a teacher of the body\'s acts');
+  assert.ok(md.includes('offered more widely: a rule is dropped (only once body outcomes are allowed as a teacher)'));
+  // "needs" goes with a dropped condition only, and the marks "always from 8" are written for one kernel age
+  const kept = Object.keys(classes.atoms).find(k => classes.atoms[k].fix === 'keep')!;
+  const wrong: Classes = { ...classes, atoms: { ...classes.atoms, [kept]: { ...classes.atoms[kept], needs: 'body' } } };
+  assert.ok(buildTable(src, wrong, base, text).problems.some(p => p.startsWith('"needs" goes with a dropped condition')));
+  assert.ok(buildTable(src, classes, { ...base, rgMinAge: 10 }, text).problems.some(p => /kernel that decides from the age of 8/.test(p)));
+  assert.ok(buildTable(src, { ...classes, staysShort: '' }, base, text).problems.some(p => /no short form/.test(p)));
 });
 
 test('an offer site the classification does not cover, or a changed gate, is a problem', () => {

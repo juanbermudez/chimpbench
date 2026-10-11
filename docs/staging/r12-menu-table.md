@@ -2,35 +2,55 @@
 
 ## 1. In two minutes
 
-Today the rules decide what the model may choose from. They do it in 94 places in the code, each offering one act (rest, feed in this tree, groom this animal, charge that one) and each standing behind conditions. To build a menu from what an animal can actually do, every condition has to be called either a fact about what is possible or a piece of advice. This page is that sorting, for your sign-off. Nothing was run to make it: it is a reading of the code, counted by a script.
-
-Every condition went into one of six classes: **physical** (the body or the world does not allow the act otherwise), **perceptual** (the animal does not see or remember what the act needs), **social fact** (who the act is addressed to: a community member, its mother, the animal that just charged it), **advice** (a conclusion about who does this, toward whom or when, written as a gate), **quota or timer** (an hours-since rule) and **dice** (opened by a random roll).
+The rules decide what the model may choose from in 94 places in the code, each offering one act (rest, feed in this tree, groom this animal, charge that one) behind conditions. To build a menu from what an animal can do, each condition must be called a fact about what is possible or a piece of advice. This is that sorting, for your sign-off: a reading of the code, counted by a script; nothing was run.
 
 | | Places |
 |---|---|
 | All | 94 |
 | Unreachable with today's settings (old branches) | 19 |
 | Reached only by animals under 8, for whom the rules decide | 6 |
-| **Live for an animal the model decides for (aged 8 or over)** | **69** |
-| … gated only by what is physically or perceptually possible | 6 |
-| … those plus a social fact that says who the act is addressed to, and nothing else | 2 |
-| … carrying advice, a quota or timer, or dice (one site can carry several) | 61 |
-| …… advice | 58 |
-| …… a quota or timer | 25 |
-| …… dice | 3 |
+| **Live for an animal the model decides for** | **69** |
+| … open whenever the act is physically possible and the animal perceives what it needs | 6 |
+| … those plus who the act is addressed to, and nothing else | 2 |
+| … behind a hand rule: advice (58), a timer or quota (25), a dice roll (3); a place can have several | 61 |
 
-So of the 69 live places, 6 are already a matter of possibility alone and 61 carry a hand rule. Counting the code as written, old branches and the young included, 83 of the 94 carry advice, a quota or dice. The hand rules of the live places hold 117 hand-set numbers.
-
-What I propose for the 69 live places: 8 need no ruling (what is possible is offered); 6 would be offered more widely, with a rule dropped and the fact shown to the model instead; 52 stay on the model's menu behind their rules, each rule counted as hand-set; 3 stay with the rules altogether. A rule is proposed for dropping only where something other than the rules could teach the model the wider choice; elsewhere the model would only learn the same rule back from its teacher.
+What I propose for the 69: 8 need no ruling; 6 would be offered more widely (2 at once, 1 only for the pairs a wild record covers, 3 only if body outcomes are allowed as a teacher); 52 stay on the menu behind their rules, each rule counted as hand-set; 3 stay with the rules.
 
 ### The ten rulings I ask for
+
+1. **The dividing line itself.** Is a condition a "social fact" when it only says whom an act is addressed to, and "advice" once it says who may act, toward whom or when? I recommend yes; every count here follows from it.
+2. **Which tree.** May the model choose which tree to travel to, among up to eight the animal sees or remembers, instead of the one the rules' ranking leaves? I recommend yes.
+3. **Trees no animal has itself seen.** Should it also be offered trees from its community's list that it has never seen? I recommend not yet, counting how often the rules go to one.
+4. **Which water, and drinking when not thirsty.** May it choose which water to drink at, and be offered a drink when not thirsty? I recommend yes to the first; the second only once the body's acts have a teacher other than the rules.
+5. **Nesting and sheltering whenever possible.** May nesting and sheltering from rain be offered whenever possible? I recommend the same condition as for drinking, and keeping "no new nest in full daylight".
+6. **Whom to groom.** May any community member in reach be offered as a grooming partner, whatever it is doing? I recommend yes where wild records can teach the choice (today an adult male among adult males); elsewhere "only a settled partner" stays.
+7. **Whom to greet.** Should "pant-grunt only to a dominant" stay a rule? I recommend keeping and counting it, and letting the model choose which dominant.
+8. **Strangers: the rules on numbers.** Should the numbers rules for strangers stay (charge only with 3 males and 2 more than theirs)? I recommend keeping and counting them.
+9. **Courtship rules.** Should the courtship rules stay (guarding only from the top two ranks; mating only 1.5 hours after his last)? I recommend keeping and counting them.
+10. **Dice.** Should the three acts opened by a random roll (gang attack, attack on an infant, transfer) stay with the rules? I recommend yes.
+
+### What stays with the rules
+
+Everything for animals under 8; the three acts opened by a roll; the age line of 12 for aggression, courtship, hunting, patrols, calls and displays; the rules that open every social act (the model chooses among what they offer); the timers after events and "not at night"; and, outside this table, when an act ends, how long a bout lasts and the 25 choices inside execution.
+
+Reasons and method: the sections below.
+
+## 2. The rulings in full, and what stays with the rules
+
+Every condition went into one of six classes: **physical** (the body or the world does not allow the act otherwise), **perceptual** (the animal does not see or remember what the act needs), **social fact** (who the act is addressed to: a community member, its mother, the animal that just charged it), **advice** (a conclusion about who does this, toward whom or when, written as a gate), **quota or timer** (an hours-since rule) and **dice** (opened by a random roll).
+
+Of the 69 live places, 6 are a matter of possibility alone and 61 carry a hand rule. Counting the code as written, old branches and the young included, 83 of the 94 carry advice, a quota or dice. The hand rules of the live places hold 117 numbers by the script's count: 76 number literals and 41 registry values. That count is lexical: a literal is counted once in each condition that carries it, so a threshold written in two conditions counts twice; it includes a few numbers that are not thresholds (a unit conversion, a phase index, the terms of the greeting score, registry switches); and a number inside a function the condition calls is not seen.
+
+A rule is proposed for dropping in two cases only. Either the rules already value every option the rule cut (which tree to travel to, which dominant to greet), so a model taught by the rules can be taught the wider choice: that removes the cut, and the model is still rules-taught. Or a teacher other than the rules exists or may be allowed (wild grooming records for some pairs; the body's own outcomes, a ruling deferred on 10 October), and the rule goes only where that teacher reaches. Everywhere else a model taught by the rules would learn the same rule back from its teacher, so the rule stays in code and is counted.
+
+### The ten rulings
 
 1. **The dividing line itself.** Is it right to call a condition a "social fact" when it only says who the act is addressed to (a community member, its mother, the animal that just charged it, a female in oestrus), and "advice" as soon as it says who may act, toward whom or when (the direction of rank, an age, a sex, a balance of numbers, a threshold)? *Recommended:* yes. Every count on this page follows from that line; a different line moves conditions between the two columns without changing a single rule.
 2. **Which tree.** May the model choose which tree to travel to among trees shortlisted by what the animal sees and remembers, instead of being shown the one tree left of the four the rules value most? *Recommended:* yes. It is the largest choice no model has ever made (about 51 trees possible, one shown), and the rules value every tree, so a scaffold teacher exists. The shortlist's own numbers are counted as hand-set. (rows 15, 21 of the table)
 3. **Trees no animal has itself seen.** Should the model also be offered trees from its community's list, which no single animal remembers? *Recommended:* not in the first build: its own view and memory only, with a count of how often the rules themselves travel to a listed tree. If that count is large, add one slot labelled "known to my community". (row 21 of the table)
 4. **Which water, and drinking when not thirsty.** May a drink be offered at any remembered water whenever one is remembered, instead of only when the thirst gauge is above zero and only at the one water the rules value most? *Recommended:* the choice of water: yes. Offering a drink without thirst: only once a teacher that is not the rules exists for the body's acts (forked body outcomes, the ruling deferred on 10 October); until then that rule stays and is counted. (row 19 of the table)
 5. **Nesting and sheltering whenever possible.** May "build a nest" and "shelter from the rain" be offered whenever physically possible, instead of only when the rules' own value says so (the nest's value above 0.25, the body colder than neutral)? *Recommended:* as for water: yes once a body-outcome teacher is allowed, counted until then. Keep the light condition on starting a nest (none in full daylight): an earlier stage offered nests at any light and day nests took a third of the daytime. (rows 2, 7 of the table)
-6. **Whom to groom.** May every community member in view be offered as a grooming partner, whatever it is doing, instead of only those resting or grooming? *Recommended:* yes. It is the one social choice with a teacher that is not the rules: wild records of whom a male grooms are in hand, and Taï's are approved for download. (row 26 of the table)
+6. **Whom to groom.** May any community member in reach be offered as a grooming partner, whatever it is doing, instead of only those resting, grooming, sheltering or nursing? *Recommended:* yes, where a teacher that is not the rules can teach the choice, and only there. Wild records of whom a male grooms are in hand (Ngogo: an adult male among the adult males present); Taï's are approved for download and count once checked. For every other pair "only a settled partner" stays a rule and is counted: a model taught by the rules would learn it back. (row 26 of the table)
 7. **Whom to greet.** A pant-grunt is offered only toward an animal that outranks the greeter, and only toward the one such animal the rules score highest. Should the direction rule stay? *Recommended:* keep "only to a dominant" for now and count it: no wild record of greetings is in hand, so a model taught by the rules would learn the same rule from its labels. Let the model choose which dominant. The direction of greetings then stays true by construction and may not be credited to the model. (row 34 of the table)
 8. **Strangers: the rules on numbers.** A charge at strangers needs at least 3 males of one's own and 2 more than theirs; with fewer, the only options are to display, call back or retreat, each by its own count. Should these stay rules? *Recommended:* keep and count them. The acts are rare and dangerous, no teacher exists, and the counts are already shown to the model as facts. (rows 62, 64, 65, 66, 67, 68, 69, 70 of the table)
 9. **Courtship rules.** Guarding a female is offered only to the top two ranks, a consortship only to a male who is not the alpha and has a bond with her, coercion only toward a female near full swelling, and mating only 1.5 hours after the male's last copulation. Should these stay rules? *Recommended:* keep and count them. The quota has a built replacement (the paternity mechanism, off on the working base); adopting it is a decision about the base, not about the menu. (rows 51, 72, 73, 74, 75 of the table)
@@ -44,9 +64,10 @@ What I propose for the 69 live places: 8 need no ruling (what is possible is off
 - Every contest, coalition, courtship, hunting, patrol, sharing and repair act: it stays on the model's menu behind the rules that open it today, each rule counted as hand-set. The model chooses among what is offered; no teacher but the rules exists for offering more.
 - Timers. The windows after an event (about 2 minutes to answer a threat, 0.3 h to answer a call or to reconcile) and the "once per event" marks stay as numbers and are counted. The cooldowns after aggression and display are already out on the working base.
 - "Not at night": the light conditions on party following, displays, aggression and avoidance stay.
+- Inside `offer()` itself, so in front of every place and not counted per place: an option the rules score at −0.4 or below is not offered; each act keeps one to three targets by the rules' score; and an animal on a silent patrol is offered no call and no display (the patrol's silence, on in the working base). The design says which of these go for which acts (`docs/staging/r12-prereg.md` §5.4).
 - Outside this table, in other files: when an act ends, how long a bout lasts, the 25 choices made inside execution (the nest tree, the patrol's route, who captures, the mother's refusal to nurse, calls on arrival), contest outcomes, and who is alerted to a conflict.
 
-## 2. How this was made, and how to read the table
+## 3. How this was made, and how to read the table
 
 Generated by `scripts/r12-offer-table.ts` from `src/sim/candidates.ts` (sha256 c265d76da6c7…) and the classification in `data/r12-offer-classes.json`, on the working base `docs/staging/integrator-kit/params/M6-W50.json` (field map). The script reads the source as text; it runs no simulation and no model. **Every count is computed. Every class is a reading of the code by the stage's author, kept in the classification file: that reading is what is put up for sign-off.** A place where the rules offer an option is called an offer site below. The sites cover 29 actions and 22 kinds of activity. Design: `docs/staging/r12-prereg.md`.
 
@@ -57,17 +78,17 @@ Generated by `scripts/r12-offer-table.ts` from `src/sim/candidates.ts` (sha256 c
 - **Proposal** for each advice, quota and dice condition: *keep* = keep as a rule for now, counted as hand-set; *drop* = drop; the kernel decides with the fact shown; *rules* = leave the whole act with the rules. A site's line in the summary follows from its conditions: one "rules" leaves the act with the rules; else one "drop" widens it; else it stays behind its rules.
 - **Teacher**: who could teach a model the choice once it is offered. *rules* = the rules' own judgment (scaffold); *wild-groom* = wild choice records in hand (whom a Ngogo male grooms); *tai-groom* = Taï grooming partner choice, once downloaded and checked; *budongo* = Budongo party scans, once downloaded and checked; *kanyawara* = Kanyawara female coalition partners, once downloaded and checked; *body* = forked body outcomes, if the user allows them; *none* = none.
 
-## 3. The table: one row per offer site
+## 4. The table: one row per offer site
 
 | # | Line | The act, in plain words | Action (variants) | Kind | Status | Classes it carries | Proposal | Teacher |
 |---|---|---|---|---|---|---|---|---|
 | 1 | 272 | Stay in its own finished nest | nest (NONE) | nest | live | PHY | nothing to rule: possible is offered | rules, body |
-| 2 | 273 | Build a night nest, or go on building one | nest (NONE) | nest | live | PHY ADV | offered more widely: a rule is dropped | rules, body |
+| 2 | 273 | Build a night nest, or go on building one | nest (NONE) | nest | live | PHY ADV | offered more widely: a rule is dropped (only once body outcomes are allowed as a teacher) | rules, body |
 | 3 | 397 | Sleep in its mother's nest (a dependent) | nest (MOTHER) | nest | young | (PHY PER) | the rules (under 8) | rules |
 | 4 | 400 | Rest where it is | rest (NONE) | rest | live | PHY | nothing to rule: possible is offered | rules, body |
 | 5 | 401 | Rest (without the body clock) | rest (NONE) | rest | legacy | (PHY) | – | rules |
 | 6 | 402 | Rest outside a nest in the dark (without the body clock) | rest (NONE) | rest | legacy | (PHY) | – | rules |
-| 7 | 403 | Sit hunched out of the rain | shelter (NONE) | rest | live | PHY ADV | offered more widely: a rule is dropped | rules, body |
+| 7 | 403 | Sit hunched out of the rain | shelter (NONE) | rest | live | PHY ADV | offered more widely: a rule is dropped (only once body outcomes are allowed as a teacher) | rules, body |
 | 8 | 404 | Shelter from the rain (without the heat mechanism) | shelter (NONE) | rest | legacy | (PHY ADV) | – | rules |
 | 9 | 410 | Ride on its mother (a carried infant) | follow (MOTHER) | keep_with_party | young | (PHY) | the rules (under 8) | rules |
 | 10 | 411 | Keep up with its mother (a dependent on the ground) | follow (MOTHER) | keep_with_party | young | (PHY) | the rules (under 8) | rules |
@@ -79,14 +100,14 @@ Generated by `scripts/r12-offer-table.ts` from `src/sim/candidates.ts` (sha256 c
 | 16 | 544 | Feed on leaves and pith where it stands (valued through the gut) | forage (NONE) | eat_here | legacy | (PHY) | – | rules |
 | 17 | 545 | Feed on leaves and pith where it stands | forage (NONE) | eat_here | live | – | nothing to rule: possible is offered | rules, body |
 | 18 | 574 | Go to a remembered fruit tree (every one offered: the small map's route) | travel (TREE) | go_to_food | legacy | (PHY PER QUO) | – | rules |
-| 19 | 578 | Go and drink at a remembered water | drink (NONE) | drink | live | PER ADV | offered more widely: a rule is dropped | rules, body |
+| 19 | 578 | Go and drink at a remembered water | drink (NONE) | drink | live | PER ADV | offered more widely: a rule is dropped (only once body outcomes are allowed as a teacher) | rules, body |
 | 20 | 621 | Go to the remembered tree with the most believed value per metre (route chaining) | travel (TREE) | go_to_food | legacy | (PHY PER ADV QUO) | – | rules |
 | 21 | 629 | Go to a fruit tree out of view, remembered or on the community's list | travel (TREE) | go_to_food | live | PHY PER ADV | offered more widely: a rule is dropped | rules, body |
 | 22 | 646 | Go toward a pant-hoot heard (the older valuation) | travel (CALLER) | keep_with_party | legacy | (PHY PER ADV QUO) | – | rules |
 | 23 | 672 | Go toward a community member's pant-hoot | travel (CALLER) | keep_with_party | live | PER ADV QUO | stays on the menu behind its rules, counted | rules, budongo |
 | 24 | 682 | Go back toward the middle of its range | travel (HOME) | go_home | live | ADV | stays on the menu behind its rules, counted | rules |
 | 25 | 685 | Climb in a tree in view (play) | climb (NONE) | play | live | PER ADV | stays on the menu behind its rules, counted | rules |
-| 26 | 782 | Groom an animal in view | groom (ACCEPT, COALITION, NONE) | groom | live | PHY PER SOC ADV | offered more widely: a rule is dropped | wild-groom, tai-groom, rules |
+| 26 | 782 | Groom an animal in view | groom (ACCEPT, COALITION, NONE) | groom | live | PHY PER SOC ADV | offered more widely: a rule is dropped (only for the pairs a wild choice record covers) | wild-groom, tai-groom, rules |
 | 27 | 795 | Play with a young peer in view | play (ACCEPT, NONE) | play | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
 | 28 | 798 | Play with a youngster (an adult) | play (ACCEPT, NONE) | play | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
 | 29 | 806 | Move away from a tense dominant who comes close | flee (AVOID) | escape | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
@@ -184,7 +205,7 @@ Classes in brackets are those of a site that is not live (as written). Line numb
 | rest | 2 | 1 | 0 | 1 | 0 |
 | share_food | 3 | 0 | 2 | 1 | 0 |
 
-## 4. Every site, with its conditions as written
+## 5. Every site, with its conditions as written
 
 ### 1. Stay in its own finished nest (`src/sim/candidates.ts:272`)
 
@@ -214,7 +235,7 @@ Number literals in its conditions: 3, 2. Hand-set numbers in its advice, quota a
 
 ### 2. Build a night nest, or go on building one (`src/sim/candidates.ts:273`)
 
-`offer('nest', t.id, …)` in `offerOwnNest`; kind: nest; key `offerOwnNest/nest/NONE#2`, print `c39535b7`. **live**; carries physical, advice; offered more widely: a rule is dropped. Teacher: the rules' own judgment (scaffold); forked body outcomes, if the user allows them.
+`offer('nest', t.id, …)` in `offerOwnNest`; kind: nest; key `offerOwnNest/nest/NONE#2`, print `c39535b7`. **live**; carries physical, advice; offered more widely: a rule is dropped (only once body outcomes are allowed as a teacher). Teacher: the rules' own judgment (scaffold); forked body outcomes, if the user allows them.
 
 *Chosen by code before the offer:* The tree: one of the trees tall enough within reach, by a formula of distance, height and a hash that avoids last night's tree (`chooseNestTree`); 11.7 stand in reach on average (R7 ledger).
 
@@ -224,7 +245,7 @@ Reached through offerOwnNest() called at line 398 (this way is closed on the wor
 - **ADV** `c.age >= 3`: it is 3 or older (a hand-set age: from then it builds its own nest) *(always from 8; proposal: keep)*
 - **SWI** `!race | race := P.departRace === 1`: the dawn race for food is off [departRace = 1] *(**false on the base**)*
 - **PHY** `NOT inNest && c.nest | inNest := c.action === 'nest' && x.phase >= 2 && c.nest !== null`: it is not lying in a finished nest
-- **ADV** `drive > 0.25 | drive := company ? nestDrive + company : nestDrive | company := P.nestCompany === 1 && inNest && !caretaker && c.age >= 5 ? nestCompanyValue(world, c, P, asleepOnly) : 0 | inNest := c.action === 'nest' && x.phase >= 2 && c.nest !== null | caretaker := dependentOn(world, c) | asleepOnly := P.choiceBelief === 1 || (P.choiceBelief === 2 && dayPhase(world) === 'day')`: the nest's own value (rest, sleepiness and the company of nest-mates) is above 0.25: the rules' value used as a gate [nestCompany = 1, choiceBelief = 2] *(proposal: drop, shown in `body (sleepiness and body clock) and now (the light)`)*
+- **ADV** `drive > 0.25 | drive := company ? nestDrive + company : nestDrive | company := P.nestCompany === 1 && inNest && !caretaker && c.age >= 5 ? nestCompanyValue(world, c, P, asleepOnly) : 0 | inNest := c.action === 'nest' && x.phase >= 2 && c.nest !== null | caretaker := dependentOn(world, c) | asleepOnly := P.choiceBelief === 1 || (P.choiceBelief === 2 && dayPhase(world) === 'day')`: the nest's own value (rest, sleepiness and the company of nest-mates) is above 0.25: the rules' value used as a gate [nestCompany = 1, choiceBelief = 2] *(proposal: drop, shown in `body (sleepiness and body clock) and now (the light)`, only once body outcomes are allowed as a teacher)*
 - **ADV** `open | open := rS ? env.daylight < 1 : hour >= 12 || night | rS := P.rhythmSleep === 1 | night := env.daylight < 0.1`: a new nest may be started only when daylight is below full (with the sleep mechanism, as on the base; otherwise from 12:00 or at night) [rhythmSleep = 1] *(proposal: keep)*
 - **PHY** `t | t := c.action === 'nest' && isTreeId(c.targetId) ? index(world).treeById.get(c.targetId) : chooseNestTree(world, c)`: a tree to nest in exists: the one it is building in, or one tall enough within reach (which one is chosen by a formula)
 
@@ -234,7 +255,7 @@ Reached through offerOwnNest() called at line 688:
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)`: it is not a dependent (weaned, or 6 or older) *(always from 8)*
 - **ADV** `c.age >= 3`: it is 3 or older (a hand-set age: from then it builds its own nest) *(always from 8; proposal: keep)*
 - **PHY** `NOT inNest && c.nest | inNest := c.action === 'nest' && x.phase >= 2 && c.nest !== null`: it is not lying in a finished nest
-- **ADV** `drive > 0.25 | drive := (company ? nestDrive + company : nestDrive) - raceG | company := P.nestCompany === 1 && inNest && !caretaker && c.age >= 5 ? nestCompanyValue(world, c, P, asleepOnly) : 0 | inNest := c.action === 'nest' && x.phase >= 2 && c.nest !== null | caretaker := dependentOn(world, c) | asleepOnly := P.choiceBelief === 1 || (P.choiceBelief === 2 && dayPhase(world) === 'day')`: the nest's own value, less what waiting would lose of a contested crop, is above 0.25: the rules' value used as a gate [nestCompany = 1, choiceBelief = 2] *(proposal: drop, shown in `body (sleepiness and body clock) and now (the light)`)*
+- **ADV** `drive > 0.25 | drive := (company ? nestDrive + company : nestDrive) - raceG | company := P.nestCompany === 1 && inNest && !caretaker && c.age >= 5 ? nestCompanyValue(world, c, P, asleepOnly) : 0 | inNest := c.action === 'nest' && x.phase >= 2 && c.nest !== null | caretaker := dependentOn(world, c) | asleepOnly := P.choiceBelief === 1 || (P.choiceBelief === 2 && dayPhase(world) === 'day')`: the nest's own value, less what waiting would lose of a contested crop, is above 0.25: the rules' value used as a gate [nestCompany = 1, choiceBelief = 2] *(proposal: drop, shown in `body (sleepiness and body clock) and now (the light)`, only once body outcomes are allowed as a teacher)*
 - **ADV** `open | open := rS ? env.daylight < 1 : hour >= 12 || night | rS := P.rhythmSleep === 1 | night := env.daylight < 0.1`: a new nest may be started only when daylight is below full (with the sleep mechanism, as on the base; otherwise from 12:00 or at night) [rhythmSleep = 1] *(proposal: keep)*
 - **PHY** `t | t := c.action === 'nest' && isTreeId(c.targetId) ? index(world).treeById.get(c.targetId) : chooseNestTree(world, c)`: a tree to nest in exists: the one it is building in, or one tall enough within reach (which one is chosen by a formula)
 
@@ -288,7 +309,7 @@ Number literals in its conditions: 2.
 
 ### 7. Sit hunched out of the rain (`src/sim/candidates.ts:403`)
 
-`offer('shelter', -1, …)` in `computeCandidates`; kind: rest; key `computeCandidates/shelter/NONE#1`, print `27282d55`. **live**; carries physical, advice; offered more widely: a rule is dropped. Teacher: the rules' own judgment (scaffold); forked body outcomes, if the user allows them.
+`offer('shelter', -1, …)` in `computeCandidates`; kind: rest; key `computeCandidates/shelter/NONE#1`, print `27282d55`. **live**; carries physical, advice; offered more widely: a rule is dropped (only once body outcomes are allowed as a teacher). Teacher: the rules' own judgment (scaffold); forked body outcomes, if the user allows them.
 
 Conditions:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
@@ -296,7 +317,7 @@ Conditions:
 - **PHY** `rain >= 0.12 | rain := env.rain`: it is raining (rain at 0.12 or more; a hand-set number)
 - **PHY** `!inNest | inNest := c.action === 'nest' && x.phase >= 2 && c.nest !== null`: it is not lying in its finished nest (there it rests by staying)
 - **PHY** `!carried | carried := caretaker ? isCarried(c, caretaker) : false | caretaker := dependentOn(world, c)`: it is not being carried *(always from 8)*
-- **ADV** `cold > 0`: its body is colder than neutral (thermal load below zero): sheltering is offered only then *(proposal: drop, shown in `body (temperature) and now (the weather)`)*
+- **ADV** `cold > 0`: its body is colder than neutral (thermal load below zero): sheltering is offered only then *(proposal: drop, shown in `body (temperature) and now (the weather)`, only once body outcomes are allowed as a teacher)*
 
 Number literals in its conditions: 0.12, 2. Hand-set numbers in its advice, quota and dice conditions: 0.
 
@@ -440,7 +461,7 @@ Conditions:
 
 ### 19. Go and drink at a remembered water (`src/sim/candidates.ts:578`)
 
-`offer('drink', m.entityId, …)` in `computeCandidates`; kind: drink; key `computeCandidates/drink/NONE#1`, print `485f26ec`. **live**; carries perceptual, advice; offered more widely: a rule is dropped. Teacher: the rules' own judgment (scaffold); forked body outcomes, if the user allows them.
+`offer('drink', m.entityId, …)` in `computeCandidates`; kind: drink; key `computeCandidates/drink/NONE#1`, print `485f26ec`. **live**; carries perceptual, advice; offered more widely: a rule is dropped (only once body outcomes are allowed as a teacher). Teacher: the rules' own judgment (scaffold); forked body outcomes, if the user allows them.
 
 *Chosen by code before the offer:* Nothing at the offer: every remembered water is offered (7.5 on average). Afterwards the slot cap keeps the one the rules score highest.
 
@@ -450,8 +471,8 @@ Conditions:
 - **PER** `EACH of c.memory`: each place it remembers
 - **PER** `NOT m.kind === 'tree' && time - m.seenAt < P.memTravelHorizonH && !stamped(_sight, m.entityId, st) | m := c.memory[_i3]`: the memory is not a fresh tree out of view (the branch for other memories) [memTravelHorizonH = 240]
 - **PER** `m.kind === 'water' | m := c.memory[_i3]`: the memory is of a water
-- **ADV** `c.age >= 3`: it is 3 or older (a hand-set age: from then it builds its own nest) *(always from 8; proposal: keep)*
-- **ADV** `water ? c.thirst > 0 : c.thirst > 0.25 | water := waterOn(P)`: it is thirsty at all: the water ledger's thirst is above zero (above 0.25 without the ledger) *(proposal: drop, shown in `body (water)`)*
+- **ADV** `c.age >= 3`: it is 3 or older (a hand-set age) *(always from 8; proposal: keep)*
+- **ADV** `water ? c.thirst > 0 : c.thirst > 0.25 | water := waterOn(P)`: it is thirsty at all: the water ledger's thirst is above zero (above 0.25 without the ledger) *(proposal: drop, shown in `body (water)`, only once body outcomes are allowed as a teacher)*
 
 Number literals in its conditions: 3, 0.25. Hand-set numbers in its advice, quota and dice conditions: 1.
 
@@ -607,7 +628,7 @@ Number literals in its conditions: 1.5, 16. Hand-set numbers in its advice, quot
 
 ### 26. Groom an animal in view (`src/sim/candidates.ts:782`)
 
-`offer('groom', o.id, …, V.ACCEPT | V.COALITION | V.NONE)` in `computeCandidates`; kind: groom; key `computeCandidates/groom/ACCEPT+COALITION+NONE#1`, print `30c808da`. **live**; carries physical, perceptual, social fact, advice; offered more widely: a rule is dropped. Teacher: wild choice records in hand (whom a Ngogo male grooms); Taï grooming partner choice, once downloaded and checked; the rules' own judgment (scaffold).
+`offer('groom', o.id, …, V.ACCEPT | V.COALITION | V.NONE)` in `computeCandidates`; kind: groom; key `computeCandidates/groom/ACCEPT+COALITION+NONE#1`, print `30c808da`. **live**; carries physical, perceptual, social fact, advice; offered more widely: a rule is dropped (only for the pairs a wild choice record covers). Teacher: wild choice records in hand (whom a Ngogo male grooms); Taï grooming partner choice, once downloaded and checked; the rules' own judgment (scaffold).
 
 *Chosen by code before the offer:* Nothing at the offer: every eligible animal in view is offered. Afterwards the slot cap keeps the two the rules score highest.
 
@@ -621,7 +642,7 @@ Conditions:
 - **ADV** `c.age >= 2`: it is 2 or older (a hand-set age) *(always from 8; proposal: keep)*
 - **ADV** `o.age >= 1`: the other is at least 1 year old *(proposal: keep)*
 - **PER** `d < P.groomRangeM`: the other is within grooming reach (a hand-set radius) [groomRangeM = 45]
-- **ADV** `o.action === 'rest' || o.action === 'groom' || o.action === 'shelter' || o.action === 'nurse'` (through `settled`): the other is settled: resting, grooming, sheltering or nursing *(proposal: drop, shown in `nearby (each animal's act)`)*
+- **ADV** `o.action === 'rest' || o.action === 'groom' || o.action === 'shelter' || o.action === 'nurse'` (through `settled`): the other is settled: resting, grooming, sheltering or nursing *(proposal: drop, shown in `nearby (each animal's act)`, only for the pairs a wild choice record covers)*
 - **PHY** `!carried | carried := caretaker ? isCarried(c, caretaker) : false | caretaker := dependentOn(world, c)`: it is not being carried *(always from 8)*
 
 Number literals in its conditions: 2, 1. Hand-set numbers in its advice, quota and dice conditions: 1.
@@ -1279,7 +1300,7 @@ Reached through aggression() called at line 881:
 - **ADV** `!night | night := env.daylight < 0.1`: it is not night (daylight at 0.1 or more) *(proposal: keep)*
 - **QUO** `time - x.coalAt < P.coalitionWindowH`: it was alerted to a conflict within the last 0.05 h (a window; who is alerted is decided in conflict.ts) [coalitionWindowH = 0.05] *(proposal: keep)*
 - **PHY** `a`: the ally exists
-- **PHY** `b`: the body exists
+- **PHY** `b`: the opponent exists
 - **PHY** `a.alive`: the ally is alive
 - **PHY** `b.alive`: the opponent is alive
 - **PHY** `b.id !== c.id`: it is not itself the opponent
@@ -2134,15 +2155,15 @@ Reached through patrolAndCalls() called at line 889:
 
 Number literals in its conditions: 12, 2.
 
-## 5. Every advice, quota and dice condition of a live site
+## 6. Every advice, quota and dice condition of a live site
 
 | Class | Condition | In plain words | Proposal | Packet line | Sites (lines) |
 |---|---|---|---|---|---|
-| ADV | `drive > 0.25 \| drive := (company ? nestDrive + company : nestDrive) - raceG \| company := P.nestCompany === 1 && inNest && !caretaker && c.age >= 5 ? nestCompany …` | the nest's own value, less what waiting would lose of a contested crop, is above 0.25: the rules' value used as a gate | drop | `body (sleepiness and body clock) and now (the light)` | 273 |
+| ADV | `drive > 0.25 \| drive := (company ? nestDrive + company : nestDrive) - raceG \| company := P.nestCompany === 1 && inNest && !caretaker && c.age >= 5 ? nestCompany …` | the nest's own value, less what waiting would lose of a contested crop, is above 0.25: the rules' value used as a gate | drop (only once body outcomes are allowed as a teacher) | `body (sleepiness and body clock) and now (the light)` | 273 |
 | ADV | `open \| open := rS ? env.daylight < 1 : hour >= 12 \|\| night \| rS := P.rhythmSleep === 1 \| night := env.daylight < 0.1` | a new nest may be started only when daylight is below full (with the sleep mechanism, as on the base; otherwise from 12:00 or at night) | keep |  | 273 |
-| ADV | `cold > 0` | its body is colder than neutral (thermal load below zero): sheltering is offered only then | drop | `body (temperature) and now (the weather)` | 403 |
+| ADV | `cold > 0` | its body is colder than neutral (thermal load below zero): sheltering is offered only then | drop (only once body outcomes are allowed as a teacher) | `body (temperature) and now (the weather)` | 403 |
 | ADV | `c.age < P.juvenileFollowMaxAgeY` | it is younger than the age up to which a juvenile keeps up with its guardian | keep |  | 434 |
-| ADV | `water ? c.thirst > 0 : c.thirst > 0.25 \| water := waterOn(P)` | it is thirsty at all: the water ledger's thirst is above zero (above 0.25 without the ledger) | drop | `body (water)` | 578 |
+| ADV | `water ? c.thirst > 0 : c.thirst > 0.25 \| water := waterOn(P)` | it is thirsty at all: the water ledger's thirst is above zero (above 0.25 without the ledger) | drop (only once body outcomes are allowed as a teacher) | `body (water)` | 578 |
 | ADV | `EACH k < 4 && _mem.length` | only the four trees the rules value most are offered (the trip shortlist: a ranking by the rules' own value) | drop | `each target's belief words (crop when seen, hours since, distance and direction)` | 629 |
 | ADV | `c.age >= 10` | it is 10 or older (a hand-set age) | keep |  | 629, 1337, 1341, 1351 |
 | ADV | `c.action !== 'patrol'` | it is not on patrol | keep |  | 672, 682, 1481 |
@@ -2150,7 +2171,7 @@ Number literals in its conditions: 12, 2.
 | ADV | `c.action !== 'transfer'` | it is not transferring | keep |  | 682 |
 | ADV | `here > P.homeLevel` | it stands outside its community's range (use level above the home level) | keep |  | 682 |
 | ADV | `c.age < 16` | it is younger than 16 (play-climbing is for the young) | keep |  | 685 |
-| ADV | `o.action === 'rest' \|\| o.action === 'groom' \|\| o.action === 'shelter' \|\| o.action === 'nurse'` | the other is settled: resting, grooming, sheltering or nursing | drop | `nearby (each animal's act)` | 782 |
+| ADV | `o.action === 'rest' \|\| o.action === 'groom' \|\| o.action === 'shelter' \|\| o.action === 'nurse'` | the other is settled: resting, grooming, sheltering or nursing | drop (only for the pairs a wild choice record covers) | `nearby (each animal's act)` | 782 |
 | ADV | `o.age >= 1` | the other is at least 1 year old | keep |  | 782, 795, 798 |
 | ADV | `!busy \| busy := o.action === 'flee' \|\| o.action === 'charge' \|\| o.action === 'attack' \|\| o.action === 'display' \|\| o.action === 'transfer'` | the other is not fleeing, charging, attacking, displaying or transferring | keep |  | 795, 798 |
 | ADV | `Math.abs(o.age - c.age) < 7` | the two are within 7 years of age | keep |  | 795 |
@@ -2262,11 +2283,11 @@ Number literals in its conditions: 12, 2.
 | DIC | `x.impulse === IMPULSE_INFANTICIDE` | an infanticide impulse was rolled at perception (per look at a stranger's infant when its males outnumber theirs by the margin, or for a new alpha and an infant he did not sire) | rules |  | 1139 |
 | DIC | `gangT \| gangT := x.impulse === IMPULSE_GANG && x.impulseUntil > time ? byId.get(x.impulseTarget) : undefined` | a gang-attack impulse was rolled at perception (probability 0.5, one roll per 6 h at most, with 3 or more own males against a lone stranger of 10 or more, on patrol or near the range's edge) | rules |  | 1287 |
 
-123 distinct conditions: 92 advice, 28 quota or timer, 3 dice. Proposed: keep 113, drop 6, leave with the rules 4.
+123 distinct conditions: 92 advice, 28 quota or timer, 3 dice. Proposed: keep 113, drop 6, leave with the rules 4. Of the 6 to drop, 2 need no teacher but the rules (the rules value every option the rule cut), 1 can go only for the pairs a wild choice record covers and 3 only once body outcomes are allowed as a teacher.
 
-## 6. The switches of the working base the sites stand behind
+## 7. The switches of the working base the sites stand behind
 
 trace off; circ on; dark on; rH on; rS on; race on; fr on; gv off; shortlist on; routeChain off; callerRate on; social4 on; cohesion on; callTrip off; party on; joinChoice on; partyJoinTrip on; travelHoo on; followCarer on; endoRain on; endoEscalate on; body off; carry off; respond off; bodyAny off; huntValue on; huntEncounter on; pv on; pv2 on; cv on; callGap1 on; callGap2 on; contactCall on; mv off; aggr1 on; aggr2 on; aggr4 on; social1 on; social2 on; social8 on; weanOutcome off; water on; dv on; guardBySize on.
 
-369 distinct conditions over 94 sites; classification file sha256 6e9b06d70380….
+369 distinct conditions over 94 sites; classification file sha256 4c5601ff4570….
 
