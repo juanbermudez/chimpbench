@@ -222,7 +222,8 @@ function groomSite(c: PoseCtx, n: number, role: number): readonly [number, numbe
 /** The seated receiver's slow lean (a step of 0.12 rad, five positions by bout number and individual). */
 function groomeeLean(k: number, seed: number) { return (((k * 7919 + Math.round(seed * 1000)) % 5) - 2) * 0.12; }
 /**
- * Lying on the belly, the forearms folded on the ground in front of the face, the legs loose behind. The limbs are
+ * Lying on the belly, the forearms folded on the ground in front of the face, the legs loose behind (stylization, as
+ * the rest of the choreography). The limbs are
  * posed by joint angles, not by IK targets (stage W5): with the trunk level the limb poles of the rig (rig.ts LIMBS,
  * they ride with the chest and hips) point up, and IK stood the elbows and knees in the air.
  */
@@ -443,7 +444,8 @@ export const CLIPS: Record<string, Clip> = {
   groom(w, c) {
     // Groomer (v2, stylization: see GROOM_SITE_S above): seated close behind (or facing) the partner. The work site
     // travels over the partner's body every ~9 s; the trunk leans and the head turns down to it; one hand holds the
-    // hair apart while the other combs in 7 cm strokes (picks taken to the mouth are written but off: GROOM_PICK_TO_MOUTH).
+    // hair apart while the other combs in strokes of 0.07 body lengths, about 10 cm on an adult (picks taken to the
+    // mouth are written but off: GROOM_PICK_TO_MOUTH).
     // Mother-and-infant variant (role GROOM_LAP; stage W5, stylization, no source): the infant she holds clings to her
     // belly with its back outward; she sits more upright with her knees apart, one hand under its rump, and combs
     // shorter strokes over its back, looking down at it.

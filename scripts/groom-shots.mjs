@@ -10,8 +10,9 @@
 //           -> one sheet each. --seated-only: a build without grooming v2 ignores &groomee, take the seated pair only.
 //   wrist   wrist and head travel of both animals over 14 s of page time (50 ms steps) -> wrist.json
 //   tiles   mode=tiles at page time 8 s, Math.random on a fixed sequence -> tiles.png, tiles.json (clip per animal)
-//   cases   mother-and-infant grooming (&infant=), a receiver cradling a dead infant (&deadinfant=1) or holding a
-//           living one (&heldinfant=), a grooming chain (&chain=1), each with a lying posture forced -> sheets, cases.json
+//   cases   mother-and-infant grooming (&infant=), a mutual pair (&mutual=1), and with a lying posture forced: a receiver
+//           cradling a dead infant (&deadinfant=1) or holding a living one (&heldinfant=), a grooming chain (&chain=1)
+//           -> sheets, cases.json (ONLY=<part of a case name> runs some)
 //   change  the receiver's first change into a lying posture in the harness's own timeline, six frames 0.35 s apart
 //   scan    the app, field map, seed 48, paused: day 1 walked tick by tick; groomer-ticks by situation and the pairs that
 //           groom without a break for 16 ticks or more -> scan.json
@@ -150,6 +151,7 @@ const CASES = [
   ['infant-1y8-nursing', 'infant=1.8&nursing=1', FRONT, true],                   // the review's case (Kiboro and Zamiko)
   ['infant-0y8-mutual', 'infant=0.8&mutual=1', FRONT, false],
   ['infant-2y5-ground', 'infant=2.5', '1.9,1.2,2.9,0.2,0.45,0.1', true],         // not carried: sits in front of her
+  ['mutual', 'mutual=1', '0.2,1.0,3.3,0.45,0.45,0.15', true],                  // two adults grooming each other, face to face
   ['risk-dead-infant-forced-prone', 'groomee=2&deadinfant=1', '0.2,1.0,3.3,0.45,0.45,0.15', true],
   ['risk-held-infant-forced-prone', 'groomee=2&heldinfant=0.3', '0.2,1.0,3.3,0.45,0.45,0.15', true],
   ['risk-chain-forced-prone', 'groomee=2&chain=1', '0.6,1.3,4.6,0.9,0.45,0.3', true],

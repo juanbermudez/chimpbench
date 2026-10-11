@@ -161,8 +161,9 @@ function setupAction(action: Action, x: number, z: number, moving: boolean) {
         break;
       }
       const b = female({ action: 'rest', x: x + 0.9, z: z + 0.3 }); const a = male({ target: b.id }); interaction('groom', a, b);
-      // &deadinfant=1: the receiver cradles a dead infant; &heldinfant=<age>: she holds a living one; &chain=1: the
-      // receiver is itself grooming a third animal.
+      // &mutual=1: the two groom each other; &deadinfant=1: the receiver cradles a dead infant; &heldinfant=<age>: she
+      // holds a living one; &chain=1: the receiver is itself grooming a third animal.
+      if (q.has('mutual')) { b.action = 'groom'; b.targetId = a.id; }
       if (q.has('deadinfant')) { const inf = chimp({ age: 0.6, sex: 'male', x: x + 0.9, z: z + 0.3, action: 'dead', mother: b.id }); inf.deathTime = world.time - 30; b.carryingDeadId = inf.id; }
       if (q.has('heldinfant')) chimp({ age: Number(q.get('heldinfant')), sex: 'male', x: x + 0.9, z: z + 0.3, action: 'rest', mother: b.id });
       if (q.has('chain')) { const t = chimp({ age: 19, sex: 'female', x: x + 1.9, z: z + 0.7, action: 'rest', heading }); b.action = 'groom'; b.targetId = t.id; interaction('groom', b, t); }

@@ -483,8 +483,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         // Groomer sits behind the groomee (or face to face when mutual) with a clear gap between bodies.
         kind = 'groom'; sep = mutual ? 0.44 : 0.4;
         if (mutual) { clipB = 'groom'; roleA = roleB = 1; bHeading = Math.PI; }
-        // A receiver that is itself grooming a third animal keeps its own grooming clip and place (stage W5): no
-        // receiver clip or posture for it; this groomer works on it where it sits.
+        // A receiver that is itself grooming a third animal keeps its own grooming clip and place (stage W5; a drawing
+        // rule, not a source): no receiver clip or posture for it; this groomer works on it where it sits.
         else if (groomsThird(b, a)) clipB = null;
         else if (PASSIVE.has(bc.action)) {
           clipB = 'groomee'; bHeading = hash01(a.id, 21) > 0.35 ? 0 : 0.6 * (hash01(b.id, 5) > 0.5 ? 1 : -1);
@@ -727,7 +727,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     if (!carried) return 0;
     a.carrierId = m.id;
     const up = (mc.position[1] ?? 0) > 0.3 || mc.action === 'climb';
-    // Held on the belly too while its carrier grooms it (stage W5): she cannot reach an infant riding on her own back.
+    // Held on the belly too while its carrier grooms it (stage W5; stylization): she cannot reach an infant riding on her own back.
     if (c.age < 0.45 || c.action === 'nurse' || mc.action === 'nurse' || up || (mc.action === 'nest' && c.age < 2) || (mc.action === 'groom' && mc.targetId === c.id)) return 1;
     return 2;
   }
