@@ -76,8 +76,10 @@ tai() { [ -f "$1/tai.json" ] || step $TSX scripts/r7-card.ts tai --out "$1"; }  
 reports() { # <loop dir> <seeds> <prefix> [dry]
   mkdir -p "$TABLES"
   engine="$($TSX scripts/r11-report.ts --dir "$1" --seeds "$2" --engine-arg)" || { echo "R11 failed: the engine arms on file under $1"; exit 1; }
-  if [ -n "$engine" ]; then step $TSX scripts/r7-report.ts --dir "$1" --units F --seeds "$2" --engine "$engine" --md "$TABLES/$3-card.md"
-  else step $TSX scripts/r7-report.ts --dir "$1" --units F --seeds "$2" --md "$TABLES/$3-card.md"; fi
+  title="Stage R11: stage R7's timing card on seeds $2, the control arms${engine:+ and the engine arms} (numbers)${4:+ - DRY RUN, a fake worker, not a result}"
+  note="Written by stage R7's report script for stage R11 (r11-prereg.md, sections 5 and 6.2). The worlds also carry observeV5 1 from the first tick (the rules never read it) and every arm continues this stage's own burn-in. Every engine arm is a rules-taught model on a rules menu. The stage's own readings (the registered statements, the spreads, lock-in) are in r11-numbers.md."
+  if [ -n "$engine" ]; then step $TSX scripts/r7-report.ts --dir "$1" --units F --seeds "$2" --engine "$engine" --title "$title" --note "$note" --md "$TABLES/$3-card.md"
+  else step $TSX scripts/r7-report.ts --dir "$1" --units F --seeds "$2" --title "$title" --note "$note" --md "$TABLES/$3-card.md"; fi
   step $TSX scripts/r11-report.ts --dir "$1" --seeds "$2" --md "$TABLES/$3-numbers.md" ${4:+--dry} ${R11_DECODE:+--decode "$R11_DECODE"}
 }
 
