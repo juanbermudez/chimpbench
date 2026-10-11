@@ -34,6 +34,8 @@ export function decisionPoint(world: World, c: Chimp): void {
   const x = ix(c);
   const model = isModelControlled(world, c);
   if (!model || x.seenAt !== world.time) perceive(world, c);
+  // stage R10 (a read-only tap, null unless a script sets it): what raised this decision point, before anything is cleared
+  if (loopTap.point) loopTap.point(c, x.intr, x.finished);
   const P = paramsOf(world), own = P.observeV5 === 1;
   // stage R8 (observeV5; own.ts): what opened this decision point is noted for the animal's packet; nothing else reads it
   if (own) ownAsk(world, c, x.intr !== '', model && c.awaitingDecisionSince !== null, P);
@@ -73,6 +75,16 @@ export function decisionPoint(world: World, c: Chimp): void {
  * `finished` flag are still those the candidates were scored with. Never set by the app; reads only.
  */
 export const rulesTap: { fn: ((c: Chimp, list: Candidate[], policy: boolean) => void) | null } = { fn: null };
+
+/**
+ * Optional taps for diagnostics (stage R10, scripts/lib/r10-run.ts: what raised a decision point and what the loop's
+ * gate did with it, for the receipts of a model-driven population). `point`: at every decision point, with the
+ * interrupt that raised it ('' for a scheduled end or a finished act) before it is cleared, and the `finished` flag.
+ * `gate`: after the loop's gate has run for a chimp a kernel other than the rules decides for, with its verdict: 'kept'
+ * or 'arrived' (the act was set without asking), else why the chimp is open ('no-intent' when no intention was held,
+ * otherwise rg.ts gate's reason). Never set by the app; read only.
+ */
+export const loopTap: { point: ((c: Chimp, intr: string, finished: boolean) => void) | null; gate: ((c: Chimp, verdict: string) => void) | null } = { point: null, gate: null };
 
 // The request and environment the rules kernel is called with inside the tick: one reused pair, so the rules' own
 // decisions allocate nothing new. The packet is built only if a kernel reads it (the rules do not: they read the live
@@ -148,11 +160,12 @@ function dropIntent(world: World, c: Chimp): void {
 function loopGate(world: World, c: Chimp, list: Candidate[]): boolean {
   if (!list[0] || list[0].action === 'dead') return false;
   const x = ix(c), it = x.rgIntent;
-  if (!it) return false;
+  if (!it) { if (loopTap.gate) loopTap.gate(c, 'no-intent'); return false; }
   const g = gate(world, c, it, list);
-  if (typeof g === 'string') { delete x.rgIntent; return false; }
+  if (typeof g === 'string') { delete x.rgIntent; if (loopTap.gate) loopTap.gate(c, g); return false; }
   startAction(world, c, g.keep, 'decide');
   if (g.arrived) x.rgIntent = { ...intentOf(world, c, 'forage', g.keep.targetId, candidateMeta.get(g.keep)?.v ?? V.NONE), buckets: it.buckets };
+  if (loopTap.gate) loopTap.gate(c, g.arrived ? 'arrived' : 'kept');
   return true;
 }
 
