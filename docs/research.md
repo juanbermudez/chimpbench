@@ -4855,8 +4855,8 @@ source was opened for it. This addendum says which statement rests on a source a
   travel, Budongo Sonso": of 166 travel initiations, the initiator stood motionless for 5 s or more in 58.4% of vocal
   and 53.9% of silent ones, and gazed 90 to 180 degrees behind toward others in 39.0% and 25.8%.
   - Use in W6 (`src/render/creatures/beat.ts`): the first mover of a drawn departure looks back at a follower, and an
-    initiator the simulation keeps waiting (its own `departCheckMin` wait, stage C7c) is drawn standing and looking
-    between its goal and its companions.
+    initiator the simulation keeps waiting (the simulation's own check for company, `departPersist` and
+    `departCheckMin`, `src/sim/execution.ts`) is drawn standing and looking between its goal and its companions.
   - What W6 does NOT take from it: the drawn first mover looks back at EVERY departure that has followers, more often
     than the 26 to 39% of initiations in the field, so that a viewer can read who leads. That is a stylization, and
     the rate should not be read off the screen.
