@@ -318,3 +318,182 @@ cover `src/sim/decide.ts`. 4. The field smoke (§7, 5 to 8). 5. Results in §10;
   script), not by a name anywhere in a command line, because the shell that launches the night carries the
   interpreter's path in its own command line; a model day prints a line every simulated hour once two minutes have
   passed, so a day of 15 to 25 minutes is not silent.
+
+### 10.2 Iterations (10 October 2026; no model process at any point)
+
+Three iterations on one problem, how often to force the files to disk, each a two-day field run of `argmax-gate`
+on seed 48 (every run landed on the same two day hashes):
+
+| Iteration | Head | When | What forced the files to disk | Wall per simulated day, s (day 1, day 2) | Load |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 554d3e7 | 20:06 to 20:09 | an fsync after every answer and every tick | 69.6, 81.1 | about 7 |
+| 2 | 4cf490e | 20:11 to 20:20 | an fsync after every answer; receipts on a two-second timer | 290.6, 254.9 | about 10 |
+| 3 | e84915e | 20:22 to 20:23 | everything on a two-second timer (amendment A6) | 13.5, 13.6 (6 and 5 fsync rounds: 4.0 and 4.2 s) | 10 to 13 |
+| final | a886f30 | 20:34 to 20:36 | the same, with the wait growing on a slow disk | 4.2, 3.6 (2 fsync rounds a day: 0.9 and 1.0 s) | about 8 |
+
+The same simulated day cost 4 s to 290 s of wall time depending only on fsync and on what else was writing to the
+volume. Iteration 2 was slower than iteration 1 with fewer fsync calls: the volume was busier.
+
+### 10.3 Results of the proofs (§7), at head a886f30 unless said
+
+**Tests.** `tests/r10-night.test.ts`: 12 tests, 12 pass (compressed map, the working base, seed 48). With the
+eleven test files that cover what the stage touches or imports (`kernel`, `sim-params` with the goldens,
+`sim-track-e` with the field pin, `sim-rg`, `decision`, `sim-model`, `simulation`, `persist-envelope`, `r5-pilot`,
+`r4b`, `r2-packet`): 131 tests, 131 pass at head 2e8c26b. `tsc --noEmit` clean; `gen-params --check` clean (1,046
+entries); the script and its test type-check under the project's strict settings (the two errors that command
+prints are in `scripts/lib/prescriptions.ts`, which this stage does not touch).
+
+| # | Proof | Result |
+| --- | --- | --- |
+| 1 | Rules equivalence (test) | A rules arm through the engine, checkpointed and read back after each of two whole days, ends each day on the hash of plain `tickWorld` calls |
+| 2 | Resume (tests) | `argmax-gate` stopped after day 1 and resumed from its checkpoint: the uninterrupted run's hash, receipts and rows. A run that dies with answers journalled but their receipts unwritten, resumed: the same hash, every journalled answer reused, the kernel asked only for the rest. The null kernel cut after day 1 or day 2 of three: the same hashes and receipts |
+| 3 | Receipts (tests) | Every `ask` and `held` line has the registered fields; only animals aged 8 and over are asked; the journal holds every answer under its receipt's key; answered from the receipts the engine lands on the same world, and one changed answer gives another; the replay of a run folder reproduces the day and catches a damaged receipt file |
+| 4 | Decode, stop check, refusals (tests) | `top` is the first maximum and changes no answer; `draw` and `held` refuse by name; each of the four stop conditions alone ends a run and a rules-like run goes on; reserved seeds, low disk and another model process are refused |
+| 5 | Field: rules arm against the plain world | **Equal.** `plain`: after 30 days 4b5cc61f8ad797e0, then c0c0192822501ddf and 1aa2a8d748255642. The rules arm through the script: the same three (heads 554d3e7 and a886f30) |
+| 6 | Field: `argmax-gate`, 2 days | Day hashes 95bfc1fd4e6ddfda and 07ec9b9f26b64f60. Per day: **2,060 and 2,069 asks** (54.3 per animal on the kernel and day), the kernel's choice settled 2,013 and 2,041, the rules 47 and 28 (every one `not-applied`), **1,145 and 1,149 acts held by the gate** (30.2 per animal and day), no death, no timeout. No-model wall time 4.2 and 3.6 s a day; the whole process 12.3 s; largest memory 410 MB |
+| 7 | Field: killed and resumed | The run killed with SIGKILL after 8,000 ticks (inside day 2; exit code 137) and resumed: 3 files of the day set aside, **1,408 journalled answers reused**, end hash **07ec9b9f26b64f60**, the uninterrupted run's |
+| 8 | Field: replay through the observer | The receipts reproduce the run: 2 of 2 day hashes equal, 0 asks without a receipt, 0 menus differ, 0 of 6,423 receipt lines differ when regenerated (each with its context's hash), 0 row files differ; 13 s with the observer and the truth readouts, 394 MB. The resumed run replays the same way. 13 of the 15 rows had a value after two days (no contest and no detected conflict fell in the window for T-SOC-14 and T-SOC-10) |
+
+**What a day of a whole population writes** (proof 6, bytes per simulated day): receipts 1.21 MB; journal 0.24 MB;
+contexts 6.2 MB as written, 0.68 MB once gzipped at the day's end; rows 27 kB; summary under 1 kB; a checkpoint
+0.9 MB (three are on disk: the start and the last two). About 2.2 MB a day kept, so 30 days are under 70 MB.
+
+**What opened the asks** (proof 6, the 4,129 asks of the two days; the receipts' `trig`): an interrupt 1,628, the
+act's scheduled end 1,530, an act that finished 971. The gate's own word: `interrupt` 1,599, `need-bucket` 940,
+`ended` 661, `max-age` 414, `light` 259, `period` 157, `no-intent` 75, `patrol` 21, `hunt` 3. Of the 2,294 held acts
+1,827 were the same act kept and 467 the feeding begun at the end of a trip.
+
+**The projection of the real night** (printed by `status` from proof 6: this run's asks per day at a model's seconds
+per ask, plus this run's own seconds per day):
+
+| Seconds per ask | Where the figure is from | Minutes per simulated day | Simulated days in 10 hours |
+| --- | --- | --- | --- |
+| 0.44 | offline, one packet per pass at 467 tokens (review of 10 October) | 15.2 | 39 |
+| 0.5 | | 17.3 | 34 |
+| 0.6 | the loop's medians were 0.46 to 0.62 (R5-gate) | 20.7 | 28 |
+| 0.76 | the slowest mean per call of R5-gate's windows (1,377 calls in 1,050 s, two timeouts in it) | 26.2 | 22 |
+
+So **a 10-hour night covers about 22 to 39 simulated days**, 28 to 34 at the speeds seen most often. Three things can
+move it and are not in the table: a model population is asked at its own rate, not the reference kernel's (on ten
+focal animals R5-gate measured 54 asks per animal and day for `r4-rules-state` against 57 for this reference); the
+first start loads the model once (55 to 145 s measured on this machine); and forcing the files to disk takes at most
+about 5% (amendment A6). `--days 40` is therefore above anything a night can reach, and `--hours 10` is what ends it.
+
+**Written before the runs, checked.** The burned-in world of seed 48 is the pilot's (4b5cc61f8ad797e0): yes.
+"Asked about 55 to 60 times per driven animal and day": 54.3, just under. "About 2,100 to 2,400 asks a day": 2,060
+and 2,069, just under. "A night of 10 hours covers about 25 simulated days": 22 to 39 by the table.
+
+**Shown from the command line** (each exits with code 2 and writes no file): a reserved seed (5303); an `--out` that
+holds a run; a tree with one untracked file; `--decode draw`; a model arm without its variables; a model arm whose
+adapter folder is missing, and one whose adapter is not named in `MGOGO_FT_ADAPTERS`; a re-draw arm and an unknown
+arm; and **another model process running**, shown with a stand-in (a Python process with `decide_provider` in its
+arguments that loads nothing, started and killed by its own pid): the script named that pid and refused, and did not
+mistake the launching shell, whose command line held the interpreter's path, for one. `--caffeinate` on a no-model
+run: the holder `caffeinate -i -w <pid>` was alive during the run and gone after it.
+
+**The stop check, end to end** (compressed map, six days asked, a check of the harness and not a result): random
+choice (`null-gate`) was stopped after day 5 with exit code 3, "S3: 86 of 190 driven animal-nights in a nest (0.45,
+below 0.80)", reserves −0.488% a day; a `--resume` then went on past it and said so. `argmax-gate` read 190 of 190
+nights, reserves −0.181% a day, the rules settling 2.23% of asks, and went on. A budget of `--hours 0.004` ended a run
+cleanly after 2 days.
+
+### 10.4 What is not done, and limits
+
+- **The night was not run, and no model process was started in this stage.** So nothing on the model's path has run
+  for real: the worker's start, the warm-up answer, the adapter hash check, the decode on real probabilities, a
+  timeout and a replacement of a real worker, the hold while swap is above 6 GB (swap in use was about 6.9 GB during
+  this stage, so the launch will hold unless the Mac is restarted first). These paths are covered by tests with
+  stand-in scorers only.
+- `draw` and `held` are not implemented here (stage R9 owns them).
+- The timing card's hook was exercised with a counting tap, not with the card (stage R7 has not delivered it yet).
+- The stop check's thresholds come from ten focal animals; they have never been read on a model-driven population.
+- After a power cut, up to the last two seconds of answers (more on a slow disk) are asked again; after a crash or a
+  kill, none.
+- A replay reproduces a run only at code whose simulation is the run's (it checks hashes and says so when it is
+  not). The contexts are kept on disk for that reason: they need no replay.
+- Animals under 8 are on the rules. `activityFirst` 2 (a second request per decision) is refused.
+- The full `pnpm test` and `pnpm build` were not run (left to the integrator at the merge, by the brief).
+
+### 10.5 Machine at the end
+
+No process of this stage is running; no model process was started. The worktree is clean at the stage's last
+commit. Outputs of the smoke are under `artifacts/r10/smoke/` in the worktree (not in git).
+
+## For the integrator
+
+**1. Status line for `IMPLEMENTATION_PLAN.md`, Stage R10** (replacing "In progress (10 October 2026; branch
+`r10-night`). The night itself is launched by the integrator."):
+
+> **Status**: Script built and proved without a model (10 October 2026; branch `r10-night`, agent-reported, awaiting
+> the integrator's review; `docs/staging/r10-prereg.md` §10). `scripts/r10-night.ts` puts every animal aged 8 and over
+> on one kernel (animals under 8 on the rules), journals each answer as it arrives, writes a receipt per decision
+> point and a lossless checkpoint per simulated day, resumes, reads a stop check after five days and replays through
+> the field observer. On seed 48 a rules arm through it equals the plain rules world (hashes c0c0192822501ddf,
+> 1aa2a8d748255642); the no-model reference `argmax-gate` is asked 2,060 and 2,069 times a day (54.3 per animal on the
+> kernel) with 1,145 and 1,149 acts held by the gate; a run killed inside day 2 and resumed ends on the uninterrupted
+> run's hash (07ec9b9f26b64f60) with 1,408 journalled answers reused; the replay regenerates all 6,423 receipt lines.
+> Projection: 22 to 39 simulated days in a 10-hour night at 0.76 to 0.44 s an ask. Two read-only taps were added to
+> `src/sim/decide.ts` (null by default; goldens and the field pin unmoved). **Not run: the night, and anything with a
+> model process.** The night is registered in §8 and is launched by the integrator.
+
+**2. Command line for `AGENTS.md`** (after the `scripts/r5-pilot.ts` line):
+
+```
+pnpm exec tsx scripts/r10-night.ts run --seed 48 --arm trained-gate [--decode top] [--days 40] [--hours 10] [--out artifacts/r10/<label>] | run --resume <out> | replay <out> [--taps a.ts] | status <out> | plain --seed 48 --days 2   # stage R10 (docs/staging/r10-prereg.md): one kernel for every animal aged 8 and over in every community (animals under 8 stay on the rules), on the working base with the switches of the gate test, after 30 days of burn-in; arms are those of scripts/r5-pilot.ts (rules, argmax-gate = no model, trained-gate = r4-rules-state); every answer is journalled as it arrives, a receipt per decision point (schema r10-receipt-1: the menu with stable keys, the probabilities, the applied option, what opened the ask, acts the gate held), a lossless checkpoint per simulated day (the last two kept), --resume continues from the newest whole checkpoint and reuses journalled answers; a stop check after day 5 (starvation, reserves, nights in a nest, fallbacks) ends a hopeless run with exit code 3; replay answers from the receipts with no model, must land on every day's hash, and prints the short scorecard by value through the field observer; a model arm needs the runtime variables of HANDOFF.md, MGOGO_FT_ROOT and MGOGO_FT_ADAPTERS, refuses to start while another model process runs, and is launched from the repo root under caffeinate -i; refuses a dirty tree, reserved seeds and less than 5 GB free
+```
+
+**3. Parameter rows for `docs/simulation.md` §17:** none. The stage adds no entry to `data/params.json` and changes
+no default. If §17 or the section on diagnostics lists taps, one line: "`loopTap` (`src/sim/decide.ts`; stage R10):
+`point` at every decision point with the interrupt that raised it, `gate` with the loop gate's verdict; null unless a
+script sets them; read only."
+
+**4. Merge notes.**
+
+- New files only, except `src/sim/decide.ts` (+16 lines: the `loopTap` export, one call in `decisionPoint`, three in
+  `loopGate`). A conflict is likely there if `r7-ledger` adds its shadow tap or another stage edits `loopGate`; the
+  calls are independent of any other change and can be kept beside it.
+- `scripts/r5-pilot.ts`, `scripts/lib/kernels.ts` and `src/kernel/*` are untouched. The script imports `ARMS`,
+  `armWorld` and `GuardedScorer` from `scripts/r5-pilot.ts`; an arm added there by another stage is accepted by
+  `--arm` without a change here.
+- **The decode (for `r9-draw-hold`).** Everything goes through `scripts/lib/r10-decode.ts`: `decode(mode,
+  probabilities, request, env)` returns `{ index, note? }`. To add R9's modes: call R9's module inside `decode`, add
+  the modes to `DECODE_HERE`, and return what should be logged as `note` (it is written on the receipt and the journal
+  as `dec`, and the replay hands it back). `env.random` is the loop's draw, fixed by seed, animal and decision
+  version. If R9 puts the decode inside the kernel instead, run with `--decode top`, which changes no answer.
+- **The timing card (for `r7-card`).** A module whose default export is a function `(registry) => Tap`
+  (`scripts/lib/r10-run.ts`): `start(world)` once on the burned-in world, `before(world, i)`, `tick(world, i, lines)`
+  after each tick's answers with that tick's receipt lines, `dayEnd(world, day)`, `end(world)` whose value is written
+  to `replay/replay.json` under `taps[name]` and printed in `replay.md`. Run it with `replay <out> --taps
+  path/to/card.ts`. The same interface works on a live run through `runDay`'s `taps`.
+- **The receipt schema (for `r7-ledger`)**, `r10-receipt-1`, one JSON line per decision point of an animal on the
+  kernel, in time order, in `receipts/dNNN.jsonl`:
+  - `ask`: `k, tick, t, day, id, v, phase, n, rulesIndex, opts [[action, targetId, variant, aux]], fam [kind per
+    option], trig {why: interrupt | bout-end | finished | waiting, intr, gate}, index, p, dec?, by: kernel | rules,
+    refusal, detail, picked, act [action, targetId], sha, ctx, tokens, ms, re?`
+  - `held`: `k, tick, t, day, id, v, how: kept | arrived, act, fam`
+  - Who set an act's **kind and target**: an `ask` with `by` kernel is a fresh choice of the model (`picked`); a
+    `held` line is an intention the gate kept or the feeding it began on arrival; an `ask` with `by` rules is the
+    rules (with the reason). Who set an act's **ending**: the `trig` of the same animal's next line says what ended
+    it (the gate's word: `interrupt`, `ended`, `need-bucket`, `period`, `max-age`, `light`, `patrol`, `hunt`, or a
+    pay-test word of `src/sim/rg.ts`), so body, world and hand-set timers can be told apart there.
+  - Not in the receipts: the rules' own decisions for animals under 8, and the options cut from the menu before the
+    kernel sees it (the ledger's shadow tap). The full decision context of each ask is in `contexts/dNNN.jsonl.gz`
+    under the same key (`t`, `id`, `v`) with the hash `ctx`. If the ledger needs another field, `runDay` in
+    `scripts/lib/r10-run.ts` builds the line in one place.
+- Tests to run at the merge: `tests/r10-night.test.ts` (12 tests; 30 to 60 s on a busy machine), then the whole suite.
+
+**5. Launching the night** (the user's or the integrator's call; §8 has the full text):
+
+- Before: restart the Mac if swap in use is above 6 GB (the script holds up to 30 minutes otherwise); no other
+  model process, no browser frame checks, no training during the night; a clean checkout of the merged commit; the
+  adapter folder present (`…/r4b-retrain/artifacts/decide-ft/r4c/adapters/r4-rules-state`, sha256 e09fd6f4…1932).
+- The command of §8, from the repo root. It prints a line per simulated day and one per simulated hour inside a day.
+- In the morning: `status`, the log's tail, then `replay` (no model). If the state is `interrupted` or the process is
+  gone: `run --resume <out> --hours <what is left>`.
+- Report it as a level, under the name "rules-taught model on a rules menu", with "animals under 8 years stay on the
+  rules" beside every number. No comparison is a result until a fresh unseen seed has been run.
+
+**6. Decisions that are not mine.** Which decode the night uses (`top` as registered, or R9's once it is merged);
+whether the first night stays on training seed 48 as registered; whether a rules arm of the same days is run beside it
+for reading (seconds of machine time; not registered here as a comparison); whether the four stop thresholds of §5
+stand.
