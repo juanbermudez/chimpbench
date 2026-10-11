@@ -57,9 +57,11 @@ export function publishedWin(v: number[], h: number, b: number[], order: number[
       let prod = pm;
       for (let k = 0; k < n && prod > 0; k++) {
         if (k === i) continue;
-        const d = b[i] - b[k];
-        // no belief draw on either side (or equal ones): compared in thousandths, an earlier option must be strictly below
-        prod *= d === 0 ? cdf(k, pos[k] < pos[i] ? m - 1 : m) : cdf(k, Math.floor(m + d * MILLI));
+        // the rival's total must be below this one's (strictly, for an option earlier in the menu: ties go to the earlier one).
+        // In thousandths the rival's score must be at most x = m + 1000 (b_i − b_k), or under it; a tie is possible only
+        // when x is a whole number (always so without belief draws)
+        const x = m + (b[i] - b[k]) * MILLI, whole = Math.round(x);
+        prod *= Math.abs(x - whole) < 1e-7 ? cdf(k, pos[k] < pos[i] ? whole - 1 : whole) : cdf(k, Math.floor(x));
       }
       sum += prod;
     }
