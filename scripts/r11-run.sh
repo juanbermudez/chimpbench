@@ -1,6 +1,6 @@
 #!/bin/sh
 # Stage R11 (docs/staging/r11-prereg.md): every run of the honest retraining, one process at a time. A model step
-# (train, parity, tokens, offline, loop, arms) first checks its arguments and what it needs on file (a wrong name is
+# (train, parity, tokens, offline, baseline, loop, arms) first checks its arguments and what it needs on file (a wrong name is
 # refused at once, before anything waits), then refuses while another model process of this project is alive and
 # refuses a tree that is not clean, then writes the load and the swap in use and holds while swap in use is above 6 GB
 # (re-checked every minute, for as long as swap keeps falling and for 30 minutes at most, then it goes ahead and says
@@ -13,7 +13,9 @@
 #
 #   no model:
 #   scripts/r11-run.sh sample                 the six sampling worlds (seeds 48, 7, 21; both bases), then `assemble`
-#   scripts/r11-run.sh assemble               the training, development and held-out files of both arms, their manifest, the data tables and the offline floors
+#   scripts/r11-run.sh assemble [p5a]         the training, development and held-out files of both arms, their manifest, the data tables and the offline floors;
+#                                             with an arm named, that arm alone is rebuilt and the other's files are left as they are and checked (prereg §13.1).
+#                                             Also renders the like-for-like baseline's packets (§13.2)
 #   scripts/r11-run.sh controls <seed>        stage R7's sixteen control arms at ten animals for five days on a test seed (4111 or 4222)
 #   scripts/r11-run.sh dry                    seed 48, one day: the control arms, then the model arms' own path (worker process, guarded scorer, GLiNER
 #                                             kernel, packet 5, receipts, decode, replay) against a fake worker that holds no model; then every report on it
@@ -26,7 +28,10 @@
 #                                             (after a training cut short: delete its folder under adapters/, then run the step again)
 #   scripts/r11-run.sh train-hard <arm> <seed>  the one-hot comparison on the same rows (r11-<arm>-s<seed>-hard); offline only
 #   scripts/r11-run.sh parity <p5b|p5a>       training inputs against the serving path on 12 development packets (CPU)
-#   scripts/r11-run.sh tokens                 real token counts of the held-out packets by the tokenizer alone (CPU; no weights are loaded)
+#   scripts/r11-run.sh tokens                 real token counts of every packet a model reads, by the tokenizer alone (CPU; no weights are loaded), and the
+#                                             model time they project to (artifacts/r11/tables/r11-costs.md)
+#   scripts/r11-run.sh baseline               optional (prereg §13.2): the first adapter on this stage's held-out fresh draws, its own packet with the rules'
+#                                             wording and with neutral options; then its table and the offline table (a description beside W1)
 #   scripts/r11-run.sh offline                score the held-out packets with the untuned model and every adapter on file, then the offline table
 #   scripts/r11-run.sh loop <seed>            the registered model arms (prereg §11.1: stage R9 named no standard, so the top pick with a draw arm beside it),
 #                                             in the order of §11.2, for the adapters on file and the arms not yet on file: this stage's adapters first,
@@ -133,7 +138,9 @@ case "$1" in
       step $TSX scripts/r11-contexts.ts --seed "$seed" --base "$base" --burn-in "$burn" --days 6 --p 0.09 --out "$FT/parts" --check
     done ;;
   assemble)
-    step $TSX scripts/r11-assemble.ts --parts "$FT/parts" --out "$FT"
+    case "${2:-}" in ''|p5a|p5b) ;; *) echo "usage: $0 assemble [p5a|p5b] (the one arm to rebuild; without it, both)"; exit 2 ;; esac
+    step $TSX scripts/r11-assemble.ts --parts "$FT/parts" --out "$FT" ${2:+--arms "$2"}
+    step $TSX scripts/r11-baseline.ts render --dir "$FT"   # the like-for-like baseline's two renderings of the held-out fresh draws (no model; prereg §13.2)
     mkdir -p "$TABLES"
     step $TSX scripts/r11-data-report.ts --manifest "$FT/manifest.json" --md "$TABLES/r11-data.md" --json "$TABLES/r11-manifest.json"
     step $TSX scripts/r11-offline.ts --dir "$FT" --md "$TABLES/r11-offline.md" ${R11_WORDING:+--wording "$R11_WORDING"} ;;
@@ -150,12 +157,16 @@ case "$1" in
     reports "$DRY" 48 r11-dry dry
     # the offline report's own plumbing, on the fake worker's odds (never a result): only when the held-out packets are on file
     if [ -f "$FT/eval/all.jsonl" ]; then
-      step $TSX scripts/r11-offline.ts --dir "$FT" --fake "$DRY/offline" --md "$TABLES/r11-dry-offline.md"
+      # the like-for-like baseline's plumbing (prereg §13.2): its two renderings, a score file by the fake worker's rule, its table; all in the dry folder
+      step $TSX scripts/r11-baseline.ts render --dir "$FT" --out "$DRY/baseline"
+      step $TSX scripts/r11-baseline.ts report --dir "$FT" --scores "$DRY/baseline" --fake --md "$TABLES/r11-dry-baseline.md"
+      step $TSX scripts/r11-offline.ts --dir "$FT" --fake "$DRY/offline" --baseline "$DRY/baseline" --md "$TABLES/r11-dry-offline.md"
     else echo "R11 dry: no held-out packets under $FT yet; the offline report's dry run is skipped ('$0 sample' first)"; fi ;;
   check)
     echo "data and adapters: $FT"; ls "$FT/manifest.json" "$FT"/p5b/contexts/train.jsonl "$FT"/p5a/contexts/train.jsonl "$FT"/eval/all.jsonl 2>&1
     for a in $NEW; do if have "$FT" "$a"; then shasum -a 256 "$FT/adapters/$a/adapter_model.safetensors"; elif cut_short "$FT" "$a"; then echo "CUT SHORT (weights, no manifest.json; it is not used): $a - delete $FT/adapters/$a and train it again"; else echo "not trained yet: $a"; fi; done
     echo "the first adapter: $OLD_FT"; if have "$OLD_FT" r4-rules-state; then shasum -a 256 "$OLD_FT/adapters/r4-rules-state/adapter_model.safetensors"; else echo "MISSING: r4-rules-state under $OLD_FT/adapters"; fi
+    echo "like-for-like baseline (optional, prereg §13.2): packets $([ -f "$FT/eval/baseline.jsonl" ] && echo rendered || echo 'not rendered'); $([ -s "$FT/eval/baseline.r4-rules-state.jsonl" ] && echo 'scored, on file' || echo 'not scored')"
     echo "control arms on file: $(ls "$LOOP"/F/s4111/rules-1.json "$LOOP"/F/s4222/rules-1.json 2>/dev/null | wc -l | tr -d ' ') of 2 seeds; decode: the top pick, a draw arm beside it (stage R9 named no standard; prereg §11.1)"
     echo "model runtime: $MGOGO_DECIDE_PYTHON ($([ -x "$MGOGO_DECIDE_PYTHON" ] && echo found || echo MISSING))"
     echo "machine: $(date '+%d %b %H:%M') | $(uptime | sed 's/.*load averages: /load /') | swap $(swap_mb) MB in use"
@@ -184,6 +195,25 @@ case "$1" in
     before_model "real token counts (the tokenizer alone)"
     export MGOGO_FT_ROOT="$FT"
     step "$PY" r8_tokens.py --in "$AFT/eval/all.jsonl" --packets p5a,p5b --out "$AFT/eval/tokens.jsonl"
+    # every packet a model reads (both arms' training, development and held-out packets; the baseline's two renderings when on file)
+    step "$PY" r11_tokens.py --root "$AFT" --out "$AFT/eval/token-counts.json" --rows "$AFT/eval/token-rows.jsonl"
+    mkdir -p "$TABLES"
+    step $TSX scripts/r11-costs.ts --counts "$FT/eval/token-counts.json" --md "$TABLES/r11-costs.md"
+    step $TSX scripts/r11-offline.ts --dir "$FT" --md "$TABLES/r11-offline.md" ${R11_WORDING:+--wording "$R11_WORDING"} ;;
+  baseline)
+    # optional (prereg §13.2): the first adapter on this stage's held-out fresh draws, on its own packet with the rules' wording and with neutral options
+    assembled
+    have "$OLD_FT" r4-rules-state || { echo "R11 baseline: r4-rules-state is not under $OLD_FT/adapters with its manifest (R11_OLD_FT names the folder that holds adapters/)"; exit 2; }
+    step $TSX scripts/r11-baseline.ts render --dir "$FT"   # no model: the two renderings, checked draw by draw against the P5b packets; refused if a score file on hand was made from other packets
+    if [ -s "$FT/eval/baseline.r4-rules-state.jsonl" ]; then echo "R11 baseline: $FT/eval/baseline.r4-rules-state.jsonl is on file; not scored again"
+    else
+      before_model "the like-for-like baseline: r4-rules-state on the held-out fresh draws, its own packet with the rules' wording and with neutral options"
+      export MGOGO_FT_ROOT="$OLD_FT"
+      logged "baseline-r4-rules-state" $KEEP "$PY" em_score.py --in "$AFT/eval/baseline.jsonl" --packets oldState,oldNeutral --provider r4-rules-state --out "$AFT/eval/baseline.r4-rules-state.jsonl.part"
+      mv "$FT/eval/baseline.r4-rules-state.jsonl.part" "$FT/eval/baseline.r4-rules-state.jsonl"
+    fi
+    mkdir -p "$TABLES"
+    step $TSX scripts/r11-baseline.ts report --dir "$FT" --md "$TABLES/r11-baseline.md" ${R11_WORDING:+--wording "$R11_WORDING"}
     step $TSX scripts/r11-offline.ts --dir "$FT" --md "$TABLES/r11-offline.md" ${R11_WORDING:+--wording "$R11_WORDING"} ;;
   offline)
     assembled
@@ -237,16 +267,18 @@ case "$1" in
   report)
     mkdir -p "$TABLES"
     [ -f "$FT/manifest.json" ] && { step $TSX scripts/r11-data-report.ts --manifest "$FT/manifest.json" --md "$TABLES/r11-data.md" --json "$TABLES/r11-manifest.json"; step $TSX scripts/r11-offline.ts --dir "$FT" --md "$TABLES/r11-offline.md" ${R11_WORDING:+--wording "$R11_WORDING"}; }
+    [ -f "$FT/eval/token-counts.json" ] && step $TSX scripts/r11-costs.ts --counts "$FT/eval/token-counts.json" --md "$TABLES/r11-costs.md"
+    [ -s "$FT/eval/baseline.r4-rules-state.jsonl" ] && step $TSX scripts/r11-baseline.ts report --dir "$FT" --md "$TABLES/r11-baseline.md" ${R11_WORDING:+--wording "$R11_WORDING"}
     S="${R11_SEEDS:-}"   # R11_SEEDS=4111: one seed alone (the engine arms read are those on file for every seed named)
     [ -n "$S" ] || for s in 4111 4222; do [ -f "$LOOP/F/s$s/rules-8.json" ] && S="$S${S:+,}$s"; done
     if [ -n "$S" ]; then tai "$LOOP"; reports "$LOOP" "$S" r11; else echo "R11 report: no control arms on file under $LOOP yet"; fi ;;
   publish)
     n=0
-    for f in r11-data.md r11-manifest.json r11-offline.md r11-card.md r11-numbers.md r11-dry-numbers.md; do   # (the dry run's card and offline tables stay under artifacts: a fake worker's numbers)
+    for f in r11-data.md r11-manifest.json r11-costs.md r11-offline.md r11-baseline.md r11-card.md r11-numbers.md r11-dry-numbers.md; do   # (the dry run's card and offline tables stay under artifacts: a fake worker's numbers)
       [ -f "$TABLES/$f" ] || continue
       if cmp -s "$TABLES/$f" "$DOCS/$f"; then echo "R11 publish: $DOCS/$f is already the generated table"; else cp "$TABLES/$f" "$DOCS/$f" && echo "R11 publish: $TABLES/$f -> $DOCS/$f"; n=$((n + 1)); fi
     done
     echo "R11 publish: $n table(s) copied from $TABLES; commit them before another model step (a model step refuses a tree that is not clean)" ;;
-  *) echo "usage: $0 sample | assemble | controls <seed> | dry | replay <seed> <a,b,…> | report | publish | check | train <p5b|p5a> <7|11> | train-hard <arm> <7|11> | parity <arm> | tokens | offline | loop <seed> | arms <seed> <a,b,…>"; exit 2 ;;
+  *) echo "usage: $0 sample | assemble [p5a] | controls <seed> | dry | replay <seed> <a,b,…> | report | publish | check | train <p5b|p5a> <7|11> | train-hard <arm> <7|11> | parity <arm> | tokens | offline | baseline | loop <seed> | arms <seed> <a,b,…>"; exit 2 ;;
 esac
 echo "R11 done ($*): $(date '+%H:%M')"
