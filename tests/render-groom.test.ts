@@ -9,7 +9,7 @@ import { CLIPS, GROOMEE, GROOM_LAP, Pw, groomeePosture, type PoseCtx } from '../
 // with the arms down, and the receiver's posture obeys the two exclusions.
 const ctx = (over: Partial<PoseCtx> = {}): PoseCtx => ({
   t: 0, time: 0, phase: 0, speedU: 0, freq: 0, seed: 0.37, stage: 'adult', male: true, age: 24, injury: 0, mood: 'calm', energy: 1,
-  vocal: null, hasTarget: false, tx: 0, ty: 0, tz: 0, tdist: 99, tsize: 1, role: 0, inTree: false, wet: 0, stride: 0, lp: 0.6, lapse: 0,
+  vocal: null, hasTarget: false, tx: 0, ty: 0, tz: 0, tdist: 99, tsize: 1, role: 0, inTree: false, wet: 0, stride: 0, lp: 0.6, lapse: 0, settle: 0,
   pb: new Float32Array(15), hasBones: false, pairT: 0, side: 1, ...over,
 });
 const pose = createPose(), w = new Pw();

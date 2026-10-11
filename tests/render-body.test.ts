@@ -155,7 +155,7 @@ test('swelling faces backward at hip height and the tail tuft sits above it, in 
   }
 });
 
-const ctx = (over: Partial<PoseCtx>): PoseCtx => ({ t: 0, time: 0, phase: 0, speedU: 0, freq: 0, seed: 0.3, stage: 'adult', male: true, age: 24, injury: 0, mood: 'calm', energy: 1, vocal: null, hasTarget: false, tx: 0, ty: 0, tz: 0, tdist: 99, tsize: 1, role: 0, inTree: false, wet: 0, stride: 0, lp: 0.6, lapse: 0, pb: new Float32Array(15), hasBones: false, pairT: 0, side: 1, ...over });
+const ctx = (over: Partial<PoseCtx>): PoseCtx => ({ t: 0, time: 0, phase: 0, speedU: 0, freq: 0, seed: 0.3, stage: 'adult', male: true, age: 24, injury: 0, mood: 'calm', energy: 1, vocal: null, hasTarget: false, tx: 0, ty: 0, tz: 0, tdist: 99, tsize: 1, role: 0, inTree: false, wet: 0, stride: 0, lp: 0.6, lapse: 0, settle: 0, pb: new Float32Array(15), hasBones: false, pairT: 0, side: 1, ...over });
 
 test('knuckle-walking hand: the middle finger segment lies level and the wrist keeps the height it had', () => {
   const m = createMorph(), fk = createFK(), pose = createPose(), w = new Pw().bind(pose), T = new Float32Array(3);
