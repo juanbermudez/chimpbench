@@ -56,6 +56,14 @@ if (process.argv[1]?.endsWith('r11-data-report.ts')) {
   p();
   calib(c.calibrationOfTheFixedMenuColumn);
   p();
+  if (c.realisedJitterOfMenuOptions) {
+    p('**Why the menu cannot be held fixed.** The candidate jitter each option on a menu was scored with, by family of option, over every redrawn fresh draw. The jitter is uniform on ±0.12 for a candidate before the menu is cut; an option that reached the menu as the best of many (a trip to one of many trees) carries the jitter that put it there:');
+    p();
+    p('| Options on the menu | Count | Mean jitter | Share with a jitter above 0 |');
+    p('| --- | --- | --- | --- |');
+    for (const [k, g] of Object.entries(c.realisedJitterOfMenuOptions as Record<string, { options: number; mean: number; shareAboveZero: number }>)) p(`| ${k} | ${n(g.options)} | ${f(g.mean)} | ${f(g.shareAboveZero)} |`);
+    p();
+  }
   p('## 3. The files');
   p();
   p(`Per training world the first ${m.perWorld.train} labelled fresh draws of train animals and the first ${m.perWorld.dev} of dev animals, in a fixed hash order; per held-out world the first ${m.perWorld.testFresh} labelled fresh draws and the first ${m.perWorld.testOther} kept or arrived records. Both arms hold the same records in the same order; only the packet differs.`);

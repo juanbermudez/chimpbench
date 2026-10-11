@@ -131,6 +131,8 @@ if (process.argv[1]?.endsWith('r11-assemble.ts')) {
   const chosen: Record<'train' | 'dev' | 'test', R11Rec[]> = { train: [], dev: [], test: [] }, worlds: Record<string, unknown>[] = [], taken: Record<string, Record<string, number>> = {};
   const heldOutPool: R11Rec[] = [];
   let fresh = 0, labelled = 0, rngOk = 0, pickOk = 0, listOk = 0, rare = 0;
+  /** The realised candidate jitter of the options that reached the menu, by option family: why the menu cannot be held fixed (prereg §10.1, C2). */
+  const jitter: Record<string, { n: number; sum: number; above: number }> = {};
   const everyLabelled: R11Row[] = [], memo = new Map<string, R11Row>();
   /** A record's row, computed once (the comparison column costs a few thousand redraws of its own). */
   const row = (r: R11Rec): R11Row => { let x = memo.get(r.id); if (!x) { x = rowOf(r); memo.set(r.id, x); } return x; };
@@ -143,6 +145,7 @@ if (process.argv[1]?.endsWith('r11-assemble.ts')) {
       fresh++;
       if (!r.lab) { noLabel[r.noLabel ?? 'unknown'] = (noLabel[r.noLabel ?? 'unknown'] ?? 0) + 1; continue; }
       labelled++; if (r.lab.rngOk) rngOk++; if (r.lab.pickOk) pickOk++; if (r.lab.listOk) listOk++; if (r.lab.same < SAME_MIN) rare++;
+      r.options.forEach((o, i) => { const g = (jitter[o.family] ??= { n: 0, sum: 0, above: 0 }), j = r.lab!.jit[i]; g.n++; g.sum += j; if (j > 0) g.above++; });
     }
     const usable = (r: R11Rec) => r.label === 'fresh' && !!r.lab && r.lab.rngOk && r.lab.pickOk && r.lab.listOk && r.lab.same >= SAME_MIN;
     everyLabelled.push(...rows.filter(usable).map(row));
@@ -168,7 +171,8 @@ if (process.argv[1]?.endsWith('r11-assemble.ts')) {
     labelChecks: { freshDraws: fresh, redrawn: labelled, notRedrawn: noLabel, replayEndsOnTheWorldsRandomState: rngOk, realisedDrawsGiveThePick: pickOk, rebuiltAtTheTrueVersion: listOk,
       markM1: rngOk === labelled && pickOk === labelled && listOk === labelled ? 'met' : 'FAILED',
       menuTooRareForALabel: rare, labelled: everyLabelled.length, calibration: calibration(everyLabelled), calibrationOfTheFixedMenuColumn: calibration(everyLabelled, 'softFixed'),
-      markM2: calibration(everyLabelled).every(g => g.within3) ? 'met' : 'FAILED' },
+      markM2: calibration(everyLabelled).every(g => g.within3) ? 'met' : 'FAILED',
+      realisedJitterOfMenuOptions: Object.fromEntries(Object.entries(jitter).sort((a, b) => b[1].n - a[1].n).map(([k, g]) => [k, { options: g.n, mean: r4(g.sum / g.n), shareAboveZero: r4(g.above / g.n) }])) },
     splits: {} as Record<string, unknown> };
   if ((manifest.labelChecks as { markM1: string }).markM1 !== 'met') throw new Error(`mark M1 failed: of ${labelled} redrawn fresh draws the replay ends on the world's random state at ${rngOk}, the realised draws give the pick at ${pickOk} and the list built again is the rules' at ${listOk}; training files are not written`);
   if ((manifest.labelChecks as { markM2: string }).markM2 !== 'met' && !process.argv.includes('--allow-uncalibrated')) throw new Error(`mark M2 failed: the label is not calibrated against the rules' picks: ${JSON.stringify(calibration(everyLabelled))}; training files are not written`);
