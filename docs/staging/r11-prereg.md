@@ -976,7 +976,7 @@ Nothing here is a result; the numbers of the smoke adapter are on 34 development
   chooser would score 1.68).
 - **Memory is under stage R4's.** Peak MPS driver memory 5.49 GiB and peak footprint 6.14 GiB (stage R4: 6.09 and
   6.82), with the eight longest training packets in the run; 0 out-of-memory retries. Swap in use rose from
-  4,509 MB to 6,389 MB during the training and stayed there after it ended.
+  4,509 MB to 6,389 MB during the training, was 6,275 MB seven minutes after it ended and 2,854 MB at 14:57.
 - **0.607 s per example** over the whole smoke run, 0.6 after the first ten steps, at a mean of 354.6 real tokens
   (the training file's mean is 346.7). A development pass costs 0.765 s a row; the load, the untuned
   development pass on 34 rows and the manifest took 69 s.
@@ -1064,7 +1064,7 @@ a training; offline scoring may take up to 50 minutes longer on night one.
    lines. An offline step: its first progress line may take five minutes (the load), the later ones about 30 s each.
 4. Both nights fit in one stretch of 11 to 15 hours if they are chained; the second night's runs are fixed whether
    or not night one is read first (§11.2).
-5. After the first training swap is likely to stand above 6 GB (it rose by 1.9 GB in the smoke run and stayed). Each
+5. After the first training swap is likely to stand above 6 GB (it rose by 1.9 GB in the smoke run and was still there seven minutes later). Each
    later model step then holds for five minutes and goes ahead; that is expected and says so on the step's first line.
 
 **Still not verified.** The speed of a P5a training (projected from P5b). A whole epoch of soft-label training: the
