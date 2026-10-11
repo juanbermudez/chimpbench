@@ -110,6 +110,7 @@ const ALLOW: Record<string, Record<string, string>> = {
   'observe.ts': { observe: 'the existing caretaker perceivability and dependency flag' },
   'observe-state.ts': { optionValue: 'M1 observeState: a dependent\'s own foraging is not valued as a rate, as computeCandidates values it (an observation; no rank, mating or fertility term)' },
   'rg.ts': { perceivedCandidates: 'C13: the same caretaker perceivability as observe() (who can be on the menu; no rank, mating or fertility term)' },
+  'own.ts': { aboutOf: 'R8 observeV5: what an option is in the animal\'s own terms for packet 5 (a dependent\'s follow of the mother that carries it is told as a ride; an observation read only by observe(); no rank, mating or fertility term)' },
 };
 
 /** Forbidden-pattern hits outside the allowlist: file, enclosing top-level function, line and pattern. */
