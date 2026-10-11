@@ -167,6 +167,11 @@ async function run(a: Args): Promise<number> {
     if (e.day > 0 && reg.days[e.day - 1].hash !== worldHash(e.world)) throw new Refused(`the checkpoint of day ${e.day} does not hash to the day's recorded hash`);
     for (let d = 1; d <= Math.min(e.day, STOP.day); d++) rows15.push(...readLines<Row>(resolve(out, 'rows', `${dayName(d)}.jsonl`)));
     if (reg.stopCheck && e.day < STOP.day) reg.stopCheck = null;
+    // a run that died between the checkpoint of day 5 and the registry never read its stop check: it is read now
+    const late = e.day >= STOP.day && !reg.stopCheck;
+    if (late) reg.stopCheck = stopCheck(rows15, reg.days);
+    if (late && reg.stopCheck!.stop && reg.stopCheckOn && e.day === STOP.day) { reg.state = 'stopped'; reg.ended = `the stop check after day ${STOP.day}: ${reg.stopCheck!.reasons.join('; ')}`; writeRegistry(out, reg); log(reg.ended); return 3; }
+    if (!late && reg.stopCheck?.stop && e.day === STOP.day) log(`the stop check after day ${STOP.day} said STOP (${reg.stopCheck.reasons.join('; ')}); this resume goes on past it on purpose`);
     reg.state = 'running'; reg.ended = '';
     reg.segments.push({ started: now(), fromDay: e.day, pid: process.pid, journalAnswers: journal.size, setAside: aside.moved });
     event(`resumed at the end of day ${e.day}${ck ? ` from ${relative(out, ck.file)}` : ' (the start world)'}; ${aside.moved.length} files of the day in progress set aside; ${journal.size} journalled answers will be reused`);
@@ -190,6 +195,14 @@ async function run(a: Args): Promise<number> {
   const onSignal = (s: string) => { signal = s; };
   process.on('SIGINT', () => onSignal('SIGINT')); process.on('SIGTERM', () => onSignal('SIGTERM'));
   const closeDown = () => { guard?.stop(); awake?.kill(); };
+  // a worker process that dies leaves a broken pipe behind: the calls that follow fail and the worker is replaced
+  // (scripts/lib/r10-run.ts REPLACE_WORKER_AFTER); anything else that is not caught ends the run with the registry saying so
+  process.on('uncaughtException', (error: NodeJS.ErrnoException) => {
+    if (error.code === 'EPIPE' || error.code === 'ERR_STREAM_DESTROYED' || error.code === 'ERR_STREAM_WRITE_AFTER_END') { log(`worker pipe error (${error.code}): the worker will be replaced`); return; }
+    console.error(error);
+    try { reg.state = 'interrupted'; reg.ended = `failed: ${error.message}; the last checkpoint stands`; writeRegistry(out, reg); } catch { /* the registry could not be written */ }
+    closeDown(); process.exit(1);
+  });
   try {
     if ((model && !a.has('no-caffeinate')) || a.has('caffeinate')) { awake = spawn('caffeinate', ['-i', '-w', String(process.pid)], { stdio: 'ignore' }); awake.on('error', () => { awake = null; }); awake.unref(); }
     if (model) {
@@ -226,6 +239,7 @@ async function run(a: Args): Promise<number> {
       const ck = writeCkpt(resolve(out, 'ckpt', `${dayName(e.day)}.json.gz`), e);
       pruneCkpts(out, 2);
       reg.days.push(res.summary);
+      journal.clear(); // the journal of an interrupted segment covers the day that was in progress, which is now done
       if (e.day <= STOP.day) rows15.push(...res.rows);
       log(`${progressLine(reg, res.summary, startedMs, reg.hours)}; checkpoint ${(ck.bytes / 1e6).toFixed(1)} MB, receipts ${(files.bytes.receipts / 1e6).toFixed(2)} MB, contexts ${(files.bytes.contexts / 1e6).toFixed(2)} MB before gzip, ${files.syncs} fsyncs in ${files.syncSeconds.toFixed(1)} s`);
       if (e.day === STOP.day) {
@@ -247,6 +261,9 @@ async function run(a: Args): Promise<number> {
     event(`done: ${e.day} days, end hash ${reg.days[reg.days.length - 1]?.hash ?? reg.startHash}; next: scripts/r10-night.ts replay ${rel(out)}`);
     writeRegistry(out, reg);
     return 0;
+  } catch (error) {
+    if (error instanceof Refused && reg.state === 'running') { reg.state = 'interrupted'; reg.ended = `refused before the first day: ${error.message}`; writeRegistry(out, reg); }
+    throw error;
   } finally { closeDown(); }
 }
 

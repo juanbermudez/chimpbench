@@ -48,6 +48,8 @@ export const NIGHT_IN_NEST = 0.9;
 export const STOP = { day: 5, starved: 2, reservePctDay: -1.0, nights: 0.80, fallbacks: 0.10, timeouts: 0.02 } as const;
 /** Kernel errors in a row that end a run at once: a worker that died answers nothing, and a night of rules fallbacks is not a model night (design assumption). */
 export const MAX_ERRORS_IN_ROW = 50;
+/** Kernel errors in a row (other than a timeout or a packet over the token budget) after which the worker is replaced: a worker process that died is started again instead of failing every call (design assumption). */
+export const REPLACE_WORKER_AFTER = 5;
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Lines: the receipt (schema r10-receipt-1), the journal
@@ -318,6 +320,8 @@ export async function runDay(e: Engine, kernel: Kernel | null, o: DayOpts = {}):
         if (r.by === 'kernel') { byKernel++; if (req.rulesIndex >= 0) { withRulesPick++; if (r.index === req.rulesIndex) agree++; } }
         else inc(fallbacks, r.refusal === 'kernel-error' ? `kernel-error: ${r.detail}` : r.refusal === 'invalid-context' ? `invalid-context: ${r.detail}${r.detail === 'body' ? ` (${bodyFieldError(req.context.body).replace(/=.*/, '')})` : ''}` : r.refusal);
         errorsInRow = r.refusal === 'kernel-error' ? errorsInRow + 1 : reached ? 0 : errorsInRow;
+        // a worker that fails call after call is stopped, so the guard starts a new one for the next call (a timeout already replaces it)
+        if (r.refusal === 'kernel-error' && o.guard && errorsInRow % REPLACE_WORKER_AFTER === 0 && !/^timeout$|^packet over the token budget/.test(r.detail)) o.guard.stop();
         const ctxText = JSON.stringify(req.context), ctx = sha16(ctxText), t = +req.context.time.toFixed(6);
         lines.push({ k: 'ask', tick: w.tick, t, day, id: r.chimpId, v: req.context.version, phase: req.context.environment.phase, n: req.options.length, rulesIndex: req.rulesIndex,
           opts: req.options.map(opt => { const m = candidateMeta.get(opt); return [opt.action, opt.targetId, m?.v ?? V.NONE, m?.aux ?? -1]; }), fam,
@@ -444,13 +448,14 @@ export function readLines<T>(file: string): T[] {
  * receipts (each tick's lines), contexts (with the receipts; gzipped when the day closes). Every line is handed to the
  * operating system at once with a write call, so nothing is held in this process and a process that dies loses
  * nothing. The files are fsynced when SYNC_EVERY_MS have passed since the last time and when the day closes, so a
- * power cut can lose at most the lines of the last two seconds (they are asked again on the resume). Why not an fsync
- * per answer: the field smoke of stage R10 measured 8 ms per fsync on the project's volume with the machine quiet and
- * about 115 ms with other jobs writing to it (65 s and 270 s a simulated day), which a night cannot afford.
+ * power cut can lose at most the lines of the last two seconds (they are asked again on the resume). On a slow disk
+ * the wait grows to SYNC_BACKOFF times what the last fsync took, so forcing files to disk stays under about 5% of the
+ * run's time whatever else is writing. Why not an fsync per answer: the field smoke of stage R10 measured 8 ms per
+ * fsync on the project's volume at load 7 and about 115 ms at load 10 (65 s and 270 s a simulated day).
  */
-export const SYNC_EVERY_MS = 2000;
+export const SYNC_EVERY_MS = 2000, SYNC_BACKOFF = 20;
 export class DayFiles implements Sink {
-  private jf: number; private rf: number; private cf: number | null; private synced = Date.now();
+  private jf: number; private rf: number; private cf: number | null; private nextSync = Date.now() + SYNC_EVERY_MS;
   bytes = { journal: 0, receipts: 0, contexts: 0 };
   /** fsync calls made and the seconds they took (the progress line prints them). */ syncs = 0; syncSeconds = 0;
   readonly files: { journal: string; receipts: string; contexts: string; rows: string };
@@ -462,10 +467,11 @@ export class DayFiles implements Sink {
     this.jf = openSync(this.files.journal, 'a'); this.rf = openSync(this.files.receipts, 'a'); this.cf = contexts ? openSync(this.files.contexts, 'a') : null;
   }
   private flush(force = false): void {
-    if (!force && (!this.sync || Date.now() - this.synced < SYNC_EVERY_MS)) return;
+    if (!force && (!this.sync || Date.now() < this.nextSync)) return;
     const s = performance.now();
     fsyncSync(this.jf); fsyncSync(this.rf); if (this.cf !== null) fsyncSync(this.cf);
-    this.syncs++; this.syncSeconds += (performance.now() - s) / 1000; this.synced = Date.now();
+    const took = performance.now() - s;
+    this.syncs++; this.syncSeconds += took / 1000; this.nextSync = Date.now() + Math.max(SYNC_EVERY_MS, SYNC_BACKOFF * took);
   }
   arrival(a: Arrival): void { this.bytes.journal += writeSync(this.jf, JSON.stringify(a) + '\n'); this.flush(); }
   lines(lines: Line[]): void { this.bytes.receipts += writeSync(this.rf, lines.map(l => JSON.stringify(l) + '\n').join('')); this.flush(); }

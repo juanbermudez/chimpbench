@@ -4,12 +4,14 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test, { after } from 'node:test';
 import { RESERVED_SEEDS } from '../scripts/e-run';
+import { glinerKernel } from '../scripts/lib/kernels';
+import { buildStateOnlyQuestion } from '../scripts/lib/packet-state';
 import { decode, decodedKernel, decodeRefusal } from '../scripts/lib/r10-decode';
 import { BESIDE, replayReport, replayRun, SHORT_ROWS, type FieldReadout } from '../scripts/lib/r10-read';
 import { comparable, DAY, DayFiles, dayName, diskRefusal, isDriven, keyOf, listCkpts, meterStart, MIN_AGE, modelProcesses, newestCkpt, pruneCkpts, readCkpt, readLines, receiptKernel, RECEIPT_SCHEMA, runDay, RunStopped, setAside, STOP, stopCheck,
   writeCkpt, writeRegistry, type Arrival, type AskLine, type DaySummary, type Engine, type HeldLine, type Line, type Registry, type Row, type Tap } from '../scripts/lib/r10-run';
 import { resultName } from '../scripts/r10-night';
-import { ARMS, armWorld } from '../scripts/r5-pilot';
+import { ARMS, armWorld, GuardedScorer } from '../scripts/r5-pilot';
 import { nullKernel, rulesKernel } from '../src/kernel/kernels';
 import { answerWaiting } from '../src/kernel/loop';
 import type { Kernel } from '../src/kernel/types';
@@ -224,6 +226,13 @@ test('the null kernel resumes exactly too; a signal ends the day cleanly; kernel
   const asks = c.lines.filter((l): l is AskLine => l.k === 'ask');
   assert.ok(asks.length >= 30 && asks.every(l => l.by === 'rules' && (l.refusal === 'kernel-error' ? l.detail === 'worker gone' && l.index === null : true)));
   assert.ok(c.arrivals.every(a => a.err === 'worker gone' && a.index === null));
+  // a worker that dies is replaced: the guard is told to stop it after a few failed calls and starts a new one for the next
+  let made = 0, stopped = 0;
+  const guard = new GuardedScorer(async () => { const mine = ++made; return { stop() { stopped++; }, score: async batch => { if (mine === 1) throw new Error('worker gone'); const n = Object.keys((batch[0].packet as { questions: { action: { criteria: Record<string, string> } } }).questions.action.criteria).length; return [Array.from({ length: n }, (_, i) => +(i === 0))]; } }; }, 5000);
+  const healed = collect(), day = await runDay(start('null-gate'), glinerKernel(guard, 'base', { packet: r => buildStateOnlyQuestion(r.context) }), { ticks: 300, sink: healed.sink, guard });
+  const got = healed.lines.filter((l): l is AskLine => l.k === 'ask');
+  assert.deepEqual([made, stopped, day.summary.workerStarts], [2, 1, 2], 'one dead worker, one replacement');
+  assert.ok(got.some(l => l.refusal === 'kernel-error' && l.detail === 'worker gone') && got.filter(l => l.by === 'kernel').length > 50 && got[got.length - 1].by === 'kernel', 'after the replacement the kernel answers again');
 });
 
 test('the replay of a run folder reproduces every day, reads the run through the observer and steps a tap; a damaged receipt file is caught', async () => {

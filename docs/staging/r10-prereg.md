@@ -295,4 +295,13 @@ cover `src/sim/decide.ts`. 4. The field smoke (§7, 5 to 8). 5. Results in §10;
   dies or is killed loses nothing: proof 7), and the journal, receipts and contexts are fsynced when two seconds have
   passed since the last time and when the day closes. A power cut or a kernel panic can therefore lose at most the
   answers of the last two seconds, which a resume asks again. Each day's line prints the fsync calls and their
-  seconds.
+  seconds. One more step after the third timed run (load 10 to 13: a round of three fsyncs took 0.7 s): the wait
+  grows to twenty times what the last fsync took, so forcing files to disk stays under about 5% of a run's time
+  whatever else is writing to the volume; the window at risk grows with it.
+- **A7 (20:26, before the runs reported in §10.3). A worker that dies is replaced.** The worker of the decide-ft
+  harnesses (`scripts/ft-society.ts` `Worker`) is replaced by the guard only after a timeout. If its process dies, every
+  later call fails at once and the broken pipe is an uncaught error that would end the run. Now: after five kernel
+  errors in a row that are neither timeouts nor packets over the token budget the worker is stopped, so the guard
+  starts a new one for the next call (still one worker process at a time); a broken pipe is logged and survived; any
+  other uncaught error ends the run with the registry saying so. The limit of 50 errors in a row still ends the run.
+  A resume that finds the checkpoint of day 5 but no stop check (the run died between the two) reads the check then.
