@@ -41,7 +41,8 @@ Three smaller faults in the same code, also in the review:
 - Speed keys are positions in the preset list, so the keys moved: 1 Real time, **2 Watch 4×**, 3 1 min/s, 4 10 min/s, 5 1 h/s, 6 6 h/s, 7 1 day/s, 8 Max.
 - `scripts/verify-browser.mjs` pressed 6 for 1 day/s and 2 to return to 1 min/s: now 7 and 3. Run against this worktree's model-free server it passes every step through "renderer fps", including both speed steps, and then stops at "store ready": the SQLite file is not served by a worktree server (the same error is in the console before any change), so the save and reload steps could not run here.
 - `scripts/audio-probe.mjs` pressed 2 before its busy close-view recording, which has meant 1 min/s since Real time became key 1: now 3, so it keeps running at 1 min/s. Not run (it needs the audio files). Its comment says "10 min/s", which was already out of date.
-- The time panel is 50 px wider (420 to 470 px) for the eighth button, and reads "1 tick / 3.8 s" at this speed.
+- `scripts/perf-probe.mjs` also picks speeds by key, from its own list, which had no Real time entry: since Real time became key 1 its scenarios named `1x` had run at Real time and those named `1d` at 6 h/s, and this stage's new key moved them one further (`1d` ran at 1 h/s). Found and fixed in the review (section 9): the list follows `SPEED_PRESETS` again and the probe stops when the app reports another speed than the one asked for.
+- The time panel is 92 px wider (420 to 512 px) for the eighth button, takes two rows of four buttons below 480 px, and reads "1 tick / 3.8 s" at this speed. (As first built it was 470 px wide: the selected "Watch 4×" label was 2 px wider than its button, and on a phone the first two labels ran into their neighbours; fixed in the review.)
 - Below one tick a second (Real time and the watching speed) the measured rate swings by half between ticks although every tick lands on time; the readouts now show the rate being kept ("4 s/s") instead of "3 s/s".
 
 **Saying "time-lapse" on screen** (`src/ui/timebar.ts`, `src/ui/hud.ts`, `src/ui/contracts.ts`, `src/main.ts`). Above the rate at which this map's walk can be drawn with feet that grip (`pace.ts` `lapseRate`: the walk's cadence cap × its longest stride ÷ the walking speed; about 9.4 s/s on the field map, 82 on the 160 m map) the time panel's state line reads "Time-lapse · bodies outrun their steps; every tick still runs", and the second line of the clock control in the menu bar reads "time-lapse" instead of repeating the chosen rate (a capped clock keeps its number, and so does one that measures under half the chosen rate; the time panel shows the measured rate).
@@ -315,7 +316,9 @@ Fourteen pictures in all. Data: one JSON per capture (`field-*.json`, `small-*.j
 8. **The menu bar's second line** reads "time-lapse" instead of the achieved rate at time-lapse speeds, unless the clock is capped or measures under half the chosen rate. The time panel still shows the measured rate. If the integrator prefers the number in the bar, it is one expression in `src/ui/hud.ts`.
 9. **Not run, by the brief:** the whole test suite, `pnpm build`, `gpu-probe`, `perf-probe`. Not possible here: the save and reload steps of `verify-browser.mjs` (no SQLite file on a worktree server) and `audio-probe.mjs` (no audio files).
 10. **Trip starts in the app:** only three were caught in the app run after the change (0.7, 0.8 and 1.0 s to the walk clip; table 4.5). A fourth, Dalubi, began 11 frames before the recording ended, so his "never" is not a result. The recorder registers an animal only when it first sees it moving at under 0.1 m/s; I did not check why the others were missed. The harness run has all eight starts, before and after.
-11. **Left behind outside the repository:** a 5 MB dependency cache, `node_modules/.vite-probe-5196`, in the main checkout's untracked `node_modules`, written by `scripts/vite.probe.config.mjs` when the base commit was served for the "before" motion probe.
+11. **A held clock freezes walkers mid-stride on the field map** (found in the review, not changed). The moving test reads the path at the reference rate, and the path's velocity does not fall to zero when the clock is paused or waits for the model, so a walker keeps the walk clip and its raised hand or foot for as long as the clock is held (7 of 7 adults mid-trip after 3 s paused, table R4). Before, and still on the 160 m map, it stood up after 0.8 s. As a freeze-frame this reads correctly; one side effect: a walker held in the stream keeps ringing the water.
+12. **Slow circling play is a creeping walk at Real time** (found in the review, not changed). Players that circle at about 0.1 m/s were drawn on the play clip while sliding; they now count as moving and take the walk clip at a third of a cycle a second (table R2). The same reading as the 160 m map at 1 min/s, but the play clip is lost while they circle.
+13. **Left behind outside the repository:** a 5 MB dependency cache, `node_modules/.vite-probe-5196`, in the main checkout's untracked `node_modules`, written by `scripts/vite.probe.config.mjs` when the base commit was served for the "before" motion probe.
 
 ## 8. For the user to decide: should the close view open at the watching speed?
 
@@ -325,12 +328,113 @@ Proposal: **yes, on the field map.** After the dawn prologue the clock would set
 - Against: at 4 s/s a simulated day takes six hours. A visitor who wants to see the day must find the speed keys; the strategy view would keep 1 min/s.
 - A middle way: keep 1 min/s as the default and show a one-line hint under the clock on first entry to the close view ("Press 2 to watch at walking pace").
 
+## 9. Review (a second agent, 10 October 2026)
+
+A second agent read the whole diff, re-ran the checks and re-measured the headline numbers with its own capture script on the branch as built (0dbcc45), then fixed what it confirmed. Its scripts, data and pictures are in `/Volumes/Drive/chimpbench/shots/watch-2026-10-10/w1-travel-walk/review/` (`review.mjs`: a census by age class and act on the environment harness; `app-check.mjs`: the running app; `ui-check.mjs`: the speed control at three widths; `prescan-young.ts`, `prescan-gallop.ts`: model-free scans used to choose ticks; `census-recheck.mjs`: the builder's `census.mjs` writing to `review/recheck/`; `review-tables.py` prints the tables below from the JSON files).
+
+**What held.** The headline claims reproduce: adults travelling on the ground are on the walk clip at Real time, at 4 s/s and at 1 min/s, in the harness and in the app, in the close view and the strategy view, by day and at night in rain (tables R1, R4); a trip started at Real time is on the walk clip within a second (R3); the stop, the climbing cap and the rule at height do what the document says (R5). Young animals on their own feet and players walk too, and no gallop in slow motion was seen (R2; a scan of the first 1,400 ticks, `prescan-gallop.ts`, found 13 animal-ticks in which a body would take the gallop clip by its speed at the reference rate while moving slower than a natural gallop at Real time: 3 in the play act at 0.21 to 0.28 m/s, 10 at about 1 m/s under other act labels). The tables of section 4 print unchanged from the builder's JSON files. `git diff dea2643..HEAD` is empty for `src/sim`, `data`, `tests/fixtures`, `src/types.ts` and the shared documents. Nothing new allocates per frame. On the 160 m map the ground path is the old code (`refMode` false); the three changes that do apply there are the ones section 2 names.
+
+**What was wrong, and is fixed on the branch.**
+
+1. `scripts/perf-probe.mjs` pressed the wrong speed keys, and the document said it was unaffected. Its own list of speeds had no Real time entry, so it was already one key off before this stage and two keys off after it: the scenario `rts-1d-day` ran at 1 h/s (its output said `"speed":"1h"`). The list now follows `SPEED_PRESETS`, the soak picks 1 day/s by id, and the probe stops when the app reports another speed than the one asked for. Re-run: `rts-1d-day` reports `1d`, `close-1x-day` reports `1x`.
+2. The time panel did not fit its eight buttons (table R6). The selected "Watch 4×" label was 2 px wider than its button at every desktop width, and at 390 px "Real time" and "Watch 4×" overflowed their cells and ran into "1 min/s". The panel is now 512 px wide and takes two rows of four buttons below 480 px.
+3. `src/ui/app.ts` kept the panel inside the window with a constant written for the 420 px panel (`innerWidth - 440`). It now uses the panel's measured width. No overflow was seen with the old constant at the widths tried; it would have let the 470 px panel pass the right edge by up to 30 px wherever the clock control sits within 490 px of it.
+4. The stop had no test. `tests/render-pace.test.ts` now poses the walk, sneak, gallop and swagger clips over a whole cycle: settled, every hand and foot is at its stance height and counted as planted, where its swing had reached; a walk in progress keeps the swing heights it had. Both assertions fail when the corresponding line of `poses.ts` is removed (tried).
+
+**What was found and left** (items 11 and 12 of section 7): a held clock freezes field-map walkers mid-stride, and slow circling play is drawn as a creeping walk at Real time. Neither is a fault of the picture; both are changes the first report did not name. Seen in passing and older than this stage: at 1 min/s about half the frames of a climb made in the climb act hold the cling clip and not the climb clip (R5; the same before, table 4.8), so the capped cycle is on screen for about half a second of such a climb.
+
+**What the review did not do.** It did not run the whole test suite, `pnpm build`, `gpu-probe` or `audio-probe` (no audio files here). `scripts/verify-browser.mjs --no-model` was re-run and behaves as section 2 says: eleven steps pass, including both speed-key steps, then "store ready" fails because the SQLite file is not served from a worktree. The 160 m map was censused after the change only (the builder's before and after stand); `scripts/motion-probe.mjs gait` was re-run once on it (natural drift median 0.22 cm, 95th percentile 2.01 cm, 434 stances, no foot under the ground), inside the builder's spread. One seed (48), one machine, load 3 to 5.
+
+### R1 Adults travelling or following on the ground (environment harness, field map unless said; every frame; path speed of 0.03 m/s or more)
+
+| Capture | Speed | Samples | Clip and regime |
+| --- | --- | --- | --- |
+| field-rt | Real time | 21010 | walk/natural 100.0% |
+| field-watch | 4 s/s | 16700 | walk/natural 100.0% |
+| field-1x | 1 min/s | 13788 | walk/timelapse 99.3%, walk/natural 0.4%, perch/natural 0.1%, stand/natural 0.1% |
+| night-watch | 4 s/s, 21:00, rain 0.8 | 8970 | walk/natural 100.0% |
+| small-1x | 160 m map, 1 min/s | 1179 | walk/warped 96.9%, walk/natural 2.5%, perch/natural 0.5% |
+
+### R2 Young animals (4 to 12 y) and players moving on the ground on their own feet (field map)
+
+| Capture | Speed | Who | Samples | Clip and regime | Frames in view on a gallop slower than its own slowest natural cadence |
+| --- | --- | --- | --- | --- | --- |
+| young-rt | Real time | young, any act | 4296 | walk/natural 99.6%, forage/natural 0.4% | 0 |
+| young-watch | 4 s/s | young, any act | 3289 | walk/natural 97.0%, walk/warped 2.6%, stand/natural 0.4% | 0 |
+| field-1x | 1 min/s | young, any act | 640 | walk/timelapse 100.0% | 0 |
+| play-rt | Real time | young, any act | 8328 | walk/natural 99.8%, stand/natural 0.2% | 0 |
+| play-rt | Real time | adults in the play act | 6378 | walk/natural 100.0% | 0 |
+| play-watch | 4 s/s | young, any act | 9988 | walk/natural 99.2%, walk/warped 0.7%, stand/natural 0.1% | 0 |
+| play-watch | 4 s/s | adults in the play act | 6870 | walk/natural 100.0% | 0 |
+
+### R3 Trips that start at Real time (the builder's eight adults, ticks 101 to 105): seconds from the first frame the path moves to the first locomotion clip
+
+| Animal | Seconds | Clips in the first 20 s (frames) |
+| --- | --- | --- |
+| Kiboro (28 y) | 0.2 | {'stand': 12, 'walk': 1099} |
+| Tindiro (17 y) | 0.2 | {'stand': 12, 'walk': 1099} |
+| Koruza (24 y) | 0.9 | {'stand': 49, 'walk': 1122} |
+| Tavuni (27 y) | 0.8 | {'stand': 49, 'walk': 1151} |
+| Sanaki (22 y) | 0.1 | {'stand': 4, 'walk': 1196} |
+| Rukaso (17 y) | 0.7 | {'stand': 44, 'walk': 1156} |
+| Oyaku (12 y) | 0.8 | {'stand': 47, 'walk': 1154} |
+| Fumbira (44 y) | 0.8 | {'stand': 49, 'walk': 1152} |
+
+### R4 The running app (field map, seed 48, 1440 x 900, from 09:39): adults travelling or following on the ground
+
+| Speed and view | Menu bar | Animals | Samples | Clip and regime |
+| --- | --- | --- | --- | --- |
+| 1 min/s, close view | 1 min/s / time-lapse | 12 | 5187 | walk/timelapse 98.1%, perch/natural 1.0%, stand/natural 0.4%, walk/natural 0.4% |
+| Watch 4x, close view | Watch 4× / 4 s/s | 9 | 12323 | walk/natural 100.0% |
+| Real time, close view | Real time / 1 s/s | 8 | 11856 | walk/natural 100.0% |
+| 1 min/s, strategy view | 1 min/s / time-lapse | 9 | 3959 | walk/timelapse 99.8%, perch/natural 0.2% |
+
+Paused at 1 min/s for 3 s: 7 adults were mid-trip; on the walk clip 7, still counted as moving 7, with at least one hand or foot off the ground 7.
+
+### R5 The stop, climbing and height (field map)
+
+- Stop at 4 s/s (Chiriku): on the walk clip for 700 ms after the body stops, a stance flag off for 83 ms of that.
+- Climb act at 1 min/s (animal 41): cadence on the climb clip min 1.6, median 1.6, max 1.6 cycles a second over 25 frames.
+- Stop at 1 min/s (the builder's own capture script, run again): on the walk clip for 667 ms after the body stops, a hand or foot in the air for 50 ms of that.
+- Foot drift of the walk at 4 s/s (Akiwe, the builder's own capture script, run again): median 0 cm, 95th percentile 0.19 cm, largest 0.56 cm over 161 stances; 1501 of 1501 frames on the walk clip; hind foot under the ground by more than 1 cm in 0 of 1860 frames; cadence 1.61 cycles a second.
+- The same climb with the builder's script: 28 of 57 frames that move vertically are on the climb clip; by act, clip and regime {'climb:clingTrunk/0': 15, 'climb:clingTrunk/2': 12, 'climb:perch/0': 2, 'climb:climb/2': 28} (the same split between the climb and cling clips as before this stage, table 4.8).
+- Above 0.3 m and moving sideways, all captures: in view, locomotion clip: 4; in view, other clip: 3151; out of view, locomotion clip: 286; out of view, other clip: 6652 frames.
+
+### R6 The time panel's speed buttons: width a label needs against the width its button has (px), with the Watch 4x button selected
+
+| Window width | | Panel (left to right edge) | Labels wider than their button |
+| --- | --- | --- | --- |
+| 1440 | as built (0dbcc45) | 320 to 790 | Watch 4× needs 54, has 52 |
+| 900 | as built (0dbcc45) | 69 to 539 | Watch 4× needs 54, has 52 |
+| 390 | as built (0dbcc45) | 8 to 382 | Real time needs 44, has 40, Watch 4× needs 46, has 40 |
+| 1440 | after the review | 320 to 832 | none |
+| 900 | after the review | 69 to 581 | none |
+| 390 | after the review | 8 to 382 | none |
+
+Keys, after: 1 rt, 2 watch, 3 1x, 4 10x, 5 1h, 6 6h, 7 1d, 8 max, 9 max (9 selects nothing; the speed stays).
+
+| Map | Speed | Menu bar | Time panel state line | Time panel rate |
+| --- | --- | --- | --- | --- |
+| field | 1 min/s | 1 min/s / time-lapse | Time-lapse · bodies outrun their steps; every tick still runs | 55 s/s 4 ticks/s |
+| field | Real time | Real time / 1 s/s | Running · every chimp resolves every tick | 1 s/s 1 tick / 15 s |
+| field | Watch 4x | Watch 4× / 4 s/s | Running · every chimp resolves every tick | 4 s/s 1 tick / 3.8 s |
+| field | 10 min/s | 10 min/s / time-lapse | Time-lapse · bodies outrun their steps; every tick still runs | 9.8 min/s 39 ticks/s |
+| field | paused | 10 min/s / Paused | Paused · Space to resume | Paused |
+| 160 m | 1 min/s | 1 min/s / 1.2 min/s | Running · every chimp resolves every tick | 1.2 min/s 5 ticks/s |
+| 160 m | Real time | Real time / 1 s/s | Running · every chimp resolves every tick | 1 s/s 1 tick / 15 s |
+| 160 m | Watch 4x | Watch 4× / 4 s/s | Running · every chimp resolves every tick | 4 s/s 1 tick / 3.8 s |
+| 160 m | 10 min/s | 10 min/s / time-lapse | Time-lapse · bodies outrun their steps; every tick still runs | 10 min/s 40 ticks/s |
+| 160 m | paused | 10 min/s / Paused | Paused · Space to resume | Paused |
+
+Pictures (in `review/after/` unless said): `field-1x-sheet.png`, `field-watch-sheet.png`, `field-rt-sheet.png` (Akiwe at the three speeds, the builder's framing), `young-rt-sheet.png` (a 7-year-old travelling at Real time), `play-rt-sheet.png`, `play-watch-sheet.png` (players circling), `stop-watch-sheet.png`, `night-watch-sheet.png` (4 s/s at 21:00 in rain), `app-paused-1440x900.png`, `app-strategy-1min-1440x900.png`, and the time panel at 390 and 900 px as built (`review/builder/ui-field-*.png`) and after the fix (`review/after/ui-field-*.png`). The builder's `after/app-ui-time-panel-*.png` and `after/app-watch-1440x900.png` (section 5) show the panel as first built, 470 px wide.
+
 ## For the integrator
 
 **Merge notes.**
-- Files: `src/clock.ts`, `src/main.ts`, `src/style.css`, `src/render/creatures.ts`, `src/render/creatures/gait.ts`, `src/render/creatures/poses.ts`, `src/render/creatures/pace.ts` (new), `src/render/env/harness.ts`, `src/ui/contracts.ts`, `src/ui/hud.ts`, `src/ui/timebar.ts`, `scripts/verify-browser.mjs`, `scripts/audio-probe.mjs`, `tests/clock.test.ts`, `tests/render-pace.test.ts` (new), this document.
-- Likely conflicts: `src/render/creatures/poses.ts` and `src/render/creatures.ts` with W5 (grooming: `quadGait` and `PoseCtx` are touched here; the grooming clips are not) and with W3 if it edits `creatures.ts`; `src/ui/hud.ts`, `src/ui/contracts.ts`, `src/main.ts` and `src/style.css` with W4 (this stage adds one optional dependency, `lapseRate`, and one CSS width).
-- Any script or note that names a speed by its key must use the new keys (1 Real time, 2 Watch 4×, 3 1 min/s, 4 10 min/s, 5 1 h/s, 6 6 h/s, 7 1 day/s, 8 Max). Scripts that use preset ids (`perf-probe.mjs`, saves) are unaffected; the new id is `watch`.
+- Files: `src/clock.ts`, `src/main.ts`, `src/style.css`, `src/render/creatures.ts`, `src/render/creatures/gait.ts`, `src/render/creatures/poses.ts`, `src/render/creatures/pace.ts` (new), `src/render/env/harness.ts`, `src/ui/app.ts` (review), `src/ui/contracts.ts`, `src/ui/hud.ts`, `src/ui/timebar.ts`, `scripts/verify-browser.mjs`, `scripts/audio-probe.mjs`, `scripts/perf-probe.mjs` (review), `tests/clock.test.ts`, `tests/render-pace.test.ts` (new), this document.
+- Likely conflicts: `src/render/creatures/poses.ts` and `src/render/creatures.ts` with W5 (grooming: `quadGait` and `PoseCtx` are touched here; the grooming clips are not) and with W3 if it edits `creatures.ts`; `src/ui/hud.ts`, `src/ui/contracts.ts`, `src/main.ts`, `src/ui/app.ts` and `src/style.css` with W4 (this stage adds one optional dependency, `lapseRate`, the time panel's width, one rule for phones, and one line of `toggleTimePanel`).
+- Any script or note that names a speed by its key must use the new keys (1 Real time, 2 Watch 4×, 3 1 min/s, 4 10 min/s, 5 1 h/s, 6 6 h/s, 7 1 day/s, 8 Max). Three scripts press speed keys: `verify-browser.mjs`, `audio-probe.mjs` and `perf-probe.mjs`; all three are updated. Saves store the preset id and are unaffected; the new id is `watch`.
+- `scripts/perf-probe.mjs` numbers taken between the commit that added Real time (bd961de) and this branch are labelled with the wrong speed: `1x` scenarios ran at Real time, `1h` at 10 min/s, `1d` at 6 h/s, `max` at 1 day/s (each scenario's own `speed` field in the output says what ran). Anything quoted from such a run as a 1 day/s or Max figure should be re-taken.
 - Run at the merge: `pnpm test`, `pnpm build`, and `node scripts/verify-browser.mjs` against `pnpm dev` (the save and reload steps did not run here).
 
 **IMPLEMENTATION_PLAN.md**, under "Stages W1 to W5", replace the W1 bullet's ending or add after it:
@@ -339,7 +443,7 @@ Proposal: **yes, on the field map.** After the dawn prologue the clock would set
 
 **AGENTS.md**, Gotchas, one line:
 
-> - Creature pace (stage W1): the creature layer's moving thresholds (0.30 and 0.18 body lengths a second) and gallop entries were tuned where the 160 m map's walk plays at 1 min/s. A world that walks at another speed reads them at its reference rate (`render/creatures/pace.ts`; 6.86 s/s on the field map, from the faster sex's speed with `walkGait`), whatever the playback speed; the 160 m map keeps the original expressions. Above `lapseRate` (about 9 s/s on the field map) a walk is time-lapse and the interface says so. Speed keys are positions in `SPEED_PRESETS` (1 Real time, 2 Watch 4×, 3 1 min/s … 8 Max): a new preset moves the keys that `scripts/verify-browser.mjs` and `scripts/audio-probe.mjs` press.
+> - Creature pace (stage W1): the creature layer's moving thresholds (0.30 and 0.18 body lengths a second) and gallop entries were tuned where the 160 m map's walk plays at 1 min/s. A world that walks at another speed reads them at its reference rate (`render/creatures/pace.ts`; 6.86 s/s on the field map, from the faster sex's speed with `walkGait`), whatever the playback speed; the 160 m map keeps the original expressions. Above `lapseRate` (about 9 s/s on the field map) a walk is time-lapse and the interface says so. Speed keys are positions in `SPEED_PRESETS` (1 Real time, 2 Watch 4×, 3 1 min/s … 8 Max): a new preset moves the keys that `scripts/verify-browser.mjs`, `scripts/audio-probe.mjs` and `scripts/perf-probe.mjs` press (the last one keeps its own list, `SPEEDS`, and stops when the app reports another speed).
 
 **AGENTS.md**, "Verifying a change", the environment harness line becomes:
 
@@ -357,6 +461,6 @@ Proposal: **yes, on the field map.** After the dawn prologue the clock would set
 
 **docs/visual-plan.md** (not on the list of shared files, but not this stage's document, so left alone), line 321, suggested wording:
 
-> - A2 and A5: distance-driven phase, stride warp to 1.6×, three regimes with hysteresis, phase-synced walk↔gallop. Stop-on-plant was not in the code until stage W1 (10 October 2026), which lowers a stopped walker's raised limb; it still does not finish the step.
+> - A2 and A5: distance-driven phase, stride warp to 1.6×, three regimes with hysteresis, phase-synced walk↔gallop. Stop-on-plant was not in the code until stage W1 (10 October 2026), which lowers a stopped walker's raised limb; it still does not finish the step. Per-individual limb phase in 0.45–0.70 [M].
 
 **HANDOFF.md:** nothing needed beyond the plan's status line.
