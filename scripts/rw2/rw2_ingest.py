@@ -112,23 +112,42 @@ def clock(text):
 
 
 def tai_load(raw, opened, structure):
-    """Events of Data+Model2.csv with their part. The outcome of a sealed row is deleted before the row is used."""
+    """Events of Data+Model2.csv with their part. The outcome cell of a sealed row is never put into the row that is kept."""
     path = os.path.join(raw, TAI_FILE)
-    with open(path, newline='', encoding='utf-8-sig') as f:
-        rows = [r for r in csv.DictReader(f) if r['group'] != 'Mangabey']
+    # first pass: the animals of the split, from three columns only (nothing else of a row is kept)
     strata = collections.defaultdict(set)
-    for r in rows:
-        strata[(r['group'], r['sex.focal'])].add(r['focal'])
+    with open(path, newline='', encoding='utf-8-sig') as f:
+        reader = csv.reader(f)
+        header = next(reader)
+        g, s, c = (header.index(name) for name in ('group', 'sex.focal', 'focal'))
+        for row in reader:
+            if row and row[g] != 'Mangabey':
+                strata[(row[g], row[s])].add(row[c])
     role = {}
     for (group, _sex), codes in strata.items():
         for i, code in enumerate(sorted(codes, key=lambda c: sha('%s:%s:%s' % (TAI_SALT, group.lower(), c.lower())))):
             role[(group, code)] = 'heldout' if i == 0 else 'dev' if i == 1 else 'train'
+    # second pass: a row's part is fixed from its group, focal code and date before the row is made, and the seal leaves
+    # the outcome cell of a sealed row (and of every row in structure mode) out of it: nothing that is kept ever holds it
+    def sealed_at_read():
+        with open(path, newline='', encoding='utf-8-sig') as f:
+            reader = csv.reader(f)
+            header = next(reader)
+            g, c, d, outcome = (header.index(name) for name in ('group', 'focal', 'r.date', 'gr.initiated'))
+            for row in reader:
+                if not row or row[g] == 'Mangabey':
+                    continue
+                if len(row) != len(header):
+                    raise Refused('tai: a row with %d cells under a header of %d' % (len(row), len(header)))
+                date, ro = tai_date(row[d]), role[(row[g], row[c])]
+                part = 'sealed' if ro == 'heldout' or date >= TAI_D2 else 'development' if ro == 'dev' or date >= TAI_D1 else 'train'
+                if structure or (part == 'sealed' and not opened):
+                    del row[outcome]   # the seal
+                    yield dict(zip(header[:outcome] + header[outcome + 1:], row)), date, ro, part
+                else:
+                    yield dict(zip(header, row)), date, ro, part
     events = collections.OrderedDict()
-    for r in rows:
-        date, ro = tai_date(r['r.date']), role[(r['group'], r['focal'])]
-        part = 'sealed' if ro == 'heldout' or date >= TAI_D2 else 'development' if ro == 'dev' or date >= TAI_D1 else 'train'
-        if structure or (part == 'sealed' and not opened):
-            r.pop('gr.initiated', None)   # the seal
+    for r, date, ro, part in sealed_at_read():
         if part == 'sealed':
             stratum = ('unseen animals' if ro == 'heldout' else 'seen animals') + (', from March 2015' if date >= TAI_D2 else ', before March 2015')
         elif part == 'development':
@@ -506,7 +525,8 @@ def main(argv):
         f.write(text)
     for name, d in manifest['datasets'].items():
         parts = d.get('parts', {})
-        sys.stdout.write('%s: %s\n' % (name, '; '.join('%s %s eligible of %s' % (p, v.get('eligible', 'sealed'), v.get('records', v.get('memberRecords', v.get('events')))) for p, v in parts.items()) or d['status']))
+        sys.stdout.write('%s: %s\n' % (name, '; '.join('%s %s eligible of %s' % (p, v['eligible'], v.get('records', v.get('memberRecords'))) if v.get('opened') else '%s unread (%s events)' % (p, v['events'])
+                                                      for p, v in parts.items()) or d['status']))
 
 
 def tai_structure(events):
@@ -530,3 +550,9 @@ if __name__ == '__main__':
     except Refused as error:
         sys.stderr.write('%s\n' % error)
         sys.exit(1)
+    except Exception as error:   # a traceback's message can quote a raw cell: say what kind of failure and where, never what
+        at = error.__traceback__
+        while at.tb_next:
+            at = at.tb_next
+        sys.stderr.write('rw2_ingest: %s at line %d of %s (the message is withheld: it could quote a raw cell)\n' % (type(error).__name__, at.tb_lineno, os.path.basename(at.tb_frame.f_code.co_filename)))
+        sys.exit(2)
