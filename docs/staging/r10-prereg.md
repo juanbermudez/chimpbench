@@ -318,7 +318,7 @@ cover `src/sim/decide.ts`. 4. The field smoke (§7, 5 to 8). 5. Results in §10;
   script), not by a name anywhere in a command line, because the shell that launches the night carries the
   interpreter's path in its own command line; a model day prints a line every simulated hour once two minutes have
   passed, so a day of 15 to 25 minutes is not silent.
-- **A9 (20:43, after the runs of §10.3; the field runs were repeated after it and landed on the same hashes).** The
+- **A9 (20:44, commit 8276757, after the runs of §10.3; the field runs were repeated after it and landed on the same hashes).** The
   file that keeps the burned-in world between runs was named by parameter file, map, seed and days only, so a world
   burned in by older code could have been picked up by a later commit. Its name now carries the commit and the
   parameters' hash, and a run from a tree that is not clean keeps none. The warm-up packet of A8 is built on a copy of
