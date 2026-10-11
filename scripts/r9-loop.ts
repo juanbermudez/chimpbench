@@ -115,7 +115,8 @@ if (process.argv[1]?.endsWith('r9-loop.ts')) {
   const arms = arg('arms', dry ? ['rules', ...DRY_ARMS].join(',') : 'rules').split(','), replayDir = arg('replay', '');
   if (days > MAX_DAYS) throw new Error(`at most ${MAX_DAYS} days per run`);
   for (const a of arms) { const s = R9_ARMS[a]; if (!specOf(a)) throw new Error(`unknown arm ${a}; known: ${[...RULES, ...Object.keys(R9_ARMS)].join(', ')}`); if (s && (s.step === 'dry') !== dry) throw new Error(`arm ${a} ${dry ? 'is not part of' : 'belongs to'} the plumbing check (--dry)`); }
-  if (arms.some(a => a.startsWith('wire-')) && !(process.env.MGOGO_DECIDE_PYTHON ?? '').endsWith('fake-worker.mjs')) throw new Error('the wire- arms run only against scripts/lib/fake-worker.mjs (scripts/r9-run.sh wire): they must never load a model');
+  // (MGOGO_DECIDE_SERVER would make scripts/ft-society.ts Worker join a shared model server instead of spawning the fake worker)
+  if (arms.some(a => a.startsWith('wire-')) && (!(process.env.MGOGO_DECIDE_PYTHON ?? '').endsWith('fake-worker.mjs') || process.env.MGOGO_DECIDE_SERVER)) throw new Error('the wire- arms run only against scripts/lib/fake-worker.mjs with MGOGO_DECIDE_SERVER unset (scripts/r9-run.sh wire): they must never load or reach a model');
   const out = resolve(root, window, `s${seed}`), head = git('rev-parse --short HEAD'), dirty = git('status --porcelain') !== '';
   if (dirty && !process.argv.includes('--allow-dirty')) throw new Error('the tree is not clean: commit first (docs/staging/r9-prereg.md §9)');
   const cache = `burnin-M6-W50-s${seed}-d${burnIn}.json`;

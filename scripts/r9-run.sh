@@ -65,7 +65,7 @@ case "$1" in
     echo "model runtime: $MGOGO_DECIDE_PYTHON ($([ -x "$MGOGO_DECIDE_PYTHON" ] && echo found || echo MISSING))"
     before_model "pre-flight, nothing is started" nowait
     [ "$(swap_mb)" -gt 6144 ] && echo "R9 note: swap in use is above 6 GB; a model step would hold now (up to 30 minutes)" ;;
-  wire) MGOGO_DECIDE_PYTHON="$(pwd)/scripts/lib/fake-worker.mjs" step fnm exec --using=22.22.3 -- pnpm exec tsx scripts/r9-loop.ts --out artifacts/r9/wire --dry --arms rules,wire-draw-1,wire-held ;;
+  wire) unset MGOGO_DECIDE_SERVER; MGOGO_DECIDE_PYTHON="$(pwd)/scripts/lib/fake-worker.mjs" step fnm exec --using=22.22.3 -- pnpm exec tsx scripts/r9-loop.ts --out artifacts/r9/wire --dry --arms rules,wire-draw-1,wire-held ;;
   reference) seed_ok "$2"; step $RUN --seed "$2" --arms "$REF" ;;
   predict) step $TSX scripts/r9-held-replay.ts --saved "$SAVED" --dir "$OUT" --md docs/staging/r9-offline.md --json artifacts/r9/offline.json ;;
   report) step $TSX scripts/r9-report.ts --dir "$OUT" --seeds 21,5 --md docs/staging/r9-numbers.md ;;
