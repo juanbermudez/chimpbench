@@ -34,6 +34,11 @@ export const SHUFFLE_SHARE = 0.45;
  * move (a stylization: a seventh of the field map's walking speed). Read from the path, not from the clip, so it holds
  * at every playback rate and whatever gait the body is drawn in. */
 export const PATH_MOVING_MPS = 0.05;
+/** The speed above which a path is on the move in a world that walks at walkMps (m per ecological second):
+ * PATH_MOVING_MPS, or the feeding-shuffle limit where that is lower. The 160 m map walks at 0.04 m/s, under
+ * PATH_MOVING_MPS: read against the fixed figure no walk there ever began, and every traveller was drawn as an
+ * initiator still waiting for company (creatures/beat.ts firstMove). On the field map this is PATH_MOVING_MPS. */
+export function movingMps(walkMps: number): number { return Math.min(PATH_MOVING_MPS, SHUFFLE_SHARE * walkMps); }
 /** Above this playback rate (ecological seconds per real second) the gap is too short to read and is not announced (a
  * stylization: at 10 min/s two ticks are three frames). The default 1 min/s and everything slower are below it. */
 export const ABOUT_MAX_RATE = 120;
@@ -45,18 +50,32 @@ export const ABOUT_MAX_RATE = 120;
  * `shown`, the start time of the act the body has already been seen to begin (an act is announced once, not again
  * each time the animal moves within it) and `shownAt`, the drawn time at which that was seen;
  * `told`, the start time of the act that has been announced; `left`, the start time of the stationary act on whose way
- * the body has been seen to move (a pause on the way then reads "going to", not "about to").
+ * the body has been seen to move (a pause on the way then reads "going to", not "about to");
+ * `plain`, the start time of the newest act while the body is drawn in it without an announcement (readDrawn), whether
+ * or not it was seen to begin it: a carried infant, a fast playback rate and a trip that outlasts its announcement are
+ * all drawn in the simulation's act at once. Without it `was` kept an act from hours before (the night's nest), and
+ * the body was drawn in that act, at that act's tree, when it was next announced;
+ * `unseen`, the time noted as the start of an act whose real start fell between two states that were not seen
+ * (SKIP_TICKS): equal to `since` for that act only.
  * Fixed size: nothing is allocated after creation.
  */
 export interface ActTrack {
   t: Float64Array; action: Action[]; target: Int32Array; head: number; n: number; shown: number; told: number;
-  since: number; was: Action; wasTarget: number; shownAt: number; left: number;
+  since: number; was: Action; wasTarget: number; shownAt: number; left: number; plain: number; unseen: number;
 }
 
 export function createActTrack(): ActTrack {
   return { t: new Float64Array(ACT_HIST), action: new Array<Action>(ACT_HIST).fill('rest'), target: new Int32Array(ACT_HIST).fill(-1), head: 0, n: 0, shown: NaN, told: NaN,
-    since: -Infinity, was: 'rest', wasTarget: -1, shownAt: NaN, left: NaN };
+    since: -Infinity, was: 'rest', wasTarget: -1, shownAt: NaN, left: NaN, plain: NaN, unseen: NaN };
 }
+/** States further apart than this many ticks were not seen in between (a fast-forward, a long frame, a jump of the
+ * clock): the act may have begun an hour ago, and the body cannot still be in whatever it was drawn in before. Such an
+ * act is not announced by time and gets no decision beat; only a body that turns out to be still on its way to a
+ * stationary act is named for that ("walking to drink"), drawn walking, standing or climbing (a stylization of the
+ * interface, like the window). */
+export const SKIP_TICKS = 2.5;
+/** True when the start of the newest act was not seen (SKIP_TICKS). */
+export function startUnseen(tr: ActTrack): boolean { return tr.n > 0 && tr.unseen === tr.since; }
 
 /**
  * Records the act at ecological time t (hours). A repeated time rewrites the newest state: a decision applied between
@@ -65,8 +84,8 @@ export function createActTrack(): ActTrack {
 export function pushAct(tr: ActTrack, t: number, action: Action, targetId: number): void {
   const changed = actChanged(tr, action, targetId);
   // A rewound world (another simulation opened) starts the record again.
-  if (tr.n > 0 && t < tr.t[tr.head]) { tr.n = 0; tr.shown = NaN; tr.told = NaN; tr.shownAt = NaN; tr.left = NaN; tr.since = -Infinity; }
-  const had = tr.n > 0, endedAct = tr.action[tr.head], endedTarget = tr.target[tr.head], endedSince = tr.since;
+  if (tr.n > 0 && t < tr.t[tr.head]) { tr.n = 0; tr.shown = NaN; tr.told = NaN; tr.shownAt = NaN; tr.left = NaN; tr.plain = NaN; tr.unseen = NaN; tr.since = -Infinity; }
+  const had = tr.n > 0, endedAct = tr.action[tr.head], endedTarget = tr.target[tr.head], endedSince = tr.since, endedT = tr.t[tr.head];
   if (had && tr.t[tr.head] === t) { tr.action[tr.head] = action; tr.target[tr.head] = targetId; }
   else {
     tr.head = (tr.head + 1) % ACT_HIST;
@@ -79,11 +98,15 @@ export function pushAct(tr: ActTrack, t: number, action: Action, targetId: numbe
   // the record); an act it never began (the animal changed its mind on the way) leaves the note on the act before.
   // A record that does not reach back to another state (it has just begun) cannot call its act new.
   if (!had || actBefore(tr) < 0) { tr.since = -Infinity; return; }
+  // States were skipped (SKIP_TICKS): when the act began was not seen. The body is in none of the acts before; while
+  // it is still on its way to this one it is on the move.
+  if (t - endedT > SKIP_TICKS * TICK_HOURS) { tr.was = 'travel'; tr.wasTarget = -1; tr.since = t; tr.unseen = t; return; }
   // An urgent or pose-only act (a call, a display, a charge) is drawn the moment the simulation begins it, so it is
   // also over the moment the simulation ends it: the body does not go on calling while it waits for its next act. It
   // stands (or sits in its tree), which is what a trip that has not set off looks like.
   if (BODY_SIGN[endedAct] === 'any') { tr.was = 'travel'; tr.wasTarget = -1; }
-  else if (!(endedSince > -Infinity) || tr.shown === endedSince) { tr.was = endedAct; tr.wasTarget = endedTarget; }
+  // (Seen to begin it, or drawn in it without an announcement: `plain`.)
+  else if (!(endedSince > -Infinity) || tr.shown === endedSince || tr.plain === endedSince) { tr.was = endedAct; tr.wasTarget = endedTarget; }
   // It had set off for the act it now gives up (it was walking or climbing to it): the body is in neither that act nor
   // the one before. It is on the move: the same neutral standing and walking poses.
   else if (tr.left === endedSince) { tr.was = 'travel'; tr.wasTarget = -1; }
@@ -155,7 +178,8 @@ export interface BodyState {
   /** Distance (m) from the drawn body to where the simulation has the animal now. */
   gap: number;
   /** The simulation moved the animal no faster than a feeding shuffle over the two ticks the body still has to play
-   * (shuffles(), SHUFFLE_SHARE): what is left for the body is the act's own creeping, not a walk or a climb to a place. */
+   * (shuffles(), SHUFFLE_SHARE) and the drawn path is not going up or down: what is left for the body is the act's own
+   * creeping, not a walk or a climb to a place. */
   shuffling: boolean;
   /** Carried (an infant on its mother) or dead: never announced, the body follows something else. */
   passive: boolean;
@@ -187,12 +211,14 @@ export function shuffles(tr: Track, maxMps: number): boolean {
  * renderer draws it in a walking or running clip; walkMps: the world's walking speed (m per ecological second).
  */
 export function readBody(out: BodyState, tr: Track, x: number, y: number, z: number, clipMoving: boolean, passive: boolean, walkMps: number): BodyState {
-  const on = PATH_MOVING_MPS * 3600;   // track velocities are metres per ecological hour
+  const on = movingMps(walkMps) * 3600;   // track velocities are metres per ecological hour
   out.moving = clipMoving || Math.sqrt(tr.vx * tr.vx + tr.vz * tr.vz) > on;
   out.climbing = Math.abs(tr.vy) > on;
   out.down = tr.vy < -on;
   out.gap = Math.hypot(tr.x - x, tr.y - y, tr.z - z);
-  out.shuffling = shuffles(tr, SHUFFLE_SHARE * walkMps);
+  // A body going up or down a trunk is never shuffling: the last, shorter step of a climb is as slow as a shuffle, and
+  // read as one it turned the tag to "foraging" over an animal with metres of trunk still to climb.
+  out.shuffling = !out.climbing && shuffles(tr, SHUFFLE_SHARE * walkMps);
   out.passive = passive;
   return out;
 }
@@ -218,10 +244,15 @@ export function bodyShows(action: Action, body: BodyState): boolean {
  * W6: the pose waits for the same moment, so nothing is early), and after that for as long as the body is still away
  * from where the animal is with more than a shuffle left to play: a walk to water of ten minutes is an approach for
  * ten minutes (stage W6; the limit of six ticks made it read "drinking" over a walking animal).
+ * `unseen`: the start of the act fell in states that were skipped (SKIP_TICKS; `since` is then the first state seen
+ * after them). Nothing is announced by time, since the animal may have been in the act for an hour; only a body still
+ * away from a stationary act's place and not yet stopped is, and only once its drawn time has reached that state
+ * (before it the position record says nothing about the body).
  */
-export function aboutTo(action: Action, since: number, renderT: number, body: BodyState, rate: number, shown = false): boolean {
+export function aboutTo(action: Action, since: number, renderT: number, body: BodyState, rate: number, shown = false, unseen = false): boolean {
   if (shown || body.passive || rate > ABOUT_MAX_RATE || !(since > -Infinity)) return false;
   const sign = BODY_SIGN[action];
+  if (unseen) return sign === 'stay' && renderT >= since && !bodyShows(action, body);
   if (sign === 'go') return renderT < since + ABOUT_TICKS * TICK_HOURS && !bodyShows(action, body);
   return sign === 'stay' && (renderT < since || !bodyShows(action, body));
 }
@@ -262,14 +293,18 @@ export function readDrawn(tr: ActTrack, renderT: number, body: BodyState, rate: 
   if (tr.n > 0) {
     const since = tr.since, action = tr.action[h], sign = BODY_SIGN[action];
     if (since > -Infinity && tr.shown !== since && !body.passive && bodyShows(action, body) && (sign !== 'stay' || renderT >= since)) { tr.shown = since; tr.shownAt = renderT; }
-    about = aboutTo(action, since, renderT, body, rate, tr.shown === since);
+    const unseen = tr.unseen === since;
+    about = aboutTo(action, since, renderT, body, rate, tr.shown === since, unseen);
     if (about) {
       tr.told = since;
       // On its way: the drawn path walks or climbs faster than a feeding shuffle. Only a stationary act has a way to it.
       const moving = sign === 'stay' && !body.shuffling && (body.moving || body.climbing);
       if (moving) tr.left = since;
-      way = !moving ? (tr.left === since ? Way.going : Way.soon) : !body.climbing ? Way.walking : body.down ? Way.down : Way.climbing;
+      // (An act whose start was not seen is never "about to": the animal set off at some time before.)
+      way = !moving ? (tr.left === since || unseen ? Way.going : Way.soon) : !body.climbing ? Way.walking : body.down ? Way.down : Way.climbing;
     }
+    // Not announced: the body is drawn in this act now (pushAct then knows which act it is in when the next one begins).
+    tr.plain = about ? NaN : since;
   }
   out.about = about;
   out.way = way;

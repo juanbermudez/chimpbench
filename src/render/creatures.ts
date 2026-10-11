@@ -25,7 +25,7 @@ import { createRemains } from './creatures/remains';
 import { createPrey } from './creatures/prey';
 import { perfEnd, perfNow } from '../perf';
 import { TICK_HOURS, advancePlayback, createPlayback, createTrack, pushSample, relocationJump2, type Track } from './creatures/playback';
-import { ABOUT_MAX_RATE, BODY_SIGN, PATH_MOVING_MPS, Way, actChanged, createActTrack, pushAct, readBody, readDrawn, type ActTrack, type BodyState, type DrawnAct } from './creatures/drawn';
+import { ABOUT_MAX_RATE, BODY_SIGN, PATH_MOVING_MPS, Way, actChanged, movingMps, createActTrack, pushAct, readBody, readDrawn, startUnseen, type ActTrack, type BodyState, type DrawnAct } from './creatures/drawn';
 import {
   DEPART_RADIUS_M, DEPART_WINDOW_TICKS, Gaze, Phase, THINK_SCAN_S, beatPhase, createBeat, deliberating, departFirst, departFollowers, departNearestFollower, departRank, firstMove,
   LATE_MAX_TICKS, gazeFor, lateTarget, ownsStep, staggerGap,
@@ -612,13 +612,21 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   function nearestTree(x: number, z: number, maxD: number) { return treeIndex.nearest(x, z, maxD); }
   const treeCache = new Map<number, number>(); // chimp id → tree id for elevated animals
   let perchYaw = 0;
+  /** A tree or nest place kept from an act the simulation has left is used only within this distance (m) of the drawn
+   * body (a design assumption: wider than any crown, far narrower than the distance to another feeding tree). */
+  const REMEMBERED_TREE_M = 30;
   function treeFor(a: Anim): World['trees'][number] | null {
     const c = a.chimp;
-    // Stage W6: by the act the drawn body is in. An animal on its way to a nest tree is still in the crown it is leaving.
-    if (a.act === 'climb' || a.act === 'nest') { const t = treeById.get(a.act === 'nest' && c.nest && c.action === 'nest' ? c.nest.treeId : a.actTarget); if (t) return t; }
     // (W6: the tree the drawn body is in. The simulation's position is two ticks ahead: an animal still coming down
     // its trunk on screen is already walking away there, out of reach of the tree, and lost its trunk half way down.)
     const px = a.track.n > 0 ? a.track.x : c.position[0], pz = a.track.n > 0 ? a.track.z : c.position[2];
+    // Stage W6: by the act the drawn body is in. An animal on its way to a nest tree is still in the crown it is leaving.
+    // The tree of an act the simulation has already left (the drawn act is a remembered one) counts only while the
+    // drawn body is near it (REMEMBERED_TREE_M): a remembered target must never carry a body across the map.
+    if (a.act === 'climb' || a.act === 'nest') {
+      const t = treeById.get(a.act === 'nest' && c.nest && c.action === 'nest' ? c.nest.treeId : a.actTarget);
+      if (t && (a.act === c.action || hyp2(t.position[0] - px, t.position[2] - pz) < REMEMBERED_TREE_M)) return t;
+    }
     const cached = treeCache.get(a.id);
     if (cached !== undefined) { const t = treeById.get(cached); if (t && hyp2(t.position[0] - px, t.position[2] - pz) < 6) return t; }
     const t = nearestTree(px, pz, 6);
@@ -831,7 +839,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   // intention movement in the real seconds before the body starts; animals leaving together are drawn setting off in
   // the order they chose. Reads the World (act, target, candidates, positions); writes only renderer state.
   const GP = new Float64Array(3);
-  const MOVE_MPS = PATH_MOVING_MPS;   // a step faster than this (m per ecological second) is the animal setting off (drawn.ts)
+  const MOVE_MPS = movingMps(paramsOf(world).walkMps);   // a step faster than this (m per ecological second) is the animal setting off (drawn.ts: by this world's walking speed)
   const KEY_ANIMAL = 500000;          // departure keys: a tree's id, or this plus the id of the animal followed
   /** Where an option's target is: 0 not found, 1 a place (written to out), 2 an animal that is drawn (its head is read each frame). */
   function placeKind(id: number, self: Anim, out: Float64Array): number {
@@ -851,8 +859,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     const c = a.chimp, b = a.beat, sign = BODY_SIGN[c.action];
     b.since = a.acts.since; b.phase = Phase.none; b.gaze = Gaze.none; b.moveT = Infinity; b.own = ownsStep(c.actionTime, a.track, b.since, MOVE_MPS); b.fromRest = true; b.up = false; b.looked = false;
     b.key = -1; b.rank = 0; b.first = -1; b.followers = 0; b.backId = -1; b.goneFor = NaN; b.waiting = false; b.goalKind = 0; b.altKind = 0;
-    // Urgent and pose-only acts (a charge, a call) are never waited for: no beat.
-    if (!(b.since > -Infinity) || sign === 'any' || !c.alive) { b.since = -Infinity; return; }
+    // Urgent and pose-only acts (a charge, a call) are never waited for: no beat. Nor is an act whose start was not
+    // seen (states were skipped, drawn.ts SKIP_TICKS): the animal decided at some time before, and is already in it.
+    if (!(b.since > -Infinity) || sign === 'any' || !c.alive || startUnseen(a.acts)) { b.since = -Infinity; return; }
     b.goalId = c.targetId; b.goalKind = placeKind(c.targetId, a, GP);
     if (b.goalKind === 1) { b.gx = GP[0]; b.gy = GP[1]; b.gz = GP[2]; }
     beatSelf = a;
@@ -1557,8 +1566,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       // The place is remembered: the simulation clears Chimp.nest the moment the animal decides to leave, two ticks
       // before its drawn body does, and it would be lifted out of its nest onto a branch for that long.
       if (a.act === 'nest' && a.trunkK < 0.5) {
-        if (c.action === 'nest' && c.nest) { const spot = nests.spotFor(c.nest.treeId, c.nest.position, a.id, V2); a.nestOk = !!spot; if (spot) { a.nestX = V2.x; a.nestY = V2.y + 0.12 * a.morph.size; a.nestZ = V2.z; } }
-        if (a.nestOk) { x = a.nestX; y = a.nestY; z = a.nestZ; }
+        if (c.action === 'nest') { const spot = c.nest ? nests.spotFor(c.nest.treeId, c.nest.position, a.id, V2) : null; a.nestOk = !!spot; if (spot) { a.nestX = V2.x; a.nestY = V2.y + 0.12 * a.morph.size; a.nestZ = V2.z; } }
+        // (The remembered place only while the drawn body is at it: REMEMBERED_TREE_M.)
+        if (a.nestOk && (c.action === 'nest' || hyp2(a.nestX - a.x, a.nestZ - a.z) < REMEMBERED_TREE_M)) { x = a.nestX; y = a.nestY; z = a.nestZ; }
       } else if (a.act !== 'nest') a.nestOk = false;
       bodyFrame(a, x, z, y, 0);
       return;

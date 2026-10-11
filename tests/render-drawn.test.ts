@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { Action } from '../src/types';
-import { ABOUT_MAX_RATE, ABOUT_TICKS, ACT_HIST, ARRIVED_M, BODY_SIGN, SHUFFLE_SHARE, WAY_WORDS, Way, aboutTo, actBefore, actChanged, actSince, actStart, bodyShows, createActTrack,
-  pushAct, readBody, readDrawn, shuffles, wayVerb, type ActTrack, type BodyState, type DrawnAct } from '../src/render/creatures/drawn';
+import { ABOUT_MAX_RATE, ABOUT_TICKS, ACT_HIST, ARRIVED_M, BODY_SIGN, PATH_MOVING_MPS, SHUFFLE_SHARE, SKIP_TICKS, WAY_WORDS, Way, aboutTo, actBefore, actChanged, actSince, actStart, bodyShows, createActTrack,
+  movingMps, pushAct, readBody, readDrawn, shuffles, startUnseen, wayVerb, type ActTrack, type BodyState, type DrawnAct } from '../src/render/creatures/drawn';
 import { actionOnWay } from '../src/ui/format';
 import { TICK_HOURS, advancePlayback, createPlayback, createTrack, pushSample, relocationJump2, type Track } from '../src/render/creatures/playback';
 import { sampleSmooth } from '../src/render/creatures/motion';
@@ -410,4 +410,134 @@ test('the field simulation through the frame loop\'s own parts: animals that sta
   assert.ok(byDistance > 0, `by distance alone they would be announced while already feeding (${byDistance} half-ticks)`);
   assert.equal(groundAbout, 0, 'never "about to forage" over an animal feeding on the ground where it is, once its drawn time is in the act');
   assert.ok(crownInLag > 20 && crownInAct > 20, `a walk or a climb to a crown is still announced (${crownInLag} half-ticks inside the lag, ${crownInAct} after it)`);
+});
+
+// --- W6 review (11 October 2026): the act a body is drawn in must be one it was drawn in a moment ago. Before these
+// rules an infant carried since dawn, or any animal after a fast-forward, was drawn in the night's nest act (asleep,
+// at its nest tree, hundreds of metres from where the simulation had it) for the two ticks of its next announcement.
+
+test('W6 review: a body drawn in an act without an announcement (carried, or a fast rate) is in that act when the next one begins', () => {
+  const out = drawn();
+  // An infant carried from its nest: nothing it does is announced, and each act is the one its body is in.
+  const tr = fill([['nest', 121236], ['nest', 121236]]);
+  let t = tr.t[tr.head];
+  const carried = body({ passive: true, gap: 0 });
+  for (const [a, g] of [['nurse', 43], ['rest', -1], ['play', 20], ['nurse', 43], ['rest', -1]] as [Action, number][]) {
+    t += T; pushAct(tr, t, a, g);
+    readDrawn(tr, t - 2 * T, carried, 1, out);
+    assert.deepEqual(out, { action: a, targetId: g, about: false, way: Way.none }, `carried: drawn in ${a} at once`);
+  }
+  // Set down by its mother, it takes a new act: its body is still in the rest it was in on her, not in the nest of the morning.
+  t += T; pushAct(tr, t, 'forage', 100200);
+  readDrawn(tr, t - 2 * T, body({ gap: 0 }), 1, out);
+  assert.deepEqual(out, { action: 'rest', targetId: -1, about: true, way: Way.soon });
+  assert.notEqual(out.action, 'nest');
+  // Played fast, nothing is announced either; slowed down, the next act is announced over the act just drawn.
+  const fast = fill([['nest', 121236], ['nest', 121236]]);
+  let u = fast.t[fast.head];
+  for (const [a, g] of [['travel', 100300], ['forage', 100300], ['groom', 7]] as [Action, number][]) {
+    u += T; pushAct(fast, u, a, g);
+    readDrawn(fast, u - 2 * T, body({ gap: 9, moving: true }), ABOUT_MAX_RATE * 5, out);
+    assert.equal(out.about, false); assert.equal(out.action, a);
+  }
+  u += T; pushAct(fast, u, 'rest', -1);
+  readDrawn(fast, u - 2 * T, body({ gap: 0 }), 60, out);
+  assert.deepEqual(out, { action: 'groom', targetId: 7, about: true, way: Way.soon }, 'the grooming it was drawn in, not the nest');
+  // An act that was drawn plain and is then announced after all (the rate dropped while the body was still walking
+  // to it) is not one the body is in: the stage's own rule for a change of mind on the way still holds.
+  const walk = fill([['rest', -1], ['rest', -1]]);
+  let v = walk.t[walk.head];
+  v += T; pushAct(walk, v, 'drink', 200001);
+  readDrawn(walk, v - 2 * T, body({ gap: 40, moving: true }), ABOUT_MAX_RATE * 5, out);
+  assert.equal(out.about, false);
+  readDrawn(walk, v + T, body({ gap: 30, moving: true }), 4, out);
+  assert.deepEqual(out, { action: 'rest', targetId: -1, about: true, way: Way.walking });
+  pushAct(walk, v + 2 * T, 'travel', 100500);
+  readDrawn(walk, v + 1.1 * T, body({ gap: 5 }), 4, out);
+  assert.deepEqual(out, { action: 'travel', targetId: -1, about: true, way: Way.soon }, 'on the move, not drinking where there is no water');
+});
+
+test('W6 review: after a skip of states (a fast-forward, a jump of the clock) nothing is announced by time and no older act is drawn; an approach still under way is named', () => {
+  const out = drawn();
+  const tr = fill([['nest', 121236], ['nest', 121236], ['nest', 121236]]);
+  const t0 = tr.t[tr.head], s = t0 + 700 * T;
+  // Hours later in one step: the act changed somewhere in between.
+  pushAct(tr, s, 'forage', 100200);
+  assert.equal(startUnseen(tr), true);
+  assert.equal(actStart(tr), s, 'the first state seen after the skip stands for its start');
+  // In its crown, where the simulation has it: drawn foraging at once, never "about to forage" and never in the nest.
+  readDrawn(tr, s - 2 * T, body({ gap: 0 }), 4, out);
+  assert.deepEqual(out, { action: 'forage', targetId: 100200, about: false, way: Way.none });
+  readDrawn(tr, s + 0.1 * T, body({ gap: 0 }), 4, out);
+  assert.deepEqual(out, { action: 'forage', targetId: 100200, about: false, way: Way.none });
+  assert.equal(tr.shown, s, 'and seen in it once the position record can tell');
+  // From there on single ticks are announced as usual, over the act just drawn.
+  pushAct(tr, s + T, 'forage', 100200);
+  pushAct(tr, s + 2 * T, 'travel', 100300);
+  assert.equal(startUnseen(tr), false);
+  readDrawn(tr, s, body({ gap: 0 }), 4, out);
+  assert.deepEqual(out, { action: 'forage', targetId: 100200, about: true, way: Way.soon });
+  // An animal that was half way to water when the states were skipped: plain while the position record has nothing
+  // to say (the body is cut to where the simulation has it), then "walking to drink" for the rest of the walk, drawn
+  // on the move and not in the act of hours before.
+  const w = fill([['nest', 121236], ['nest', 121236]]), sw = w.t[w.head] + 500 * T;
+  pushAct(w, sw, 'drink', 200001);
+  readDrawn(w, sw - 2 * T, body({ gap: 0 }), 4, out);
+  assert.equal(out.about, false); assert.equal(out.action, 'drink');
+  assert.notEqual(w.shown, sw, 'standing where it was cut to is not yet having arrived');
+  pushAct(w, sw + T, 'drink', 200001); pushAct(w, sw + 2 * T, 'drink', 200001);
+  readDrawn(w, sw + 0.1 * T, body({ gap: 10, moving: true }), 4, out);
+  assert.deepEqual(out, { action: 'travel', targetId: -1, about: true, way: Way.walking });
+  readDrawn(w, sw + 1.1 * T, body({ gap: 9 }), 4, out);
+  assert.equal(out.way, Way.going, 'a pause on the way is "going to", never "about to": it set off before the skip');
+  readDrawn(w, sw + 9 * T, body({ gap: 0.2 }), 4, out);
+  assert.deepEqual(out, { action: 'drink', targetId: 200001, about: false, way: Way.none });
+  // A trip in progress is travelling, not "about to travel", however still the cut body stands.
+  const g = fill([['rest', -1], ['rest', -1]]), sg = g.t[g.head] + 40 * T;
+  pushAct(g, sg, 'travel', 100300);
+  readDrawn(g, sg - 2 * T, body(), 4, out);
+  assert.deepEqual(out, { action: 'travel', targetId: 100300, about: false, way: Way.none });
+  assert.equal(aboutTo('travel', sg, sg - 2 * T, body(), 4, false, true), false);
+  assert.equal(aboutTo('travel', sg, sg - 2 * T, body(), 4, false, false), true, 'seen to begin, it would be announced');
+  // The limit: a step of two ticks (a slow frame at 2 min/s) is still a change that was seen; three are not.
+  assert.ok(SKIP_TICKS > 2 && SKIP_TICKS < 3);
+  const two = fill([['rest', -1], ['rest', -1]]); pushAct(two, two.t[two.head] + 2 * T, 'groom', 7);
+  assert.equal(startUnseen(two), false);
+  const three = fill([['rest', -1], ['rest', -1]]); pushAct(three, three.t[three.head] + 3 * T, 'groom', 7);
+  assert.equal(startUnseen(three), true);
+  readDrawn(three, three.t[three.head] - 2 * T, body({ gap: 0 }), 1, out);
+  assert.equal(out.action, 'groom', 'not the rest of three ticks ago');
+});
+
+test('W6 review: a body still going up a trunk is not shuffling, however short the last step of its climb', () => {
+  const out = body();
+  // Climbing 3.3 m a tick, then the last 2 m, then still: the two newest steps are as slow as a feeding shuffle.
+  const up = path([[0, 3.3], [0, 3.3], [0, 2.0], [0, 0]]);
+  assert.equal(shuffles(up, SHUFFLE_SHARE * 0.35), true, 'by the last two steps alone it would be');
+  sampleSmooth(up, 10 + 2.4 * T);   // the drawn body is on the last, shorter step
+  readBody(out, up, 0, 8.6, 0, false, false, 0.35);
+  assert.equal(out.climbing, true); assert.equal(out.shuffling, false);
+  assert.equal(bodyShows('forage', out), false, 'so the tag still reads "climbing to feed"');
+  const d = drawn(), tr = fill([['travel', 100200], ['travel', 100200], ['forage', 100200], ['forage', 100200], ['forage', 100200]]);
+  readDrawn(tr, tr.t[tr.head] - 0.6 * T, out, 1, d);
+  assert.equal(d.way, Way.climbing);
+  // Arrived and still: the act.
+  sampleSmooth(up, 10 + 3.2 * T);
+  readBody(out, up, 0, 8.6, 0, false, false, 0.35);
+  assert.equal(out.climbing, false); assert.equal(bodyShows('forage', out), true);
+});
+
+test('W6 review: on the move is judged by the world\'s own walking speed, so a walk on the 160 m map counts', () => {
+  assert.equal(movingMps(0.35), PATH_MOVING_MPS, 'the field map: unchanged');
+  const small = movingMps(0.04);
+  assert.ok(small < 0.9 * 0.04 && small > 0.3 * 0.04, 'the small map: between its feeding creep and its slowest approach');
+  const out = body(), tr = path([[0.04 * 15, 0], [0.04 * 15, 0], [0.04 * 15, 0]]);
+  sampleSmooth(tr, 10 + 1.5 * T);
+  readBody(out, tr, 1.8, 0, 0, false, false, 0.04);
+  assert.equal(out.moving, true, 'a walk at 0.04 m/s is a walk there, whatever clip the body is drawn in');
+  const creep = path([[0.012 * 15, 0], [0.012 * 15, 0], [0.012 * 15, 0]]);
+  sampleSmooth(creep, 10 + 1.5 * T);
+  assert.ok(Math.hypot(creep.vx, creep.vz) / 3600 > 0.01, 'the path does creep');
+  readBody(out, creep, 0.54, 0, 0, false, false, 0.04);
+  assert.equal(out.moving, false, 'its feeding creep is not');
 });
