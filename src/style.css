@@ -568,7 +568,8 @@ body.preview .viewport { background: #3a3d38; }
 .tl-legend { display: flex; flex-wrap: wrap; gap: 3px 14px; margin-top: 5px; font-size: 11px; color: var(--ink-3); }
 .tl-legend i { display: inline-block; width: 8px; height: 8px; margin-right: 5px; border-radius: 2px; background: var(--a); } .tl-legend .a-none i { box-shadow: inset 0 0 0 1px var(--line-3); }
 .dlog .cl-text { color: var(--ink-2); } .dlog .cl-text b { font-weight: 600; color: var(--ink); }
-.dlog-src { margin-left: 8px; font-style: normal; font-size: 10.5px; color: var(--ink-4); } .dlog-why { display: block; font-size: 11.5px; color: var(--ink-3); text-wrap: pretty; }
+.dlog-src { display: inline-block; margin-left: 8px; font-style: normal; font-size: 10.5px; color: var(--ink-4); white-space: nowrap; } .dlog-why { display: block; font-size: 11.5px; color: var(--ink-3); text-wrap: pretty; }
+.dlog .cl-ic { align-self: start; margin-top: 2px; }
 .mind { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 28px; align-items: start; }
 @container chimp (min-width: 640px) {
   .mind:has(> .history) { grid-template-columns: minmax(0, 1fr) minmax(210px, 270px); }
