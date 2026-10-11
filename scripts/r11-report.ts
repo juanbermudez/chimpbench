@@ -156,7 +156,7 @@ if (process.argv[1]?.endsWith('r11-report.ts')) {
     p();
     p('The first that holds names the outcome; the others are printed. A **recipe** (P5b, P5a) has the realizations of both its training seeds: it is told from the rules on a row only when every one of them lies outside the rules\' mean ± D on the same side.');
     for (const fam of [primary, ...families.filter(x => x !== primary)]) {
-      const recipe = (arm: 'p5b' | 'p5a') => NEW[arm].flatMap(key => armsOf(keyOf(key), fam)), both = (arm: 'p5b' | 'p5a') => NEW[arm].every(key => armsOf(keyOf(key), fam).length > 0);
+      const recipe = (arm: 'p5b' | 'p5a') => [...new Set(NEW[arm].flatMap(key => armsOf(keyOf(key), fam)))], both = (arm: 'p5b' | 'p5a') => NEW[arm].every(key => armsOf(keyOf(key), fam).length > 0);
       const seedMean = (key: string, k: string) => mean(vals(armsOf(keyOf(key), fam), k)), old = armsOf(oldKey, fam).length ? armsOf(oldKey, fam) : armsOf(oldKey, families.find(x => armsOf(oldKey, x).length) ?? fam);
       p();
       p(`### Decode \`${fam}\`${fam === primary ? ' (read first)' : ' (the second line)'}`);
