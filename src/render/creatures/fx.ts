@@ -171,22 +171,30 @@ export function createFX(parent: THREE.Object3D, ctx: CreatureContext) {
   const blipMesh = new THREE.Mesh(blipGeo, blipMat);
   blipMesh.frustumCulled = false; blipMesh.renderOrder = 12; blipMesh.visible = false;
   group.add(blipMesh);
-  // Per blip: x, y, z, final radius; start time; colour.
+  // Per blip: x, y, z, final radius; start time; colour; the animal it marks.
   const blipAt = new Float32Array(MAX_BLIPS * 4), blipStart = new Float64Array(MAX_BLIPS).fill(-Infinity), blipCol = new Float32Array(MAX_BLIPS * 3);
+  const blipId = new Int32Array(MAX_BLIPS).fill(-1);
   let blipNext = 0, blipUntil = -Infinity;
-  function blip(x: number, y: number, z: number, r1: number, start: number, color: THREE.Color) {
+  function blip(id: number, x: number, y: number, z: number, r1: number, start: number, color: THREE.Color) {
     const k = blipNext; blipNext = (k + 1) % MAX_BLIPS;
-    blipAt[k * 4] = x; blipAt[k * 4 + 1] = y; blipAt[k * 4 + 2] = z; blipAt[k * 4 + 3] = r1; blipStart[k] = start;
+    blipAt[k * 4] = x; blipAt[k * 4 + 1] = y; blipAt[k * 4 + 2] = z; blipAt[k * 4 + 3] = r1; blipStart[k] = start; blipId[k] = id;
     blipCol[k * 3] = color.r; blipCol[k * 3 + 1] = color.g; blipCol[k * 3 + 2] = color.b;
     blipUntil = Math.max(blipUntil, start + BLIP_LIFE);
   }
-  function updateBlips(now: number, closeView: boolean) {
+  function updateBlips(now: number, closeView: boolean, anims: Map<number, Anim>) {
     if (now >= blipUntil || closeView) { if (blipMesh.visible) { blipMesh.visible = false; blipGeo.instanceCount = 0; } return; }
     const R = bRing.array as Float32Array, S = bStyle.array as Float32Array, Cc = bColor.array as Float32Array;
     let n = 0;
     for (let k = 0; k < MAX_BLIPS; k++) {
       const t = (now - blipStart[k]) / BLIP_LIFE;
       if (!(t >= 0 && t < 1)) continue;
+      // The ring is drawn where its animal is now, not where it stood when the call was given: the arc reaches a far
+      // listener up to 2.4 s later, and at 1 min/s a walker is 15 to 100 m further on by then (a ring left on the path
+      // behind a walking party read as nobody's). One map lookup per live blip; the ground is asked only if it moved.
+      const b = anims.get(blipId[k]);
+      if (b && b.carry === 0 && (Math.abs(b.bx - blipAt[k * 4]) > 0.05 || Math.abs(b.bz - blipAt[k * 4 + 2]) > 0.05)) {
+        blipAt[k * 4] = b.bx; blipAt[k * 4 + 1] = (b.elevated > 0.5 ? b.by : ctx.groundHeight(b.bx, b.bz)) + 0.12; blipAt[k * 4 + 2] = b.bz;
+      }
       const e = 1 - Math.pow(1 - t, 2.2), r1 = blipAt[k * 4 + 3];
       R[n * 4] = blipAt[k * 4]; R[n * 4 + 1] = blipAt[k * 4 + 1]; R[n * 4 + 2] = blipAt[k * 4 + 2]; R[n * 4 + 3] = r1 * (0.35 + 0.65 * e);
       S[n * 4] = 0.1; S[n * 4 + 1] = 0.85 * (1 - t) * Math.min(1, t * 8); S[n * 4 + 2] = 0; S[n * 4 + 3] = 0.12;
@@ -210,7 +218,7 @@ export function createFX(parent: THREE.Object3D, ctx: CreatureContext) {
       if (frame.closeView || !b.visible || b.carry !== 0) continue;
       // A ring about 22 px in radius around the animal's disc at any strategy zoom (design assumption).
       const s = b.morph.size, r1 = Math.max(1.9 * s, 22 * s / Math.max(1, b.px));
-      blip(b.bx, (b.elevated > 0.5 ? b.by : ctx.groundHeight(b.bx, b.bz)) + 0.12, b.bz, r1, now + delay, BLIP[call.kind] ?? COL.hoot);
+      blip(b.id, b.bx, (b.elevated > 0.5 ? b.by : ctx.groundHeight(b.bx, b.bz)) + 0.12, b.bz, r1, now + delay, BLIP[call.kind] ?? COL.hoot);
     }
   }
 
@@ -362,7 +370,7 @@ export function createFX(parent: THREE.Object3D, ctx: CreatureContext) {
     lGeo.setDrawRange(0, baseOff + tn * 2);
     lGeo.attributes.position.needsUpdate = true; lGeo.attributes.color.needsUpdate = true;
 
-    updateBlips(now, frame.closeView);
+    updateBlips(now, frame.closeView, anims);
     // Scheduled rings.
     for (let i = scheduled.length - 1; i >= 0; i--) if (scheduled[i].at <= now) { ring(scheduled[i].spec, now); scheduled.splice(i, 1); }
     // Ring attributes.
