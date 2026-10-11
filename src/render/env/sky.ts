@@ -244,6 +244,8 @@ export function createSky(uniforms: SharedUniforms, owner: Owner): SkyRig {
       overcastIbl.setRGB(0.05, 0.058, 0.062).multiplyScalar(0.06 + dayLevel * 0.94).lerp(tmpA.setRGB(0.012, 0.014, 0.02), rain * 0.5 * dayLevel);
       // The strategy camera is orthographic: it has no horizon and shows the dome only as the backdrop round the whole
       // map, so the horizon band, the floor and the massif are for perspective views; that backdrop keeps its old look.
+      // The bloom guard stays on there: by day that backdrop is over the bloom threshold, and without the guard it
+      // veils the whole map (mean brightness 212 of 255 at 12:36 before stage W2, 171 after; tests/render-sky.test.ts).
       const dome = perspective ? 1 : 0;
       skyU.uDome.value = dome;
       skyU.uOvercastColor.value = dome ? overcastDome : overcastIbl;
