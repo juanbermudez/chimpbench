@@ -6,14 +6,14 @@ Registration: `docs/staging/r9-prereg.md`. **Rules-taught model on a rules menu.
 
 | Arm | what | seeds | head | model calls | model seconds | timeouts | deaths | ends on its saved or replayed world |
 |---|---|---|---|---|---|---|---|---|
-| `rules` | the rules | 21, 5 | f021124 | 0 | 0 | 0 | 0 | saved run reproduced |
-| `rules-r1` | the rules, re-draw 1 | 21, 5 | f021124 | 0 | 0 | 0 | 0 | saved run reproduced |
-| `rules-r2` | the rules, re-draw 2 | 21, 5 | f021124 | 0 | 0 | 0 | 0 | saved run reproduced |
-| `rules-r3` | the rules, re-draw 3 | 21, 5 | f021124 | 0 | 0 | 0 | 0 | saved run reproduced |
-| `r4-top` | first adapter, top pick (saved run, replayed) | 21, 5 | f021124 | 2707 | 1777 | 0 | 0 | saved run reproduced |
-| `r4c-top` | third adapter, top pick (saved run, replayed) | 21, 5 | f021124 | 3202 | 1631 | 0 | 0 | saved run reproduced |
-| `r4-top-free` | first adapter, top pick, gate off (saved run, replayed) | 21, 5 | f021124 | 4833 | 2679 | 0 | 0 | saved run reproduced |
-| `r4c-top-free` | third adapter, top pick, gate off (saved run, replayed) | 21, 5 | f021124 | 10273 | 7142 | 0 | 0 | saved run reproduced |
+| `rules` | the rules | 21, 5 | 99d2186 | 0 | 0 | 0 | 0 | saved run reproduced |
+| `rules-r1` | the rules, re-draw 1 | 21, 5 | 99d2186 | 0 | 0 | 0 | 0 | saved run reproduced |
+| `rules-r2` | the rules, re-draw 2 | 21, 5 | 99d2186 | 0 | 0 | 0 | 0 | saved run reproduced |
+| `rules-r3` | the rules, re-draw 3 | 21, 5 | 99d2186 | 0 | 0 | 0 | 0 | saved run reproduced |
+| `r4-top` | first adapter, top pick (saved run, replayed) | 21, 5 | 99d2186 | 2707 | 1777 | 0 | 0 | saved run reproduced |
+| `r4c-top` | third adapter, top pick (saved run, replayed) | 21, 5 | 99d2186 | 3202 | 1631 | 0 | 0 | saved run reproduced |
+| `r4-top-free` | first adapter, top pick, gate off (saved run, replayed) | 21, 5 | 99d2186 | 4833 | 2679 | 0 | 0 | saved run reproduced |
+| `r4c-top-free` | third adapter, top pick, gate off (saved run, replayed) | 21, 5 | 99d2186 | 10273 | 7142 | 0 | 0 | saved run reproduced |
 
 ## What is read (prereg §5)
 

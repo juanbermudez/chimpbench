@@ -141,7 +141,7 @@ if (process.argv[1]?.endsWith('r9-report.ts')) {
     md.push(`| \`${a}\` | ${f(armMean(rows, 'asked'))} | ${f(o.epochs / ad)} | ${['first', 'replaced', 'arrived', 'interrupt', 'rules', 'block'].map(k => f((o.opened[k] ?? 0) / ad)).join(' | ')} | ${f(o.reasks / ad)} | ${o.reasks ? `${(100 * o.goneShare).toFixed(1)}%` : '–'} | ${o.there ? `${(100 * o.share).toFixed(1)}% of ${o.there}` : '–'} | ${R9_ARMS[a]?.decode?.mode === 'held' ? breaks : '–'} |`); }
 
   // gate off against gate on, where both arms of a decode are on file
-  const pairs = [['r4-top-free', 'r4-top'], ['r4c-top-free', 'r4c-top'], ['r4-held-free', 'r4-held'], ['r4c-held-free', 'r4c-held'], ['even-draw-free', 'even-draw-1'], ['even-held-free', 'even-held']].filter(([x, y]) => has(x) && has(y));
+  const pairs = [['r4-top-free', 'r4-top'], ['r4c-top-free', 'r4c-top'], ['r4-held-free', 'r4-held'], ['r4c-held-free', 'r4c-held'], ['r4c-whole-free', 'r4c-whole'], ['even-draw-free', 'even-draw-1'], ['even-held-free', 'even-held']].filter(([x, y]) => has(x) && has(y));
   if (pairs.length) { md.push('', '## Gate off against gate on (prereg §5.4)', '', '| Decode | asks a day, gate off | gate on | ratio | trips begun a day, gate off | gate on | act changes a day, gate off | gate on |', '|---|---|---|---|---|---|---|---|');
     for (const [off, on] of pairs) md.push(`| ${what(on)} | ${f(armMean(rowsOf(off), 'asked'))} | ${f(armMean(rowsOf(on), 'asked'))} | ${f(armMean(rowsOf(off), 'asked') / armMean(rowsOf(on), 'asked'), 2)} | ${f(armMean(rowsOf(off), 'trips'))} | ${f(armMean(rowsOf(on), 'trips'))} | ${f(armMean(rowsOf(off), 'changes'))} | ${f(armMean(rowsOf(on), 'changes'))} |`); }
 
@@ -149,7 +149,7 @@ if (process.argv[1]?.endsWith('r9-report.ts')) {
   for (const m of R9_MEASURES) md.push(`| ${m.label} | ${saltA && saltB ? iv(paired(saltB, saltA, m.id), m.digits + 1) : '–'} | ${redraws.length ? f(Math.max(...redraws.map(r => Math.abs(paired(r, rules, m.id).mean))), m.digits + 1) : '–'} | ${f(noise(m.id), m.digits + 1)} |`);
 
   // against the top pick of the same adapter
-  const sets: [string, string, string[]][] = [['first adapter', 'r4-top', ['r4-draw-1', 'r4-draw-2', 'r4-held', 'r4-block', 'r4s2-top', 'r4s2-draw-1']], ['third adapter', 'r4c-top', ['r4c-draw-1', 'r4c-held', 'r4c-block']], ['even odds (plumbing check)', 'even-top', ['even-draw-1', 'even-draw-2', 'even-held', 'even-block']]];
+  const sets: [string, string, string[]][] = [['first adapter', 'r4-top', ['r4-draw-1', 'r4-draw-2', 'r4-held', 'r4-block', 'r4-whole', 'r4s2-top', 'r4s2-draw-1']], ['third adapter', 'r4c-top', ['r4c-draw-1', 'r4c-held', 'r4c-block', 'r4c-whole']], ['even odds (plumbing check)', 'even-top', ['even-draw-1', 'even-draw-2', 'even-held', 'even-block', 'even-whole']]];
   for (const [label, top, arms] of sets) { if (!has(top)) continue; const got = arms.filter(has); if (!got.length) continue;
     md.push('', `## Against the top pick, ${label} (\`${top}\`)`, '', `| Measure | \`${top}\` | the rules | ${got.map(a => `\`${a}\` minus top`).join(' | ')} |`, `|---|---|---|${got.map(() => '---').join('|')}|`);
     for (const m of R9_MEASURES) md.push(`| ${m.label} | ${f(armMean(rowsOf(top), m.id), m.digits)} | ${f(armMean(rules, m.id), m.digits)} | ${got.map(a => { const d = differs(rowsOf(a), rowsOf(top), m.id, noise(m.id)); return `${iv(d.diff, m.digits)}${d.differs ? ' **differs**' : ''}`; }).join(' | ')} |`);

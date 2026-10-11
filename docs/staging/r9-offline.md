@@ -21,16 +21,16 @@ One difference from his script: there, an option that left the menu and came bac
 
 ## 2. This stage's epochs (the predictions for the arms)
 
-The `act` epoch of every ask is the one step 0 recorded while it replayed the saved run through the loop (it opens at an animal's first ask, when its act was replaced or it arrived, at an interrupt, or after a fallback to the rules); `block` is the half hour of the ask. A **re-ask** is an ask inside an epoch that is already open: only there can holding differ from drawing afresh.
+The `act` epoch of every ask is the one step 0 recorded while it replayed the saved run through the loop (it opens at an animal's first ask, when its act was replaced or it arrived, at an interrupt, or after a fallback to the rules); `block` is the half hour of the ask. A **re-ask** is an ask inside an epoch that is already open: only there can holding differ from drawing afresh. `whole` (exploratory; prereg §10, amendment A2) is the act through interrupts: an ask the saved run opened at an interrupt alone, its act still going, is counted as a re-ask.
 
 Both seeds pooled (50 animal-days an arm).
 
-| Saved arm | asks a day | epochs opened a day: first | act replaced | arrived | interrupt | after a fallback | re-asks a day | re-asks as a share of asks | at a re-ask the held option is missing |
-|---|---|---|---|---|---|---|---|---|---|
-| first adapter (`r4-rules-state`), gate on | 53.9 | 0.2 | 14.6 | 0.5 | 16.3 | 0.2 | 22.3 | 41.3% | 2.5% |
-| third adapter (`r4c-rules-state`), gate on | 63.3 | 0.2 | 16.8 | 1.2 | 28.4 | 0.7 | 16.8 | 26.5% | 3.1% |
-| first adapter, gate off | 95.9 | 0.2 | 24.8 | 0.0 | 28.7 | 0.8 | 42.1 | 44.0% | 3.1% |
-| third adapter, gate off | 195.4 | 0.1 | 72.9 | 0.0 | 94.2 | 10.0 | 28.0 | 14.3% | 3.0% |
+| Saved arm | asks a day | epochs opened a day: first | act replaced | arrived | interrupt | of those, the act was also replaced | after a fallback | re-asks a day | re-asks as a share of asks | at a re-ask the held option is missing |
+|---|---|---|---|---|---|---|---|---|---|---|
+| first adapter (`r4-rules-state`), gate on | 53.9 | 0.2 | 14.6 | 0.5 | 16.3 | 3.7 | 0.2 | 22.3 | 41.3% | 2.5% |
+| third adapter (`r4c-rules-state`), gate on | 63.3 | 0.2 | 16.8 | 1.2 | 28.4 | 9.1 | 0.7 | 16.8 | 26.5% | 3.1% |
+| first adapter, gate off | 95.9 | 0.2 | 24.8 | 0.0 | 28.7 | 4.6 | 0.8 | 42.1 | 44.0% | 3.1% |
+| third adapter, gate off | 195.4 | 0.1 | 72.9 | 0.0 | 94.2 | 23.3 | 10.0 | 28.0 | 14.3% | 3.0% |
 
 The applied option changes at a re-ask with the option applied last still on the menu (for `held` this is "the held draw is overturned"):
 
@@ -38,21 +38,25 @@ The applied option changes at a re-ask with the option applied last still on the
 |---|---|---|---|---|---|
 | first adapter (`r4-rules-state`), gate on | act | 21.7 | 29.2% | 32.7% | 23.3% |
 | first adapter (`r4-rules-state`), gate on | block | 19.7 | 29.4% | 45.0% | 26.3% |
+| first adapter (`r4-rules-state`), gate on | whole | 33.8 | 35.3% | 42.7% | 29.5% |
 | third adapter (`r4c-rules-state`), gate on | act | 16.3 | 41.8% | 44.3% | 33.7% |
 | third adapter (`r4c-rules-state`), gate on | block | 20.1 | 32.5% | 53.0% | 32.2% |
+| third adapter (`r4c-rules-state`), gate on | whole | 33.2 | 40.4% | 52.0% | 36.2% |
 | first adapter, gate off | act | 40.8 | 22.7% | 33.2% | 19.8% |
 | first adapter, gate off | block | 50.5 | 32.8% | 48.1% | 27.4% |
+| first adapter, gate off | whole | 63.5 | 31.3% | 43.1% | 26.7% |
 | third adapter, gate off | act | 27.2 | 22.9% | 31.5% | 20.8% |
 | third adapter, gate off | block | 94.8 | 32.6% | 52.0% | 29.7% |
+| third adapter, gate off | whole | 85.0 | 33.8% | 46.9% | 28.5% |
 
 Changes of the applied option and trips begun, per animal and day:
 
-| Saved arm | act changes: top pick | draw | held, `act` | held, `block` | trips begun: top pick | draw | held, `act` | held, `block` |
-|---|---|---|---|---|---|---|---|---|
-| first adapter (`r4-rules-state`), gate on | 29.8 | 34.4 (33.4 to 35.4) | 32.5 (31.8 to 33.4) | 30.6 (29.6 to 31.6) | 2.3 | 4.7 (4.2 to 5.1) | 4.4 (3.9 to 5.2) | 4.4 (3.8 to 4.8) |
-| third adapter (`r4c-rules-state`), gate on | 42.7 | 47.4 (46.7 to 48.2) | 46.0 (45.1 to 46.9) | 42.9 (41.7 to 43.6) | 13.8 | 11.8 (11.3 to 12.2) | 11.6 (11.0 to 12.1) | 11.3 (10.7 to 11.7) |
-| first adapter, gate off | 48.2 | 59.9 (58.8 to 61.0) | 55.0 (53.7 to 56.1) | 49.7 (48.2 to 51.1) | 4.0 | 8.6 (7.7 to 9.3) | 8.1 (7.3 to 8.7) | 7.7 (6.7 to 8.6) |
-| third adapter, gate off | 121.3 | 143.9 (142.8 to 145.0) | 141.5 (139.6 to 142.7) | 123.7 (122.0 to 125.3) | 53.6 | 42.7 (41.7 to 43.5) | 42.3 (41.4 to 43.3) | 41.5 (40.2 to 42.6) |
+| Saved arm | act changes: top pick | draw | held, `act` | held, `block` | held, `whole` | trips begun: top pick | draw | held, `act` | held, `block` | held, `whole` |
+|---|---|---|---|---|---|---|---|---|---|---|
+| first adapter (`r4-rules-state`), gate on | 29.8 | 34.4 (33.4 to 35.4) | 32.5 (31.8 to 33.4) | 30.6 (29.6 to 31.6) | 30.4 (29.4 to 31.2) | 2.3 | 4.7 (4.2 to 5.1) | 4.4 (3.9 to 5.2) | 4.4 (3.8 to 4.8) | 4.4 (3.9 to 5.1) |
+| third adapter (`r4c-rules-state`), gate on | 42.7 | 47.4 (46.7 to 48.2) | 46.0 (45.1 to 46.9) | 42.9 (41.7 to 43.6) | 43.0 (42.3 to 43.7) | 13.8 | 11.8 (11.3 to 12.2) | 11.6 (11.0 to 12.1) | 11.3 (10.7 to 11.7) | 11.2 (10.6 to 11.9) |
+| first adapter, gate off | 48.2 | 59.9 (58.8 to 61.0) | 55.0 (53.7 to 56.1) | 49.7 (48.2 to 51.1) | 50.7 (49.4 to 52.3) | 4.0 | 8.6 (7.7 to 9.3) | 8.1 (7.3 to 8.7) | 7.7 (6.7 to 8.6) | 7.9 (7.0 to 8.5) |
+| third adapter, gate off | 121.3 | 143.9 (142.8 to 145.0) | 141.5 (139.6 to 142.7) | 123.7 (122.0 to 125.3) | 130.6 (129.2 to 132.0) | 53.6 | 42.7 (41.7 to 43.5) | 42.3 (41.4 to 43.3) | 41.5 (40.2 to 42.6) | 41.3 (40.1 to 42.3) |
 
 ## 3. Model time of the saved arms (the estimate for a new arm)
 

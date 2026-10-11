@@ -33,7 +33,7 @@ import { ARMS, DAY, decodeDiffers, GuardedScorer, MAX_DAYS, replayKernel, runArm
 import type { DecodeMode } from '../src/kernel/decode';
 
 /** An arm of stage R9. `saved`: the arm of R4b's loop test whose receipts it replays (step 0: no model, and it must end on that arm's hash). */
-export type R9Arm = ArmSpec & { saved?: string; step: 0 | 1 | 2 | 3 | 'dry'; what: string };
+export type R9Arm = ArmSpec & { saved?: string; step: 0 | 1 | 2 | 3 | 'x' | 'dry'; what: string };
 const D = (mode: DecodeMode, salt: number, hold: Hold = 'act'): HarnessDecode => ({ mode, salt, hold });
 const R4 = 'r4-rules-state', R4C = 'r4c-rules-state', S2 = 'r4-rules-state-s2';
 export const R9_ARMS: Record<string, R9Arm> = {
@@ -53,6 +53,10 @@ export const R9_ARMS: Record<string, R9Arm> = {
   // step 2: the contrast, gate off
   'r4-held-free': { kernel: 'gliner', adapter: R4, decode: D('held', 1, 'act'), step: 2, what: 'first adapter, held for the act, gate off' },
   'r4c-held-free': { kernel: 'gliner', adapter: R4C, decode: D('held', 1, 'act'), step: 2, what: 'third adapter, held for the act, gate off' },
+  // exploratory, no rule attached (prereg §10, amendment A2): held for the whole act, through interrupts
+  'r4-whole': { kernel: 'gliner', adapter: R4, gate: 1, decode: D('held', 1, 'whole'), step: 'x', what: 'first adapter, held for the whole act (exploratory)' },
+  'r4c-whole': { kernel: 'gliner', adapter: R4C, gate: 1, decode: D('held', 1, 'whole'), step: 'x', what: 'third adapter, held for the whole act (exploratory)' },
+  'r4c-whole-free': { kernel: 'gliner', adapter: R4C, decode: D('held', 1, 'whole'), step: 'x', what: 'third adapter, held for the whole act, gate off (exploratory)' },
   // step 3: the first recipe retrained with a second training seed (scripts/r9-seed2.sh)
   'r4s2-top': { kernel: 'gliner', adapter: S2, gate: 1, decode: D('top', 0), step: 3, what: 'first recipe, second training seed, top pick' },
   'r4s2-draw-1': { kernel: 'gliner', adapter: S2, gate: 1, decode: D('draw', 1), step: 3, what: 'first recipe, second training seed, draw, salt 1' },
@@ -66,6 +70,7 @@ export const R9_ARMS: Record<string, R9Arm> = {
   'even-draw-2': { kernel: 'null', gate: 1, decode: D('draw', 2), step: 'dry', what: 'even odds, draw, salt 2' },
   'even-held': { kernel: 'null', gate: 1, decode: D('held', 1, 'act'), step: 'dry', what: 'even odds, held for the act' },
   'even-block': { kernel: 'null', gate: 1, decode: D('held', 1, 'block'), step: 'dry', what: 'even odds, held for the half hour' },
+  'even-whole': { kernel: 'null', gate: 1, decode: D('held', 1, 'whole'), step: 'dry', what: 'even odds, held for the whole act (exploratory)' },
   'even-draw-free': { kernel: 'null', decode: D('draw', 1), step: 'dry', what: 'even odds, draw, gate off' },
   'even-held-free': { kernel: 'null', decode: D('held', 1, 'act'), step: 'dry', what: 'even odds, held for the act, gate off' },
   // the wiring check (no model): the model arms' own path (worker process, guarded scorer, GLiNER kernel, state-only packet)
