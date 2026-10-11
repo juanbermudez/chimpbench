@@ -318,7 +318,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   let disposed = false;
   let frameNo = 0;
   /** Harness-only overrides (not part of the scene contract). */
-  const debug: { clip: string | null; attention: boolean; anim?: (id: number) => Anim | undefined; feet?: (id: number) => unknown; lodSwitches: number; lodBlends: number } = { clip: null, attention: true, anim: id => anims.get(id), lodSwitches: 0, lodBlends: 0 };
+  // lodFade false: a mesh-level change is drawn at once. The harness tile sheets update the layer once per tile with
+  // dt 0, so a cross-fade never advanced and each tile showed the level chosen for the tile before it (W3).
+  // blink false: eyes stay open (the face sheet is a check of the eyes; a blink lasts 0.13 s and hides them).
+  const debug: { clip: string | null; attention: boolean; lodFade: boolean; blink: boolean; anim?: (id: number) => Anim | undefined; feet?: (id: number) => unknown; lodSwitches: number; lodBlends: number } = { clip: null, attention: true, lodFade: true, blink: true, anim: id => anims.get(id), lodSwitches: 0, lodBlends: 0 };
   // Harness probe (?debug=feet): ankle and wrist world points, stance flags, lock states and counters.
   const FEET = [B.handL, B.handR, B.footL, B.footR];
   debug.feet = (id: number) => {
@@ -1124,12 +1127,15 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     d[o + 4] = a.skin[0]; d[o + 5] = a.skin[1]; d[o + 6] = a.skin[2]; d[o + 7] = Math.min(0.99, a.mottle) + Math.round(a.grin * 15);
     const swell = c.sex === 'female' ? clamp(c.swelling ?? 0, 0, 1) : 0;
     d[o + 8] = a.bristle; d[o + 9] = swell > 0.01 ? swell : -a.tuft; d[o + 10] = a.beard; d[o + 11] = a.bald;
-    const blink = blinkAt(a.blink, a.id, elapsed);
+    const blink = debug.blink ? blinkAt(a.blink, a.id, elapsed) : 0;
     d[o + 12] = a.dim; d[o + 13] = a.mouth; d[o + 14] = Math.max(a.out.v[PI.eyes], blink); d[o + 15] = a.fade;
     // P4: iris offset (yaw, pitch in radians, head frame), brow raise (−1 lowered .. 1 raised), lip press.
     d[o + 16] = a.eye[0].x; d[o + 17] = a.eye[1].x; d[o + 18] = a.out.v[PI.brow]; d[o + 19] = a.out.v[PI.press];
     // P5.x: palms and soles darken from juvenility to adulthood (pale in infants).
     d[o + 20] = smoothstep(4, 14, c.age ?? 20);
+    // P5.y: the iris of the young is drawn up to 22% wider and a third darker, easing out between 3 and 11 years, so
+    // an infant's eye reads large and dark in its pale face (stylization: no measured ratio; W3).
+    d[o + 21] = 0.22 * (1 - smoothstep(3, 11, c.age ?? 20));
   }
 
   // Body frame from heading and terrain slope (quadrupeds align more than sitters).
@@ -1454,7 +1460,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       if (lod === 2 && a.px > up1) lod = a.px > up0 ? 0 : 1;
       if (lod === 3 && !lods[3]) lod = 0;
       while (!lods[lod]) lod++;
-      if (lod !== a.lod) { a.lodFrom = a.lod; a.lodT = 0; debug.lodSwitches++; if (lods[a.lodFrom]) debug.lodBlends++; }
+      if (lod !== a.lod) { a.lodFrom = a.lod; a.lodT = debug.lodFade ? 0 : LOD_FADE; debug.lodSwitches++; if (lods[a.lodFrom]) debug.lodBlends++; }
       a.lod = lod;
       a.lodT += dt;
       const blend = a.lodT < LOD_FADE && a.lodFrom !== lod && !!lods[a.lodFrom];

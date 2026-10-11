@@ -25,6 +25,25 @@ interface Prim {
 interface Mask { name: MaskName; c: V3; r: V3; f: number; }
 type MaskName = 'face' | 'bald' | 'beard' | 'gray' | 'tuft' | 'swell' | 'back' | 'mouth' | 'palm';
 
+/**
+ * Bind-space landmarks the material paints from (material.ts) and the tests check (tests/render-body.test.ts). Left
+ * side; the right is the mirror image in x.
+ */
+/** Eyeball: centre and radius of the primitive below (the coarser levels thicken it sideways; the paint does not). */
+export const EYE = { c: [0.0265, 1.1575, 0.1115] as V3, r: 0.0124 };
+/** Ear plate: centre, radii (thickness, height, depth) and its turn about Y; `concha` is the painted hollow on its outer face (plate-local offset and radii; stylization, no measurement). */
+export const EAR = { c: [0.082, 1.146, 0.03] as V3, r: [0.0095, 0.034, 0.028] as V3, rotY: -0.72, concha: { c: [-0.002, 0.0012] as [number, number], r: [0.021, 0.016] as [number, number] } };
+/**
+ * Sexual swelling and the infant's white tail tuft, as region masks on the pelvis. The swelling is anogenital skin and
+ * the tuft is on the rump (docs/research.md, "Addendum: W3 body defects", shefferly2005 [L]), so both sit low on the
+ * back of the pelvis: with the hips pitched 1.1 rad in the knuckle-walking stance (poses.ts quadStance) the swelling
+ * faces backward about level with the hip joint and the tuft lies above it at the tail-bone. Where exactly, and how
+ * large, is a stylization: the mask sizes are the ones the body had before (the swelling's width and the tuft's
+ * radii unchanged), not measurements.
+ */
+export const SWELL = { c: [0, 0.53, -0.085] as V3, r: [0.052, 0.042, 0.042] as V3 };
+export const TUFT = { c: [0, 0.572, -0.122] as V3, r: [0.028, 0.035, 0.03] as V3 };
+
 const mirrorBone = (bone: BoneName): number => {
   if (bone.endsWith('L')) return B[(bone.slice(0, -1) + 'R') as BoneName];
   if (bone.endsWith('L2')) return B[(bone.slice(0, -2) + 'R2') as BoneName];
@@ -84,7 +103,7 @@ function buildPrims(lo: boolean): { prims: Prim[]; masks: Mask[] } {
   cone('brow', [0, 1.186, 0.108], [0.03, 1.185, 0.106], 0.0165 * thin, 0.0165 * thin, { k: 0.012, skin: 1, sigma: 0.008 }, true);
   cone('brow', [0.03, 1.185, 0.106], [0.053, 1.179, 0.088], 0.0165 * thin, 0.013 * thin, { k: 0.012, skin: 1, sigma: 0.008 }, true);
   ell('head', [0.027, 1.158, 0.126], [0.0175, 0.013, 0.014], { sub: true, k: 0.006, sigma: 0.01 }, true);
-  ell('head', [0.0265, 1.1575, 0.1115], [0.0124 * thin, 0.0124 * thin, 0.0124], { k: 0.003, eye: 1, skin: 1, sigma: 0.004 }, true);
+  ell('head', EYE.c, [EYE.r * thin, EYE.r * thin, EYE.r], { k: 0.003, eye: 1, skin: 1, sigma: 0.004 }, true);
   // Narrow nose bridge dropping to a small, flat nose.
   ell('head', [0, 1.148, 0.118], [0.014, 0.022, 0.014], { k: 0.012, skin: 1, sigma: 0.01 });
   ell('head', [0, 1.131, 0.136], [0.019, 0.0095, 0.0105], { k: 0.01, skin: 1, sigma: 0.008 });
@@ -96,9 +115,10 @@ function buildPrims(lo: boolean): { prims: Prim[]; masks: Mask[] } {
   cone('jaw', [0.047, 1.122, 0.046], [0.033, 1.084, 0.098], 0.02, 0.016, { k: 0.02, skin: 0.3, sigma: 0.012 }, true);
   // Mouth line groove so the lips read even when closed.
   cone('lipU', [-0.034, 1.0905, 0.151], [0.034, 1.0905, 0.151], 0.0032, 0.0032, { sub: true, k: 0.004, sigma: 0.004 });
-  // Large, protruding cup ears at eye level — the quickest cue that this is not a gorilla.
-  ell('earL', [0.082, 1.146, 0.03], [0.0095 * thin, 0.034, 0.028], { k: 0.01, skin: 1, rotY: -0.72, sigma: 0.006 }, true);
-  ell('earL', [0.087, 1.144, 0.036], [0.006, 0.022, 0.017], { sub: true, k: 0.004, rotY: -0.72, sigma: 0.004 }, true);
+  // Large, protruding cup ears at eye level — the quickest cue that this is not a gorilla. The plate is solid: a
+  // concha cut into it left a wall thinner than the mesh spacing, which surface nets drew as a hole through the ear
+  // (W3). The hollow is painted in the material instead (EAR below; a stylization).
+  ell('earL', EAR.c, [EAR.r[0] * thin, EAR.r[1], EAR.r[2]], { k: 0.01, skin: 1, rotY: EAR.rotY, sigma: 0.006 }, true);
   // --- Arms: long, with powerful forearms.
   ell('uarmL', [0.184, 0.966, -0.022], [0.066, 0.074, 0.068], { k: 0.035, shag: 0.012 }, true);
   cone('uarmL', [0.186, 0.968, -0.024], [0.222, 0.732, -0.035], 0.058, 0.045, { k: 0.03, shag: 0.011 }, true);
@@ -136,8 +156,8 @@ function buildPrims(lo: boolean): { prims: Prim[]; masks: Mask[] } {
   masks.push({ name: 'gray', c: [0, 0.66, -0.1], r: [0.09, 0.08, 0.05], f: 0.04 });
   masks.push({ name: 'gray', c: [0.09, 0.47, -0.035], r: [0.07, 0.13, 0.07], f: 0.03 });
   masks.push({ name: 'gray', c: [-0.09, 0.47, -0.035], r: [0.07, 0.13, 0.07], f: 0.03 });
-  masks.push({ name: 'tuft', c: [0, 0.64, -0.125], r: [0.028, 0.035, 0.03], f: 0.008 });
-  masks.push({ name: 'swell', c: [0, 0.595, -0.12], r: [0.052, 0.048, 0.035], f: 0.01 });
+  masks.push({ name: 'tuft', c: TUFT.c, r: TUFT.r, f: 0.008 });
+  masks.push({ name: 'swell', c: SWELL.c, r: SWELL.r, f: 0.01 });
   masks.push({ name: 'back', c: [0, 0.92, -0.07], r: [0.24, 0.22, 0.13], f: 0.05 });
   masks.push({ name: 'mouth', c: [0, 1.091, 0.142], r: [0.046, 0.02, 0.028], f: 0.006 });
   for (const p of prims) {
@@ -270,22 +290,29 @@ export function buildChimpGeometry(h: number, lo = false): { geometry: THREE.Buf
     cellVert[i + cx * (j + cy * k)] = verts.length / 3;
     verts.push(min[0] + (i + sx / n) * h, min[1] + (j + sy / n) * h, min[2] + (k + sz / n) * h);
   }
+  // Each quad is wound from the grid edge it crosses: its four cells are listed anticlockwise about +x, -y and +z, so
+  // the winding is reversed when the inside lies on the far end of the edge. (W3: triangles used to be wound by the
+  // SDF normals of their corners, which point anywhere on a feature thinner than the grid, such as the ear plate on
+  // the coarser levels; wrongly wound triangles are culled and the viewer sees through the body.)
   const quads: number[] = [];
   const cv = (i: number, j: number, k: number) => cellVert[i + cx * (j + cy * k)];
   for (let k = 1; k < cz; k++) for (let j = 1; j < cy; j++) for (let i = 0; i < cx; i++) {
     const a = grid[gi(i, j, k)], b = grid[gi(i + 1, j, k)];
     if ((a < 0) === (b < 0)) continue;
-    quads.push(cv(i, j - 1, k - 1), cv(i, j, k - 1), cv(i, j, k), cv(i, j - 1, k));
+    if (a < 0) quads.push(cv(i, j - 1, k - 1), cv(i, j, k - 1), cv(i, j, k), cv(i, j - 1, k));
+    else quads.push(cv(i, j - 1, k), cv(i, j, k), cv(i, j, k - 1), cv(i, j - 1, k - 1));
   }
   for (let k = 1; k < cz; k++) for (let j = 0; j < cy; j++) for (let i = 1; i < cx; i++) {
     const a = grid[gi(i, j, k)], b = grid[gi(i, j + 1, k)];
     if ((a < 0) === (b < 0)) continue;
-    quads.push(cv(i - 1, j, k - 1), cv(i, j, k - 1), cv(i, j, k), cv(i - 1, j, k));
+    if (a >= 0) quads.push(cv(i - 1, j, k - 1), cv(i, j, k - 1), cv(i, j, k), cv(i - 1, j, k));
+    else quads.push(cv(i - 1, j, k), cv(i, j, k), cv(i, j, k - 1), cv(i - 1, j, k - 1));
   }
   for (let k = 0; k < cz; k++) for (let j = 1; j < cy; j++) for (let i = 1; i < cx; i++) {
     const a = grid[gi(i, j, k)], b = grid[gi(i, j, k + 1)];
     if ((a < 0) === (b < 0)) continue;
-    quads.push(cv(i - 1, j - 1, k), cv(i, j - 1, k), cv(i, j, k), cv(i - 1, j, k));
+    if (a < 0) quads.push(cv(i - 1, j - 1, k), cv(i, j - 1, k), cv(i, j, k), cv(i - 1, j, k));
+    else quads.push(cv(i - 1, j, k), cv(i, j, k), cv(i, j - 1, k), cv(i - 1, j - 1, k));
   }
   const vcount = verts.length / 3;
   const pos = new Float32Array(verts);
@@ -308,16 +335,9 @@ export function buildChimpGeometry(h: number, lo = false): { geometry: THREE.Buf
     pos[v * 3] = x; pos[v * 3 + 1] = y; pos[v * 3 + 2] = z;
     nrm[v * 3] = gx; nrm[v * 3 + 1] = gy; nrm[v * 3 + 2] = gz;
   }
-  // Triangulate quads along the shorter diagonal and orient by the SDF normal.
+  // Triangulate quads along the shorter diagonal, keeping the quad's winding.
   const index: number[] = [];
-  const tri = (a: number, b: number, c: number) => {
-    const ax = pos[a * 3], ay = pos[a * 3 + 1], az = pos[a * 3 + 2];
-    const ux = pos[b * 3] - ax, uy = pos[b * 3 + 1] - ay, uz = pos[b * 3 + 2] - az;
-    const vx = pos[c * 3] - ax, vy = pos[c * 3 + 1] - ay, vz = pos[c * 3 + 2] - az;
-    const tx = uy * vz - uz * vy, ty = uz * vx - ux * vz, tz = ux * vy - uy * vx;
-    const nx2 = nrm[a * 3] + nrm[b * 3] + nrm[c * 3], ny2 = nrm[a * 3 + 1] + nrm[b * 3 + 1] + nrm[c * 3 + 1], nz2 = nrm[a * 3 + 2] + nrm[b * 3 + 2] + nrm[c * 3 + 2];
-    if (tx * nx2 + ty * ny2 + tz * nz2 >= 0) index.push(a, b, c); else index.push(a, c, b);
-  };
+  const tri = (a: number, b: number, c: number) => { index.push(a, b, c); };
   const dist2 = (a: number, b: number) => (pos[a * 3] - pos[b * 3]) ** 2 + (pos[a * 3 + 1] - pos[b * 3 + 1]) ** 2 + (pos[a * 3 + 2] - pos[b * 3 + 2]) ** 2;
   for (let q = 0; q < quads.length; q += 4) {
     const a = quads[q], b = quads[q + 1], c = quads[q + 2], d = quads[q + 3];
@@ -368,6 +388,9 @@ export function buildChimpGeometry(h: number, lo = false): { geometry: THREE.Buf
     for (let s = 0; s < 4; s++) { const bi = skinIndex[v * 4 + s]; if (bi === B.jaw || bi === B.lipL) jawW += skinWeight[v * 4 + s]; }
     const face = maskOf('face', x, y, z);
     const skinM = Math.max(skin, face * (1 - eye));
+    // regA.y (eye) is a weight-normalised mean over nearby primitives: 0.23 to 0.37 over the iris and never above
+    // 0.46, at every mesh level. The material painted the eye through it, so two thirds of what was drawn there was
+    // the face colour (W3); it now paints the eye from EYE in bind space and no longer reads this channel.
     regA[v * 4] = Math.min(1, skinM); regA[v * 4 + 1] = eye; regA[v * 4 + 2] = lip; regA[v * 4 + 3] = maskOf('swell', x, y, z);
     regB[v * 4] = maskOf('tuft', x, y, z);
     regB[v * 4 + 1] = Math.max(maskOf('gray', x, y, z), maskOf('beard', x, y, z) * 0.6);

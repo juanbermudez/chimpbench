@@ -8,7 +8,15 @@
 // emissive term: chimpanzees have no tapetum lucidum. Optional halo shells
 // (LOD0, 'high') add silhouette fuzz.
 import * as THREE from 'three';
-import { PARAM_TEXEL, ROW_TEXELS } from './rig';
+import { EAR, EYE } from './body';
+import { ARM_ABDUCT, PARAM_TEXEL, ROW_TEXELS, joint } from './rig';
+
+const g = (x: number) => x.toFixed(5); // a number as a GLSL float literal
+/** The eye paint fades out between these distances outside the eyeball sphere (m, bind space; stylization). */
+export const EYE_RIM = [0.0008, 0.0022] as const;
+/** Extra depth of that rim straight in front of the iris, and the distances from the eye's axis between which it fades (m; stylization). */
+export const EYE_FRONT = [0.0016, 0.0085, 0.0115] as const;
+const SHOULDER = joint('uarmL');
 
 export interface ChimpMaterials {
   material: THREE.MeshStandardMaterial;
@@ -41,7 +49,8 @@ const SKIN_VERTEX = /* glsl */`
   mat4 cSkin = cBone(cSlot, aSkinIndex.x) * aSkinWeight.x + cBone(cSlot, aSkinIndex.y) * aSkinWeight.y
              + cBone(cSlot, aSkinIndex.z) * aSkinWeight.z + cBone(cSlot, aSkinIndex.w) * aSkinWeight.w;
   float cFurM = 1.0 - clamp(aRegA.x, 0.0, 1.0);
-  vec3 cPos = position + normal * (cP2.x * cFurM * (0.006 + 0.018 * aRegC.y) + max(cP2.y, 0.0) * aRegA.w * 0.05 * (0.6 + 0.4 * aRegA.w));
+  // The infant's tail tuft (cP2.y < 0) stands 16 mm proud in bind metres so it shows from the side too (stylization).
+  vec3 cPos = position + normal * (cP2.x * cFurM * (0.006 + 0.018 * aRegC.y) + max(cP2.y, 0.0) * aRegA.w * 0.05 * (0.6 + 0.4 * aRegA.w) + max(-cP2.y, 0.0) * aRegB.x * 0.016);
 `;
 
 /**
@@ -87,7 +96,7 @@ uniform float uOpacity; uniform vec3 uLine; uniform float uFillK; varying vec3 v
         ? 'gl_FragColor = vec4(uLine, uOpacity * 0.9 * mix(smoothstep(0.6, 0.92, vRim), 1.0, step(0.99, uFillK)));'
         : `gl_FragColor = vec4(vTint * (0.85 + 0.35 * vRim), uOpacity * uFillK * (1.0 - 0.86 * vLens));`);
   };
-  m.customProgramCacheKey = () => `mgogo-chimp-xray-v6-${outline ? 1 : 0}`;
+  m.customProgramCacheKey = () => `mgogo-chimp-xray-v7-${outline ? 1 : 0}`;
   return m;
 }
 
@@ -168,11 +177,15 @@ void RE_Direct_Hair( const in IncidentLight directLight, const in vec3 geometryP
   vec3 T1 = normalize( T + geometryNormal * ( 0.12 + gHairShift ) );
   vec3 T2 = normalize( T + geometryNormal * ( -0.18 + gHairShift ) );
   float d1 = dot( T1, H ), d2 = dot( T2, H );
-  float e1 = mix( 80.0, 160.0, gHairWet ), e2 = mix( 24.0, 48.0, gHairWet );
+  // Lobe widths and weights are a look, not a measurement (stylization). W3: both lobes are wider than they were
+  // (exponents halved, about 1.4 times the width) and weigh about 0.7 of what they did, so the highlight carries
+  // the same light as a soft band; the wet tip lobe is a third of its old weight, so wet fur is a dark sheen, not
+  // chrome.
+  float e1 = mix( 40.0, 80.0, gHairWet ), e2 = mix( 12.0, 24.0, gHairWet );
   float s1 = pow( sqrt( max( 0.0, 1.0 - d1 * d1 ) ), e1 ), s2 = pow( sqrt( max( 0.0, 1.0 - d2 * d2 ) ), e2 );
   float wrap = smoothstep( -0.15, 0.5, dot( geometryNormal, directLight.direction ) );
   // Weights ≈ hair Fresnel reflectance (a few percent), so black fur shows a sheen, not paint.
-  gHairSpec += directLight.color * wrap * ( s1 * mix( 0.011, 0.06, gHairWet ) + s2 * gHairTint * mix( 0.008, 0.006, gHairWet ) );
+  gHairSpec += directLight.color * wrap * ( s1 * mix( 0.008, 0.02, gHairWet ) + s2 * gHairTint * 0.006 );
 }
 #define RE_Direct RE_Direct_Hair`)
       .replace('#include <color_fragment>', `
@@ -202,7 +215,10 @@ void RE_Direct_Hair( const in IncidentLight directLight, const in vec3 geometryP
   cGray = clamp(cGray * (1.0 - cVent * 0.6), 0.0, 0.6);
   cFurCol = mix(cFurCol, vec3(0.15, 0.14, 0.125), cGray);
   // P2.y packs swelling (>0, adult females) or the infant tail tuft (<0); P2.z is the pale chin beard.
-  cFurCol = mix(cFurCol, vec3(0.78, 0.76, 0.70) * (0.85 + 0.2 * cStrand), clamp(max(-vP2.y, 0.0) * vRegB.x * 1.4, 0.0, 1.0));
+  // The tuft's edge is broken by the strand and clump noise so it reads as white hairs among dark ones, not a disc
+  // (stylization).
+  float cTuft = max(-vP2.y, 0.0) * smoothstep(0.3, 0.75, vRegB.x * (0.55 + 0.9 * cStrandV) + 0.25 * (cClump - 0.5));
+  cFurCol = mix(cFurCol, vec3(0.78, 0.76, 0.70) * (0.8 + 0.3 * cStrand), clamp(cTuft, 0.0, 1.0));
   cFurCol = mix(cFurCol, vec3(0.46, 0.44, 0.40) * (0.75 + 0.5 * cStrand), clamp(vP2.z * vRegC.z * (0.4 + 0.8 * cStrand), 0.0, 0.85));
   float cMottle = cNoise(vBind * 90.0) * 0.6 + cNoise(vBind * 260.0) * 0.4;
   float cMot = fract(vP1.a), cGrin = floor(vP1.a) / 15.0;
@@ -221,19 +237,51 @@ void RE_Direct_Hair( const in IncidentLight directLight, const in vec3 geometryP
     vec2 n = vec2(abs(vBind.x) - 0.0085, (vBind.y - 1.1285) * 1.6);
     cCol *= 1.0 - 0.8 * smoothstep(0.0048, 0.0028, length(n)) * step(0.138, vBind.z) * cSkinM;
   }
-  float cEye = vRegA.y * (1.0 - vP3.z);
+  {
+    // Fingers and toes are one slab in the mesh (2 cm digits cannot exist at 9 to 33 mm mesh spacing), so the gaps
+    // between them are drawn as the nostrils are: dark grooves in bind space, faded before they alias (W3; a
+    // stylization). Fingers hang down the bind pose from the knuckles; the arm's bind abduction (rig.ts ARM_ABDUCT)
+    // is undone first so the grooves run along the fingers. Toes run forward; one more groove sets off the big toe.
+    vec2 hp = vec2(abs(vBind.x) - ${g(SHOULDER[0])}, vBind.y - ${g(SHOULDER[1])});
+    vec2 hu = vec2(hp.x * ${g(Math.cos(ARM_ABDUCT))} + hp.y * ${g(Math.sin(ARM_ABDUCT))} + ${g(SHOULDER[0])}, -hp.x * ${g(Math.sin(ARM_ABDUCT))} + hp.y * ${g(Math.cos(ARM_ABDUCT))} + ${g(SHOULDER[1])});
+    float fx = hu.x - 0.244;
+    float fg = min(abs(fx), min(abs(fx - 0.01475), abs(fx + 0.01475)));
+    float fingers = smoothstep(0.0024, 0.0007, fg) * smoothstep(0.366, 0.35, hu.y) * step(0.24, hu.y) * step(abs(fx), 0.03) * (1.0 - smoothstep(0.35, 0.9, fwidth(fx) / 0.0024));
+    float tx = abs(vBind.x);
+    float tg = min(abs(tx - 0.0885), min(abs(tx - 0.0995), abs(tx - 0.11)));
+    float toes = smoothstep(0.0022, 0.0006, tg) * smoothstep(0.106, 0.118, vBind.z);
+    vec2 ha = vec2(tx - 0.0775, vBind.z - 0.086), hb = vec2(-0.0075, 0.036);
+    float hall = smoothstep(0.0024, 0.0007, length(ha - hb * clamp(dot(ha, hb) / dot(hb, hb), 0.0, 1.0)));
+    float feet = max(toes, hall) * step(vBind.y, 0.07) * (1.0 - smoothstep(0.35, 0.9, fwidth(tx) / 0.0022));
+    cCol *= 1.0 - 0.72 * max(fingers, feet) * smoothstep(0.3, 0.7, cSkinM);
+    // Ear hollow (concha): painted on the outer face of the solid ear plate (body.ts EAR), darker toward its middle.
+    vec3 eq = vec3(abs(vBind.x) - ${g(EAR.c[0])}, vBind.y - ${g(EAR.c[1])}, vBind.z - ${g(EAR.c[2])});
+    float elx = eq.x * ${g(Math.cos(EAR.rotY))} - eq.z * ${g(Math.sin(EAR.rotY))}, elz = eq.x * ${g(Math.sin(EAR.rotY))} + eq.z * ${g(Math.cos(EAR.rotY))};
+    float concha = (1.0 - smoothstep(0.45, 1.0, length(vec2((eq.y - ${g(EAR.concha.c[0])}) / ${g(EAR.concha.r[0])}, (elz - ${g(EAR.concha.c[1])}) / ${g(EAR.concha.r[1])})))) * smoothstep(0.0015, 0.005, elx) * step(length(eq), 0.045);
+    cCol = mix(cCol, cCol * vec3(0.3, 0.19, 0.19), concha * (0.7 + 0.25 * smoothstep(-0.012, 0.012, elz)) * cSkinM);
+  }
+  // Eye gate at full strength: the eyeball's own sphere in bind space (body.ts EYE) with a rim of 1 to 2 mm, which
+  // draws the lid line up close. Straight in front of the iris the rim is 1.6 mm deeper (EYE_FRONT): nothing but
+  // the eyeball lies there on the fine levels, and it takes in the eyeball that the coarser levels thicken. The gate
+  // used to be a per-vertex mask that is a weight-normalised mean over nearby primitives and stays under one half
+  // on the eyeball at every level, so most of what was drawn there was the face colour: dark on an adult's dark
+  // face, nothing on a pale young one (W3).
+  vec3 cEyeD = vec3(abs(vBind.x) - ${g(EYE.c[0])}, vBind.y - ${g(EYE.c[1])}, vBind.z - ${g(EYE.c[2])});
+  float cEyeA = ${g(EYE.r + EYE_RIM[0])} + ${g(EYE_FRONT[0])} * (1.0 - smoothstep(${g(EYE_FRONT[1])}, ${g(EYE_FRONT[2])}, length(cEyeD.xy)));
+  float cEye = (1.0 - smoothstep(cEyeA, cEyeA + ${g(EYE_RIM[1] - EYE_RIM[0])}, length(cEyeD))) * (1.0 - vP3.z);
   {
     // Iris and pupil painted in bind space around each eye's forward axis (eyes turn with the head).
     // P4.xy: gaze yaw/pitch in the head frame; the iris slides toward it (mirrored for the right eye).
+    // P5.y: the young animal's larger, darker iris (0 adult; creatures.ts writeParams; a stylization).
     vec2 cGaze = vP4.xy * 0.0078;
-    vec2 e = vec2(abs(vBind.x) - 0.0265 - cGaze.x * sign(vBind.x), vBind.y - 1.1575 - cGaze.y);
-    float r = length(e);
+    vec2 e = vec2(abs(vBind.x) - ${g(EYE.c[0])} - cGaze.x * sign(vBind.x), vBind.y - ${g(EYE.c[1])} - cGaze.y);
+    float r = length(e) / (1.0 + vP5.y);
     float fwd = smoothstep(0.108, 0.121, vBind.z);
     float ring = cNoise(vec3(atan(e.y, e.x) * 6.0, r * 900.0, 3.0));
     // Dark amber-brown iris with a darker limbal ring, near-black pupil, brown-pigmented sclera; the upper lid
     // shades the eye (no emissive: the "glow" was a saturated orange iris).
     vec3 iris = mix(vec3(0.07, 0.035, 0.014), vec3(0.16, 0.085, 0.03), ring) * (0.8 + 0.35 * smoothstep(0.009, 0.004, r));
-    iris *= 1.0 - 0.45 * smoothstep(0.0065, 0.0096, r);
+    iris *= (1.0 - 0.45 * smoothstep(0.0065, 0.0096, r)) * (1.0 - 1.6 * vP5.y);
     vec3 sclera = vec3(0.028, 0.02, 0.016);
     vec3 eyeCol = mix(sclera, iris, smoothstep(0.0098, 0.0082, r) * fwd);
     eyeCol = mix(eyeCol, vec3(0.004), smoothstep(0.0042, 0.0034, r) * fwd);
@@ -262,7 +310,11 @@ void RE_Direct_Hair( const in IncidentLight directLight, const in vec3 geometryP
   // Clumps and strands break the highlight up (a smooth band reads as leather or latex, not hair).
   float cFine = cNoise(vBind * vec3(640.0, 18.0, 640.0));
   float cFineK = 1.0 - smoothstep(0.2, 0.5, fwidth(vBind.x * 640.0));
-  float cHairMask = mix(0.15, 1.5, smoothstep(0.35, 0.7, cClump)) * mix(1.0, 0.35 + 1.2 * cStrand, cStrandK) * mix(1.0, 0.4 + 1.2 * cFine, cFineK);
+  // W3: the three masks used to multiply to as much as 3.7 with the clumps swinging the highlight between 0.15 and
+  // 1.5, which broke it into white blotches. Now the clumps only shade it (0.55 to 1.1), the strands streak it and
+  // the product is held under 1.2: a soft band broken by strands. Its mean is about what it was, so the sheen on a
+  // distant back (where the strand terms have faded to 1) is unchanged. Amounts are a look (stylization).
+  float cHairMask = min(1.2, mix(0.55, 1.1, smoothstep(0.35, 0.7, cClump)) * mix(1.0, 0.45 + 1.0 * cStrand, cStrandK) * mix(1.0, 0.5 + 1.0 * cFine, cFineK));
   gHairK = cFur * (1.0 - cVent * 0.7) * (1.0 - cGray * 0.5) * (1.0 - vP3.x * 0.6) * cHairMask;
   gHairShift = (cStrandV - 0.5) * 0.3 + (cClump - 0.5) * 0.2;
   gHairTint = normalize(vP0.rgb + 1e-4) * 0.9 + 0.1;
@@ -285,7 +337,7 @@ void RE_Direct_Hair( const in IncidentLight directLight, const in vec3 geometryP
   #endif`)
       .replace('#include <roughnessmap_fragment>', `
   float roughnessFactor = mix(0.86, 0.58, cSkinM);
-  roughnessFactor = mix(roughnessFactor, 0.36, cWet);
+  roughnessFactor = mix(roughnessFactor, 0.48, cWet); // W3: 0.36 mirrored the sun on wet fur (stylization)
   roughnessFactor = mix(roughnessFactor, 0.4, cSwell);
   roughnessFactor = mix(roughnessFactor, 0.07, cEye);`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
@@ -311,8 +363,9 @@ void RE_Direct_Hair( const in IncidentLight directLight, const in vec3 geometryP
   reflectedLight.indirectSpecular *= ambientOcclusion;
   // Dry hair scatters rather than mirrors: damp and warm-tint the specular lobe on fur (a white GGX lobe
   // turns black fur grey); wet fur gets its gloss back.
-  float cSpecK = mix(mix(0.08, 0.6, cWet), 1.0, cSkinM);
-  vec3 cSpecTint = mix(vP0.rgb * 6.0 + vec3(0.1), vec3(1.0), clamp(cSkinM + cWet, 0.0, 1.0));
+  // W3: wet fur keeps 0.3 of the lobe (was 0.6) and half of its warm tint, so it glistens without turning to chrome.
+  float cSpecK = mix(mix(0.08, 0.3, cWet), 1.0, cSkinM);
+  vec3 cSpecTint = mix(vP0.rgb * 6.0 + vec3(0.1), vec3(1.0), clamp(cSkinM + cWet * 0.5, 0.0, 1.0));
   reflectedLight.directSpecular *= cSpecK * cSpecTint;
   reflectedLight.indirectSpecular *= cSpecK * cSpecTint;`)
       .replace('#include <opaque_fragment>', `
@@ -354,11 +407,11 @@ void RE_Direct_Hair( const in IncidentLight directLight, const in vec3 geometryP
   #include <opaque_fragment>`);
   };
   material.onBeforeCompile = patch;
-  material.customProgramCacheKey = () => 'mgogo-chimp-v5';
+  material.customProgramCacheKey = () => 'mgogo-chimp-v6';
   const shell = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.8, metalness: 0, alphaToCoverage: true });
   shell.defines = { MGOGO_CREATURE: '', MGOGO_SHELL: '' };
   shell.onBeforeCompile = patch;
-  shell.customProgramCacheKey = () => 'mgogo-chimp-shell-v2';
+  shell.customProgramCacheKey = () => 'mgogo-chimp-shell-v3';
   const depth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
   depth.colorWrite = false;   // shadow maps sample the depth texture; the packed colour is never read
   depth.onBeforeCompile = shader => {
@@ -376,6 +429,6 @@ varying float vFade;`)
       .replace('void main() {', `void main() {
   if (vFade > 0.5) discard;`);
   };
-  depth.customProgramCacheKey = () => 'mgogo-chimp-depth-v1';
+  depth.customProgramCacheKey = () => 'mgogo-chimp-depth-v2';
   return { material, shell, depth, texture, data, uniforms };
 }
