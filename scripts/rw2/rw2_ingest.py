@@ -457,7 +457,7 @@ def write_records(out, dataset, records, opened):
     os.makedirs(os.path.join(out, dataset), exist_ok=True)
     for part in ('train', 'development') + (('sealed',) if opened else ()):
         with open(os.path.join(out, dataset, 'records-%s.jsonl' % part), 'w', encoding='utf-8') as f:
-            for r in records:
+            for r in sorted(records, key=lambda r: r['key']):   # by hashed key: neither the source's order nor the order in time
                 if r['part'] == part:
                     f.write(json.dumps(r, sort_keys=True) + '\n')
 
