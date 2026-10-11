@@ -613,7 +613,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   const treeCache = new Map<number, number>(); // chimp id → tree id for elevated animals
   let perchYaw = 0;
   /** A tree or nest place kept from an act the simulation has left is used only within this distance (m) of the drawn
-   * body (a design assumption: wider than any crown, far narrower than the distance to another feeding tree). */
+   * body (a design assumption: wider than a crown). A safety net: a body that has set off is read as on the move
+   * (update) and uses no remembered tree at all, so this only bounds what a wrong note in the record could do. */
   const REMEMBERED_TREE_M = 30;
   function treeFor(a: Anim): World['trees'][number] | null {
     const c = a.chimp;
