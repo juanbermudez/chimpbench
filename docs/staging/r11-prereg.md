@@ -919,6 +919,9 @@ scripts/r11-run.sh publish          # copies the tables to docs/staging; then co
   refuses to overwrite). Offline: run `offline` again (a `.part` file is not read). Loop: run `loop <seed>` again; it
   skips the arms on file and replays any arm whose replay is missing.
 - **One seed first:** `R11_SEEDS=4111 scripts/r11-run.sh report` reads seed 4111 alone.
+- **The wording baseline (W1)** is read from `docs/staging/r8-wording-numbers.md`, which a checkout holds once the
+  results of 11 October are merged (`track-e` from 241bceb). From the unmerged branch head, name the table:
+  `R11_WORDING=<path to r8-wording-numbers.md>`; without it W1 prints "not read" and nothing else changes.
 - **Optional, offline only:** `scripts/r11-run.sh train-hard p5b 7` (about 1 h 40 min) trains the one-hot comparison
   on the same rows; `offline` then scores it. No rule reads it.
 - **Never:** `R11_RERUN=1` without a logged reason; an arm on file is a result. `R11_ALLOW_OTHER_MODEL=1` only for the
