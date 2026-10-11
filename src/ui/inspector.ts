@@ -1,14 +1,16 @@
 import type { Ctx } from './app';
 import type { Action, Chimp, MemoryDigest, Relationship, World } from '../types';
-import type { InspectorTab } from './contracts';
+import type { DrawnActView, InspectorTab } from './contracts';
 import { icon } from './icons';
-import { actionVerb, ageText, ago, cap, duration, esc, feedCat, interactionCat, nameOf, pct, RELATION_LABEL, relationClass, stamp, troopOf, troopShort } from './format';
+import { actionLabel, actionSoon, actionVerb, ageText, ago, cap, duration, esc, feedCat, hhmm, interactionCat, nameOf, pct, RELATION_LABEL, relationClass, stamp, timeParts, troopOf, troopShort } from './format';
 import { alphaBadge, bar, chip, empty, meter, radar, troopChip } from './parts';
 import { mindHtml, mindKey } from './mind';
 import { egoTreeSvg } from './family-tree';
 import { egoNetworkSvg, relationLegend } from './graph';
 import { CAT_ICON } from './feed';
 import { CHIMP_LOG_MAX, chimpEvents } from './chimp-log';
+import { ACTIVITY_LABEL, createDecisionLog, timeline, watchDecisions, type DecisionLog } from './decision-log';
+import { targetName } from './mind-card';
 import { morph, setAttr, setText } from './morph';
 
 // Bottom chimp panel: the selected animal at the foot of the forest, between the left column and the right sidebar.
@@ -47,9 +49,13 @@ export function renderInto(el: HTMLElement, html: string) {
   }
 }
 
-/** The overview's one-line state: "Traveling · 17 min", or when and how the animal died. */
-export function nowLine(w: World, c: Chimp): string {
+/**
+ * The strip's one-line state: "Traveling · 17 min", or when and how the animal died. about (stage W4): the simulation
+ * has begun the act and the drawn body has not started it, so the line reads "About to travel" until the body does.
+ */
+export function nowLine(w: World, c: Chimp, about = false): string {
   if (!c.alive) return `Died ${c.deathTime !== null ? stamp(w, c.deathTime) : ''}${c.causeOfDeath ? ` · ${c.causeOfDeath}` : ''}`.trim();
+  if (about) return actionSoon(c.action);
   const t = c.actionTime ?? 0;
   return `${actionVerb(c.action)} · ${t < 60 ? 'just started' : duration(t / 3600)}`;
 }
@@ -83,12 +89,35 @@ function overviewHtml(ctx: Ctx, c: Chimp): string {
   </div>`;
 }
 
-/** Log: the field log filtered to this animal. */
-function logHtml(ctx: Ctx, c: Chimp): string {
-  const w = ctx.world(), evs = chimpEvents(w, c.id);
-  if (!evs.length) return empty(`Nothing in the field log names ${esc(c.name)} yet`, 'Entries appear here as they are recorded: greetings, grooming, conflicts, hunts, births and losses.', 'history');
-  return `<div class="clog-wrap"><h3 class="eyebrow">Activity log <span class="muted">${evs.length}${evs.length === CHIMP_LOG_MAX ? '+' : ''} field-log ${evs.length === 1 ? 'entry' : 'entries'}, newest first</span></h3>
-    <ol class="clog">${evs.map(e => { const cat = feedCat(e.kind); return `<li class="k-${cat} sev-${Math.min(3, e.severity ?? 0)}"><span class="mono cl-when">${stamp(w, e.time)}</span><span class="cl-ic">${icon(CAT_ICON[cat])}</span><span class="cl-text">${esc(e.text)}</span><span class="mono cl-ago">${ago(w, e.time)}</span></li>`; }).join('')}</ol></div>`;
+/** Hours shown on the Log tab's activity line. */
+const ACTIVITY_SPAN = 3;
+/** Decisions listed under it (the record keeps more: decision-log.ts). */
+const DECISIONS_SHOWN = 12;
+
+/**
+ * Log, first part (stage W4): what the interface saw this animal do since it was selected (decision-log.ts). One line
+ * of activity over the last three hours, then its changes of act, newest first, each with the simulation's own reason.
+ */
+function activityHtml(w: World, c: Chimp, log: DecisionLog): string {
+  if (log.chimpId !== c.id || !log.entries.length) return '';
+  const tl = timeline(log, w.time, ACTIVITY_SPAN), span = tl.to - tl.from;
+  const clock = (t: number) => hhmm(timeParts(w, t).hour);
+  const kinds = [...new Set(tl.segments.map(s => s.kind))].filter(k => k !== 'none');
+  const seen = [...log.entries].reverse().slice(0, DECISIONS_SHOWN);
+  return `<section class="tl"><h3 class="eyebrow">Activity <span class="muted">last ${ACTIVITY_SPAN} h, as the interface saw it since ${esc(stamp(w, log.since))}</span></h3>
+    <div class="tl-bar" role="img" aria-label="Activity over the last ${ACTIVITY_SPAN} hours: ${tl.segments.map(s => `${ACTIVITY_LABEL[s.kind]} ${clock(s.start)} to ${clock(s.end)}`).join(', ')}">${tl.segments.map(s => `<i class="tl-seg a-${s.kind}" style="flex:${Math.max(1, Math.round(((s.end - s.start) / span) * 1000))} 0 0" title="${ACTIVITY_LABEL[s.kind]} · ${clock(s.start)}–${clock(s.end)}"></i>`).join('')}</div>
+    <div class="tl-axis mono" aria-hidden="true"><span>${clock(tl.from)}</span><span>${clock(tl.from + span / 2)}</span><span>${clock(tl.to)}</span></div>
+    <p class="tl-legend">${kinds.map(k => `<span class="a-${k}"><i></i>${ACTIVITY_LABEL[k]}</span>`).join('')}<span class="a-none"><i></i>before it was selected</span></p></section>
+  <section><h3 class="eyebrow">Acts <span class="muted">${log.entries.length === 1 ? 'the one under way' : `${log.entries.length} seen, newest first`}${log.missed ? ` · ${log.missed} decision${log.missed === 1 ? '' : 's'} passed unseen at speed` : ''}</span></h3>
+    <ol class="clog dlog">${seen.map(e => { const tn = targetName(w, e); return `<li><span class="mono cl-when">${e.before ? 'since ' : ''}${clock(e.time)}</span><span class="cl-ic">${icon(ACTION_ICON[e.action] ?? 'leaf')}</span><span class="cl-text"><b>${esc(actionLabel(e.action))}</b>${tn ? ` → ${esc(tn)}` : ''}<i class="dlog-src">${e.source === 'decide' ? 'model' : 'rules'}${e.kept ? ` · kept at ${e.kept} more decision point${e.kept === 1 ? '' : 's'}` : ''}</i>${e.reason ? `<span class="dlog-why">${esc(e.reason)}</span>` : ''}</span><span class="mono cl-ago">${ago(w, e.time)}</span></li>`; }).join('')}</ol></section>`;
+}
+
+/** Log: what the animal has been doing (the interface's own record), then the field log filtered to it. */
+function logHtml(ctx: Ctx, c: Chimp, log: DecisionLog): string {
+  const w = ctx.world(), evs = chimpEvents(w, c.id), activity = activityHtml(w, c, log);
+  if (!evs.length && !activity) return empty(`Nothing in the field log names ${esc(c.name)} yet`, 'Entries appear here as they are recorded: greetings, grooming, conflicts, hunts, births and losses.', 'history');
+  return `<div class="clog-wrap">${activity}<section><h3 class="eyebrow">Field log <span class="muted">${evs.length ? `${evs.length}${evs.length === CHIMP_LOG_MAX ? '+' : ''} ${evs.length === 1 ? 'entry' : 'entries'} naming ${esc(c.name)}, newest first` : `nothing names ${esc(c.name)} yet`}</span></h3>
+    ${evs.length ? `<ol class="clog">${evs.map(e => { const cat = feedCat(e.kind); return `<li class="k-${cat} sev-${Math.min(3, e.severity ?? 0)}"><span class="mono cl-when">${stamp(w, e.time)}</span><span class="cl-ic">${icon(CAT_ICON[cat])}</span><span class="cl-text">${esc(e.text)}</span><span class="mono cl-ago">${ago(w, e.time)}</span></li>`; }).join('')}</ol>` : '<p class="subtle">The field log records notable events only: greetings, grooming, conflicts, hunts, births and losses.</p>'}</section></div>`;
 }
 
 function familyHtml(ctx: Ctx, c: Chimp): string {
@@ -252,6 +281,11 @@ export function createChimpPanel(root: HTMLElement, ctx: Ctx) {
     if (el.dataset.act === 'control') ctx.setModelControl(el.checked);
   });
   const photo = q<HTMLCanvasElement>('.ch-photo');
+  // What the renderer reports about the selected animal's drawn body (one record, reused at every refresh).
+  const drawn: DrawnActView = { action: 'rest', targetId: -1, about: false };
+  // What the selected animal has been seen doing (decision-log.ts): looked at on every refresh, also while the panel is
+  // collapsed or shows another tab, so the Log tab has a line to show when it is opened.
+  const seen = createDecisionLog();
   let headKey = '', bodyKey = '', tabKey = '', openKey: boolean | null = null, scrolled = 0, renderedAt = -1e9;
   // Snapshot: the scene draws the animal into the canvas when asked (render/creatures/portrait.ts). Asked on a new
   // selection and once more 1.5 s later (the camera has arrived, the pose has settled); after that only when the
@@ -286,15 +320,19 @@ export function createChimpPanel(root: HTMLElement, ctx: Ctx) {
       }
       snapshot(c);
       if (!c) { headKey = ''; morph(who, '<h2 class="ch-name"><span>Nobody selected</span></h2><p class="ch-meta">Click a chimp in the forest, on the map or in the field log.</p>'); if (open) renderInto(body, ''); return; }
-      const t = troopOf(w, c.troopId), now = nowLine(w, c);
-      const hk = [c.id, c.name, c.alive, c.stage, ageText(c), c.troopId, c.natalTroopId, t?.alphaId, t?.color, rankLine(w, c), now, c.action].join('|');
+      watchDecisions(seen, w, c);
+      // The act as the drawn body shows it ("About to …" while the body trails the simulation) and, in plain sight,
+      // the simulation's own reason sentence for it (Chimp.reason), also on the collapsed strip.
+      const about = c.alive && !!ctx.deps.getScene()?.drawnAct?.(c.id, drawn) && drawn.about;
+      const t = troopOf(w, c.troopId), now = nowLine(w, c, about), why = c.alive ? c.reason ?? '' : '';
+      const hk = [c.id, c.name, c.alive, c.stage, ageText(c), c.troopId, c.natalTroopId, t?.alphaId, t?.color, rankLine(w, c), now, c.action, about, why].join('|');
       if (force || hk !== headKey) {
         headKey = hk;
         renderInto(who, `<h2 class="ch-name"><span>${esc(c.name)}</span>${t?.alphaId === c.id && c.alive ? alphaBadge() : ''}${c.alive ? '' : '<span class="dagger" title="Deceased">†</span>'}</h2>
           <p class="ch-comm">${troopChip(t)}${c.natalTroopId !== c.troopId ? '<span class="muted">immigrant</span>' : ''}</p>
           <p class="ch-meta">${cap(c.stage)} ${c.sex} · ${ageText(c)}<span class="mono" title="Individual number">#${String(c.id).padStart(3, '0')}</span></p>
           <p class="ch-rank">${esc(rankLine(w, c))}</p>
-          <p class="ch-now">${icon(ACTION_ICON[c.action] ?? 'leaf')}<span>${esc(now)}</span></p>`);
+          <div class="ch-act${about ? ' soon' : ''}"><p class="ch-now">${icon(ACTION_ICON[c.action] ?? 'leaf')}<span>${esc(now)}</span></p>${why ? `<p class="ch-why" title="${esc(why)}">${esc(why)}</p>` : ''}</div>`);
         // Stand-in for the snapshot: the unit chip (square male, circle female, community colour, monogram).
         setText(chipEl.firstElementChild!, c.name.slice(0, 2)); setAttr(chipEl, 'data-sex', c.sex); setAttr(chipEl, 'data-size', SIZE[c.stage] ?? 'ad');
         if (t) shot.style.setProperty('--c', t.color);
@@ -308,7 +346,7 @@ export function createChimpPanel(root: HTMLElement, ctx: Ctx) {
         case 'mind': bk = mindKey(ctx, c); html = () => mindHtml(ctx, c); break;
         case 'family': bk = [c.id, w.chimps.length, w.chimps.filter(x => !x.alive).length, Math.floor(w.time / 24)].join('|'); html = () => familyHtml(ctx, c); break;
         case 'social': bk = [c.id, Math.floor(w.time * 4), w.interactions.length, c.digests?.length ?? 0].join('|'); html = () => socialHtml(ctx, c); break;
-        case 'log': { const evs = chimpEvents(w, c.id); bk = [c.id, evs.length, evs[0]?.time ?? '', Math.floor(w.time * 12)].join('|'); html = () => logHtml(ctx, c); break; }
+        case 'log': { const evs = chimpEvents(w, c.id), last = seen.entries[seen.entries.length - 1]; bk = [c.id, evs.length, evs[0]?.time ?? '', Math.floor(w.time * 12), seen.entries.length, last?.version ?? '', seen.missed].join('|'); html = () => logHtml(ctx, c, seen); break; }
         default: bk = [c.id, c.mood, c.alive, Math.round(c.hunger * 50), Math.round(c.thirst * 50), Math.round(c.energy * 50), Math.round(c.social * 50), Math.round(c.stress * 50), Math.round(c.health * 50), Math.round(c.injury * 50), Math.round(c.swelling * 20), c.lactating, c.pregnancy > 0, c.carryingMeat > 0, c.vocal, c.nest !== null, c.episodes?.length, Math.floor(w.time * 4)].join('|'); html = () => overviewHtml(ctx, c);
       }
       bk = `${tk}:${bk}`;

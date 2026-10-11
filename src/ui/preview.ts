@@ -44,7 +44,10 @@ if (params.get('exp')) app.ctx.fireExperiment('playback-stranger');
 let prev = performance.now();
 function frame(now: number) {
   const dt = Math.min(0.1, (now - prev) / 1000); prev = now;
-  if (clock.playing && !params.get('freeze')) { const h = (dt * clock.effectiveRate) / 3600; world.time += h; world.hour = (world.hour + h) % 24; }
+  if (clock.playing && !params.get('freeze')) {
+    const h = (dt * clock.effectiveRate) / 3600; world.time += h; world.hour = (world.hour + h) % 24;
+    for (const c of world.chimps) if (c.alive) c.actionTime += h * 3600;   // time in the act runs with the clock, as in the simulation
+  }
   app.tick(now);
   requestAnimationFrame(frame);
 }

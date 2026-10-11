@@ -75,6 +75,10 @@ const ACTION_VERB: Partial<Record<Action, string>> = {
   shelter: 'Sheltering', call: 'Pant-hooting', transfer: 'Emigrating', alarm: 'Alarm-calling',
 };
 export const actionVerb = (a: Action) => ACTION_VERB[a] ?? cap(a);
+const ACTION_SOON: Partial<Record<Action, string>> = { share: 'share meat', guard: 'mate-guard', call: 'pant-hoot', transfer: 'emigrate', alarm: 'give the alarm', consort: 'leave on consortship' };
+/** "About to travel": an act the simulation has begun and the drawn body has not started (stage W4; the renderer
+ * reports it, contracts.ts DrawnActView). The plain verb (actionVerb) takes over when the body starts. */
+export const actionSoon = (a: Action) => `About to ${ACTION_SOON[a] ?? a}`;
 export const actionLabel = (a: Action) => a === 'pant-grunt' ? 'Pant-grunt' : cap(a.replace('-', ' '));
 
 export const RELATION_LABEL: Record<Relation, string> = {
