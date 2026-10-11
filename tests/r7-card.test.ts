@@ -7,13 +7,14 @@ import { activityCategory, CATEGORIES } from '../src/field/categories';
 import { FEED, REST, TRAVEL } from '../src/compare/tracks';
 import { kernelTap, rulesTap } from '../src/sim/decide';
 import { paramsOf } from '../src/sim/params';
-import { index, ix } from '../src/sim/state';
+import { index, isTreeId, ix } from '../src/sim/state';
 import { createWorld, stepWorld, tickWorld } from '../src/simulation';
 import type { World } from '../src/types';
 import { runBenchSeed, type BenchJob } from '../scripts/lib/bench-run';
 import { animalsView, communityView, focalAfter, focalFinish, focalStart, OBSERVER_ROWS, poolRow, popAfter, popBefore, popFinish, popStart, popStop, SHORT_ROWS, TRUTH_ROWS } from '../scripts/lib/r7-readers';
-import { act3Of, cardFinish, cardStart, cardStep, cardSummary, DAY_TICKS, HALF_HOUR_TICKS, histMean, histN, histQuantile, inNest, taiPersistence, TIMING_ROWS, CARD_LABELS } from '../scripts/lib/timing-card';
+import { act3Of, cardFinish, cardStart, cardStep, cardSummary, DAY_TICKS, HALF_HOUR_TICKS, histMean, histN, histQuantile, inNest, taiPersistence, TIMING_ROWS, CARD_LABELS, VISIT_GAP_TICKS } from '../scripts/lib/timing-card';
 import { ARMS, armWorld, salted } from '../scripts/r7-card';
+import { familyOf } from '../scripts/em-sample';
 import { worldHash } from './fixtures/golden';
 
 const ticks = (w: World, n: number) => { for (let i = 0; i < n; i++) tickWorld(w); return w; };
@@ -154,7 +155,9 @@ test('the card\'s counts are those of an independent recount (act changes, switc
   const w = ticks(createWorld(48), 120), ids = w.chimps.filter(c => c.alive && c.age >= 8).slice(0, 12).map(c => c.id), N = 2 * DAY_TICKS;
   const card = cardStart(w, ids);
   // an independent recount from each animal's sequence
-  const seq = new Map(ids.map(id => [id, { act: [] as string[], cat: [] as number[], awake: [] as boolean[], hour: [] as number[] }]));
+  const seq = new Map(ids.map(id => [id, { act: [] as string[], cat: [] as number[], awake: [] as boolean[], hour: [] as number[], fam: [] as string[], tgt: [] as number[], feed: [] as number[] }]));
+  const feedOf = (c: World['chimps'][number]) => (c.action === 'forage' && isTreeId(c.targetId) && ix(c).phase >= 2 ? c.targetId : -1);
+  const start2 = new Map(ids.map(id => { const c = index(w).byId.get(id)!; return [id, { fam: familyOf(c.action, ix(c).v, ix(c).aux), tgt: c.targetId, feed: feedOf(c), awake: !inNest(c) }]; }));
   const start = new Map(ids.map(id => { const c = index(w).byId.get(id)!; return [id, `${c.action}:${c.targetId}`]; }));
   for (let i = 0; i < N; i++) {
     tickWorld(w); cardStep(card, w);
@@ -165,10 +168,12 @@ test('the card\'s counts are those of an independent recount (act changes, switc
       const site = c.action === 'drink' ? index(w).waterById.get(c.targetId) : undefined, atW = !!site && (site.position[0] - c.position[0]) ** 2 + (site.position[2] - c.position[2]) ** 2 <= 1.44;
       s.act.push(`${c.action}:${c.targetId}`); s.awake.push(!inNest(c)); s.hour.push(w.tick % HALF_HOUR_TICKS === 0 ? Math.round(w.hour * 2) / 2 : -1);
       s.cat.push(activityCategory(c.action, ix(c).phase, c.targetId, groomed.has(c.id), c.carryingMeat > 0.02, atW));
+      s.fam.push(familyOf(c.action, ix(c).v, ix(c).aux)); s.tgt.push(c.targetId); s.feed.push(feedOf(c));
     }
   }
   const res = cardFinish(card);
   assert.equal(res.ticks, N);
+  let runsAll = 0, treesAll = 0;
   for (const id of ids) {
     const s = seq.get(id)!, rows = res.days.filter(d => d.id === id), sum = (f: (d: typeof rows[number]) => number) => rows.reduce((a, d) => a + f(d), 0);
     let changes = 0, switches = 0, pairs = 0, same = 0, awake = 0, prevMark = -1e9, prevAct = -1;
@@ -177,6 +182,43 @@ test('the card\'s counts are those of an independent recount (act changes, switc
       if (s.awake[i]) { awake++; if (i && s.awake[i - 1] && s.cat[i] !== s.cat[i - 1]) switches++; }
       if (s.hour[i] >= 6.5 && s.hour[i] <= 18.5 && s.awake[i]) { const a = act3Of(s.cat[i]); if (prevMark === i - HALF_HOUR_TICKS) { pairs++; if (a === prevAct) same++; } prevMark = i; prevAct = a; }
     }
+    // trips to food begun and completed (the definition of scripts/r5-pilot.ts), recounted from the sequence
+    const st = start2.get(id)!;
+    let trips = 0, done = 0, tripTo = -1, pf = st.fam, pt = st.tgt;
+    for (let i = 0; i < s.fam.length; i++) {
+      if (s.fam[i] === 'food-trip' && (pf !== 'food-trip' || s.tgt[i] !== pt)) { trips++; tripTo = s.tgt[i]; }
+      else if (s.fam[i] !== 'food-trip' && tripTo >= 0) { if (s.act[i] === `forage:${tripTo}`) done++; tripTo = -1; }
+      pf = s.fam[i]; pt = s.tgt[i];
+    }
+    assert.equal(sum(d => d.trips), trips, `trips begun by ${id}`); assert.equal(sum(d => d.tripsDone), done, `trips completed by ${id}`);
+    // patch visits, segmented afterwards from the feeding ticks: one crown, no gap over 10 min; a visit under way at the
+    // window's start, or not yet closed at its end, is not whole
+    const n = s.feed.length, feedTicks = s.feed.map((t, i) => [i, t] as [number, number]).filter(([, t]) => t >= 0);
+    let visits = 0, visitTicks = 0, runs = 0;
+    for (let a = 0; a < feedTicks.length;) {
+      let b = a;
+      while (b + 1 < feedTicks.length && feedTicks[b + 1][1] === feedTicks[a][1] && feedTicks[b + 1][0] - feedTicks[b][0] <= VISIT_GAP_TICKS) b++;
+      const cut = feedTicks[a][0] === 0 && st.feed === feedTicks[a][1], closed = b + 1 < feedTicks.length || n - 1 - feedTicks[b][0] > VISIT_GAP_TICKS;
+      if (!cut && closed) { visits++; visitTicks += b - a + 1; }
+      a = b + 1;
+    }
+    for (let i = 0; i < n;) {
+      if (s.feed[i] < 0) { i++; continue; }
+      let j = i; while (j + 1 < n && s.feed[j + 1] === s.feed[i]) j++;
+      if (!(i === 0 && st.feed === s.feed[0]) && j < n - 1) runs++;
+      i = j + 1;
+    }
+    assert.equal(sum(d => d.visits), visits, `patch visits of ${id}`); assert.equal(sum(d => d.visitTicks), visitTicks, `feeding ticks in whole visits of ${id}`);
+    runsAll += runs; treesAll += rows.reduce((a, d) => a + d.trees, 0);
+    // whole bouts: runs of awake ticks in one activity; the one under way at the start and the one still open at the end are not whole
+    let bouts = 0;
+    for (let i = 0; i < n;) {
+      if (!s.awake[i]) { i++; continue; }
+      let j = i; while (j + 1 < n && s.awake[j + 1] && s.cat[j + 1] === s.cat[i]) j++;
+      if (!(i === 0 && st.awake) && j < n - 1) bouts++;
+      i = j + 1;
+    }
+    assert.equal(sum(d => d.bouts.reduce((a, b) => a + b, 0)), bouts, `whole bouts of ${id}`);
     assert.equal(sum(d => d.actChanges), changes, `act changes of ${id}`);
     assert.equal(sum(d => d.switches), switches, `switches of ${id}`);
     assert.equal(sum(d => d.awakeTicks), awake, `awake ticks of ${id}`);
@@ -192,7 +234,8 @@ test('the card\'s counts are those of an independent recount (act changes, switc
   // the histograms hold the whole bouts the day rows count
   CATEGORIES.forEach((_, k) => assert.equal(histN(res.bout6[k]), res.days.reduce((a, d) => a + d.bouts[k], 0), `bouts of kind ${k}`));
   assert.equal(histN(res.visit), res.days.reduce((a, d) => a + d.visits, 0));
-  assert.ok(histN(res.run) >= histN(res.visit), 'a visit holds one or more uninterrupted runs');
+  assert.equal(histN(res.run), runsAll, 'uninterrupted feeding runs in one crown');
+  assert.ok(histN(res.visit) > 20 && treesAll > 20, `the animals fed in crowns (${histN(res.visit)} visits, ${treesAll} crown-days)`);
   const s = cardSummary([res]);
   for (const k of TIMING_ROWS) { assert.ok(CARD_LABELS[k], `${k} is labelled`); assert.ok(s[k] !== null && Number.isFinite(s[k]!), `${k} has a value (${s[k]})`); }
   assert.ok(s.sameHalfHour! > 0 && s.sameHalfHour! < 1);
