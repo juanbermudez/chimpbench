@@ -692,7 +692,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       // arrived there (stage W6: the act's own clock also counts the walk and the climb to the tree, so a long way
       // left no building to see), or of the act when the arrival was not seen. An animal about to leave its nest
       // (the drawn act is still the night's) sleeps on, then sits up.
-      const seen = a.acts.shown === a.acts.since && Number.isFinite(a.acts.shownAt);
+      // (Not after skipped states: the moment the body was first seen in the nest is then not its arrival, and every
+      // sleeper would build for four minutes after a fast-forward.)
+      const seen = a.acts.shown === a.acts.since && Number.isFinite(a.acts.shownAt) && !startUnseen(a.acts);
       const building = !about && (seen ? (playback.renderT - a.late - a.acts.shownAt) * 3600 < 240 : (c.actionTime ?? 9999) < 240);
       if (about && still && (a.beat.up || a.beat.phase !== Phase.none)) { a.beat.up = true; return ['perch', 0, null]; }
       return [building ? 'nestBuild' : 'sleep', 0, null];
