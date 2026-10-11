@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -8,7 +9,7 @@ import { glinerKernel } from '../scripts/lib/kernels';
 import { buildStateOnlyQuestion } from '../scripts/lib/packet-state';
 import { decode, decodedKernel, decodeRefusal } from '../scripts/lib/r10-decode';
 import { BESIDE, replayReport, replayRun, SHORT_ROWS, type FieldReadout } from '../scripts/lib/r10-read';
-import { ancestors, comparable, DAY, DayFiles, dayName, diskRefusal, isDriven, keyOf, listCkpts, meterStart, MIN_AGE, modelProcesses, newestCkpt, pruneCkpts, readCkpt, readLines, receiptKernel, RECEIPT_SCHEMA, runDay, runningModelProcesses, RunStopped, setAside, STOP, stopCheck, venvLaunchers, WARM_UP_LIMIT_MS, warmedWorker,
+import { ancestors, comparable, DAY, DayFiles, dayName, diskRefusal, isDriven, keyOf, listCkpts, meterStart, MIN_AGE, modelProcesses, newestCkpt, pruneCkpts, readCkpt, readLines, readReceipts, receiptKernel, RECEIPT_SCHEMA, runDay, runningModelProcesses, RunStopped, setAside, STOP, stopCheck, venvLaunchers, WARM_UP_LIMIT_MS, warmedWorker,
   writeCkpt, writeRegistry, type Arrival, type AskLine, type DaySummary, type Engine, type HeldLine, type Line, type Registry, type Row, type Tap } from '../scripts/lib/r10-run';
 import { resultName } from '../scripts/r10-night';
 import { ARMS, armWorld, GuardedScorer } from '../scripts/r5-pilot';
@@ -318,6 +319,35 @@ test('checkpoints: atomic files, the last two kept, a damaged newest falls back 
   writeFileSync(resolve(dir, 'ckpt', 'd002.json.gz'), gzipSync(Buffer.from(JSON.stringify({ ...w.header, meter: w.meter, world: w.world }))));
   assert.throws(() => readCkpt(resolve(dir, 'ckpt', 'd002.json.gz')), /its header says/);
   assert.equal(newestCkpt(dir), null);
+});
+
+test('the script itself: a run killed inside day 2 and resumed from its folder is the uninterrupted run; a second start on the folder is refused', async () => {
+  // the engine's pieces are tested above; this is the script's own wiring from the command line (the registry, the day
+  // summaries read back, the files set aside, the journal of a process that was really killed), on whole days
+  const dir = resolve(tmp, 'cli'), script = resolve('scripts/r10-night.ts');
+  const cli = (...args: string[]) => spawnSync(process.execPath, ['--import', 'tsx', script, ...args], { encoding: 'utf8', timeout: 240_000 });
+  // --allow-dirty: the tree may be under edit when the tests run; the burned-in world is kept outside the repo
+  const fresh = ['run', '--profile', 'compressed', '--burn-in', '0', '--seed', '48', '--arm', 'argmax-gate', '--days', '2', '--out', dir, '--allow-dirty', '--burnin-dir', resolve(tmp, 'cli-burnin')];
+  const killed = cli(...fresh, '--crash-at-tick', String(DAY + 700));
+  assert.equal(killed.signal, 'SIGKILL', `${killed.stdout}${killed.stderr}`);
+  const dead = JSON.parse(readFileSync(resolve(dir, 'run.json'), 'utf8')) as Registry;
+  assert.deepEqual([dead.state, dead.days.length, dead.segments.length], ['running', 1, 1], 'the process died without closing the registry, one day done');
+  const again = cli(...fresh);
+  assert.equal(again.status, 2); assert.match(again.stderr, /refused: .*run\.json exists: continue it with --resume/);
+  const resumed = cli('run', '--resume', dir, '--allow-dirty');
+  assert.equal(resumed.status, 0, `${resumed.stdout}${resumed.stderr}`);
+  const reg = JSON.parse(readFileSync(resolve(dir, 'run.json'), 'utf8')) as Registry;
+  assert.deepEqual([reg.state, reg.days.length, reg.segments.length, reg.segments[1].fromDay], ['done', 2, 2, 1]);
+  assert.ok(reg.segments[1].journalAnswers > 100 && reg.days[1].reused === reg.segments[1].journalAnswers, `${reg.segments[1].journalAnswers} answers of the dead process were on disk and every one was reused`);
+  assert.ok(existsSync(resolve(dir, 'orphans', 'seg1', 'journal', 'd002.jsonl')), 'the dead process\'s files are set aside, not deleted');
+  // the uninterrupted run of the same world and days, in this process
+  const world = armWorld(createWorld(48, { profile: 'compressed', params }), ARMS['argmax-gate']), e: Engine = { world, day: 0, meter: meterStart(world) }, c = collect(), startHash = worldHash(world);
+  const d1 = await runDay(e, rulesKernel, { sink: c.sink }), d2 = await runDay(e, rulesKernel, { sink: c.sink });
+  assert.equal(reg.startHash, startHash);
+  assert.deepEqual(reg.days.map(d => d.hash), [d1.summary.hash, d2.summary.hash], 'killed and resumed, the script ends each day on the uninterrupted run\'s hash');
+  assert.deepEqual(readReceipts(dir, 2).map(comparable), c.lines.map(comparable), 'with the same receipts');
+  assert.deepEqual([readLines<Row>(resolve(dir, 'rows', 'd001.jsonl')), readLines<Row>(resolve(dir, 'rows', 'd002.jsonl'))], JSON.parse(JSON.stringify([d1.rows, d2.rows])), 'and the same rows (as written: a rounded -0 is 0 on disk)');
+  assert.deepEqual(listCkpts(dir).map(k => k.day), [1, 2]);
 });
 
 test('the decode is one function: top is the first maximum and changes no answer; draw and held wait for stage R9', async () => {
