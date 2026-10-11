@@ -134,10 +134,11 @@ export function createHud(root: HTMLElement, ctx: Ctx) {
       if (clk.playing !== playing) { playing = clk.playing; el.play.innerHTML = icon(playing ? 'pause' : 'play'); attr(el.play, 'aria-label', playing ? 'Pause (Space)' : 'Play (Space)'); }
       const pre = ctx.deps.speedPresets.find(p => p.id === clk.speedId);
       set(el.speed, pre ? presetLabel(pre.ecoSecondsPerSecond, pre.label) : clk.speedId);
-      // Stage W1: at a speed this map's walk cannot be drawn at with real steps (deps.lapseRate), and while the clock keeps
-      // the chosen rate (the line would only repeat it), the line says "time-lapse"; a rate that falls short still shows
-      // (short by more than 15%: design assumption).
-      const lapse = st === 'ok' && clk.ecoSecondsPerSecond > (ctx.deps.lapseRate?.() ?? Infinity) && Math.abs(clk.effectiveRate / clk.ecoSecondsPerSecond - 1) < 0.15;
+      // Stage W1: at a speed this map's walk cannot be drawn at with real steps (deps.lapseRate) the line says "time-lapse"
+      // instead of repeating the chosen rate. A capped clock keeps its number, and so does one whose measured rate is
+      // under half the chosen one (slow frames; design assumption: a wide margin, so the line does not flicker). The
+      // time panel shows the measured rate at these speeds.
+      const lapse = st === 'ok' && clk.ecoSecondsPerSecond > (ctx.deps.lapseRate?.() ?? Infinity) && clk.effectiveRate >= 0.5 * clk.ecoSecondsPerSecond;
       // Below one tick a second (Real time, the watching speed) the measured rate swings by half between ticks although
       // every tick lands on time: show the rate being kept.
       const kept = st === 'ok' && clk.ecoSecondsPerSecond < TICK_SECONDS ? clk.ecoSecondsPerSecond : clk.effectiveRate;
