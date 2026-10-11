@@ -1380,6 +1380,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     // Each animal is positioned by one pairing only: its own (as actor) first, else the first that targets it.
     actorIds.clear();
     for (const p of pairings) actorIds.add(p.a.id);
+    // A receiver that is the actor of a pairing of its own (it begs, shares or plays while it is groomed) keeps the
+    // plain seated posture (stage W5): its role is rewritten by its own pairing every frame, so any other posture
+    // was dropped and started again about three times a second without ever being reached.
+    for (const p of pairings) if (p.clipB === 'groomee' && p.roleB !== GROOMEE.sit && actorIds.has(p.b.id)) p.roleB = GROOMEE.sit;
     placedIds.clear();
     contactPairs.clear();
     for (const p of pairings) {
