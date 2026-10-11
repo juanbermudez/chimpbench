@@ -3,12 +3,14 @@
 //   --source r8   contexts saved by scripts/r8-contexts.ts (they carry the animal's own experience): today's state-only
 //                 packet, that packet with neutral options, packet 5 full and short, and packet 5 without each new line
 //   --source r4   the saved held-out contexts of stage R4 (sampled before observeV5): today's packet and the neutral one
+//   --source rows packets already rendered, as {id, packets} rows (tests/r8-packet.test.ts writes its built world's with R8_DUMP_ROWS)
 // The packets are rendered now from the saved contexts, so a change of wording needs no new simulation. Counts: the
 // project's estimate (src/providers/packet.ts estimateInputTokens) always; the real GLiNER count when a file of counts
 // made by the tokenizer alone is given (training/decide_ft/r8_tokens.py over the rows this script writes; no model load).
 //
 //   pnpm exec tsx scripts/r8-tokens.ts --source r8 --contexts artifacts/r8/contexts/s48-W50.jsonl --out artifacts/r8/tokens/s48 [--real <tokens.jsonl>] [--md <file.md>]
 //   pnpm exec tsx scripts/r8-tokens.ts --source r4 [--contexts <R4 contexts dir>] --out artifacts/r8/tokens/r4 [--real <tokens.jsonl>] [--md <file.md>]
+//   pnpm exec tsx scripts/r8-tokens.ts --source rows --contexts <rows.jsonl> --title "<what the rows are>" --out <dir> [--real <tokens.jsonl>] [--md <file.md>]
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { buildOwnQuestion, estimateInputTokens, type LocalPacket, type OwnBlock } from '../server/decide';
@@ -49,12 +51,15 @@ if (process.argv[1]?.endsWith('r8-tokens.ts')) {
       const has: Record<string, boolean> = { doing: !!o.doing, asked: !!o.asked, lately: !!o.lately, last: (p.own.state.last as string[] | undefined)?.length ? true : false, acts: r.context.social.length > 0 };
       for (const b of BLOCKS) carrying[b] = (carrying[b] ?? 0) + +has[b];
     }
+  } else if (source === 'rows') {
+    from = resolve(arg('contexts', ''));
+    rows.push(...(lines(from) as typeof rows));
   } else {
     from = `${resolve(arg('contexts', R4_CONTEXTS))}/test.jsonl`;
     for (const r of uniqueIds(lines(from) as R4Rec[])) { const p = rerender(r); rows.push({ id: r.id, packets: { state: p.state, neutral: p.neutral } }); }
   }
   mkdirSync(out, { recursive: true });
-  writeFileSync(`${out}/rows.jsonl`, rows.map(r => JSON.stringify(r)).join('\n') + '\n');
+  if (source !== 'rows') writeFileSync(`${out}/rows.jsonl`, rows.map(r => JSON.stringify(r)).join('\n') + '\n');
   const names = Object.keys(rows[0].packets), main = names.filter(n => !n.startsWith('without-'));
   const real = new Map<string, number>();
   if (realFile && existsSync(resolve(realFile))) for (const t of lines(resolve(realFile)) as { id: string; packet: string; tokens: number }[]) real.set(`${t.packet}|${t.id}`, t.tokens);
@@ -83,8 +88,10 @@ if (process.argv[1]?.endsWith('r8-tokens.ts')) {
   const result = { stage: 'R8', source: from, records: rows.length, realCounts: hasReal ? resolve(realFile) : null, summary, byBlockEstimateMean: byBlock, costOfEachNewLine: cost, realOverEstimate: ratio,
     speed: speed ? { exponent: +speed.exponent.toFixed(2), from: SPEED_PROBE, note: 'a projection from the review\'s measurement on the untuned model, not a measurement of these packets' } : null };
   writeFileSync(`${out}/tokens.json`, JSON.stringify(result, null, 1) + '\n');
-  const text = [`# Stage R8: packet length (${source === 'r8' ? 'contexts with the animal\'s own experience' : 'the saved held-out contexts of stage R4'})`, '',
-    `Written by \`scripts/r8-tokens.ts\` over ${rows.length} contexts (${source === 'r8' ? 'the sampler\'s smoke day' : 'sampled before observeV5: they carry none of the new lines'}). `
+  const what = source === 'r8' ? ['contexts with the animal\'s own experience', arg('title', 'the sampler\'s smoke day')] : source === 'rows' ? ['contexts with the animal\'s own experience', arg('title', 'rendered packets')]
+    : ['the saved held-out contexts of stage R4', 'sampled before observeV5: they carry none of the new lines'];
+  const text = [`# Stage R8: packet length (${what[0]})`, '',
+    `Written by \`scripts/r8-tokens.ts\` over ${rows.length} contexts (${what[1]}). `
     + `Estimate: the project's \`estimateInputTokens\`. ${hasReal ? 'Real: the model\'s own count, by its tokenizer alone (`training/decide_ft/r8_tokens.py`; no model loaded).' : 'Real counts: not taken.'}`, '',
     `| Packet | Estimate: median | 95th | largest |${hasReal ? ' Real: median | 95th | largest | over 512 |' : ''}${hasReal && speed ? ' Seconds at the real median (projected) |' : ''}`,
     `| --- | --- | --- | --- |${hasReal ? ' --- | --- | --- | --- |' : ''}${hasReal && speed ? ' --- |' : ''}`,

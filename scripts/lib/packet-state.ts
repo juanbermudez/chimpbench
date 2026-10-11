@@ -12,7 +12,7 @@
 // What stays per option: the act and target as the simulation describes them, the fixed purpose of the act, and beliefs
 // about the world (the crop and when it was seen, the chance a listed crown is in fruit, others going there, the
 // distance, the assessed chance of winning against an aggressor).
-import { actionInstructions, buildLocalQuestion, estimateInputTokens, situationRules, type LocalPacket } from '../../src/providers/packet';
+import { actionInstructions, buildLocalQuestion, estimateInputTokens, situationRules, withoutOwn, type LocalPacket } from '../../src/providers/packet';
 import type { Candidate, DecisionContext, OptionValue } from '../../src/types';
 
 export const STATE_PACKET_VERSION = 'r4-state-1';
@@ -36,6 +36,8 @@ export function fixedInstructions(ctx: DecisionContext): string {
 
 /** The state-only packet of a v4 context (observeV4 1). The options are the context's, in its order. */
 export function buildStateOnlyQuestion(ctx: DecisionContext): LocalPacket {
+  // stage R8: a packet 5 context (observeV5 1) is first taken back to the v4 observation of the same moment, so this stays the R4 packet
+  if (ctx.packet === 5) ctx = withoutOwn(ctx);
   // the state lines and the belief words: the real builder on the context without the valuation fields
   const beliefs: DecisionContext = { ...ctx, candidates: ctx.candidates.map(beliefsOnly) };
   const shown = buildLocalQuestion(beliefs);

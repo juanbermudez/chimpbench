@@ -254,8 +254,8 @@ function memoryLines(ctx: DecisionContext): string[] {
   return ctx.recent.filter((r, i) => ctx.recent.findIndex(o => base(o) === base(r)) === i).slice(0, 5);
 }
 
-export function buildLocalQuestion(ctx: DecisionContext, opts: { staticInstructions?: boolean; wording?: 1 | 2 } = {}): LocalPacket {
-  if (ctx.packet === 5) return buildOwnQuestion(ctx); // stage R8: the animal's own experience, neutral options (observeV5 1)
+export function buildLocalQuestion(ctx: DecisionContext, opts: { staticInstructions?: boolean; wording?: 1 | 2; own?: OwnOpts } = {}): LocalPacket {
+  if (ctx.packet === 5) return buildOwnQuestion(ctx, opts.own); // stage R8: the animal's own experience, neutral options (observeV5 1); `own` chooses the registered length
   return hasState(ctx) ? buildStateQuestion(ctx, opts) : localPacket(ctx, opts); // stage M1: Track E's state (observeState 1)
 }
 /** GLiNER's packet: the state lines and the choice question (criteria c0..cN aligned with ctx.candidates). */

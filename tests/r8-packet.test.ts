@@ -3,7 +3,7 @@
 // no benchmark is run. Seeds 48 and 7 only.
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import test from 'node:test';
 import { BELIEF_FIELDS as STATE_BELIEFS, buildStateOnlyQuestion, removedWordingsIn, tokensOf } from '../scripts/lib/packet-state';
 import { withAboutFromReason } from '../scripts/lib/r8-about';
@@ -532,6 +532,9 @@ test('length: both variants are shorter than today\'s state-only packet by the p
     + `packet 5 full ${med(own)} (${Math.max(...own)}), short ${med(short)} (${Math.max(...short)})`);
   assert.ok(med(short) < med(own) && med(own) < med(state), 'short < full < today\'s');
   assert.ok(Math.max(...own) < 1000);
+  // R8_DUMP_ROWS=<file>: this built world's packets as {id, packets} rows, for a real count by the tokenizer alone
+  // (training/decide_ft/r8_tokens.py); the stage's token table of a second day comes from it. Off unless asked for.
+  if (process.env.R8_DUMP_ROWS) writeFileSync(process.env.R8_DUMP_ROWS, uniqueIds(recs).map(r => JSON.stringify({ id: r.id, packets: r.packets })).join('\n') + '\n');
 });
 
 // ---------------------------------------------------------------------------------------------------------------------
