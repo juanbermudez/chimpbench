@@ -286,7 +286,7 @@ cover `src/sim/decide.ts`. 4. The field smoke (§7, 5 to 8). 5. Results in §10;
   must end each day on, for proof 5) and the switch `--crash-at-tick N` (the process kills itself with SIGKILL after
   N ticks: the crash of proof 7).
 - **A5. The replay has no error limit** (it must run to the end and report missing receipts, not stop on them).
-- **A6 (20:24, after two timed field runs, before the runs reported in §10.3). When the files are forced to the
+- **A6 (20:22, after two timed field runs, before the runs reported in §10.3). When the files are forced to the
   disk.** §3 said the journal is "written and flushed before the next call" and the receipts "appended and flushed
   after each tick". As first built, every answer and every tick ended with an fsync. Measured on the project's volume
   (`/Volumes/Drive`, shared with the other agents): about 8 ms per fsync at load 7 (65 s of waiting a simulated day)
