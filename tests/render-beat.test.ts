@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { Candidate } from '../src/types';
 import {
-  BACK_AFTER_S, BACK_FOR_S, BEAT_S, CATCH_UP, DEPART_RADIUS_M, DEPART_WINDOW_TICKS, GLANCE_S, Gaze, INTENT_S, LATE_MAX_TICKS, LOOK_S, Phase, RUNNER_MARGIN, STAGGER_ECO_S,
+  BACK_AFTER_S, BACK_FOR_S, BEAT_S, CATCH_UP, DEPART_RADIUS_M, DEPART_WINDOW_TICKS, GLANCE_S, GONE_EPS, Gaze, INTENT_S, LATE_MAX_TICKS, LOOK_S, Phase, RUNNER_MARGIN, STAGGER_ECO_S,
   STAGGER_REAL_S, THINK_SCAN_S, WAIT_CYCLE_S, beatPhase, choseBefore, deliberating, departFirst, departFollowers, departNearestFollower, departRank, firstMove, gazeFor, lateTarget,
   looksBack, ownsStep, realSeconds, restedBefore, runnerUp, staggerGap, startTime, stateBefore, stepLate, steppedAlready, waitLooksBack,
 } from '../src/render/creatures/beat';
@@ -182,6 +182,12 @@ test('a follower is drawn behind its own path by its place in the departure, nev
   assert.ok(Math.abs(stepLate(4 / 3600, 0, d) - (4 / 3600 - CATCH_UP * d)) < 1e-15);
   assert.equal(stepLate(1e-9, 0, d), 0);
   assert.equal(stepLate(0.001, 0.5, 0), 0.001, 'paused: nothing changes');
+  // W6 review: once the body has set off its lateness never grows (it would stop in mid-stride); it still shrinks.
+  assert.equal(stepLate(0, 4 / 3600, d, true), 0);
+  assert.equal(stepLate(2 / 3600, 4 / 3600, d, true), 2 / 3600);
+  assert.ok(Math.abs(stepLate(4 / 3600, 0, d, true) - (4 / 3600 - CATCH_UP * d)) < 1e-15);
+  // A follower held exactly at its own start has not set off: the hold goes on (the slack is far under a frame).
+  assert.ok(GONE_EPS > 0 && GONE_EPS * 3600 < 0.01, 'a few milliseconds of ecological time');
 });
 
 test('three animals leaving on the same tick are drawn setting off one after another, at Real time and at the watching speed', () => {
@@ -191,7 +197,8 @@ test('three animals leaving on the same tick are drawn setting off one after ano
     for (let f = 0; f < 60 * 60 && startReal.some(Number.isNaN); f++) {
       real += dt; renderT += dt * rate / 3600;
       for (let k = 0; k < 3; k++) {
-        late[k] = stepLate(late[k], lateTarget(k, move, move, renderT, rate), renderT - prev);
+        // (as the frame loop calls it: with the test for a body that has set off)
+        late[k] = stepLate(late[k], lateTarget(k, move, move, renderT, rate), renderT - prev, prev - late[k] > move + GONE_EPS);
         assert.ok(renderT - late[k] >= prev - (k === 0 ? 0 : late[k]) - 1e-12);
         if (Number.isNaN(startReal[k]) && renderT - late[k] >= move) startReal[k] = real;
       }
@@ -201,6 +208,29 @@ test('three animals leaving on the same tick are drawn setting off one after ano
     assert.ok(startReal[0] < startReal[1] && startReal[1] < startReal[2], `in order at rate ${rate}`);
     assert.ok(Math.abs(startReal[1] - startReal[0] - gap) < 0.1 && Math.abs(startReal[2] - startReal[1] - gap) < 0.1, `${gap} s apart at rate ${rate} (${startReal.map(v => v.toFixed(2))})`);
   }
+});
+
+test('W6 review: a joiner the simulation moves a tick before its initiator is held at its own start until the initiator has gone, frame by frame', () => {
+  // The simulation moves a joiner in the tick it joins, while the initiator still checks for company: the joiner's
+  // first step is a tick before the first mover's, and the first mover's is not known until a tick later. The frame
+  // loop must catch the joiner in the frame its drawn time first passes its own start (a fraction of a frame late)
+  // and must not take that for a body that has set off (stepLate's `gone`, tested on the frame before).
+  for (const rate of [1, 4, 60]) {
+    const moveFirst = 10, moveSelf = moveFirst - T, dt = 1 / 60, step = dt * rate / 3600;
+    let rt = moveSelf - 1.37 * T, late = 0, startSelf = NaN, startFirst = NaN;   // frames do not land on the start
+    for (let f = 0; f < 200000 && Number.isNaN(startSelf); f++) {
+      const prev = rt; rt += step;
+      const known = rt + 2 * T >= moveFirst + T;   // the first mover's step is recorded a tick after it begins
+      late = stepLate(late, lateTarget(1, moveSelf, known ? moveFirst : Infinity, rt, rate), step, prev - late > moveSelf + GONE_EPS);
+      if (Number.isNaN(startFirst) && rt >= moveFirst) startFirst = rt;
+      if (rt - late > moveSelf + 2 * step) startSelf = rt;
+    }
+    const gap = (startSelf - startFirst) * 3600, want = Math.min(Math.max(STAGGER_ECO_S, STAGGER_REAL_S * rate), LATE_MAX_TICKS * 15 - 15);
+    assert.ok(startFirst < startSelf, `the first mover goes first at rate ${rate}`);
+    assert.ok(Math.abs(gap - want) < 0.2 + 3 * step * 3600, `the joiner follows ${want} s later at rate ${rate} (${gap.toFixed(2)} s)`);
+  }
+  // A body that has been walking for a tick is gone: joined to a departure then, it is not stopped.
+  assert.equal(stepLate(0, lateTarget(1, 10, 10, 10 + T, 1), T / 900, (10 + T) - 0 > 10 + GONE_EPS), 0);
 });
 
 test('a model-driven animal waiting for an answer keeps scanning; nobody else does (not seen with a model)', () => {

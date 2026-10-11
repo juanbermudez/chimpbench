@@ -209,11 +209,18 @@ export function lateTarget(rank: number, moveSelf: number, moveFirst: number, re
 /**
  * One frame of the lateness: it grows no faster than drawn time itself (the body's own time stands still at most, it
  * never runs backwards) and shrinks at CATCH_UP of drawn time (the body plays its path a little faster).
+ * gone: the drawn body has already set off. Its lateness then never grows: two animals walking to one tree from
+ * different places become one departure when they come within reach of each other, and the later one would stop in
+ * mid-stride for its place in an order that was never seen.
  */
-export function stepLate(late: number, target: number, dRender: number): number {
+export function stepLate(late: number, target: number, dRender: number, gone = false): number {
   if (!(dRender > 0)) return late;
-  return target > late ? Math.min(target, late + dRender) : Math.max(target, late - CATCH_UP * dRender);
+  if (target > late) return gone ? late : Math.min(target, late + dRender);
+  return Math.max(target, late - CATCH_UP * dRender);
 }
+/** Slack (ecological hours, a few milliseconds) in the test for a body having set off, which the caller makes on the
+ * body's own drawn time of the frame before: a follower held exactly at its own start has not. */
+export const GONE_EPS = 1e-6;
 
 /** Real seconds after the first mover sets off at which it looks back, and for how long (stylizations). */
 export const BACK_AFTER_S = 1.0, BACK_FOR_S = 1.8;

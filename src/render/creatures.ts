@@ -27,7 +27,7 @@ import { perfEnd, perfNow } from '../perf';
 import { TICK_HOURS, advancePlayback, createPlayback, createTrack, pushSample, relocationJump2, type Track } from './creatures/playback';
 import { ABOUT_MAX_RATE, BODY_SIGN, PATH_MOVING_MPS, Way, actChanged, movingMps, createActTrack, pushAct, readBody, readDrawn, startUnseen, type ActTrack, type BodyState, type DrawnAct } from './creatures/drawn';
 import {
-  DEPART_RADIUS_M, DEPART_WINDOW_TICKS, Gaze, Phase, THINK_SCAN_S, beatPhase, createBeat, deliberating, departFirst, departFollowers, departNearestFollower, departRank, firstMove,
+  DEPART_RADIUS_M, DEPART_WINDOW_TICKS, GONE_EPS, Gaze, Phase, THINK_SCAN_S, beatPhase, createBeat, deliberating, departFirst, departFollowers, departNearestFollower, departRank, firstMove,
   LATE_MAX_TICKS, gazeFor, lateTarget, ownsStep, staggerGap,
   realSeconds, restedBefore, runnerUp, startTime, stepLate, type Beat,
 } from './creatures/beat';
@@ -925,7 +925,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       // A follower is drawn a little behind its own path so that the first mover is seen to go first (beat.ts lateTarget).
       let target = 0;
       if (b.since > -Infinity && b.rank > 0 && b.first >= 0) { const f = anims.get(b.first); if (f && f.beat.since > -Infinity) target = lateTarget(b.rank, b.moveT, f.beat.moveT, rt, rate, b.fromRest); }
-      a.late = step < 0.5 ? stepLate(a.late, target, step) : 0;
+      // (Set off: by its own drawn time of the frame before. A follower held at its own start is caught in the frame
+      // its time first passes that start, a fraction of a frame late, and must not count as gone.)
+      a.late = step < 0.5 ? stepLate(a.late, target, step, b.since > -Infinity && b.moveT < Infinity && rt - step - a.late > b.moveT + GONE_EPS) : 0;
       sampleSmooth(a.track, rt - a.late, jump2);
       if (b.since > -Infinity) updateBeat(a, rt, rt - a.late, rate, dt); else { b.phase = Phase.none; b.gaze = Gaze.none; b.waiting = false; }
     }
