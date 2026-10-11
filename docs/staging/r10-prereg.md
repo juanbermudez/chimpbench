@@ -544,6 +544,41 @@ where said here.
   as in §10.3; its replay regenerates all 6,423 lines and reads the card and the observer. `null-gate --decode held`
   for 1 day replays exactly (3,304 lines).
 
+### 10.8 The first run on the real model (the integrator, 11 October 2026, 11:27 to 14:13 EDT; frozen checkout `bench-t1` at a11c45c)
+
+The registered night (§8), started as a first segment of three hours while the processor was free: arm
+`trained-gate` (`r4-rules-state`), decode `top` (stage R9 named no other, `docs/staging/r9-prereg.md` §10.6), seed 48,
+the gate on. Tables: `docs/staging/r10-night-s48-replay.md` (the script's own replay report),
+`docs/staging/r10-rules-s48-replay.md` (a rules arm of the same nine days through the same script, run afterwards for
+reading) and `docs/staging/r10-night-s48-paired.md` (the 38 animals on the kernel beside the same animals on the
+rules; `docs/staging/integrator-kit/scripts/pair_r10.py`). **Rules-taught model on a rules menu; animals under 8 years
+stay on the rules; a level measurement on one training seed; no comparison here is a registered result.**
+
+- **The run.** Nine simulated days in 2.73 hours: 18,869 asks (2,097 a day, 55.2 per animal on the kernel), 0.52 s a
+  call (median 0.44 to 0.53 by day), no timeout, no worker restart; the kernel's choice settled 98.0% of asks, the rules
+  368 (answers that had gone stale); the gate held 27.2 acts per animal and day without asking. The burned-in world is
+  the pilot's (4b5cc61f8ad797e0). The replay reproduces all 9 day hashes and all 28,167 receipt lines.
+- **Viable.** No death; 342 of 342 nights in a nest; reserves −0.07% of the usual store a day (the same animals on
+  the rules −0.04; difference −0.03, −0.08 to +0.01). The stop check after day 5 passed on all four numbers.
+- **Level, the same 38 animals on the kernel and on the rules, per animal and day:** energy eaten 1,487 against 1,597
+  kcal (−110, −137 to −84); distance 1.63 against 2.50 km (−0.88, −1.16 to −0.59); trips to food begun 2.4 against
+  7.6 and completed 0.74 against 2.10; act changes 31.1 against 40.2. Through the field observer, by value (kernel run /
+  rules run / field band): adult male day range 0.89 / 2.28 / 1.5 to 3.5 km; travel share of daytime 0.076 / 0.103 /
+  0.12 to 0.25; feeding share 0.335 / 0.374 / 0.33 to 0.5; rest 0.499 / 0.453 / 0.3 to 0.47; fruit share of feeding
+  0.992 / 0.848 / 0.6 to 0.78; male pant-hoots 0.17 / 0.60 / 0.5 to 1.5 per male-hour; party size 4.69 / 4.23 / 4.5
+  to 9.2; grooming share 0.101 / 0.073 / 0.08 to 0.18; pant-grunts to the top three males 0.49 / 0.62 / 0.6 to 0.9
+  (one community-window each).
+- **Reading.** A population on this adapter lives, nests and keeps its reserves, and it is sedentary: it sets out for
+  food a third as often as the rules, walks a third less (the focal tests inside a rules-driven community showed a
+  fifth less: 2.05 against 2.63 km), calls less and eats 7% less. The under-travel of the focal tests is larger when
+  every adult is on the kernel, as the sceptic of 10 October expected.
+- **Decision of the integrator (11 October, 14:20).** The remaining seven hours of this night are not run on this
+  adapter. The run served its purposes (the script and the model's path proven on a real worker, viability, the level,
+  18,501 states a model-driven population reached, with probabilities), and the wording test of the same morning
+  (`docs/staging/r8-prereg.md` §10a) showed that this adapter read more than half of what it knows from the rules' own
+  sentences. The processor goes to stage R11's adapters; the next population run is registered with the first of them.
+  The folder `artifacts/r10/night-s48` in `bench-t1` is kept for relabelling.
+
 ## For the integrator
 
 **1. Status line for `IMPLEMENTATION_PLAN.md`, Stage R10** (replacing "In progress (10 October 2026; branch
