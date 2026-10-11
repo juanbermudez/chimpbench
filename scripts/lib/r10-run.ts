@@ -557,22 +557,34 @@ export function diskRefusal(out: string, free: (p: string) => number = freeBytes
 }
 
 /**
- * Processes that hold, or are about to load, a model: anything run by the Decide Python environment (the worker of the
- * decide-ft harnesses, the batching server, a training or scoring script), and the app's resident Decide worker.
- * `ps`: lines of "pid command". Pure, so a test can hand it a process list.
+ * Processes that hold, or are about to load, a model: a Python process that is the Decide environment's own
+ * interpreter (the worker of the decide-ft harnesses, the batching server, a training or scoring script), or any Python
+ * process running the app's Decide worker or a decide-ft script. Only the program a process runs counts (the first
+ * word of its command), never a mention of these names in the arguments of a shell or an editor: the shell that
+ * launches a night has the interpreter's path in its own command line. `ps`: lines of "pid ppid command". `ignore`:
+ * pids left out (this process and its ancestors). Pure, so a test can hand it a process list.
  */
 export function modelProcesses(ps: string, ignore: number[] = [], python = process.env.MGOGO_DECIDE_PYTHON ?? ''): { pid: number; command: string }[] {
   const out: { pid: number; command: string }[] = [];
   for (const line of ps.split('\n')) {
-    const m = /^\s*(\d+)\s+(.*)$/.exec(line);
+    const m = /^\s*(\d+)\s+(\d+)\s+(\S+)(.*)$/.exec(line);
     if (!m || ignore.includes(+m[1])) continue;
-    const cmd = m[2];
-    if (/decide-env\/bin\/python|experiments\.active_perception\.decide_provider|training\/decide_ft\/|decide_ft\/(?:worker|server|train|train_r4|eval_offline|score_contexts)\.py/.test(cmd) || (python !== '' && cmd.includes(python))) out.push({ pid: +m[1], command: cmd.slice(0, 160) });
+    const program = m[3], rest = m[4];
+    if (!/python[0-9.]*$/i.test(program)) continue;
+    if (program.includes('decide-env/') || (python !== '' && program === python) || /decide_provider|decide_ft|(?:^|[\s/])(?:worker|server|train|train_r4|eval_offline|score_contexts)\.py\b/.test(rest)) out.push({ pid: +m[1], command: `${program}${rest}`.slice(0, 160) });
   }
   return out;
 }
+/** This process and its ancestors, from a "pid ppid command" process list. */
+export function ancestors(ps: string, pid: number): number[] {
+  const parent = new Map<number, number>();
+  for (const line of ps.split('\n')) { const m = /^\s*(\d+)\s+(\d+)\s/.exec(line); if (m) parent.set(+m[1], +m[2]); }
+  const out = [pid];
+  for (let p = parent.get(pid); p !== undefined && p > 1 && !out.includes(p); p = parent.get(p)) out.push(p);
+  return out;
+}
 export function runningModelProcesses(): { pid: number; command: string }[] {
-  try { return modelProcesses(execFileSync('ps', ['-axo', 'pid=,command='], { encoding: 'utf8' }), [process.pid]); } catch { return []; }
+  try { const ps = execFileSync('ps', ['-axo', 'pid=,ppid=,command='], { encoding: 'utf8' }); return modelProcesses(ps, ancestors(ps, process.pid)); } catch { return []; }
 }
 /** Swap in use, MB (macOS `sysctl -n vm.swapusage`); null where it cannot be read. */
 export function swapUsedMB(): number | null {

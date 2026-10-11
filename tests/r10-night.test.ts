@@ -8,7 +8,7 @@ import { glinerKernel } from '../scripts/lib/kernels';
 import { buildStateOnlyQuestion } from '../scripts/lib/packet-state';
 import { decode, decodedKernel, decodeRefusal } from '../scripts/lib/r10-decode';
 import { BESIDE, replayReport, replayRun, SHORT_ROWS, type FieldReadout } from '../scripts/lib/r10-read';
-import { comparable, DAY, DayFiles, dayName, diskRefusal, isDriven, keyOf, listCkpts, meterStart, MIN_AGE, modelProcesses, newestCkpt, pruneCkpts, readCkpt, readLines, receiptKernel, RECEIPT_SCHEMA, runDay, RunStopped, setAside, STOP, stopCheck,
+import { ancestors, comparable, DAY, DayFiles, dayName, diskRefusal, isDriven, keyOf, listCkpts, meterStart, MIN_AGE, modelProcesses, newestCkpt, pruneCkpts, readCkpt, readLines, receiptKernel, RECEIPT_SCHEMA, runDay, RunStopped, setAside, STOP, stopCheck,
   writeCkpt, writeRegistry, type Arrival, type AskLine, type DaySummary, type Engine, type HeldLine, type Line, type Registry, type Row, type Tap } from '../scripts/lib/r10-run';
 import { resultName } from '../scripts/r10-night';
 import { ARMS, armWorld, GuardedScorer } from '../scripts/r5-pilot';
@@ -336,10 +336,12 @@ test('the refusals: a reserved seed, low disk, another model process; the names 
   for (const s of [1111, 5303, 7004, 606, 9101]) assert.ok(RESERVED_SEEDS.has(s)); for (const s of [48, 7, 21, 5]) assert.ok(!RESERVED_SEEDS.has(s));
   assert.equal(diskRefusal(tmp, () => 80e9).refusal, ''); assert.match(diskRefusal(tmp, () => 4.9e9).refusal, /only 4\.9 GB free/);
   assert.match(diskRefusal(tmp, p => p === tmp ? 80e9 : 3e9).refusal + diskRefusal(tmp, p => p === tmp ? 3e9 : 80e9).refusal, /only 3\.0 GB free/, 'the run\'s volume and the system volume are both read');
-  const ps = ['  101 /Volumes/Drive/chimpbench/decide-env/bin/python -B worker.py --device mps', '  102 node /x/node_modules/.bin/vite --host 127.0.0.1', '  103 /usr/bin/python3 -m experiments.active_perception.decide_provider --worker --device mps',
-    '  104 /opt/py/bin/python -B training/decide_ft/train_r4.py --name r4-rules-state', '  105 /Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '  106 /custom/env/bin/python -B server.py', '  107 tsx scripts/r10-night.ts run --arm argmax-gate'].join('\n');
-  assert.deepEqual(modelProcesses(ps, [], '').map(p => p.pid), [101, 103, 104]);
-  assert.deepEqual(modelProcesses(ps, [101], '/custom/env/bin/python').map(p => p.pid), [103, 104, 106], 'the configured Decide Python counts; a listed pid is left out');
+  const ps = ['  101     1 /Volumes/Drive/chimpbench/decide-env/bin/python -B worker.py --device mps', '  102     1 node /x/node_modules/.bin/vite --host 127.0.0.1', '  103   102 /usr/bin/python3 -m experiments.active_perception.decide_provider --worker --device mps',
+    '  104     1 /opt/py/bin/python3.12 -B training/decide_ft/train_r4.py --name r4-rules-state', '  105     1 /Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '  106     1 /custom/env/bin/python -B server.py', '  107   108 node tsx scripts/r10-night.ts run --arm trained-gate',
+    '  108   109 /bin/zsh -c export MGOGO_DECIDE_PYTHON=/Volumes/Drive/chimpbench/decide-env/bin/python; caffeinate -i tsx scripts/r10-night.ts run', '  109     1 /bin/zsh -c grep training/decide_ft/worker.py notes.txt', '  110     1 /usr/bin/python3 /x/report.py', '  111     1 /custom/env/bin/python /x/other.py'].join('\n');
+  assert.deepEqual(modelProcesses(ps, [], '').map(p => p.pid), [101, 103, 104, 106], 'only what a process runs counts: a shell whose command line names the interpreter or a script is not a model process');
+  assert.deepEqual(modelProcesses(ps, [101], '/custom/env/bin/python').map(p => p.pid), [103, 104, 106, 111], 'the configured Decide Python counts whatever it runs; a listed pid is left out');
+  assert.deepEqual(ancestors(ps, 107), [107, 108, 109]); assert.deepEqual(ancestors(ps, 103), [103, 102]);
   assert.deepEqual(modelProcesses('', [], ''), []);
   assert.equal(resultName('gliner', 'r4-rules-state'), 'rules-taught model on a rules menu'); assert.equal(resultName('gliner', 'r4c-rules-state'), 'rules-taught model on a rules menu');
   assert.equal(resultName('gliner', 'base'), 'untuned model on a rules menu'); assert.ok(!/model-driven/i.test(['rules', 'argmax', 'null', 'gliner'].map(k => resultName(k, 'r4-field-groom')).join()));
