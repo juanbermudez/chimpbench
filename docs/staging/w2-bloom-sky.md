@@ -364,11 +364,12 @@ the picture moves by 3 to 5 levels of 255 with the bloom pass off in both builds
 | 07:36, eye level, facing the sun | 0.84 | 0.26% | 17.4% | 3.89 |
 | 12:36, eye level, looking at the animal | 0.18 | 0.22% | 3.5% | 3.00 |
 
-Same page and frame (10:00, crown height, field map), the fade as shipped against the fade pushed out of reach: 255 pixels differ by more than 8, all in rows 385 to 393 of 900 (the far forest's edge); mean absolute difference over the frame 0.12. Farthest mesh in the scene reaches 7266 m (overview-canopy).
+The far fade of ambient occlusion, tested on its own. Same page and frame (10:00, crown height, field map), the fade as shipped against the fade pushed out of reach: 255 pixels differ by more than 8, all in rows 385 to 393 of 900 (the far forest's edge); mean absolute difference over the frame 0.12. Farthest mesh in the scene reaches 7266 m (overview-canopy).
 
 Through dawn and dusk the dome was read every 6 minutes on the branch (table R6 in `review/review-tables.md`): it
-rises and falls without a jump. Largest change between two readings 6 minutes apart: a factor of 3.6 (19:24 to 19:30, 4° up). That is the floor fading out at nightfall; the
-pictures at 19:24 and 19:30 show a dark blue sky with a paler band at the horizon, and the forest dims with it.
+rises and falls without a jump. Largest change between two readings 6 minutes apart: a factor of 3.6 (19:24 to 19:30, 4° up). That is the floor fading out at nightfall;
+frames at 19:24 and 19:30 (looked at, not kept) show a dark blue sky with a paler band at the horizon, and the forest
+dims with it.
 
 Left as found, for the integrator and the user:
 - The mountain is faint by day (a soft ridge in the haze band) and the sun now sets behind a ridge that cannot be
