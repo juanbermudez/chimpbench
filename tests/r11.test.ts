@@ -17,7 +17,7 @@ import { beliefDraw, bruteLabel, cropOffset, entropy, milli, published, publishe
 import { DAY_TICKS } from '../scripts/lib/timing-card';
 import { calibration, rowOf, uniqueIds, type R11Row } from '../scripts/r11-assemble';
 import { SAME_MIN, type R11Rec } from '../scripts/r11-contexts';
-import { ADAPTERS, armsRefusal, carryTally, controlArm, engineArm, engineRun, LOOP_SWITCHES, packetOf, registeredArms, SEALED_SEEDS, seedRefusal, spy, TEST_SEEDS } from '../scripts/r11-loop';
+import { ADAPTERS, armsRefusal, carryTally, controlArm, engineArm, engineRun, LOOP_SWITCHES, packetOf, registeredArms, SEALED_SEEDS, seedRefusal, spy, TEST_SEEDS, warmUpPacket } from '../scripts/r11-loop';
 import { auc, boot, kindPrior, wordingBaseline } from '../scripts/r11-offline';
 import { guardFails, n1, nightsOf, outside, pairedNights } from '../scripts/r11-report';
 import { spreadOf } from '../scripts/r7-report';
@@ -294,6 +294,15 @@ test('an engine arm sends its own packet to the kernel, is read by the card, not
   const base: World = createWorld(48, { profile: 'field', params });
   for (let i = 0; i < 360; i++) tickWorld(base);   // an hour and a half: the window is one whole day from there
   const focal = focalSet(base), x = { seed: 48, burnInDays: 360 / DAY_TICKS, days: 1, params, base, plainHash: '', focal, out: tmp, head: 'test', dirty: false };
+  // the warm-up packet of a worker (the model loads on its first batch, outside the guard's time limit): each kind of
+  // packet for an animal with a real choice, one description per option, and the world is left as it was
+  const before = worldHash(base);
+  for (const name of ['p5b', 'p5a', 'state'] as const) {
+    const w = warmUpPacket(base, name)!;
+    assert.ok(w.options >= 2 && Object.keys(w.packet.questions.action.criteria).length === w.options, `${name}: a real choice`);
+    assert.equal('lately' in w.packet.state, name === 'p5b'); assert.equal(w.packet.questions.action.instructions === OWN_INSTRUCTION, name !== 'state');
+  }
+  assert.equal(worldHash(base), before, 'building the warm-up packet leaves the world untouched');
   // the stand-in for a model: odds from a hash of each option's text (scripts/lib/fake-worker.mjs's rule), every packet kept
   const hash = (t: string) => { let h = 0x811c9dc5; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 0x01000193); } return (h >>> 0) % 7; };
   const seen: LocalPacket[] = [], fake: Scorer = { async score(batch) { return batch.map(b => { const p = b.packet as LocalPacket; seen.push(p); const w = Object.values(p.questions.action.criteria).map(t => 1 + hash(t)), z = sum(w); return w.map(v => v / z); }); } };

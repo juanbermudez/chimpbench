@@ -25,6 +25,7 @@ import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { LocalPacket } from '../server/decide';
+import { requestFor } from '../src/sim/decide';
 import { paramsOf, REGISTRY_HASH } from '../src/sim/params';
 import { rgTap } from '../src/sim/rg';
 import { index, ix } from '../src/sim/state';
@@ -38,6 +39,7 @@ import { Worker, type Scorer } from './ft-society';
 import type { HarnessDecode } from './lib/decoder';
 import { glinerKernel } from './lib/kernels';
 import { buildStateOnlyQuestion } from './lib/packet-state';
+import { warmedWorker } from './lib/r10-run';
 import { ARM_BANNED, armPacket, isArm, type Arm } from './lib/r11-packets';
 import { DAY_TICKS } from './lib/timing-card';
 import { DAY, decodeDiffers, GuardedScorer, replayKernel, runArm, type ArmResult, type ArmSpec, type Receipt } from './r5-pilot';
@@ -103,6 +105,23 @@ export function armsRefusal(names: string[], dry = false): string {
 
 /** The packet an arm's kernel is sent. */
 export function packetOf(name: PacketName, ctx: DecisionContext): LocalPacket { return name === 'state' ? buildStateOnlyQuestion(ctx) : armPacket(ctx, name); }
+
+/**
+ * A packet to warm a worker up with (scripts/lib/r10-run.ts warmedWorker): the packet of this name for the first living
+ * animal of the burned-in world that has a real choice. The worker loads the model on its first batch, which has taken
+ * from 55 to 220 s on this machine; the loop's guard gives an ask 120 s, so without a warm-up the first ask of every
+ * worker races that limit, and a first arm of a seed can lose its first choices to the rules (or, when every load is
+ * slow, all of them). Built on a copy of the world; its answer is thrown away and nothing of it reaches a run.
+ */
+export function warmUpPacket(base: World, name: PacketName): { packet: LocalPacket; options: number } | null {
+  const probe = structuredClone(base), minAge = paramsOf(probe).rgMinAge;
+  for (const c of probe.chimps) {
+    if (!c.alive || c.age < minAge) continue;
+    const r = requestFor(probe, c);
+    if (r.refusal === '') { const packet = packetOf(name, r.request.context); return { packet, options: Object.keys(packet.questions.action.criteria).length }; }
+  }
+  return null;
+}
 
 /** Why a seed may not be run here, or ''. */
 export function seedRefusal(seed: number, dry: boolean): string {
@@ -241,16 +260,25 @@ if (process.argv[1]?.endsWith('r11-loop.ts')) {
     if (dry && (!(process.env.MGOGO_DECIDE_PYTHON ?? '').endsWith('fake-worker.mjs') || process.env.MGOGO_DECIDE_SERVER)) throw new Error('the dry run answers from scripts/lib/fake-worker.mjs with MGOGO_DECIDE_SERVER unset (scripts/r11-run.sh dry): it must never load or reach a model');
     const live = arms.length > 0 && !replayOnly;
     let workerReady: Record<string, unknown> | null = null;
-    const guard = live ? new GuardedScorer(async () => { const w = new Worker(arg('device', 'mps')); await w.start(); workerReady = w.ready; console.log(`worker ready ${JSON.stringify(w.ready)}`); return w; }, +arg('timeout-s', '120') * 1000) : null;
+    // A worker of this process, started or replaced after a timeout. An arm must never be answered by the untuned model:
+    // the worker loads only the adapters MGOGO_FT_ADAPTERS names and finds under MGOGO_FT_ROOT, and answers with the
+    // untuned model when it loaded none (training/decide_ft/adapters.py). Checked on the worker's ready line, before
+    // anything is asked and before the model loads.
+    const startWorker = async () => {
+      const w = new Worker(arg('device', 'mps')); await w.start(); workerReady = w.ready; console.log(`worker ready ${JSON.stringify(w.ready)}`);
+      const held = (w.ready.adapters ?? {}) as Record<string, string>, listed = (process.env.MGOGO_FT_ADAPTERS ?? '').split(',');
+      for (const a of arms) {
+        const why = !(a.adapter in held) ? `the worker finds no adapter ${a.adapter} under MGOGO_FT_ROOT (${process.env.MGOGO_FT_ROOT ?? 'unset'})` : !dry && !listed.includes(a.adapter) ? `MGOGO_FT_ADAPTERS must name ${a.adapter} (it is "${process.env.MGOGO_FT_ADAPTERS ?? ''}")` : '';
+        if (why) { w.stop(); throw new Error(`arm ${a.name}: ${why}; nothing was asked`); }
+      }
+      return w;
+    };
+    // The model loads on the worker's first batch: every worker answers one packet no one applies before it serves, outside
+    // the guard's time limit (up to ten minutes; a worker that cannot is stopped and the step fails, loudly).
+    const warm = live ? warmUpPacket(base, arms[0].packet) : null;
+    if (live && !warm) throw new Error('no animal of the burned-in world has a real choice to warm the worker up with');
+    const guard = live ? new GuardedScorer(warmedWorker(startWorker, arms[0].adapter, warm!.packet, warm!.options, s => console.log(s)), +arg('timeout-s', '120') * 1000) : null;
     await guard?.start();
-    // An arm must never be answered by the untuned model: the worker loads only the adapters MGOGO_FT_ADAPTERS names and
-    // finds under MGOGO_FT_ROOT, and answers with the untuned model when it loaded none (training/decide_ft/adapters.py).
-    // Checked on the worker's ready line, before the first ask (the model itself loads at the first ask).
-    if (live) for (const a of arms) {
-      const held = ((workerReady as Record<string, unknown> | null)?.adapters ?? {}) as Record<string, string>, listed = (process.env.MGOGO_FT_ADAPTERS ?? '').split(',');
-      const why = !(a.adapter in held) ? `the worker finds no adapter ${a.adapter} under MGOGO_FT_ROOT (${process.env.MGOGO_FT_ROOT ?? 'unset'})` : !dry && !listed.includes(a.adapter) ? `MGOGO_FT_ADAPTERS must name ${a.adapter} (it is "${process.env.MGOGO_FT_ADAPTERS ?? ''}")` : '';
-      if (why) { guard?.stop(); throw new Error(`arm ${a.name}: ${why}; nothing was asked`); }
-    }
     const replay = async (a: EngineArm): Promise<boolean> => {
       const of = (JSON.parse(readFileSync(resolve(out, `${a.name}.json`), 'utf8')) as R11ArmFile).engine!.result, source = lines(resolve(out, `${a.name}.receipts.jsonl`)), stats = { missing: 0, menuDiffers: 0 };
       const r = await engineRun(x, a, replayKernel(source, stats), { replay: stats, log: s => console.log(s) });
