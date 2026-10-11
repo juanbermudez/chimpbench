@@ -338,6 +338,17 @@ stage's rule: the whole suite and the build.
 
 **Iteration 1** (11 October 2026, 03:00 EDT): the design above.
 
+*Before the launch of part two* (03:11 to 03:16 EDT): one smoke check of `scripts/r7b-forks.ts` with a dirty tree and
+scratch output (seed 48, three points of one day, `artifacts/r7b/smoke`), used only to debug the script; no number of
+it is reported. It made the 30-day burn-in of seed 48, whose hash is stage R7's (4b5cc61f8ad797e0). Seen in it and
+said now, since it bears on reading the result: replicates of one option held the forced act for the same number of
+ticks in almost every case (the rules' bout lengths and their evaluation jitter are hashes, not draws from the random
+stream), so a salt changes little in the first minutes of a fork and replicates part later, through companions and the
+world. Nothing in the design was changed after it. One assumption of the registration was wrong and is corrected
+here before any result: with more than two options the distinguishability test fires on shuffled scores less often
+than its nominal level, not more (the runner-up is the closest of the rest); the measured noise rate stays the
+reference, as registered.
+
 ## 7. Results
 
 (To be written after the runs.)
