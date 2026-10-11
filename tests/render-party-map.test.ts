@@ -133,6 +133,26 @@ test('a party that splits off starts with the trail it shared', () => {
   const n3 = trailPoints(tr, trailSlot(tr, 3), 10 + 5 * TRAIL_STEP_H, out);
   assert.equal(n3, 6); assert.equal(out[15], -100);
   assert.equal(inheritTrail(tr, -1, 7), -1); assert.equal(inheritTrail(tr, 3, 7), -1, 'nothing to inherit from a free slot');
+  // The split is seen when both parties are placed at the same time, the source first: the source's place after the
+  // split is not copied to the heir, whose trail goes from the last shared place to its own.
+  const sp = createTrails(4, 8), t0 = 20;
+  for (let i = 0; i < 4; i++) pushTrail(sp, 39, t0 + i * TRAIL_STEP_H, -317, -1761);
+  const tSplit = t0 + 4 * TRAIL_STEP_H;
+  pushTrail(sp, 39, tSplit, -225, -1777);   // the two that walked off keep the id
+  const heir = inheritTrail(sp, trailSlot(sp, 39), 43, tSplit);
+  assert.equal(pushTrail(sp, 43, tSplit, -317, -1763), heir);   // the three that stayed
+  const nh = trailPoints(sp, heir, tSplit, out);
+  assert.equal(nh, 5, 'four shared places and its own');
+  for (let k = 0; k < nh; k++) assert.equal(out[k * 3], -317, 'the party that stayed never went where the others did');
+  assert.equal(out[(nh - 1) * 3 + 1], -1763);
+  assert.equal(trailPoints(sp, trailSlot(sp, 39), tSplit, out), 5); assert.equal(out[12], -225, 'the source keeps its own place');
+  // A full ring: dropping the source's newest place leaves the older ones in order.
+  const fr = createTrails(3, 4);
+  for (let i = 0; i < 6; i++) pushTrail(fr, 1, 30 + i * TRAIL_STEP_H, i, 0);
+  const fh = inheritTrail(fr, trailSlot(fr, 1), 2, 30 + 5 * TRAIL_STEP_H);
+  assert.equal(trailPoints(fr, fh, 30 + 5 * TRAIL_STEP_H, out), 3); assert.deepEqual([out[0], out[3], out[6]], [2, 3, 4]);
+  pushTrail(fr, 2, 30 + 5 * TRAIL_STEP_H, 9, 9);
+  assert.equal(trailPoints(fr, fh, 30 + 5 * TRAIL_STEP_H, out), 4); assert.deepEqual([out[0], out[3], out[6], out[9]], [2, 3, 4, 9]);
   // A full table never hands the source's own slot to its heir.
   const full = createTrails(2, 4);
   pushTrail(full, 1, 10, 1, 1); pushTrail(full, 2, 10.5, 2, 2);

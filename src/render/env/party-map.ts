@@ -166,12 +166,18 @@ export function pushTrail(tr: Trails, id: number, t: number, x: number, z: numbe
   return s;
 }
 /** A new party that split from a tracked one starts with a copy of that party's trail (the two then diverge on the
- * map); returns its slot, or −1 when the source slot is free. */
-export function inheritTrail(tr: Trails, from: number, id: number): number {
+ * map); returns its slot, or −1 when the source slot is free. `now` (ecological hours): a place the source has
+ * already taken at this very time is where the source is after the split, not a place they shared, and is left out
+ * of the copy (it drew a spur on the heir's trail: 50 to 90 m out to the party that walked off, and back). */
+export function inheritTrail(tr: Trails, from: number, id: number, now = Infinity): number {
   if (from < 0 || from >= tr.cap || tr.id[from] < 0) return -1;
   const s = claim(tr, id, from);
   for (let i = 0; i < tr.n; i++) { tr.t[s * tr.n + i] = tr.t[from * tr.n + i]; tr.x[s * tr.n + i] = tr.x[from * tr.n + i]; tr.z[s * tr.n + i] = tr.z[from * tr.n + i]; }
   tr.head[s] = tr.head[from]; tr.len[s] = tr.len[from]; tr.last[s] = tr.last[from];
+  if (tr.len[s] > 0 && tr.last[s] >= now - 1e-9) {
+    tr.len[s]--; tr.head[s] = (tr.head[s] - 1 + tr.n) % tr.n;
+    tr.last[s] = tr.len[s] > 0 ? tr.t[s * tr.n + tr.head[s]] : -Infinity;
+  }
   return s;
 }
 /** Frees the slots whose newest place is older than the window (the party is gone, merged or renamed), and every slot
@@ -302,7 +308,7 @@ export function updatePartyMap(pm: PartyMap, world: World, now: number): boolean
     // place taken (a party's id is its lowest member's id, so a split shows as one trail becoming two).
     let slot = trailSlot(pm.trails, p.id);
     if (sample) {
-      if (slot < 0) { const was = p.id < pm.lastParty.length ? pm.lastParty[p.id] : -1; if (was >= 0 && was !== p.id) inheritTrail(pm.trails, trailSlot(pm.trails, was), p.id); }
+      if (slot < 0) { const was = p.id < pm.lastParty.length ? pm.lastParty[p.id] : -1; if (was >= 0 && was !== p.id) inheritTrail(pm.trails, trailSlot(pm.trails, was), p.id, world.time); }
       slot = pushTrail(pm.trails, p.id, world.time, m.x, m.z);
       for (let j = 0; j < sc.length; j++) pm.lastParty[sc[j].id] = p.id;
     }
