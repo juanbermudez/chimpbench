@@ -222,7 +222,7 @@ export function createSocial(parent: THREE.Object3D, ctx: CreatureContext) {
       discs.setColorAt(n, col);
       const hl = frame.highlightTroopId;
       const focus = hl == null ? 1 : c.troopId === hl ? 1.2 : 0.25;
-      const model = c.controller === 'model' ? 1 : 0;
+      const model = c.controller === 'model' && world.modelPolicy.mode !== 'off' ? 1 : 0;   // as the name tag's spark (labels.ts)
       const pk = clamp(1 - (frame.elapsed - pulse.at) / 1.2, 0, 1);
       discA[n * 4] = (0.2 + 0.8 * mode + (model ? 0.35 : 0) * (1 - mode)) * focus * (1 - a.fade);
       discA[n * 4 + 1] = model; discA[n * 4 + 2] = pk; discA[n * 4 + 3] = 0;

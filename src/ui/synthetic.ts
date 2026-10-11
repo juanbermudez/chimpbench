@@ -101,7 +101,22 @@ export function syntheticWorld(): World {
   const west = troops[0];
   const alpha = chimps[west.alphaId];
   alpha.controller = 'model'; alpha.decisionSource = 'decide'; alpha.action = 'patrol'; alpha.mood = 'excited';
+  alpha.actionTime = 60 * 22;   // the patrol began with his latest trace (syntheticDecider, 21 min ago), so that trace describes the act under way
   alpha.reason = 'Heard a stranger pant-hoot near the eastern boundary; party has 4 adult males';
+  // Stage W4: every other living animal carries the options it weighed and the reason of the act under way, as the
+  // simulation's animals do, so the Mind tab's live card can be previewed. Arbitrary values; no draw is used, so the
+  // rest of the synthetic world is unchanged.
+  const WHY: Partial<Record<Action, string>> = {
+    forage: 'Feed on ripe figs in the Ficus mucuso 6 m away (crop 62%)', rest: 'Sit and rest nearby', groom: 'Groom my ally, who groomed me this morning',
+    travel: 'Travel 240 m east to a Ficus natalensis I remember with ripe fruit', play: 'Play with the juveniles nearby', patrol: 'Patrol the eastern boundary with the adult males',
+    call: 'Pant-hoot to find the others; few of my community are in sight', nurse: 'Nurse from my mother (hunger 45%)', climb: 'Climb into the crown to feed', display: 'Charging display with branch-dragging',
+  };
+  for (const c of chimps) {
+    if (!c.alive || c === alpha) continue;
+    const others = ACTIONS.filter(a => a !== c.action && a !== 'nurse').slice(c.id % 3, c.id % 3 + 4);
+    c.candidates = [c.action, ...others].map((action, i) => ({ action, targetId: -1, score: +(0.82 - i * 0.17 + ((c.id * 7 + i * 3) % 10) / 100).toFixed(2), reason: WHY[action] ?? action }));
+    c.reason = c.candidates[0].reason; c.actionTime = 60 * (5 + (c.id * 13) % 40);
+  }
   alpha.episodes = [
     { time: now - 0.4, text: 'Heard strangers pant-hoot from the east', kind: 'territory', otherId: -1 },
     { time: now - 2.1, text: `Groomed ${chimps[west.maleHierarchy[1]].name} for 14 minutes`, kind: 'social', otherId: west.maleHierarchy[1] },

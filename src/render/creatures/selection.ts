@@ -135,7 +135,8 @@ export function createSelection(parent: THREE.Object3D, ctx: CreatureContext) {
     // ~40% smaller than before; depth-tested so the body hides the part of the ring behind its legs.
     const r = Math.max(0.46 * s, 0.55, 12 * upp);
     ring.position.set(a.bx, baseY + 0.05, a.bz); ring.scale.setScalar(r);
-    ringUniforms.uModel.value = a.chimp.controller === 'model' ? 1 : 0;
+    // Gold for an animal the decision loop asks about; none while the rules decide for everyone (policy off, stage W4).
+    ringUniforms.uModel.value = a.chimp.controller === 'model' && world.modelPolicy.mode !== 'off' ? 1 : 0;
     // Tether to the current target chimp.
     const target = a.chimp.targetId >= 0 ? anims.get(a.chimp.targetId) : undefined;
     if (target && target !== a && hyp2(target.x - a.x, target.z - a.z) > 0.8 * s) {

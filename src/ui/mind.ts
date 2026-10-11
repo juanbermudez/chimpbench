@@ -1,25 +1,20 @@
 import type { Ctx } from './app';
-import type { Candidate, Chimp, SocialPercept, World } from '../types';
+import type { Chimp, SocialPercept, World } from '../types';
 import type { DecisionTraceView } from './contracts';
 import { icon } from './icons';
-import { actionLabel, ago, cap, esc, hhmm, pct, RELATION_LABEL, relationClass, stamp } from './format';
+import { actionLabel, actionVerb, cap, esc, hhmm, pct, RELATION_LABEL, relationClass, stamp } from './format';
 import { alphaBadge, bar, empty } from './parts';
+import { belowTopNote, cardFromChimp, cardFromTrace, modelEngine, targetName, traceIsCurrent, type DecisionCard, type OptionRow } from './mind-card';
 
-// Mind tab: the decision loop made visible. The exact percept the model saw, options with model probabilities beside
-// rules scores, the pick, agreement, cost, and a scrollable history of past decisions. The latest-decision header
-// carries a compact switch that hands this chimp to the model (the demo's per-chimp control); the model's readiness
-// lives in the time menu under the clock and in the model panel (M).
+// Mind tab: the decision made visible, for any animal (stage W4). First the decision: the pick over its runners-up
+// in one line, who chose, and the reason sentence in print. Then the options it weighed, each with its value as a
+// small bar and its reason as text. For an animal the decision loop has a trace for, the trace's details follow (the
+// loop step by step, the exact percept, cost) and a history of past decisions; for every other animal the card is
+// built live from the animal's own candidates and reason (mind-card.ts) and headed "Rules": the rules' own valuation.
+// The header carries a compact switch that hands this chimp to the model (the demo's per-chimp control); the model's
+// readiness lives in the time menu under the clock and in the model panel (M).
 
-export function targetName(world: World, cand: Candidate, trace?: DecisionTraceView): string {
-  if (cand.targetId < 0) return '';
-  const seen = trace?.context.social.find(s => s.id === cand.targetId);
-  if (seen) return seen.name;
-  const c = world.chimps.find(x => x.id === cand.targetId); if (c) return c.name;
-  const t = world.trees.find(x => x.id === cand.targetId); if (t) return t.common || t.species;
-  if (world.water.some(x => x.id === cand.targetId)) return 'water';
-  const p = world.prey.find(x => x.id === cand.targetId); if (p) return p.species;
-  return '';
-}
+export { targetName };
 
 export const tracesFor = (ctx: Ctx, id: number) => ctx.deps.decider.traces.filter(t => t.chimpId === id);
 
@@ -29,20 +24,32 @@ function pickLabel(world: World, tr: DecisionTraceView, i: number) {
   return `${actionLabel(o.action)}${tn ? ` <i>→ ${esc(tn)}</i>` : ''}`;
 }
 
-function optionsTable(world: World, tr: DecisionTraceView): string {
-  const maxScore = Math.max(1e-6, ...tr.options.map(o => o.score));
-  const hasProb = tr.probabilities.length === tr.options.length && tr.source === 'model';
-  const order = tr.options.map((_, i) => i).sort((a, b) => hasProb ? tr.probabilities[b] - tr.probabilities[a] : tr.options[b].score - tr.options[a].score);
-  return `<div class="opts ${hasProb ? 'by-model' : 'by-rules'}" role="table" aria-label="Options offered to the model">
-    <div class="opt head" role="row"><span role="columnheader">Option</span><span role="columnheader" title="Simulation utility weight (uncalibrated)">Rules</span><span role="columnheader" title="Model probabilities over the offered options (uncalibrated)">Model</span></div>
-    ${order.map(i => {
-      const o = tr.options[i], chosen = i === tr.choiceIndex, rules = i === tr.rulesIndex, p = hasProb ? tr.probabilities[i] : NaN;
-      return `<div class="opt ${chosen ? 'chosen' : ''} ${rules ? 'rules' : ''}" role="row" title="${esc(o.reason)}">
-        <span class="opt-name" role="cell"><span class="opt-marks">${chosen ? `<i class="mk-model" title="${hasProb ? 'Model’s pick' : 'Chosen by the rules fallback'}">●</i>` : ''}${rules ? `<i class="mk-rules" title="Rules' pick">◆</i>` : ''}</span>${pickLabel(world, tr, i)}</span>
-        <span class="opt-val" role="cell">${bar(o.score / maxScore, 'rules')}<b class="mono">${o.score.toFixed(2)}</b></span>
-        <span class="opt-val" role="cell">${hasProb ? `${bar(p, 'model')}<b class="mono">${(p * 100).toFixed(0)}%</b>` : '<b class="mono muted">—</b>'}</span>
-      </div>`;
-    }).join('')}
+const rowLabel = (r: OptionRow) => `${actionLabel(r.action)}${r.target ? ` <i>→ ${esc(r.target)}</i>` : ''}`;
+const rowValue = (r: OptionRow, by: DecisionCard['by']) => by === 'probability' ? `${((r.probability ?? 0) * 100).toFixed(0)}%` : r.score.toFixed(2);
+
+/** The decision in one line: the pick over its runners-up, each with the chooser's own value, then the reason in print. */
+function decisionLine(card: DecisionCard): string {
+  const alt = card.over.map(r => `<span class="dl-alt">${rowLabel(r)} <em class="mono">${rowValue(r, card.by)}</em></span>`).join('');
+  // "over …" wraps as one group, so the word never hangs at the end of the pick's line.
+  const rest = (word: string) => `<span class="dl-rest"><span class="dl-over">${word}</span>${alt}</span>`;
+  const head = card.pick ? `<span class="dl-main"><b class="dl-pick">${rowLabel(card.pick)}</b><em class="mono dl-val">${rowValue(card.pick, card.by)}</em></span>${alt ? rest(card.beaten ? 'scored below' : 'over') : ''}`
+    : card.waiting ? `<span class="dl-main"><b class="dl-pick">${esc(actionVerb(card.action))}</b></span>${rest('until an answer comes · asked about')}`
+    : `<span class="dl-main"><b class="dl-pick">${esc(actionVerb(card.action))}</b></span>${card.offMenu ? '<span class="dl-rest"><span class="dl-over">not among the options weighed</span></span>' : ''}`;
+  return `<p class="dline">${head}</p>${card.reason ? `<p class="dwhy">${esc(card.reason)}</p>` : ''}`;
+}
+
+/** Every option weighed: its value as a small bar (the rules' score; the model's probability beside it when a model
+ * answered) and its reason sentence as text. */
+function optionsList(card: DecisionCard): string {
+  const model = card.by === 'probability';
+  return `<div class="opts ${model ? 'by-model' : 'by-rules one'}" role="table" aria-label="Options weighed">
+    <div class="opt head" role="row"><span role="columnheader">Option</span><span role="columnheader" title="The rules’ own score for the option: a simulation weight, uncalibrated">Rules score</span>${model ? '<span role="columnheader" title="The model’s probabilities over the offered options (softmax, uncalibrated)">Model</span>' : ''}</div>
+    ${card.options.map(r => `<div class="opt ${r.chosen ? 'chosen' : ''} ${r.rulesPick ? 'rules' : ''}" role="row">
+        <span class="opt-name" role="cell"><span class="opt-marks">${r.chosen ? `<i class="mk-model" title="${card.kind === 'live' ? 'Under way' : model ? 'The model’s pick' : 'Chosen by the rules'}">●</i>` : ''}${r.rulesPick && !(r.chosen && !model) ? `<i class="mk-rules" title="${card.kind === 'live' ? 'The rules’ best score' : 'The rules’ pick'}">◆</i>` : ''}</span>${rowLabel(r)}</span>
+        <span class="opt-val" role="cell">${bar(r.bar, 'rules')}<b class="mono">${r.score.toFixed(2)}</b></span>
+        ${model ? `<span class="opt-val" role="cell">${bar(r.probability ?? 0, 'model')}<b class="mono">${((r.probability ?? 0) * 100).toFixed(0)}%</b></span>` : ''}
+        ${r.reason ? `<span class="opt-why" role="cell">${esc(r.reason)}</span>` : ''}
+      </div>`).join('')}
   </div>`;
 }
 
@@ -116,20 +123,44 @@ function storyStrip(ctx: Ctx, tr: DecisionTraceView): string {
   return `<ol class="story" aria-label="Decision loop, step by step">
     <li class="st st-saw"><span class="st-k">Saw</span><span class="saw">${sawFacts(tr).map(f => `<b>${esc(f)}</b>`).join('')}</span></li>
     <li class="st"><span class="st-k">Options</span><b class="st-v">${tr.options.length}</b><span class="st-s">${esc(top.join(' · '))}</span></li>${arrow}
-    <li class="st st-pick ${model ? (agree ? 'agree' : 'diverge') : ''}"><span class="st-k">${model ? 'Model pick' : 'Rules pick'}</span><b class="st-v">${pickLabel(w, tr, tr.choiceIndex)}${p !== undefined ? ` <em class="mono">${(p * 100).toFixed(0)}%</em>` : ''}</b><span class="st-s">${model ? (tr.rulesIndex < 0 ? 'rules pick unknown' : agree ? 'rules agree' : `rules chose ${esc(actionLabel(tr.options[tr.rulesIndex]?.action ?? 'rest').toLowerCase())}`) : 'model did not answer'}</span></li>${arrow}
+    <li class="st st-pick ${model ? (agree ? 'agree' : 'diverge') : ''}"><span class="st-k" title="${model ? esc(modelEngine(tr.model, tr.provider).label) : 'The rules stood in for the model'}">${model ? 'Model pick' : 'Rules pick'}</span><b class="st-v">${pickLabel(w, tr, tr.choiceIndex)}${p !== undefined ? ` <em class="mono">${(p * 100).toFixed(0)}%</em>` : ''}</b><span class="st-s">${model ? (tr.rulesIndex < 0 ? 'rules pick unknown' : agree ? 'rules agree' : `rules chose ${esc(actionLabel(tr.options[tr.rulesIndex]?.action ?? 'rest').toLowerCase())}`) : 'model did not answer'}</span></li>${arrow}
     <li class="st st-app ${applied.cls}"><span class="st-k">Outcome</span><b class="st-v">${applied.head}</b><span class="st-s">${esc(applied.sub)}${model ? ` · ${Math.round(tr.latencyMs)} ms` : ''}</span></li>
   </ol>`;
 }
 
+/** Header chip: who chose, in the plan's names (mind-card.ts Engine). */
+const whoChip = (card: DecisionCard) => `<span class="who who-${card.engine.id}" title="${esc(card.engine.note)}">${card.engine.id === 'rules' || card.engine.id === 'rules-stand-in' ? icon('ladder') : card.engine.id === 'none' ? '' : icon('spark')}${esc(card.engine.label)}</span>`;
+
+/** A decision-loop trace: the decision first, the options with their reasons, then the loop's own details. */
 export function traceCard(ctx: Ctx, tr: DecisionTraceView, pinned: boolean, control = ''): string {
-  const w = ctx.world();
+  const w = ctx.world(), card = cardFromTrace(w, tr), model = tr.source === 'model';
+  const agree = tr.choiceIndex >= 0 && tr.choiceIndex === tr.rulesIndex, rules = tr.options[tr.rulesIndex];
   return `<article class="trace ${pinned ? 'pinned' : ''}">
-    <header class="trace-head"><h3 class="eyebrow">${pinned ? 'Pinned decision' : 'Latest decision'}</h3><b class="mono">${stamp(w, tr.time)}</b><span class="muted">${ago(w, tr.time)}</span>${control}</header>
+    <header class="trace-head"><h3 class="eyebrow">${pinned ? 'Pinned decision' : 'Latest decision'}</h3><b class="mono">${stamp(w, tr.time)}</b>${whoChip(card)}${control}</header>
+    ${decisionLine(card)}
+    ${model ? `<p class="dnote ${agree ? '' : 'diverge'}">${tr.rulesIndex < 0 ? 'The rules’ own pick is not on this menu.' : agree ? 'The rules pick the same.' : `The rules would pick ${rules ? `${esc(actionLabel(rules.action).toLowerCase())}${targetName(w, rules, tr) ? ` → ${esc(targetName(w, rules, tr))}` : ''}` : 'another option'}.`}</p>` : `<p class="dnote">${esc(card.engine.note)}</p>`}
+    <h4 class="eyebrow opts-title ${model ? '' : 'by-rules'}">Options offered <span class="muted">${card.options.length} · <i class="mk-model">●</i> chosen${model ? ' · <i class="mk-rules">◆</i> rules pick' : ''}</span></h4>
+    ${optionsList(card)}
     ${storyStrip(ctx, tr)}
-    <h4 class="eyebrow opts-title">Options offered <span class="muted"><i class="mk-model">●</i> chosen · <i class="mk-rules">◆</i> rules pick</span></h4>
-    ${optionsTable(w, tr)}
-    <p class="trace-cost mono">${tr.source === 'model' ? `${Math.round(tr.latencyMs)} ms · ${tr.inputTokens} input tokens · ` : ''}${tr.options.length} options · v${tr.context.version}</p>
-    <details class="ctx-wrap" data-keep="ctx"><summary>${icon('eye')}What ${esc(tr.chimpName)} perceived <span class="muted">the model’s entire input</span></summary>${contextHtml(w, tr)}</details>
+    <p class="trace-cost mono">${model ? `${Math.round(tr.latencyMs)} ms · ${tr.inputTokens} input tokens · ` : ''}${tr.options.length} options · v${tr.context.version}</p>
+    <details class="ctx-wrap" data-keep="ctx"><summary>${icon('eye')}What ${esc(tr.chimpName)} perceived <span class="muted">the packet the loop built for the model</span></summary>${contextHtml(w, tr)}</details>
+  </article>`;
+}
+
+/**
+ * The live card: an animal with no trace to show. What it is doing and why, then the options it weighed at its last
+ * decision point with the rules' own scores, read from the animal itself (Chimp.candidates, Chimp.reason).
+ */
+export function liveCard(ctx: Ctx, c: Chimp, control = ''): string {
+  const w = ctx.world(), d = ctx.deps.decider, card = cardFromChimp(w, c, modelEngine(d.model, d.provider));
+  // No running clock here (the strip beside the tab carries "· 31 min" live): the card redraws only when the animal's
+  // decision count, act or option list changes.
+  return `<article class="trace live">
+    <header class="trace-head"><h3 class="eyebrow">Now</h3><b class="mono">since ${stamp(w, card.time)}</b>${whoChip(card)}${control}</header>
+    ${decisionLine(card)}
+    ${card.beaten ? `<p class="dnote">${esc(belowTopNote(card))}</p>` : card.offMenu || card.waiting ? `<p class="dnote">${esc(card.engine.note)}</p>` : ''}
+    ${card.options.length ? `<h4 class="eyebrow opts-title by-rules">${card.waiting ? 'Options on the table' : 'Options weighed'} <span class="muted">${card.options.length} at its last decision point${card.pick ? ' · <i class="mk-model">●</i> under way' : ''}</span></h4>
+    ${optionsList(card)}` : '<p class="subtle">No options on record yet: it has not reached a decision point since the simulation began.</p>'}
   </article>`;
 }
 
@@ -154,30 +185,37 @@ export function mindHtml(ctx: Ctx, c: Chimp): string {
   const controlled = c.controller === 'model' && mode !== 'off';
   const traces = tracesFor(ctx, c.id);
   const pinned = ctx.state.pinnedTraceId ? traces.find(t => t.id === ctx.state.pinnedTraceId) : undefined;
-  const shown = pinned ?? traces.at(-1);
+  // The latest trace is the first view only while it describes the act under way; once the animal has moved on (the
+  // rules decided since, or it was never asked) the live card is, and the traces stay in the history.
+  const latest = traces.at(-1), current = latest && (!c.alive || traceIsCurrent(w, c, latest)) ? latest : undefined;
+  const shown = pinned ?? current;
   const inflight = d.inflightChimpId === c.id;
   const waiting = c.awaitingDecisionSince !== null && c.awaitingDecisionSince !== undefined;
   // One word of live state beside the switch, only while the model has this chimp (readiness in full: time menu, M).
   const note = !controlled || !c.alive ? '' : !d.ready ? (d.phase === 'loading' ? 'loading' : 'offline') : inflight ? '<span class="pulse">deciding</span>' : waiting ? '<span class="pulse">waiting</span>' : '';
-  const control = `<label class="mctl" title="${controlled ? 'The decision model chooses this chimp’s actions' : 'Let the decision model choose this chimp’s actions'}"><span>Model${note ? ` <i>· ${note}</i>` : ''}</span><span class="switch sm"><input type="checkbox" role="switch" data-act="control" ${controlled ? 'checked' : ''} ${c.alive ? '' : 'disabled'} aria-label="Model decides for ${esc(c.name)}"><span class="sw"></span></span></label>`;
+  const engine = modelEngine(d.model, d.provider).label;
+  const control = `<label class="mctl" title="${controlled ? `${esc(engine)}: the model picks among the options the rules list for this chimp` : `Let the model pick among the options the rules list for this chimp (${esc(engine.toLowerCase())})`}"><span>Model${note ? ` <i>· ${note}</i>` : ''}</span><span class="switch sm"><input type="checkbox" role="switch" data-act="control" ${controlled ? 'checked' : ''} ${c.alive ? '' : 'disabled'} aria-label="Model decides for ${esc(c.name)}"><span class="sw"></span></span></label>`;
   return `<div class="mind">
     ${shiftCard(ctx, c, traces)}
-    ${shown ? traceCard(ctx, shown, !!pinned, control) : `<header class="trace-head"><h3 class="eyebrow">Latest decision</h3><span class="muted">none yet</span>${control}</header>${empty('No decisions recorded yet', controlled ? 'The model is consulted at decision points: when an action ends, a need crosses a threshold, or something new is perceived. Traces appear here.' : 'Switch Model on to watch the decision model choose for this chimp. The rule baseline keeps running for everyone else.', 'brain')}`}
-    ${traces.length ? `<section class="history"><div class="sec-head"><h3 class="eyebrow">History <span class="muted">${traces.length} decision${traces.length === 1 ? '' : 's'}</span></h3>${pinned ? '<button class="link-btn" data-act="follow">Follow latest</button>' : ''}</div>
+    ${shown ? traceCard(ctx, shown, !!pinned, control) : c.alive ? liveCard(ctx, c, control) : `<header class="trace-head"><h3 class="eyebrow">Latest decision</h3><span class="muted">none</span>${control}</header>${empty('No decision on record', `${esc(c.name)} has died; nothing is weighed any more.`, 'brain')}`}
+    ${traces.length ? `<section class="history"><div class="sec-head"><h3 class="eyebrow">History <span class="muted">${traces.length} decision${traces.length === 1 ? '' : 's'} through the loop</span></h3>${pinned ? '<button class="link-btn" data-act="follow">Back to now</button>' : ''}</div>
       <ol>${[...traces].reverse().slice(0, 40).map(t => {
         const agree = t.choiceIndex === t.rulesIndex;
         return `<li><button class="h-row ${t === shown ? 'on' : ''}" data-trace="${esc(t.id)}" aria-pressed="${t === shown}">
           <span class="mono">${stamp(w, t.time).replace(/^D\d+ /, '')}</span>
           <span class="h-pick"><b>${esc(actionLabel(t.options[t.choiceIndex]?.action ?? 'rest'))}</b>${t.source === 'model' && !agree && t.rulesIndex >= 0 ? `<i>rules: ${esc(actionLabel(t.options[t.rulesIndex]?.action ?? 'rest'))}</i>` : ''}</span>
-          <span class="h-flag ${t.source !== 'model' ? 'fb' : agree ? 'same' : 'diff'}" title="${t.source !== 'model' ? 'Rules fallback' : agree ? 'Agrees with rules' : 'Diverges from rules'}"></span>
+          <span class="h-flag ${t.source !== 'model' ? 'fb' : agree ? 'same' : 'diff'}" title="${t.source !== 'model' ? 'The rules stood in' : agree ? 'Agrees with the rules' : 'Diverges from the rules'}"></span>
           <span class="mono muted">${t.source === 'model' ? `${Math.round(t.latencyMs)}ms` : 'rules'}</span></button></li>`;
       }).join('')}</ol></section>` : ''}
-    <p class="honest">Model probabilities are softmax scores over the offered options; rules scores are simulation weights. Neither is calibrated to chimpanzee behavior.</p>
+    <p class="honest">Rules scores are the simulation’s own weights for each option, with a small tie-breaking jitter. Model probabilities are softmax scores over the offered options. Neither is calibrated to chimpanzee behavior. The options and their sentences are written by the rules, whoever picks.</p>
   </div>`;
 }
 
 export function mindKey(ctx: Ctx, c: Chimp): string {
-  const d = ctx.deps.decider, traces = tracesFor(ctx, c.id), last = traces.at(-1);
-  return [c.id, c.controller, c.alive, ctx.world().modelPolicy.mode, d.ready, d.phase, d.roster, traces.length, last?.id, last?.applied, ctx.state.pinnedTraceId,
-    ctx.state.experiment?.time, c.awaitingDecisionSince === null ? '-' : Math.floor((ctx.world().time - c.awaitingDecisionSince) * 60), d.inflightChimpId === c.id].join('|');
+  const d = ctx.deps.decider, traces = tracesFor(ctx, c.id), last = traces.at(-1), w = ctx.world();
+  // The live card reads the animal itself: its decision count, act, reason and option list. No clock term: nothing in
+  // the tab counts time, so it redraws only when one of these changes.
+  return [c.id, c.controller, c.alive, w.modelPolicy.mode, d.ready, d.phase, d.roster, traces.length, last?.id, last?.applied, ctx.state.pinnedTraceId,
+    ctx.state.experiment?.time, c.awaitingDecisionSince === null ? '-' : Math.floor((w.time - c.awaitingDecisionSince) * 60), d.inflightChimpId === c.id,
+    c.decisionVersion, c.action, c.targetId, c.reason, c.candidates?.length ?? 0, c.candidates?.[0]?.score ?? '', c.decisionSource].join('|');
 }

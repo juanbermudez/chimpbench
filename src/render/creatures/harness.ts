@@ -315,7 +315,7 @@ if (mode === 'sheet') {
     const cx = members.reduce((s2, c) => s2 + c.position[0], 0) / members.length, cz = members.reduce((s2, c) => s2 + c.position[2], 0) / members.length;
     world.parties.push({ id, troopId: t.id, members: members.map(c => c.id), center: [cx, 0, cz], kind: south ? 'foraging' : 'traveling' });
   }
-  if (q.has('model')) for (const c of world.chimps.slice(0, 12)) c.controller = 'model';
+  if (q.has('model')) { world.modelPolicy.mode = 'async'; for (const c of world.chimps.slice(0, 12)) c.controller = 'model'; }   // the spark and gold rings show only while a model policy is on
   ortho = zoom === 'rts';
   if (!ortho) { camTarget.set(0, 0.5, 0); camPos.set(14, 12, 26); }
 }

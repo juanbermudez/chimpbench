@@ -1,5 +1,5 @@
 import type { Vec3 } from 'math';
-import type { Candidate, Chimp, DecisionContext, InterventionKind, Layer, ModelPolicy, Quality, Relation, Relationship, SceneAPI, Stimulus, ViewMode, World } from '../types';
+import type { Action, Candidate, Chimp, DecisionContext, InterventionKind, Layer, ModelPolicy, Quality, Relation, Relationship, SceneAPI, Stimulus, ViewMode, World } from '../types';
 
 // Structural mirrors of the clock and decision-controller contracts in
 // IMPLEMENTATION_PLAN.md. UI components depend on these views instead of the
@@ -48,6 +48,11 @@ export interface FootprintView { pts: ArrayLike<number>; fx: number; fz: number;
  * hides it when the animal cannot be drawn. The UI decides when to ask (a new selection, then a changed activity). */
 export interface PortraitView { request(id: number, canvas: HTMLCanvasElement, refresh?: boolean): boolean }
 
+/** Optional scene extra (stage W4): what the renderer reports about one drawn animal. Bodies are drawn two ticks behind
+ * the simulation, so for a moment after an act changes the body is still in the act before it. action/targetId: the act
+ * the drawn body is in; about: the simulation has begun a newer one (the animal's own action) the body has not started. */
+export interface DrawnActView { action: Action; targetId: number; about: boolean }
+
 /** Everything the UI needs from the outside world, injected by main.ts (or the preview). */
 export interface UiDeps {
   getWorld(): World;
@@ -55,8 +60,9 @@ export interface UiDeps {
   speedPresets: SpeedPresetView[];
   decider: DeciderView;
   /** followChimp (optional extra): make the camera follow an animal without zooming; focusChimp also zooms in.
-   * portrait (optional extra): draw the animal's snapshot into the bottom panel's canvas (see PortraitView). */
-  getScene(): (SceneAPI & { getFootprint?(): FootprintView; followChimp?(id: number): void; portrait?: PortraitView }) | null;
+   * portrait (optional extra): draw the animal's snapshot into the bottom panel's canvas (see PortraitView).
+   * drawnAct (optional extra): fill the caller's record with the act the drawn body is in (see DrawnActView). */
+  getScene(): (SceneAPI & { getFootprint?(): FootprintView; followChimp?(id: number): void; portrait?: PortraitView; drawnAct?(id: number, out: DrawnActView): boolean }) | null;
   setSpeed(id: string): void;
   /** Optional (stage W1): the playback rate (ecological seconds per real second) above which this world's walk is drawn as
    * time-lapse, because bodies cover ground faster than feet can step (render/creatures/pace.ts lapseRate). The menu bar

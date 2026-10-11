@@ -4,6 +4,10 @@
 // a gold spark icon, and their label pulses gold when a model decision lands. Party banners mark
 // each fission-fusion party in the RTS view. Labels avoid UI panels marked
 // [data-occluder] and are decluttered by priority.
+// Stage W4: the selected animal's label carries a second line, the simulation's own reason sentence for the act
+// (Chimp.reason; the other labels stay one line). An act the simulation has begun and the drawn body has not
+// (creatures/drawn.ts: bodies are drawn two ticks behind) reads "about to travel" in its own style until the body
+// starts it. The wording and the style are interface conventions, not observations.
 import * as THREE from 'three';
 import type { Action, CallKind, World } from '../../types';
 import type { Anim, CreatureFrame } from '../creatures';
@@ -16,13 +20,14 @@ const KIND_TEXT: Record<string, string> = { foraging: 'foraging party', patrol: 
 /** A patrol's published leg (Party.patrolPhase), shown in its banner. */
 const PHASE_TEXT: Record<string, string> = { out: 'patrol, silent', listen: 'patrol, listening', incursion: 'patrol, in neighbour range', return: 'patrol, heading home' };
 type Cat = 'aff' | 'agon' | 'food' | 'move' | 'rest' | 'vocal' | 'repro' | 'dead';
-const ACTION: Record<Action, [string, Cat]> = {
-  rest: ['resting', 'rest'], forage: ['foraging', 'food'], drink: ['drinking', 'food'], travel: ['travelling', 'move'], groom: ['grooming', 'aff'],
-  play: ['playing', 'aff'], follow: ['following', 'move'], climb: ['climbing', 'move'], patrol: ['patrolling', 'agon'], display: ['displaying', 'agon'],
-  flee: ['fleeing', 'agon'], hunt: ['hunting', 'food'], mate: ['mating', 'repro'], nurse: ['nursing', 'aff'], dead: ['dead', 'dead'], nest: ['nesting', 'rest'],
-  'pant-grunt': ['pant-grunting', 'agon'], charge: ['charging', 'agon'], attack: ['attacking', 'agon'], submit: ['submitting', 'agon'],
-  reconcile: ['reconciling', 'aff'], console: ['consoling', 'aff'], share: ['sharing meat', 'food'], beg: ['begging', 'food'], guard: ['mate-guarding', 'repro'],
-  consort: ['consorting', 'repro'], shelter: ['sheltering', 'rest'], call: ['calling', 'vocal'], transfer: ['transferring', 'move'], alarm: ['alarm', 'vocal'],
+// Per action: the verb while the body does it, its category, and the verb after "about to".
+const ACTION: Record<Action, [string, Cat, string]> = {
+  rest: ['resting', 'rest', 'rest'], forage: ['foraging', 'food', 'forage'], drink: ['drinking', 'food', 'drink'], travel: ['travelling', 'move', 'travel'], groom: ['grooming', 'aff', 'groom'],
+  play: ['playing', 'aff', 'play'], follow: ['following', 'move', 'follow'], climb: ['climbing', 'move', 'climb'], patrol: ['patrolling', 'agon', 'patrol'], display: ['displaying', 'agon', 'display'],
+  flee: ['fleeing', 'agon', 'flee'], hunt: ['hunting', 'food', 'hunt'], mate: ['mating', 'repro', 'mate'], nurse: ['nursing', 'aff', 'nurse'], dead: ['dead', 'dead', 'dead'], nest: ['nesting', 'rest', 'nest'],
+  'pant-grunt': ['pant-grunting', 'agon', 'pant-grunt'], charge: ['charging', 'agon', 'charge'], attack: ['attacking', 'agon', 'attack'], submit: ['submitting', 'agon', 'submit'],
+  reconcile: ['reconciling', 'aff', 'reconcile'], console: ['consoling', 'aff', 'console'], share: ['sharing meat', 'food', 'share meat'], beg: ['begging', 'food', 'beg'], guard: ['mate-guarding', 'repro', 'mate-guard'],
+  consort: ['consorting', 'repro', 'consort'], shelter: ['sheltering', 'rest', 'shelter'], call: ['calling', 'vocal', 'call'], transfer: ['transferring', 'move', 'transfer'], alarm: ['alarm', 'vocal', 'give the alarm'],
 };
 // Minimal 12px glyphs per category.
 const CAT_ICON: Record<Cat, string> = {
@@ -60,6 +65,16 @@ const STYLE = `
 .crl-act:empty,.crl-voc:empty{display:none}
 .crl-act svg,.crl-voc svg{width:11px;height:11px;flex:none}
 .crl-act svg{fill:currentColor;stroke:currentColor}
+.crl-act.soon{font-style:italic;color:#ececee}
+.crl-act.soon svg{opacity:.45}
+.crl-act.soon span{padding-bottom:1px;border-bottom:1px dashed rgba(255,255,255,.5)}
+.crl-act.soon i{color:#97979c}
+/* The reason line: one element, moved into the selected animal's label, which then wraps it onto a second line. Zero
+   width with a 100% minimum: it adds nothing to the label's own width and then fills it, so the label stays as wide as
+   its first line (at least 216 px) and the sentence wraps inside it, at most three lines. */
+.crl.why{flex-wrap:wrap;row-gap:1px;min-width:216px}
+.crl-why{flex:0 0 auto;width:0;min-width:100%;box-sizing:border-box;max-height:3.9em;overflow:hidden;padding:0 0 1px 12px;margin-right:-5px;white-space:normal;
+  font-size:10.5px;line-height:1.3;font-weight:400;color:#b8b8bd}
 .crl-voc{display:flex;align-items:center;gap:3px;color:#97979c;font-size:10.5px;font-style:italic}
 .crl-voc svg{stroke:currentColor}
 .crl::after{content:"";position:absolute;left:50%;bottom:-4px;width:6px;height:6px;margin-left:-3px;transform:rotate(45deg);background:inherit;border-right:1px solid rgba(255,255,255,.09);border-bottom:1px solid rgba(255,255,255,.09)}
@@ -75,6 +90,7 @@ interface Slot {
   used: boolean; visible: boolean; pulseAt: number; width: number; h: number; hov: boolean;
   // Last written content and style, so unchanged labels cost no DOM writes (and no style invalidation).
   id: number; name$: string; color: string; rank$: string; act$: string; vocal: string; sel: boolean; model: boolean; tx: number; ty: number; op: number;
+  soon: boolean;
 }
 interface Banner { el: HTMLDivElement; key: string; visible: boolean; width: number; tx: number; ty: number; op: number; }
 type Rect = { x0: number; y0: number; x1: number; y1: number };
@@ -107,8 +123,15 @@ export function createLabels(container: HTMLElement) {
     el.append(chip, name, rank, act, voc);
     root.appendChild(el);
     slots.push({ el, chip, name, rank, act, voc, used: false, visible: false, pulseAt: -99, width: 0, h: 20, hov: false,
-      id: -1, name$: '', color: '', rank$: '', act$: '', vocal: '', sel: false, model: false, tx: NaN, ty: NaN, op: -1 });
+      id: -1, name$: '', color: '', rank$: '', act$: '', vocal: '', sel: false, model: false, tx: NaN, ty: NaN, op: -1, soon: false });
   }
+  // The selected animal's reason line (stage W4): one element for the whole overlay, attached to whichever label is the
+  // selected animal's, so the other labels keep their six children and their per-frame style cost. Its text is
+  // rewritten at most four times a second: at watching speeds decisions are seconds apart and it is immediate, at
+  // 1 day/s the sentence would change every frame, unreadably, and each change is a layout.
+  const whyEl = document.createElement('div'); whyEl.className = 'crl-why';
+  let whyOwner: Slot | null = null, why$ = '', whyAt = -1e9;
+  const WHY_EVERY = 0.25;
   const banners: Banner[] = [];
   for (let i = 0; i < MAX_BANNERS; i++) {
     const el = document.createElement('div');
@@ -191,7 +214,8 @@ export function createLabels(container: HTMLElement) {
     if (op !== t.op) { t.op = op; t.el.style.opacity = String(op); }
   }
 
-  function update(frame: CreatureFrame, animList: Anim[], anims: Map<number, Anim>, world: World, camera: THREE.Camera, parties: PartyView[], pulse: (id: number, t: number) => number) {
+  /** about (stage W4, optional): true while the simulation has begun an act the animal's drawn body has not started. */
+  function update(frame: CreatureFrame, animList: Anim[], anims: Map<number, Anim>, world: World, camera: THREE.Camera, parties: PartyView[], pulse: (id: number, t: number) => number, about?: (a: Anim) => boolean) {
     // No layout reads in the frame: the viewport size comes with the frame, widths from the ResizeObserver.
     const w = frame.viewW ?? 1440, h = frame.viewH ?? 800;
     readOccluders(frame.elapsed);
@@ -265,7 +289,8 @@ export function createLabels(container: HTMLElement) {
     for (const c of cand) {
       if (c.pri < 0 || count >= cap) break;
       const prev = slotOf.get(c.a.id);
-      const bw = prev && prev.width ? prev.width : c.detail ? 170 : 96, bh = 19;
+      // The selected animal's label is taller (its reason line): others keep clear of its measured height.
+      const bw = prev && prev.width ? prev.width : c.detail ? 170 : 96, bh = c.pri >= 100 && prev && prev.h > 19 ? prev.h : 19;
       const r = rect(c.x - bw / 2, c.y - bh - 6, c.x + bw / 2, c.y - 6);
       if (hits(r, occluders)) continue;
       if (c.pri < 100 && hits(r, placed)) continue;
@@ -275,7 +300,7 @@ export function createLabels(container: HTMLElement) {
     }
     for (const c of chosen) { const s = slotOf.get(c.a.id); if (s) s.used = true; }
     slotOf.forEach(dropUnused);
-    let free = 0;
+    let free = 0, whySeen = false;
     for (const c of chosen) {
       let s = slotOf.get(c.a.id);
       if (!s) {
@@ -284,21 +309,31 @@ export function createLabels(container: HTMLElement) {
         s = slots[free]; s.used = true; s.id = -1; slotOf.set(c.a.id, s);
       }
       const a = c.a, chimp = a.chimp;
-      const [verb, cat] = ACTION[chimp.action] ?? ['—', 'rest'];
+      const [verb, cat, toVerb] = ACTION[chimp.action] ?? ['—', 'rest', '—'];
       let isAlpha = false;
       for (const t of world.troops) if (t.id === chimp.troopId) { isAlpha = t.alphaId === chimp.id && chimp.alive; break; }
       const rank = isAlpha ? 'α' : chimp.rankOrder > 0 ? `#${chimp.rankOrder}` : '';
       const vocal = c.detail && chimp.vocal && (chimp.vocalUntil ?? 0) >= world.time ? chimp.vocal : '';
       const act = c.detail ? chimp.action : '';
-      const sel = a === focal, model = chimp.controller === 'model';
-      if (s.id !== chimp.id || s.name$ !== chimp.name || s.color !== a.troopColor || s.rank$ !== rank || s.act$ !== act || s.vocal !== vocal || s.sel !== sel || s.model !== model) {
-        s.id = chimp.id; s.name$ = chimp.name; s.color = a.troopColor; s.rank$ = rank; s.act$ = act; s.vocal = vocal; s.sel = sel; s.model = model;
+      // The spark marks an animal the decision loop asks about: none while the rules decide for everyone (policy off).
+      const sel = a === focal, model = chimp.controller === 'model' && world.modelPolicy.mode !== 'off';
+      const soon = c.detail && !!about && about(a);
+      const why = sel && chimp.alive ? chimp.reason ?? '' : '';
+      if (why) {
+        whySeen = true;
+        const moved = whyOwner !== s || s.id !== chimp.id;   // another label, or this slot now names another animal
+        if (whyOwner !== s) { whyOwner?.el.classList.remove('why'); s.el.appendChild(whyEl); s.el.classList.add('why'); whyOwner = s; }
+        if (why$ !== why && (moved || frame.elapsed - whyAt >= WHY_EVERY)) { why$ = why; whyAt = frame.elapsed; whyEl.textContent = why; }
+      }
+      if (s.id !== chimp.id || s.name$ !== chimp.name || s.color !== a.troopColor || s.rank$ !== rank || s.act$ !== act || s.vocal !== vocal || s.sel !== sel || s.model !== model || s.soon !== soon) {
+        s.id = chimp.id; s.name$ = chimp.name; s.color = a.troopColor; s.rank$ = rank; s.act$ = act; s.vocal = vocal; s.sel = sel; s.model = model; s.soon = soon;
         s.chip.style.background = a.troopColor;
         s.name.textContent = chimp.name;
         s.rank.textContent = rank;
         s.rank.className = isAlpha ? 'crl-rank alpha' : 'crl-rank';
         s.rank.style.display = rank ? '' : 'none';
-        s.act.innerHTML = c.detail ? `<svg viewBox="0 0 12 12">${CAT_ICON[cat]}</svg><span>${verb}</span>` : '';
+        s.act.innerHTML = c.detail ? `<svg viewBox="0 0 12 12">${CAT_ICON[cat]}</svg><span>${soon ? `<i>about to</i> ${toVerb}` : verb}</span>` : '';
+        s.act.className = soon ? 'crl-act soon' : 'crl-act';
         s.voc.innerHTML = vocal ? `<svg viewBox="0 0 12 12" fill="none" stroke-width="1.3" stroke-linecap="round"><path d="M3 4.5v3M5.5 3v6M8 2v8M10.5 4v4"/></svg>${CALL_TEXT[vocal as CallKind]}` : '';
         s.el.classList.toggle('sel', sel);
         s.el.classList.toggle('model', model);
@@ -312,6 +347,8 @@ export function createLabels(container: HTMLElement) {
       place(s, c.x, c.y - 8, dimmed ? 0.35 : c.pri >= 40 ? 1 : 0.86);
       if (!s.visible) { s.el.style.display = ''; s.visible = true; }
     }
+    // No label for the selected animal this frame (off screen, dead, nobody selected): the reason line leaves the overlay.
+    if (!whySeen && whyOwner) { whyOwner.el.classList.remove('why'); whyEl.remove(); whyOwner = null; why$ = ''; }
     for (const s of slots) if (!s.used && s.visible) { s.el.style.display = 'none'; s.visible = false; s.id = -1; }
   }
   /** Chimp id whose label hit box (at least 32 px tall, padded) contains (x, y) in container CSS px, else −1. Labels

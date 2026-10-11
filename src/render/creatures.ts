@@ -25,6 +25,7 @@ import { createRemains } from './creatures/remains';
 import { createPrey } from './creatures/prey';
 import { perfEnd, perfNow } from '../perf';
 import { advancePlayback, createPlayback, createTrack, pushSample, relocationJump2, type Track } from './creatures/playback';
+import { actChanged, createActTrack, pushAct, readBody, readDrawn, type ActTrack, type BodyState, type DrawnAct } from './creatures/drawn';
 import { paramsOf } from '../sim/params';
 import { sampleSmooth } from './creatures/motion';
 import { GAITS, Regime, advancePhase, createLock, limbPhase, resetLock, solveClimb, solveGait, stepLock, type ContactLock, type GaitSolve } from './creatures/gait';
@@ -92,6 +93,10 @@ export interface CreatureLayer {
   /** Optional: chimp id of the visible animal nearest (x, y) in viewport CSS px within max(radius, its on-screen
    * half-size), else −1; preferId (the hovered animal) wins close calls (creatures/pick.ts). */
   nearestAt?(x: number, y: number, camera: THREE.Camera, radius: number, preferId: number): number;
+  /** Optional (stage W4, creatures/drawn.ts): the act the drawn body is in, and whether the simulation has begun a
+   * newer one the body has not started. Fills out (the caller's object, reused) and returns false when the animal is
+   * not drawn. Reads only. */
+  drawnAct?(id: number, out: DrawnAct): boolean;
   dispose(): void;
 }
 
@@ -134,6 +139,7 @@ export interface Anim {
   /** Stage W1: 0..1, a stopped walker lowering its swinging limb (poses.ts PoseCtx.settle); exactly 0 while it walks. */
   settle: number;
   track: Track;                    // sim position history; track.x/y/z is the smooth sim path at render time
+  acts: ActTrack;                  // act and target of the last few tick states (creatures/drawn.ts): which act the drawn body is in
   ox: number; oz: number;          // eased layout offset (pairing, separation) added to the interpolated point
   // Gait and contacts (gait.ts), transitions (secondary.ts).
   moving: boolean; stillT: number; fastGait: boolean; turnRate: number; climbDy: number; dist: number; strides: number; poseDt: number;
@@ -367,7 +373,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       id: chimp.id, slot, chimp, morph: createMorph(), fk: createFK(), cur: createPose(), out: createPose(), w: new Pw(),
       clip: '', clipT: 0, role: 0, gait: null, phase: hash01(chimp.id, 3),
       x: chimp.position[0], y: 0, z: chimp.position[2], heading: chimp.heading ?? 0, speed: 0, vel: 0, inited: false,
-      track: createTrack(chimp.position[0], Math.max(0, chimp.position[1] ?? 0), chimp.position[2]), ox: 0, oz: 0,
+      track: createTrack(chimp.position[0], Math.max(0, chimp.position[1] ?? 0), chimp.position[2]), acts: createActTrack(), ox: 0, oz: 0,
       refSpeed: 0, moveSpeed: 0, settle: 0, moving: false, stillT: 0, fastGait: false, turnRate: 0, climbDy: 0, dist: 0, strides: 0, poseDt: 0,
       gs: { f: 0, stride: 0, regime: Regime.natural }, lapse: 0, locks: [createLock(), createLock(), createLock(), createLock()], drop: 0, planted: false, bank: 0,
       inert: createInertia(POSE_SIZE), prevOut: new Float32Array(POSE_SIZE), prevCur: new Float32Array(POSE_SIZE), outVel: new Float32Array(POSE_SIZE), skip: new Uint8Array(POSE_SIZE), hold: new Float32Array(12), holdMask: 0,
@@ -768,6 +774,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     for (const a of animList) {
       const c = a.chimp;
       if (fresh || a.track.n === 0) pushSample(a.track, world.time, c.position[0], Math.max(0, c.position[1] ?? 0), c.position[2]);
+      // The act of each tick state (drawn.ts), and at once when a decision applied between ticks changes it.
+      if (fresh || actChanged(a.acts, c.action, c.targetId)) pushAct(a.acts, world.time, c.action, c.targetId);
       sampleSmooth(a.track, rt, jump2);
     }
   }
@@ -1623,7 +1631,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     selection.update(frame, anims, world, dt);
     perfEnd('overlays', o0);
     const l0 = perfNow();
-    labels.update(frame, animList, anims, world, cam, social.parties, social.pulse);
+    labels.update(frame, animList, anims, world, cam, social.parties, social.pulse, aboutOf);
     perfEnd('labels', l0);
   }
 
@@ -1634,6 +1642,26 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     return true;
   }
   function getScale(id: number) { return anims.get(id)?.morph.size ?? 1; }
+  // Stage W4: which act the drawn body is in (creatures/drawn.ts). One scratch record and one body reading for the
+  // name tags; the interface passes its own record. Nothing is allocated per call and nothing is written to the World.
+  const DRAWN: DrawnAct = { action: 'rest', targetId: -1, about: false };
+  const BODY: BodyState = { moving: false, climbing: false, gap: 0, shuffling: false, passive: false };
+  // This world's walking speed, for telling a feeding shuffle from a walk to a place (read once, as jump2 above: the
+  // layer is rebuilt when a simulation is swapped in).
+  const walkMps = paramsOf(world).walkMps;
+  /** What the drawn body is doing: walking, going up or down, how far its path still is from the animal's place, and
+   * whether only a shuffle is left for it to play (drawn.ts readBody). */
+  function bodyOf(a: Anim): BodyState {
+    const c = a.chimp;
+    return readBody(BODY, a.track, c.position[0], Math.max(0, c.position[1] ?? 0), c.position[2], a.moving, a.carry !== 0 || !c.alive, walkMps);
+  }
+  function drawnAct(id: number, out: DrawnAct): boolean {
+    const a = anims.get(id);
+    if (!a) return false;
+    readDrawn(a.acts, playback.renderT, bodyOf(a), curSimRate, out);
+    return true;
+  }
+  const aboutOf = (a: Anim): boolean => readDrawn(a.acts, playback.renderT, bodyOf(a), curSimRate, DRAWN).about;
   // --- Portrait (creatures/portrait.ts): one instance of the finest body mesh loaded so far, on its own layer and
   // outside the creature group (which hides in the field overview). A wrapper geometry shares the LOD's vertex
   // buffers (never disposed here: they belong to the LOD) and adds a one-instance slot, so the body material's
@@ -1729,5 +1757,5 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     picks.length = 0; anims.clear(); animList.length = 0;
     void lastElapsed;
   }
-  return { picks, update, getPosition, getScale, bendSources, keepClearCandidates, portrait, labelAt: labels.hitTest, nearestAt, dispose, debug } as CreatureLayer & { debug: typeof debug };
+  return { picks, update, getPosition, getScale, bendSources, keepClearCandidates, portrait, labelAt: labels.hitTest, nearestAt, drawnAct, dispose, debug } as CreatureLayer & { debug: typeof debug };
 }

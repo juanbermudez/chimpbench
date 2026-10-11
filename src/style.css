@@ -496,8 +496,17 @@ body.preview .viewport { background: #3a3d38; }
 .ch-comm { display: flex; align-items: center; gap: 8px; margin: 2px 0 1px; font-size: 11.5px; }
 .ch-meta, .ch-rank { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ch-rank { color: var(--ink-3); } .ch-meta .mono { margin-left: 8px; font-size: 10.5px; color: var(--ink-4); }
-.ch-now { display: flex; align-items: center; gap: 6px; margin-top: 5px; min-width: 0; font-size: 12.5px; font-weight: 600; color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* What it is doing, then why: the simulation's own reason sentence for the act (stage W4). */
+.ch-act { display: grid; gap: 3px; min-width: 0; margin-top: 5px; }
+.ch-now { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 12.5px; font-weight: 600; color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .ch-now svg.i { width: 14px; height: 14px; color: var(--ink-3); } .ch-now span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.ch-why { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; font-size: 11.5px; line-height: 1.4; color: var(--ink-2); text-wrap: pretty; }
+/* "About to …": the simulation has begun the act, the drawn body has not (the 3D name tag wears the same style). */
+.ch-act.soon .ch-now span { font-style: italic; font-weight: 500; padding-bottom: 1px; border-bottom: 1px dashed var(--line-3); }
+.ch-act.soon .ch-now svg.i { opacity: .5; }
+/* Short windows: the panel is at its smallest, so the snapshot gives the reason its lines. */
+@media (max-height: 800px) and (min-width: 721px) { .app:not(.chimp-closed) .ch-shot { width: 64px; height: 64px; } .ch-why { -webkit-line-clamp: 2; } }
+@media (max-height: 690px) and (min-width: 721px) { .ch-why { -webkit-line-clamp: 1; } }
 /* The alpha's mark everywhere in the UI: the gold "α" badge of the 3D name tag (render/creatures/labels.ts). */
 .alpha-badge { display: inline-grid; place-items: center; flex: none; padding: 2px 4px; border-radius: 4px; background: var(--gold); color: #17140e;
   font: 600 10px/1 var(--font-ui); font-style: normal; letter-spacing: 0; vertical-align: 1px; }
@@ -525,7 +534,12 @@ body.preview .viewport { background: #3a3d38; }
 .app.chimp-closed .ch-who > * { flex: 0 0 auto; margin: 0; }
 .app.chimp-closed .ch-name { font-size: 18px; }
 .app.chimp-closed .ch-rank { display: none; }
-.app.chimp-closed .ch-now { flex: 0 1 auto; font-weight: 500; color: var(--ink-2); }
+.app.chimp-closed .ch-act { flex: 1 1 auto; display: flex; align-items: center; gap: 12px; min-width: 0; }
+.app.chimp-closed .ch-now { flex: 0 0 auto; font-weight: 500; color: var(--ink-2); }
+.app.chimp-closed .ch-why { flex: 0 1 auto; display: block; min-width: 0; white-space: nowrap; text-overflow: ellipsis; font-size: 12px; color: var(--ink-3); }
+/* A narrow strip (both sidebars open at 1440 px) drops the age line before it cuts the reason short. */
+.app.chimp-closed .ch-id { container: chstrip / inline-size; }
+@container chstrip (max-width: 860px) { .app.chimp-closed .ch-meta { display: none; } }
 .app.chimp-closed .ch-main { justify-content: center; }
 .app.chimp-closed .ch-bar { padding: 0 12px 0 0; border-bottom: 0; }
 .app.chimp-closed :is(.ch-tabs, .ch-body) { display: none; }
@@ -544,6 +558,18 @@ body.preview .viewport { background: #3a3d38; }
 .cl-ic { display: grid; place-items: center; align-self: center; width: 16px; height: 16px; color: var(--ink-4); } .cl-ic svg.i { width: 13px; height: 13px; }
 .clog :is(.sev-2, .sev-3) .cl-ic, .inter .cl-ic { color: var(--k); }
 .clog .sev-0 .cl-text { color: var(--ink-3); } .clog .sev-2 .cl-text { color: var(--ink); font-weight: 500; } .clog .sev-3 .cl-text { color: var(--ink); font-weight: 600; }
+/* Log tab, stage W4: one line of what the interface saw the animal do, then its changes of act with their reasons.
+   The colours group acts for the eye (feeding, moving, resting, social, conflict, calling); they are not an ethogram. */
+.clog-wrap > section + section { margin-top: 16px; }
+.tl-bar { display: flex; gap: 1px; height: 14px; border-radius: 4px; overflow: hidden; background: var(--track); }
+.tl-seg { display: block; min-width: 2px; height: 100%; background: var(--a); }
+.a-feed { --a: #8fbf7a; } .a-move { --a: #74b9f2; } .a-rest { --a: #6c6c73; } .a-social { --a: #e79bbd; } .a-conflict { --a: #ef7266; } .a-call { --a: #b39af5; } .a-none { --a: transparent; }
+.tl-axis { display: flex; justify-content: space-between; margin-top: 4px; font-size: 10px; color: var(--ink-4); }
+.tl-legend { display: flex; flex-wrap: wrap; gap: 3px 14px; margin-top: 5px; font-size: 11px; color: var(--ink-3); }
+.tl-legend i { display: inline-block; width: 8px; height: 8px; margin-right: 5px; border-radius: 2px; background: var(--a); } .tl-legend .a-none i { box-shadow: inset 0 0 0 1px var(--line-3); }
+.dlog .cl-text { color: var(--ink-2); } .dlog .cl-text b { font-weight: 600; color: var(--ink); }
+.dlog-src { display: inline-block; margin-left: 8px; font-style: normal; font-size: 10.5px; color: var(--ink-4); white-space: nowrap; } .dlog-why { display: block; font-size: 11.5px; color: var(--ink-3); text-wrap: pretty; }
+.dlog .cl-ic { align-self: start; margin-top: 2px; }
 .mind { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 28px; align-items: start; }
 @container chimp (min-width: 640px) {
   .mind:has(> .history) { grid-template-columns: minmax(0, 1fr) minmax(210px, 270px); }
@@ -702,6 +728,24 @@ body.preview .viewport { background: #3a3d38; }
 .opt-marks { display: inline-flex; width: 18px; flex-shrink: 0; gap: 1px; font-style: normal; }
 .mk-model, .opt-name .mk-model { color: var(--gold); font-style: normal; font-size: 10px; } .mk-rules, .opt-name .mk-rules { color: var(--ink-3); font-style: normal; font-size: 9px; }
 .opt-val { display: grid; grid-template-columns: minmax(0, 1fr) 36px; gap: 6px; align-items: center; }
+/* Stage W4: the decision first (the pick over its runners-up in one line, who chose, the reason in print), then every
+   option with its value as a bar and its reason as text. */
+.who { display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px 1px 6px; border-radius: 10px; font-size: 11px; font-weight: 500; color: var(--ink-2); background: var(--hover); }
+.who svg.i { width: 11px; height: 11px; }
+.who:is(.who-untuned, .who-general, .who-other-model) { color: var(--gold-2); background: var(--gold-a); }
+.who-none { color: var(--warn); padding-left: 8px; }
+.dline, .dl-main, .dl-rest { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+.dline { margin-top: 8px; font-size: 12px; color: var(--ink-2); } .opts-title.by-rules .mk-model { color: var(--ink-2); }
+.dline i { font-style: normal; color: var(--ink-3); } .dline em { font-style: normal; font-size: 11px; color: var(--ink-3); }
+.dl-pick { font-family: var(--font-display); font-size: 17px; font-weight: 500; line-height: 1.2; color: var(--ink); } .dl-pick i { font-family: var(--font-ui); font-size: 12.5px; }
+.dl-over { font-size: 10px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-4); }
+.dl-alt + .dl-alt::before { content: '·'; margin-right: 8px; color: var(--ink-4); }
+.dwhy { margin-top: 5px; font-size: 13px; line-height: 1.45; color: var(--ink); text-wrap: pretty; }
+.dnote { margin-top: 4px; font-size: 11.5px; line-height: 1.4; color: var(--ink-3); } .dnote.diverge { color: var(--gold-2); }
+.trace .opts-title { margin-top: 14px; } .trace .story { margin: 14px 0 8px; }
+.opts.one .opt { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+.opt-why { grid-column: 1 / -1; margin: -3px 0 0 22px; font-size: 11.5px; line-height: 1.4; color: var(--ink-3); text-wrap: pretty; }
+.opt.chosen .opt-why { color: var(--ink-2); }
 .opt-val b { font-size: 11px; font-weight: 500; text-align: right; }
 .trace-cost { margin-top: 8px; font-size: 10.5px; color: var(--ink-4); }
 .ctx-wrap { margin-top: 14px; border-top: 1px solid var(--line); }
@@ -955,7 +999,13 @@ dialog.settings::backdrop { background: rgba(0, 0, 0, .6); }
   .app:not(.chimp-closed) .ch-main { flex: 1 1 auto; }
   .ch-tabs { overflow-x: auto; scrollbar-width: none; } .ch-tabs button { padding: 0 9px; }
   .app:not(.chimp-closed) .ch-actions :is([data-act="prev"], [data-act="next"]) { display: none; }   /* room for the five tabs */
-  .app.chimp-closed .ch-who { gap: 10px; } .app.chimp-closed :is(.ch-meta, .ch-now) { display: none; }
+  /* The strip on a phone: the name and community, and under them what the animal is doing and why. */
+  .app.chimp-closed .ch-who { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 10px; align-items: center; } .app.chimp-closed .ch-meta { display: none; }
+  .app.chimp-closed .ch-act { grid-column: 1 / -1; gap: 8px; } .app.chimp-closed .ch-name { font-size: 16px; }
+  .app.chimp-closed .ch-why { font-size: 11.5px; } .app.chimp-closed .ch-now svg.i { width: 12px; height: 12px; }
+  .app.chimp-closed .ch-now span { display: none; }   /* the icon and the reason: the name tag over the animal carries the verb */
+  .app.chimp-closed .ch-act.soon .ch-why { font-style: italic; }
+  .app:not(.chimp-closed) .ch-why { -webkit-line-clamp: 2; }
   .app.chimp-closed .ch-id { padding: 0 6px 0 8px; gap: 10px; } .app.chimp-closed .ch-shot { width: 34px; height: 34px; }
   .app.left-open .chimp-panel, .app:not(.rside-closed) .chimp-panel { display: none; }
   .app.left-open .left { display: flex !important; transform: none; opacity: 1; visibility: visible; position: absolute; left: 0; right: 0; top: 14vh; bottom: 0; width: auto; z-index: 25; padding: 10px; gap: 8px; overflow-y: auto; background: var(--bg); border-top: 1px solid var(--line-2); border-radius: 16px 16px 0 0; animation: sheetIn .35s var(--ease); }
