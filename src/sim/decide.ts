@@ -8,6 +8,7 @@ import { candidateMeta, findCandidate, getEligibleActions, rulesChoice, V } from
 import { decisionContextError } from './context-check';
 import { setRest, startAction } from './execution';
 import { observe } from './observe';
+import { ownAsk, ownSetAside } from './own';
 import { paramsOf } from './params';
 import { perceive } from './perception';
 import { buildRequest, targetRequest } from './request';
@@ -33,15 +34,17 @@ export function decisionPoint(world: World, c: Chimp): void {
   const x = ix(c);
   const model = isModelControlled(world, c);
   if (!model || x.seenAt !== world.time) perceive(world, c);
+  const P = paramsOf(world), own = P.observeV5 === 1;
+  // stage R8 (observeV5; own.ts): what opened this decision point is noted for the animal's packet; nothing else reads it
+  if (own) ownAsk(world, c, x.intr !== '', model && c.awaitingDecisionSince !== null, P);
   x.intr = '';
   const list = getEligibleActions(world, c);
-  const P = paramsOf(world);
   if (model) {
     if (c.awaitingDecisionSince === null) c.awaitingDecisionSince = world.time;
     const policy = world.modelPolicy;
     if (policy.mode === 'async' && (world.time - c.awaitingDecisionSince) * 60 > policy.asyncGraceMinutes) { dropIntent(world, c); decideByRules(world, c); return; }
     if (P.kernelGate === 1 && loopGate(world, c, list)) return;
-    if (x.finished || !findCandidate(list, c.action, c.targetId)) setRest(world, c, 'Waiting for a decision');
+    if (x.finished || !findCandidate(list, c.action, c.targetId)) { if (own && !x.finished) ownSetAside(world, c, P); setRest(world, c, 'Waiting for a decision'); }
     x.finished = false;
     c.nextDecision = world.time + 1 / 60;
     return;

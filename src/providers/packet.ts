@@ -9,6 +9,8 @@ import type { Action, BodyPercept, BodySight, Candidate, DecisionContext, Option
 import { MAX_HISTORY } from '../sim/context-check';
 // Stage R2 (docs/staging/r2-prereg.md §3, §10): the v4 wording of the state (words before numbers), for a context with `packet: 4`.
 import { bodyWordsV4, valueWordsV4 } from '../kernel/packet-words';
+// Stage R8 (docs/staging/r8-prereg.md §4, §5): the words of packet 5 (the animal's own experience, neutral option labels), for a context with `packet: 5`.
+import { actWords, askedWords, bodyDepartures, doingWords, lastWords, latelyWords, neutralOption, OWN_INSTRUCTION } from '../kernel/packet-own';
 export { MAX_HISTORY, MAX_OPTIONS, bodyFieldError, decisionContextError, validateDecisionContext } from '../sim/context-check';
 
 // ---------------------------------------------------------------------------
@@ -252,7 +254,8 @@ function memoryLines(ctx: DecisionContext): string[] {
   return ctx.recent.filter((r, i) => ctx.recent.findIndex(o => base(o) === base(r)) === i).slice(0, 5);
 }
 
-export function buildLocalQuestion(ctx: DecisionContext, opts: { staticInstructions?: boolean; wording?: 1 | 2 } = {}): LocalPacket {
+export function buildLocalQuestion(ctx: DecisionContext, opts: { staticInstructions?: boolean; wording?: 1 | 2; own?: OwnOpts } = {}): LocalPacket {
+  if (ctx.packet === 5) return buildOwnQuestion(ctx, opts.own); // stage R8: the animal's own experience, neutral options (observeV5 1); `own` chooses the registered length
   return hasState(ctx) ? buildStateQuestion(ctx, opts) : localPacket(ctx, opts); // stage M1: Track E's state (observeState 1)
 }
 /** GLiNER's packet: the state lines and the choice question (criteria c0..cN aligned with ctx.candidates). */
@@ -318,6 +321,7 @@ function optionKeys(ctx: DecisionContext): string[] {
  * situational rules apply to this moment only. keys[i] is the criteria key of ctx.candidates[i].
  */
 export function buildJevQuestion(ctx: DecisionContext, opts: { wording?: 1 | 2 } = {}): JevPacket {
+  if (ctx.packet === 5) return jevOwnPacket(ctx); // stage R8 (observeV5 1): the same lines and labels as GLiNER's packet 5
   return hasState(ctx) ? buildJevStateQuestion(ctx, opts.wording ?? (ctx.packet === 4 ? 2 : 1)) : jevPacket(ctx); // stage M1: Track E's state (observeState 1); R2: wording 2 for packet 4
 }
 /** Jev's packet: grouped state, structured instructions, named options (keys[i] is ctx.candidates[i]'s key). */
@@ -396,8 +400,16 @@ export const TOKEN_BUDGET = 613;
 export const hasState = (ctx: DecisionContext): boolean => ctx.body !== undefined || ctx.light !== undefined;
 /** The same moment as today's observation: the context without `body`, `light` and option values. */
 export function withoutState(ctx: DecisionContext): DecisionContext {
+  if (ctx.packet === 5) return withoutState(withoutOwn(ctx)); // stage R8: first without the animal's own experience
   const { body: _body, light: _light, packet: _packet, ...rest } = ctx; // (packet: stage R2's marker of the v4 fields)
   return { ...rest, candidates: ctx.candidates.map(({ value: _value, ...k }) => k) };
+}
+/** Stage R8: a packet 5 context without the animal's own experience: the v4 observation of the same moment (`packet: 4`). */
+export function withoutOwn(ctx: DecisionContext): DecisionContext {
+  const { own: _own, ...rest } = ctx;
+  return { ...rest, packet: 4,
+    social: ctx.social.map(({ dir: _d, away: _a, toMe: _t, groomedH: _g, groomedByH: _gb, greetedH: _pg, ...p }) => p),
+    candidates: ctx.candidates.map(({ about: _about, ...k }) => k) };
 }
 /** The packet's estimate budget for the new layout: the old packet's budget plus room for the new parts, under the 1,280 hard limit (M1 measures the real counts). */
 export const TOKEN_BUDGET_STATE = 1000;
@@ -463,22 +475,23 @@ function stateOptionParts(ctx: DecisionContext, c: Candidate, wording: 1 | 2 = 1
 // by the food at its end. Wording 2 names what each act does under the mechanisms on (a context with sleep pressure in
 // its body; a tree trip), in the drive words the state uses; the drive "fatigue" is called sleepiness there.
 const SLEEPY = (ctx: DecisionContext) => ctx.body?.sleepPressure !== undefined;
+const TRACK_SLEEP = 'sleep, relieves sleepiness', TRACK_PAUSE = 'a pause: cools the body, digests, favours wounds', TRACK_FOOD = 'food, eases hunger';
 function trackPurpose(ctx: DecisionContext, c: Candidate, purpose: string): string {
   const f = ctx.focal, sleepy = 1 - f.energy, hungerEcho = (p: string) => urgentPurpose(f, 'forage', p);
-  if (SLEEPY(ctx) && c.action === 'nest') return sleepy >= 0.7 ? `sleep, relieves ${intensity(sleepy)} sleepiness — needed now` : 'sleep, relieves sleepiness';
-  if (SLEEPY(ctx) && c.action === 'rest') return 'a pause: cools the body, digests, favours wounds';
-  if (c.action === 'travel' && c.targetId > 100_000 && c.targetId < 200_000) return hungerEcho('food, eases hunger');
+  if (SLEEPY(ctx) && c.action === 'nest') return sleepy >= 0.7 ? `sleep, relieves ${intensity(sleepy)} sleepiness — needed now` : TRACK_SLEEP;
+  if (SLEEPY(ctx) && c.action === 'rest') return TRACK_PAUSE;
+  if (c.action === 'travel' && c.targetId > 100_000 && c.targetId < 200_000) return hungerEcho(TRACK_FOOD);
   return purpose;
 }
 /** Wording 2's drive word: under rhythmSleep the "fatigue" gauge is felt sleepiness, and what relieves it is sleep in a nest. */
 const sleepWords = (t: string) => t.replace(/\bfatigue — needs rest now\b/g, 'sleepiness — needs sleep in a nest now').replace(/\bfatigue\b/g, 'sleepiness');
 
-function nowWords(ctx: DecisionContext): string {
+function nowWords(ctx: DecisionContext, withCurrent = true): string {
   const f = ctx.focal, e = ctx.environment;
   const weather = e.weather === 'storm' ? 'thunderstorm' : e.weather === 'rain' ? (e.rain >= 0.6 ? 'heavy rain' : 'light rain') : e.weather;
   const phase = e.phase === 'dusk' ? 'dusk, night is falling' : e.phase === 'dawn' ? 'dawn' : e.phase === 'night' ? 'night' : 'daytime';
   const strangers = e.strangersSeen || e.strangersHeard ? `strangers: ${e.strangersSeen} seen, ${e.strangersHeard} heard` : '';
-  const current = CURRENT[f.currentAction] && !ctx.candidates.some(c => c.action === f.currentAction) ? `currently ${CURRENT[f.currentAction]}` : '';
+  const current = withCurrent && CURRENT[f.currentAction] && !ctx.candidates.some(c => c.action === f.currentAction) ? `currently ${CURRENT[f.currentAction]}` : '';
   const when = ctx.light ? `${phase} (${lightWords(ctx.light)})` : `${clock(e.hour)} ${phase}`;
   return [current, when, `${weather}, ${Math.round(e.temperature)} °C`, `party of ${e.partySize} with ${e.partyAdultMales} adult males`, fruitWord(e.fruitNearby),
     e.nearTerritoryEdge ? 'at the territory edge' : '', strangers].filter(Boolean).join('; ');
@@ -545,6 +558,136 @@ function buildJevStateQuestion(ctx: DecisionContext, wording: 1 | 2 = 1): JevPac
   const instructions = { ...old.questions.action.instructions, evidence: `Judge only from \`self\`, \`needs\`, \`body\`, \`situation\`, \`nearby\`, \`memories\`${ctx.bodies?.length ? ', `events` and `bodies`' : ' and `events`'}. Every option is possible now.`,
     ...(wording === 2 && SLEEPY(ctx) && Array.isArray(now) ? { now: (now as string[]).map(sleepWords) } : {}) };
   return { state, questions: { action: { type: 'choice' as const, instructions, criteria } }, keys };
+}
+
+// ---------------------------------------------------------------------------
+// Stage R8 (observeV5 1; docs/staging/r8-prereg.md): packet 5, the animal's own experience and neutral options
+// ---------------------------------------------------------------------------
+// For a context with `packet: 5` (observe() at observeV5 1). The state gains what the animal plainly knows: what it is
+// doing and for how long (`doing`), why it is being asked when that is something it perceived or felt (`asked because`),
+// what its companions are doing (in `nearby`), its own foraging returns (`lately`) and its social timing (`last`). Each
+// option is a neutral label: the act, its target and the animal's belief words (src/kernel/packet-own.ts). None of the
+// rules' wording is written: no reason sentence, no purpose phrase, no mark of urgency, no `urgent` line, no situational
+// rule, no sentence on dominance; the instruction is one sentence. Nothing here reads an option's `score` or `reason`,
+// its net rate or company value, or the feeding drive (tests/r8-packet.test.ts changes each and compares the text), and
+// the animals nearby are listed nearest first, not in the observation's order, which follows the rules' scores.
+// The recorded failure at the "currently" phrase above (the current act beside the same option locked the model onto
+// continuing) is why the act is a line of state in the participle with its duration, never words on an option, and why
+// any one of the new lines can be left out (`without`) to measure its pull; see the pre-registration §6.
+
+/** The new lines of packet 5; any may be left out of a build (an ablation, or a measurement of its tokens). */
+export type OwnBlock = 'doing' | 'asked' | 'acts' | 'lately' | 'last';
+/** `variant`: 'full' (the default) or the registered 'short' (fewer memory and history lines, the body line only where it departs from normal). */
+export interface OwnOpts { variant?: 'full' | 'short'; without?: OwnBlock[] }
+/** Memory and history lines kept by each variant (prereg §5). */
+const OWN_LINES = { full: { memories: 3, history: 2 }, short: { memories: 1, history: 0 } } as const;
+
+/** A perceived animal's line with what it is doing at its end (today's line names only notable acts, before the distance). */
+function describePerceptOwn(ctx: DecisionContext, p: SocialPercept): string {
+  const parts = [RELATION_TEXT[p.relation], `${p.stage} ${p.sex}`, dominance(ctx, p), meters(p.distance)];
+  if (p.relation !== 'stranger') parts.push(p.bond >= 0.6 ? 'close bond' : p.bond >= 0.3 ? 'friendly' : p.bond < 0 ? 'hostile' : '');
+  if ((p.tension ?? 0) >= 0.5) parts.push('very tense'); else if ((p.tension ?? 0) >= 0.25) parts.push('tense');
+  if (p.injured) parts.push('injured');
+  if (p.hasMeat) parts.push('holding meat');
+  if (p.sex === 'female' && p.swelling >= 0.8) parts.push('maximally swollen');
+  parts.push(actWords(p, NOTABLE[p.action]));
+  return `${p.name}: ${parts.filter(Boolean).join(', ')}`;
+}
+
+/** Memory lines that packet 5 says elsewhere: grooming and greeting times (`last`), and the interrupt (`asked because`). */
+function ownMemories(ctx: DecisionContext, lastShown: boolean, event: string | undefined): string[] {
+  const bare = (t: string) => t.replace(/\b(?:is|are|was|were)\b/g, '').replace(/\s+/g, ' ').trim();
+  return memoryLines(ctx).filter(r => {
+    if (lastShown && /^(?:Groomed|Was groomed by|Pant-grunted to) /.test(r)) return false;
+    const m = event ? r.match(/^(?:Just now|\d+ (?:min|h) ago): (.*)$/) : null;
+    return !(m && bare(m[1]) === bare(event!));
+  });
+}
+
+/** GLiNER's packet 5 (see the section note). The options are the context's, in its order. */
+export function buildOwnQuestion(ctx: DecisionContext, opts: OwnOpts = {}): LocalPacket {
+  const f = ctx.focal, e = ctx.environment, own = ctx.own ?? {}, variant = opts.variant ?? 'full', short = variant === 'short', sleepy = SLEEPY(ctx);
+  const off = (b: OwnBlock) => opts.without?.includes(b) ?? false;
+  const { hierarchy, personality, status } = selfWords(f);
+  const state: Record<string, unknown> = {
+    me: short ? [`${f.name}, ${f.stage} ${f.sex}, ${ageText(f.ageYears)}`, hierarchy, ...status, f.mood === 'calm' ? '' : `mood ${f.mood}`, ...personality].filter(Boolean).join('; ')
+      : [`${f.name}, ${f.stage} ${f.sex}, ${ageText(f.ageYears)}, ${/community$/i.test(f.community) ? f.community : `${f.community} community`}`, hierarchy, ...status, `mood ${f.mood}`, ...personality].join('; '),
+  };
+  const feeling = drives(f).feeling; // (the `urgent` line of today's packet names a remedy and is not written)
+  if (feeling !== 'no pressing needs') state.feeling = sleepy ? sleepWords(feeling) : feeling;
+  if (own.doing && !off('doing')) state.doing = doingWords(own.doing);
+  if (own.asked && !off('asked')) state['asked because'] = askedWords(own.asked, sleepy, !!own.doing && !off('doing'));
+  if (ctx.body && Object.keys(ctx.body).length) { const b = short ? bodyDepartures(ctx.body, ctx.light) : bodyWordsV4(ctx.body); if (b) state.body = b; }
+  if (short) {
+    const weather = e.weather === 'storm' ? 'thunderstorm' : e.weather === 'rain' ? (e.rain >= 0.6 ? 'heavy rain' : 'light rain') : e.weather;
+    state.now = [ctx.light ? lightWords(ctx.light) : `${clock(e.hour)} ${e.phase}`, `${weather}, ${Math.round(e.temperature)} °C`, `party of ${e.partySize} with ${e.partyAdultMales} adult males`, fruitWord(e.fruitNearby),
+      e.nearTerritoryEdge ? 'at the territory edge' : '', e.strangersSeen || e.strangersHeard ? `strangers: ${e.strangersSeen} seen, ${e.strangersHeard} heard` : ''].filter(Boolean).join('; ');
+  } else state.now = nowWords(ctx, false);
+  // The observation lists the animals nearby with the targets of the rules' best-valued options first (observe.ts:
+  // "candidate targets first (by score)"), so in today's packets the order of the `nearby` line tells which partner the
+  // rules would take: on stage R4's saved held-out records the animal a social pick names is the first one listed in
+  // every fresh draw (docs/staging/r8-wording-probe.md, "The order of the nearby list"). That is a ranking the rules
+  // computed, so packet 5 does not carry it: the animals are listed nearest first, an order the animal itself perceives,
+  // ties by the line's own text. The order of the observation's list never reaches the text (tests/r8-packet.test.ts).
+  const near = ctx.social.map(p => ({ p, line: off('acts') ? describePercept(ctx, p) : describePerceptOwn(ctx, p) }))
+    .sort((a, b) => a.p.distance - b.p.distance || (a.line < b.line ? -1 : a.line > b.line ? 1 : 0));
+  if (near.length) state.nearby = near.map(n => n.line);
+  if (own.lately && !off('lately')) { const l = latelyWords(own.lately, own.doing?.ended !== undefined); if (l) state.lately = l; }
+  const named = new Set(ctx.candidates.map(c => c.targetId));
+  const last = off('last') ? [] : lastWords({ ...ctx, social: near.map(n => n.p) }, short ? p => named.has(p.id) : () => true);
+  if (last.length) state.last = last;
+  const memories = ownMemories(ctx, !off('last'), off('asked') ? undefined : own.asked?.event).slice(0, OWN_LINES[variant].memories);
+  if (memories.length) state.memories = memories;
+  const history = ctx.history?.slice(0, OWN_LINES[variant].history) ?? [];
+  if (history.length) state.history = history;
+  if (ctx.stimuli.length) state.events = ctx.stimuli;
+  if (ctx.bodies?.length) state.bodies = ctx.bodies.map(b => describeBody(ctx, b));
+  const criteria: Record<string, string> = {};
+  ctx.candidates.forEach((c, i) => { criteria[`c${i}`] = neutralOption(ctx, c); });
+  const questions = { action: { type: 'choice' as const, instructions: OWN_INSTRUCTION, criteria } };
+  // under the hard limit: history first, then the oldest memories, then the oldest social timing
+  for (;;) {
+    if (estimateInputTokens(state, questions) <= TOKEN_BUDGET_STATE) break;
+    const hist = state.history as string[] | undefined, mems = state.memories as string[] | undefined, times = state.last as string[] | undefined;
+    if (hist?.length) { if (hist.length > 1) state.history = hist.slice(0, -1); else delete state.history; }
+    else if (mems && mems.length > 1) state.memories = mems.slice(0, -1);
+    else if (times && times.length > 1) state.last = times.slice(0, -1);
+    else break;
+  }
+  return { state, questions };
+}
+
+/**
+ * Stage R8 (the wording test; prereg §7): a state packet with the leaked wording gone and nothing else changed. The
+ * given packet's state lines without `urgent`, each option as its neutral label, the one-sentence instruction. The
+ * context's options must carry `about` (observe() at observeV5 1 writes it; scripts/lib/r8-about.ts reads it back from
+ * a saved context of an earlier stage).
+ */
+export function neutralized(ctx: DecisionContext, packet: LocalPacket): LocalPacket {
+  const { urgent: _urgent, ...state } = packet.state;
+  const criteria: Record<string, string> = {};
+  ctx.candidates.forEach((c, i) => { criteria[`c${i}`] = neutralOption(ctx, c); });
+  return { state, questions: { action: { type: 'choice' as const, instructions: OWN_INSTRUCTION, criteria } } };
+}
+
+/** Jev's packet 5: the same state lines and the same neutral labels, under Jev's descriptive option keys. */
+function jevOwnPacket(ctx: DecisionContext): JevPacket {
+  const p = buildOwnQuestion(ctx), keys = optionKeys(ctx), criteria: JevPacket['questions']['action']['criteria'] = {};
+  ctx.candidates.forEach((_, i) => { criteria[keys[i]] = { act: p.questions.action.criteria[`c${i}`] }; });
+  return { state: p.state, questions: { action: { type: 'choice' as const, instructions: { question: OWN_INSTRUCTION }, criteria } }, keys };
+}
+
+/**
+ * Stage R8: the rules' wording that packet 5 must never carry, read from the tables and functions of this file that
+ * write it (the test derives its banned phrases from here, not from a list typed elsewhere): every purpose phrase, the
+ * instruction sentences other than the neutral one, and the words of the `urgent` line and of the urgency mark.
+ */
+export function rulesWordings(): { purposes: string[]; instructions: string[]; urgent: string[] } {
+  return {
+    purposes: [...new Set([...Object.values(VERBS).map(v => v[2]), ...AIMS.map(a => a[2]), TRACK_SLEEP, TRACK_PAUSE, TRACK_FOOD])].filter(Boolean),
+    instructions: [ACTION_WEIGH, ACTION_BASE, STATIC_INSTRUCTIONS],
+    urgent: [...Object.values(NEEDS).map(n => `needs ${n}`), urgentPurpose({ hunger: 1 } as DecisionContext['focal'], 'forage', TRACK_FOOD).split(' — ')[1]],
+  };
 }
 
 // Only abundance is news; ordinary fruit availability is left to the forage options' own reasons.

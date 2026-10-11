@@ -5,6 +5,7 @@ import { bond, relationOf } from './hierarchy';
 import { historyLines, tensionOf } from './relations';
 import { copyCandidate } from './menu';
 import { bodyPercept, lightPercept, withValues } from './observe-state';
+import { ownPercept, perceptOwn, withAbout } from './own';
 import { paramsOf } from './params';
 import { index, isChimpId, ix, simOf, TICK_HOURS } from './state';
 import { bodySights } from './deadbody';
@@ -40,6 +41,9 @@ function dirWord(dx: number, dz: number): string {
  * Stage M1 (observeState 1; docs/staging/em-prereg.md, observe-state.ts): plus the animal's Track E state (`body`), the
  * light it sees (`light`) and each option's Track E values (`value`, on copies); at 0 the observation is unchanged.
  * Stage R2 (observeV4 1; docs/staging/r2-prereg.md): the same, with the v4 fields in `body` and `value` and `packet: 4`.
+ * Stage R8 (observeV5 1; docs/staging/r8-prereg.md, own.ts): the v4 observation plus the animal's own experience (`own`),
+ * what it sees each perceived animal doing and its own timing with it, what each option is in its own terms (`about`, on
+ * copies), and `packet: 5`. Still pure and local.
  */
 export function observe(world: World, c: Chimp): DecisionContext {
   const x = ix(c);
@@ -47,6 +51,8 @@ export function observe(world: World, c: Chimp): DecisionContext {
   const troop = idx.troopById.get(c.troopId);
   const time = world.time;
   const env = world.environment;
+  // stage R2 (observeV4 1; docs/staging/r2-prereg.md §1 A): the M1 parts plus the v4 fields and the packet marker; stage R8 (observeV5 1): those and the animal's own experience
+  const P = paramsOf(world), v5 = P.observeV5 === 1, v4 = v5 || P.observeV4 === 1, track = v4 || P.observeState === 1;
   const all: Candidate[] = computeCandidates(world, c, []);
   const px = c.position[0], pz = c.position[2];
   const perceivable = (id: number) => x.seen.includes(id) || c.memory.some(m => m.kind === 'chimp' && m.entityId === id) || id === x.caretaker || id === c.motherId;
@@ -82,6 +88,7 @@ export function observe(world: World, c: Chimp): DecisionContext {
       distance: Math.round(Math.hypot(o.position[0] - px, o.position[2] - pz) * 10) / 10, action: o.action,
       swelling: r2(o.swelling), injured: o.injury > 0.15, hasMeat: o.carryingMeat > 0.05,
       ...(same ? { tension: r2(tensionOf(c, o)) } : {}),
+      ...(v5 ? perceptOwn(world, c, o) : {}),
     };
   });
   // stage ED (deadBody; deadbody.ts): the bodies in sight, and the options about them (a body is never in `social`)
@@ -126,8 +133,7 @@ export function observe(world: World, c: Chimp): DecisionContext {
   const dep = world.chimps.some(k => k.alive && k.motherId === c.id && dependentOn(world, k) === c);
   // longer-term memory, only about individuals present in `social`
   const history = historyLines(world, c, chosen);
-  // stage R2 (observeV4 1; docs/staging/r2-prereg.md §1 A): the M1 parts plus the v4 fields and the packet marker
-  const P = paramsOf(world), v4 = P.observeV4 === 1, track = v4 || P.observeState === 1;
+  const valued = track ? withValues(world, c, candidates, P, copyCandidate, v4) : candidates;
   return {
     chimpId: c.id, version: c.decisionVersion, time,
     focal: {
@@ -143,11 +149,12 @@ export function observe(world: World, c: Chimp): DecisionContext {
       fruitNearby: r2(x.fruitNear), partySize, partyAdultMales: x.ownMales,
       nearTerritoryEdge: !!troop && fromCenter > troop.radius * 0.8, strangersSeen: x.strangers, strangersHeard: heard,
     },
-    social, recent, stimuli, candidates: track ? withValues(world, c, candidates, P, copyCandidate, v4) : candidates,
+    social, recent, stimuli, candidates: v5 ? withAbout(world, c, valued, copyCandidate) : valued,
     ...(history.length ? { history } : {}),
     ...(track ? { body: bodyPercept(world, c, P, v4), light: lightPercept(world) } : {}),
     ...(bodies.length ? { bodies } : {}),
-    ...(v4 ? { packet: 4 as const } : {}),
+    // (own: an act in progress that is off the animal's own legal list can no longer go on; decide.ts decisionPoint tests the same)
+    ...(v5 ? { packet: 5 as const, own: ownPercept(world, c, all.some(k => k.action === c.action && k.targetId === c.targetId)) } : v4 ? { packet: 4 as const } : {}),
   };
 }
 

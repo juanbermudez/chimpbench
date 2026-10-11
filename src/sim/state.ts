@@ -163,6 +163,8 @@ export interface ChimpX {
   bd?: number[];
   /** Stage E2b (nurseWake): the last tick in which this mother's infant drank milk in her nest at night. Absent until then. */
   nwk?: number;
+  /** Stage R8 (observeV5; src/sim/own.ts): the animal's own recent experience, kept for its decision packet only (OwnRecord). Absent until the switch is on. */
+  own?: OwnRecord;
   /**
    * Stage C8 (docs/staging/early-life-prereg.md §2.6–2.9): body condition 0..1 (a slow average of 1 − hunger), the growth
    * record 0..1 (scales strength), a transient bereavement stress added to the resting stress floor, and a mother's mean
@@ -179,6 +181,36 @@ export interface ChimpX {
    * (0 none, else its severity 0..1), and the last slow-step position on the ground (snare exposure per metre walked).
    */
   ill: number; outbreak: number; snare: number; trX: number; trZ: number;
+}
+
+/**
+ * Stage R8 (observeV5; src/sim/own.ts; docs/staging/r8-prereg.md §3): what the loop remembers of an animal's own recent
+ * experience, for its decision packet. Written by the mechanisms at the moments named; read only by observe()
+ * (own.ts ownPercept). Nothing in the rules' valuation, the gate or any mechanism reads it, so a world with the switch
+ * on is the world with it off plus this key. Plain numbers; every part is absent until first written.
+ */
+export interface OwnRecord {
+  /** The decision point now open: [eco-hour it opened, what opened it: 0 the scheduled end of the bout, 1 an interrupt, 2 the act's own end]. Cleared when an act starts. */
+  ask?: number[];
+  /**
+   * The act that had come to its own end at that decision point, or that a waiting animal could not go on with: [action
+   * code, target id, seconds in it, end code, variant, aux]. A seventh number, the phase the act was in, is there while a
+   * waiting animal has been set to rest with the point open: leaving that act (its crown, its feeding bout, its nest) is
+   * entered in the record only when a choice is applied (own.ts ownLeave, ownStart).
+   */
+  was?: number[];
+  /** When it last chose (an act started or was chosen again): the step of the word of each drive (hunger, thirst, fatigue, loneliness, fear: 0 none … 4 severe), then the light phase (0 night, 1 dawn, 2 day, 3 dusk). */
+  at?: number[];
+  /** The feeding bout in a crown now in progress: [eaten in its first slow step, in its latest complete one, in the step in progress, feeding ticks in that step, complete steps] (kcal under the energy ledger, fruit units without). */
+  eat?: number[];
+  /** The open trip to a crown: [crown id, the trip's own target id, kcal eaten there, the meal it set out for (kcal)]. Energy ledger only. */
+  trip?: number[];
+  /** Closed trips, oldest first, at most ownKeep: flat pairs [kcal eaten at the crown, the meal it set out for]. */
+  trips?: number[];
+  /** Crowns it fed in since it last left a finished nest, oldest first, at most ownKeep: flat pairs [tree id, eco-hour it left the crown]. */
+  fed?: number[];
+  /** Eco-hour it last groomed (g) and was last groomed by (gb) each partner, by id; at most ownKeep each, the oldest dropped. */
+  g?: Record<number, number>; gb?: Record<number, number>;
 }
 
 /**
@@ -315,7 +347,7 @@ export type SimWorld = World & { sim: SimState };
  * ChimpX and SimState keys that exist only once their mechanism has fired (so worlds with the switch off keep their
  * shape and hashes). The save check (src/persist/envelope.ts worldShapeProblem) ignores them.
  */
-export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'tryNest', 'dfa', 'en', 'wat', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl', 'phAt', 'phX', 'phZ', 'ard', 'wr', 'lm', 'upk', 'jt', 'nbm', 'jv', 'ty', 'tt', 'cd', 'cdAt', 'ls', 'cg', 'bd'];
+export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'tryNest', 'dfa', 'en', 'wat', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl', 'phAt', 'phX', 'phZ', 'ard', 'wr', 'lm', 'upk', 'jt', 'nbm', 'jv', 'ty', 'tt', 'cd', 'cdAt', 'ls', 'cg', 'bd', 'own'];
 export const OPTIONAL_SIM: readonly string[] = ['fission', 'stormAt', 'bodies'];
 
 export function newX(): ChimpX {
