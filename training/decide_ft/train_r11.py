@@ -14,7 +14,10 @@ same rows (an offline comparison). No class weight, prior, temperature or resamp
 MGOGO_FT_ROOT. --extra: a JSON file whose fields are copied into the manifest.
 
 Checked by the script itself before the first step: its option shuffle equals common.permuted on every row, and on the
-first batch the tensor loss equals soft_loss.soft_cross_entropy and, with a one-hot target, the library's cross-entropy.
+first example the tensor loss equals soft_loss.soft_cross_entropy and, with a one-hot target, the library's cross-entropy;
+the same again on the first example whose label is spread over options. Each check prints the example's logits and
+target, so the loss can be redone by hand from the log. A missing --extra file stops the script before the model loads
+(the manifest is the last write, and scripts/r11-run.sh reads an adapter without one as a training cut short).
 """
 from __future__ import annotations
 
@@ -79,6 +82,8 @@ def main(args: dict) -> None:
     dev_rows = [r for r in read_jsonl(dev_path) if r.get("pick")]
     if labels == "soft" and any(not r.get("soft") for r in train_rows + dev_rows):
         sys.exit("--labels soft: a row has no `soft` label")
+    if args["extra"] and not (FT / args["extra"]).is_file():  # read at the end, for the manifest: a wrong path must not cost the training
+        sys.exit(f"--extra: no file {FT / args['extra']}")
     if args["limit"]:
         train_rows, dev_rows = train_rows[:args["limit"]], dev_rows[:max(8, args["limit"] // 5)]
     by_epoch = any("epoch" in r for r in train_rows)
@@ -105,7 +110,7 @@ def main(args: dict) -> None:
     out.mkdir(parents=True, exist_ok=True)
     history, best, step, examples, t0, peak_mps, peak_foot, train_seconds = [], None, 0, 0, time.time(), 0.0, 0.0, 0.0
     oom = 0
-    checked = [False]
+    checked = [0]  # 0: no example checked yet; 1: the first example checked; 2: also one whose label is spread over options
 
     def backward(chunk: list, share: int) -> float:
         """Forward and backward of some examples of one batch; returns their summed loss. `share`: the batch's size."""
@@ -117,16 +122,21 @@ def main(args: dict) -> None:
             target = batch.structure_labels[j][0].index(1)
             assert exs[j][2][target] == pick
             # the target over the offered options, in the order of the logits (exs[j][2], checked by the line above)
-            t = torch.tensor(target_vector(exs[j][2], soft, pick, labels), device=lg.device, dtype=lg.dtype)
+            tv = target_vector(exs[j][2], soft, pick, labels)
+            t = torch.tensor(tv, device=lg.device, dtype=lg.dtype)
             one = -(t * F.log_softmax(lg, dim=-1)).sum()
-            if not checked[0]:  # once: the tensor loss is the reference arithmetic, and with a one-hot target the library's cross-entropy
+            spread = max(tv) < 0.99
+            # on the first example, and on the first whose label is spread over options: the tensor loss is the reference
+            # arithmetic, and with a one-hot target the library's cross-entropy; the logits and the target are printed
+            if checked[0] == 0 or (checked[0] == 1 and spread):
                 hard = torch.zeros_like(t)
                 hard[target] = 1.0
                 lib = float(F.cross_entropy(lg[None], torch.tensor([target], device=lg.device)))
                 assert abs(float(-(hard * F.log_softmax(lg, dim=-1)).sum()) - lib) < 1e-4, "one-hot soft loss differs from the library's cross-entropy"
                 assert abs(float(one) - soft_cross_entropy(lg.detach().float().tolist(), t.tolist())) < 1e-3, "the tensor loss differs from soft_loss.soft_cross_entropy"
-                checked[0] = True
-                print(f"[{name}] loss self-check passed (one-hot {lib:.4f}; this example {float(one):.4f})", flush=True)
+                checked[0] = 2 if spread else 1
+                print(f"[{name}] loss self-check passed (one-hot {lib:.6f}; this example {float(one):.6f}; logits {[round(v, 5) for v in lg.detach().float().tolist()]}; "
+                      f"target {[round(v, 6) for v in tv]}; the pick is option {target})", flush=True)
             loss = loss + one
         (loss / share / args["accum"]).backward()
         return float(loss.detach())
