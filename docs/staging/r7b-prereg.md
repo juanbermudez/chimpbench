@@ -444,8 +444,12 @@ arm files and never a burn-in, so the refusal named in the merge note did not ap
 - **F4:** by the rule fixed before iteration 2 (the line met in both iterations), and already by iteration 1 alone,
   no question at either horizon is worth a ruling as a label source at this grain.
 - **"Which food" turned out to be "feed here or go".** All 130 points hold feeding here beside one trip to a food
-  tree; no menu holds two trips. Which of several trees cannot be read on the rules' menu at all, so the sceptic's
-  advice to start with "which tree" cannot be followed without a wider menu.
+  tree; no menu holds two trips of the animal's own (*review:* three of the 200 hold its own trip beside a joint trip
+  to another tree, the kind `social-move`). Which of several trees cannot be read on the rules' menu at all, so the
+  sceptic's advice to start with "which tree" cannot be followed without a wider menu. *Review (§7a.4, numbers
+  §2.8b):* and "go" was seldom carried out. A forced trip to food ended in an arrival at its tree in 39 of 131 forks;
+  in 88 the rules' gate re-opened the choice first, mostly on an interrupt, and the rules drew another act. The
+  question read here is "feed here" against "set out, then do what the rules draw next".
 - **Three hours against six.** The winning kind after 3 h is the winning kind after 6 h at 0.34 of points (0.58 for
   food): the label changes with the horizon about as much as with the replicate set.
 
@@ -455,7 +459,8 @@ The winners' kinds follow what the menus offer, not what the rules take: affilia
 and 17% of the winners (the rules take them at 9% of points), aggression 12% and 11% (6%), rest 16% and 16% (31%), a
 nest 1% and 1% (6%). A display or a charge "wins" one point in nine because the body score cannot see what it costs:
 an injury was added in 76 of 1,136 forks that began with an aggressive act, against 57 of 1,520 that began with rest
-(injury and death are beside the score, as registered; no animal died in any of the 14,580 forks). Where the winner
+(injury and death are beside the score, as registered; no animal died in any of the 14,456 forks read: *review:* 124
+of the 14,580 made belong to options iteration 2 left out, and their outcomes were not kept). Where the winner
 is distinguishable and is not the rules' option, the rules' option is told worse at 22 of 29 points after 3 h.
 
 **Which body state decides** (§2.6, §2.7). The energy reserve never does: counted double or half, it changes no
@@ -522,8 +527,14 @@ grooming and other affiliative acts 0.25, a trip to food or a move with others 0
   (−0.0049 to 0.0246), not beyond noise in log-loss though they lift the AUC by 0.081; the reason the act began
   −0.0018 (−0.0062 to 0.0027), nothing. The largest weights are sleep pressure (less staying as it rises), party
   size (less), whether the animal has been eating in this crown for two five-minute steps (less), companions moving,
-  resting or feeding, and air temperature (more).
-- **Held-out world** (§3.5b; a check added after the result, so description). Animals of one world share its days.
+  resting or feeding, and air temperature (more). *Review (§7a.4, numbers §3.6b):* inside "own foraging returns and
+  timing" the gain is not the returns. The count of crowns fed in since the last nest carries 0.0139 (0.0057 to
+  0.0224) alone and the flag "has eaten here for two five-minute steps" 0.0065 (0.0009 to 0.0127); the rate eaten
+  adds nothing to the flag, and what the last trips delivered adds nothing (−0.0010). The flag is a clock of the
+  feeding bout (19 minutes in the act at the median with it, 7 without).
+- **Held-out world** (§3.5b; a check added after the result, so description). Animals of one world share its days
+  (*review, numbers §3.5c:* it is not the shared days: with a whole day held out and the other days of its world seen,
+  the packet still gains 0.0250, 0.0024 to 0.0462. What it does not carry to is the other world).
   With each seed's moments predicted by models fitted on the other seed's world alone, the packet as a whole gains
   0.0016 nats over (b) (−0.0279 to 0.0263): **not beyond noise**. Two groups still gain beyond noise: what
   companions are doing 0.0170 (0.0061 to 0.0288) and own foraging returns and timing 0.0208 (0.0094 to 0.0323). Body
@@ -535,11 +546,14 @@ grooming and other affiliative acts 0.25, a trip to food or a move with others 0
 
 **Verdict.** A stay question would not be a timer in weights: the minutes carry nothing, and on held-out animals
 state predicts the rules' staying beyond them, so the registered objection fails. That does not make it worth
-training now. What survives a change of world is narrow (what the companions are doing and how far the animal's own
-feeding bout has got, about 0.02 nats each), the body words did not carry over, and the label's only teacher is the
+training now. What survives a change of world is narrow (what the companions are doing, 0.0170, and how many crowns
+the animal has fed in since its nest, 0.0142; *corrected by the review:* this read "how far the animal's own feeding
+bout has got, about 0.02 nats each", and that flag is 0.0050 and not beyond noise there), the body words did not
+carry over, and the label's only teacher is the
 rules' own continuation among rules-driven companions; nothing here says wild chimpanzees stay as the rules do. So:
 a stay question **may** be trained, as a small question named "rules-taught", shown the companions' acts and the
-animal's own foraging returns (it need not be told why the act began), and only beside a fixed 0.5 answer and a
+animal's own feeding history (the crowns since its nest; *review:* not its returns, which add nothing; it need not be
+told why the act began), and only beside a fixed 0.5 answer and a
 kind-of-act-only answer, both of which it must beat on a world it was not fitted on. It is not a route to wild-like
 bout lengths, and it should wait until the teacher question is settled.
 
@@ -564,19 +578,27 @@ bout lengths, and it should wait until the teacher question is settled.
   iteration 1 all eight replicates held the forced act for exactly the same number of ticks (261 of 598 in iteration
   2). "A salt applied after the fork" re-draws the world around the animal and not the rules' evaluation jitter or
   bout lengths, which are hashes of its decision count. Iteration 1's repeat is therefore the generous figure, and
-  any later fork test should re-draw both.
+  any later fork test should re-draw both. *Review:* iteration 2 is generous too. It re-draws the forked animal's
+  hashed noise; its companions' jitter and bout lengths are hashes of their own decision counts and stay shared by
+  all eight replicates. A later test should move every animal's count.
 - **Iteration 2 drops options.** 100 of 698 options could not be applied in at least one replicate and were left
   out of both iterations' columns; "which food" is read on 15 points there and says little.
 - **The menu is the rules'.** At most eight options, 6.0 on average, 5.1 kinds; one trip to food at most. The option
   the rules took is on the menu a kernel would see one tick later at 194 of 200 points.
 - **How long an option was forced** is the rules' own hold: a median of 21 minutes for rest, 17 for feeding, 9 for
-  an affiliative act, 1 for a trip to food (the act changes when the walk ends), under a minute for a display, a
-  call or a greeting. An outcome three hours later is mostly the rules' continuation, as the sceptic said.
+  an affiliative act, 1 for a trip to food, under a minute for a display, a call or a greeting. *Corrected by the
+  review:* the trip's minute was explained here as "the act changes when the walk ends". Measured (§7a.4): the walk
+  ended in an arrival in 39 of 131 forced trips; in 88 the rules' gate re-opened the choice and the rules drew
+  another act. Over all 1,209 forced options the forced act ended in a fresh draw of the rules after an interrupt in
+  415, after a need passed into another word in 153, and because the act was over in 431. The rules do not hold an
+  act they would not have chosen, so the forcing is weak by design, and an outcome three hours later is mostly the
+  rules' continuation, as the sceptic said.
 - **F3 at 6 h is read on near-ties** (§7.2): the registered fallback to all points, where few are distinguishable,
   measures how easily a coin flip is turned over.
 - **Part three's features are hand-listed and its model linear**: the gain is a floor on what a packet could carry.
-  The registered split (held-out animals of the same worlds) let shared days through; the held-out-world check was
-  added after the result. Two seeds, five days, one season, the working base at a swallowed share of 0.5.
+  The registered split (held-out animals of the same worlds) keeps both worlds in every fit (*corrected by the
+  review:* this read "let shared days through"; a held-out day does not remove the gain, §7a.4); the held-out-world
+  check was added after the result. Two seeds, five days, one season, the working base at a swallowed share of 0.5.
 - **The stay label is the rules' continuation in a rules world.** A model-driven population breaks acts differently
   (companions raise 73% of interrupts), so the predictability measured here is of the rules among the rules.
 - **A slip of procedure.** Three short test files were once started in one command and ran side by side for a few
@@ -688,13 +710,69 @@ gain. The readings below repeat those looks with committed code on all the point
 - **R3, a held-out day** (`evaluate` with one fold per simulated day of a seed; no simulation): every day predicted
   by models fitted on the other nine seed-days.
 
-### 7a.4 Results of the three readings
+### 7a.4 Results of the three readings (11 October 2026, 05:25 to 05:34 EDT)
 
-(To be written after the run.)
+Every number is from [r7b-numbers.md](r7b-numbers.md), regenerated at head d0e7b47.
+
+- **R1, the check that could fail: it held** (numbers §2.8b; `scripts/r7b-ends.ts` at head a5bcb12 on a clean
+  tree, four minutes of one core). Both parents ended on their saved hashes, all 200 menus were the saved menus, and
+  all 1,209 re-made forks held the forced act for the saved number of ticks and read exactly the saved five body
+  terms after 3 h. The points of iteration 1 are the points this code makes.
+- **R1, how a forced option ended.** Of the 1,209 forced options the forced act ended in a fresh draw of the rules
+  after an interrupt in 415, after a need passed into another word in 153, because the act was over or no longer
+  possible in 431, for another of the gate's reasons in 115; 82 trips arrived; 6 nests were still held after three
+  hours. **A forced trip to food ended in an arrival at its tree in 39 of 131 forks.** In 88 the rules' gate
+  re-opened the choice first and the rules drew another act (74 after an interrupt); the animal fed at that tree at
+  some time in the three hours in 56. A joint trip to a companion's tree arrived in 41 of 60. So the option that the
+  fork "forces" is held only until the rules next look, and they let go of what they would not have chosen. The test
+  measured what the brief described (force the option, let the rules run on); it did not measure what an option is
+  worth when it is carried through.
+- **R2, inside "own foraging returns and timing"** (numbers §3.6b). Added to (b) alone: the count of crowns fed in
+  since the last nest 0.0139 (0.0057 to 0.0224) on held-out animals and 0.0142 (0.0048 to 0.0241) on a held-out
+  world; the flag "has eaten in this crown for two five-minute steps" 0.0065 (0.0009 to 0.0127) and 0.0050 (−0.0007
+  to 0.0110); the rate eaten adds nothing to the flag; what the last trips delivered −0.0010 and −0.0001; hours since
+  the last aggression 0.0010 (not beyond noise) and 0.0058 (0.0028 to 0.0090). The group's name promised returns;
+  what predicts staying is a count of the day's feeding and a clock of the bout.
+- **R3, a held-out day** (numbers §3.5c). (c) over (b) 0.0250 (0.0024 to 0.0462), against 0.0257 on held-out
+  animals and 0.0016 on a held-out world. The packet's gain survives a day it has not seen; it does not survive the
+  other world, and that is the body words (§3.5b). With two worlds this is one comparison each way.
+- **The first question in three classes** (numbers §2.3, §2.9; printed by the report, description). Feeding here,
+  resting or going, every other option left out: repeat 0.53 (0.46 to 0.60) after 3 h and 0.40 (0.32 to 0.48) after
+  6 h, chance 0.35; with the animal's own noise re-drawn, on 115 points, 0.45 and 0.53, chance 0.43. Below the line
+  of 0.70 in every reading, so the verdict of §7.2 does not hang on the fourteen families.
 
 ### 7a.5 What the review changed
 
-(To be written after the run.)
+- **Code.** New: `scripts/r7b-ends.ts` (R1). `scripts/lib/r7b-stay-fit.ts`: `foldsOf` (the folds of `evaluate`,
+  taken out; a fold per simulated day added), `partGains`, and `design` takes single features; the numbers of §3.1 to
+  §3.6 did not move. `scripts/r7b-report.ts`: sections 2.8b, 3.5c and 3.6b, the three-class tables, the count of
+  menus with two trees, forks made beside forks read in §2.9, and one more sentence in each of the two summary lines
+  of section 4. `scripts/r7b-forks.ts`: a comment that said an option is refused "the same for every salt", which is
+  false with `--own-noise`. Tests for the probe, the folds and the parts in the stage's two test files.
+- **§7.** Corrections marked "review" or "corrected by the review" in §7.2 (what "go" was; the forks read), §7.3
+  (what carries the gain of the foraging group; shared days against the other world; the verdict's wording) and §7.5
+  (why a forced trip lasts a minute; iteration 2 still shares the companions' noise; the split). No number of the
+  builder's was changed.
+- **§8.** The proposed lines carry the corrections, the new script and the review's status.
+- **Not changed, and said here instead.** The registered readings F1 to F4 and §3.3 are as the builder computed
+  them. The readout "repeat on one term alone" stays narrowed to the points where the term varies (§7a.2 item 7).
+  The 6-hour reading of F3 stays as registered (on all points).
+
+### 7a.6 The review's reading of the three verdicts
+
+1. **The amended score is in the report: yes.** Confirmed by regeneration and by reading the rule against §13a.
+2. **Forked outcomes, as designed: not repeatable enough for a ruling.** Confirmed on the builder's numbers, on the
+   review's own count, in three classes, and with the saved forks re-made. Two limits belong in the ruling's first
+   line and not in a footnote: the forcing was weak (a forced trip reached its tree in three forks in ten), and
+   "which tree", the question the sceptic said to start with, could not be asked on the rules' menu. What the test
+   rules out is this design: a few replicates, 3 to 6 hours, five body terms, an option held as the rules' gate holds
+   it. At about one decision point in ten an option does stand out, and the energy reserve alone repeated "feed here
+   or go" at 0.82 in the generous replicates: neither is a reason to allow the labels, both are reasons not to write
+   "outcome labels cannot work".
+3. **A stay question: not a timer in weights by the registered reading; not worth a night.** Confirmed with the
+   review's own fit. Sharper than §7.3 had it: beyond the kind of act, what predicts the rules' staying and carries
+   to another world is what the companions are doing and how many crowns the animal has fed in since its nest, about
+   0.015 nats each. Its returns add nothing, the minutes in the act add nothing, and the body words fit one world.
 
 ## 8. For the integrator
 
@@ -703,12 +781,16 @@ gain. The readings below repeat those looks with committed code on all the point
 1. **Outcome labels from forked worlds** (open since 10 October: "deferred until Stage R7's repeat test is in").
    The repeat test is in. Recommended ruling: **no**, as designed. With four replicates the best option's kind
    repeats at 0.39 after 3 h and 0.34 after 6 h (0.70 was the line); with the animal's own evaluation noise drawn
-   again it repeats at 0.27, which is chance; the winner is the rules' option no more often than a random pick; and
-   the form of the score (end state or time average) turns over half of the few clear winners. §7.2 lists what a
-   narrower proposal would have to bring.
+   again it repeats at 0.27 after 3 h and 0.35 after 6 h, at or near chance (0.26); the winner is the rules' option
+   no more often than a random pick; and the form of the score (end state or time average) turns over half of the
+   few clear winners. §7.2 lists what a narrower proposal would have to bring. *Review (§7a.6):* the ruling should
+   name what was ruled out: this design, in which a forced option is held only as the rules' gate holds it (a forced
+   trip to food reached its tree in 39 of 131 forks) and "which tree" could not be asked. The review re-made all
+   1,209 saved first replicates exactly and counted the repeat with its own code; the recommendation stands.
 2. **A stay question.** This test does not forbid it (it would not be a timer in weights) and does not recommend it
-   now (§7.3). If it is trained: rules-taught by name, the companions' acts and the animal's own foraging returns in
-   the packet, a fixed 0.5 arm and a kind-of-act-only arm beside it, judged on a world it was not fitted on.
+   now (§7.3). If it is trained: rules-taught by name, the companions' acts and the animal's own feeding history in
+   the packet (*review:* the crowns fed in since its nest; its returns add nothing, §7a.4), a fixed 0.5 arm and a
+   kind-of-act-only arm beside it, judged on a world it was not fitted on.
 3. **What the amended scoring rule leaves.** With "closer" measured outside the band, the short scorecard can show
    an engine closer than the rules on one row at the population unit (T-SOC-6) and on none at ten animals. That is
    the rule doing its work, and it means a claim of "closer to wild chimpanzees" has to come from somewhere else:
@@ -731,11 +813,16 @@ gain. The readings below repeat those looks with committed code on all the point
 - New: `scripts/r7b-forks.ts`, `scripts/r7b-stay.ts`, `scripts/r7b-report.ts`, `scripts/lib/r7b-score.ts`,
   `scripts/lib/r7b-stats.ts`, `scripts/lib/r7b-fork-readout.ts`, `scripts/lib/r7b-stay-fit.ts`,
   `tests/r7b-report.test.ts`, `tests/r7b-forks.test.ts`, `tests/r7b-stay.test.ts`, `docs/staging/r7b-prereg.md`,
-  `docs/staging/r7b-numbers.md`.
+  `docs/staging/r7b-numbers.md`; added by the review: `scripts/r7b-ends.ts`.
 - `docs/research.md` is unchanged: the one source cited for the score (keramatiGutkin2014) is already there.
 - `artifacts/r7b/` (25 MB) is not committed: four burn-in worlds, the points of both iterations
-  (`forks/`, `forks-own/`), the moments (`stay/`) and a smoke folder. To regenerate everything (about 1 h 40 min of
-  one core, no model): the four commands of the `AGENTS.md` lines below, then `scripts/r7b-report.ts`.
+  (`forks/`, `forks-own/`), the moments (`stay/`), the review's probe (`ends/`) and a smoke folder. To regenerate
+  everything (about 1 h 45 min of one core, no model): the commands of the `AGENTS.md` lines below (the fork script
+  twice, without and with `--own-noise`), then `scripts/r7b-report.ts`.
+- Reviewed on 11 October by a second agent (§7a): the numbers re-derived with its own code, the saved forks re-made
+  exactly, three wrong or loose statements of §7 corrected in place and marked, four descriptive readings added to
+  the numbers file (how a forced option ended; three classes; a held-out day; the parts of the foraging group). The
+  whole suite and the build were not run by the review either (the stage's rule).
 - The project's `tsc --noEmit` does not cover `scripts/` or `tests/` (`tsconfig.json` includes `src/` only). This
   stage's files were checked with `tsc --ignoreConfig --noEmit --strict …` on the files named; one error in a test
   was found that way. Worth a line in the checklist.
@@ -758,32 +845,37 @@ gain. The readings below repeat those looks with committed code on all the point
 > question would be a timer in weights. Nothing under `src/` changes.
 > **Tests**: `tests/r7b-report.test.ts`, `tests/r7b-forks.test.ts` (a fork is deterministic in its salt and leaves
 > its parent), `tests/r7b-stay.test.ts`; `tests/r7-engine.test.ts`.
-> **Status**: Built and run on branch `r7b-forks` (11 October 2026; agent-reported, awaiting review; no model was
-> run; `docs/staging/r7b-prereg.md` §7 and §8, numbers in `docs/staging/r7b-numbers.md`; seeds 48 and 7).
+> **Status**: Built, run and reviewed on branch `r7b-forks` (11 October 2026; a second agent re-derived the numbers
+> with its own code and re-made the saved forks exactly, `docs/staging/r7b-prereg.md` §7a; no model was run;
+> results in §7 and §8, numbers in `docs/staging/r7b-numbers.md`; seeds 48 and 7).
 > *The amended score is in the report*: by the distance outside the band the rules are inside the field band on 11
 > of the 15 short-scorecard rows at the population unit and on 10 of 12 at ten animals; the rules with 10% of
 > choices random are inside it on three of the other four (T-ACT-2, T-FOOD-2, T-SOC-14); an engine could be shown
 > closer on T-SOC-6 alone at the population unit and on no row at ten animals. *Forked outcomes are not repeatable
 > enough*: on 200 fresh draws of adults, every option forced on a copy and the animal's body read after 3 and 6
-> hours (14,580 forks, none fatal; 0.39 s a fork), the winning kind of four replicates is the winning kind of four
-> others at 0.39 and 0.34 of points (chance 0.23), "feed here or go" at 0.66 and 0.58 (chance 0.50); a winner is
-> told from the runner-up at 18% and 10% of points; with the animal's own hashed evaluation noise drawn again in
-> each replicate the 3-hour figure is 0.27, chance; the winner is the option the rules took at 0.20 of points
-> (chance 0.18); reading the time average instead of the end state changes the winning kind at 0.60 of points. No
-> menu held two trips to food, so "which tree" could not be asked. *Staying*: 22% of 2,000 moments were still in the
-> same act 30 minutes later; on held-out animals the minutes in the act add nothing to the kind of act (−0.0032
-> nats) and the packet features add 0.0257 (0.0064 to 0.0446; AUC 0.61 to 0.73), so a stay question would not be a
-> timer in weights; fitted on one world and read on the other, only what companions are doing and the animal's own
-> foraging returns still add (about 0.02 nats each) and the body words do not carry over. *Open*: the user's ruling
-> on outcome labels (recommended: no, as designed) and on a stay question (allowed by this test, small, rules-taught);
-> a fork test should re-draw the animal's own hashed noise as well as the random stream; end state against time
-> average and the place of injury in any body score.
+> hours (14,580 forks made, none of the 14,456 read fatal; 0.39 s a fork), the winning kind of four replicates is
+> the winning kind of four others at 0.39 and 0.34 of points (chance 0.23; in three classes, feed here, rest or go,
+> 0.53 and 0.40, chance 0.35), "feed here or go" at 0.66 and 0.58 (chance 0.50); a winner is told from the runner-up
+> at 18% and 10% of points; with the animal's own hashed evaluation noise drawn again in each replicate the figures
+> are 0.27 and 0.35, at or near chance (0.26); the winner is the option the rules took at 0.20 of points (chance
+> 0.18); reading the time average instead of the end state changes the winning kind at 0.60 of points. The forcing
+> is weak by design: an option is held only as the rules' gate holds it, and a forced trip to food reached its tree
+> in 39 of 131 forks. No menu held two trips of the animal's own, so "which tree" could not be asked. *Staying*: 22%
+> of 2,000 moments were still in the same act 30 minutes later; on held-out animals the minutes in the act add
+> nothing to the kind of act (−0.0032 nats) and the packet features add 0.0257 (0.0064 to 0.0446; AUC 0.61 to 0.73),
+> so a stay question would not be a timer in weights; fitted on one world and read on the other, only what
+> companions are doing (0.0170) and how many crowns the animal has fed in since its nest (0.0142) still add; what its
+> feeding returned adds nothing, and the body words do not carry over. *Open*: the user's ruling on outcome labels
+> (recommended: no, as designed) and on a stay question (allowed by this test, small, rules-taught); a later fork
+> test should hold the forced option through, re-draw every animal's hashed noise as well as the random stream, and
+> offer more than one tree; end state against time average and the place of injury in any body score.
 
 **Proposed edits to the block "User decisions (10 October 2026)", the line "Still open":** replace "whether the
 simulation's own body outcomes in forked worlds may be a label source (deferred until Stage R7's repeat test is in)"
 with "whether the simulation's own body outcomes in forked worlds may be a label source (the repeat test is in,
 Stage R7b: the winning kind repeats at 0.39 of decision points after 3 h, 0.27 once the animal's own evaluation
-noise is drawn again, chance 0.23 to 0.26; recommended: no, as designed)".
+noise is drawn again, chance 0.23 to 0.26, with the forced option held only as the rules' gate holds it;
+recommended: no, as designed)".
 
 **Proposed edit to "Stage R7", Status, the sentence beginning "*Open*: the user's ruling on the scoring rule":**
 replace its first clause with "the scoring rule was amended on 11 October (`r7-prereg.md` §13a) and the report
@@ -795,7 +887,8 @@ applies it since Stage R7b: on the short scorecard an engine can now be shown cl
 ```sh
 pnpm exec tsx scripts/r7b-forks.ts run [--seeds 48,7] [--n 100] [--days 5] [--out artifacts/r7b/forks] [--own-noise]   # stage R7b (docs/staging/r7b-prereg.md §2), no model: the fork-label repeat test. Fresh draws of adults in daylight in a rules world of the working base; every option of the menu forced on a copy (applied, and held as the rules hold their own draw), eight replicates that differ in a salt applied after the fork, the rules run on, the animal's own body read after 3 and 6 simulated hours (scripts/lib/r7b-score.ts: five terms on their mechanisms' own ranges); --own-noise also re-draws the forked animal's hashed evaluation jitter and bout lengths (use it: without it replicates share that noise); resumes from <out>/s<seed>.points.jsonl; about 19 s of one core per decision point; refuses a dirty tree and any seed but 48 and 7
 pnpm exec tsx scripts/r7b-stay.ts sample [--seeds 48,7] [--n 1000] [--days 5] [--out artifacts/r7b/stay]   # stage R7b §3, no model: moments inside an act in a rules world with observeV5 1, the label "still in this act without a break 30 simulated minutes later", the packet features of observe() and why the act began (about a minute)
-pnpm exec tsx scripts/r7b-report.ts --r7 <stage R7's artifacts/r7> [--dir artifacts/r7b] [--md docs/staging/r7b-numbers.md]   # stage R7b: the numbers file (the amended scoring rule on R7's saved runs; repeat, the rules, the body terms, the score variants and the cost of forked outcomes, both iterations; the kind of act, the minutes in it and the packet features as predictors of staying on held-out animals and on a held-out world)
+pnpm exec tsx scripts/r7b-ends.ts run [--seeds 48,7] [--from artifacts/r7b/forks] [--out artifacts/r7b/ends]   # stage R7b review (r7b-prereg.md §7a), no model: re-makes the first replicate of every forced option of the fork run and says how the forced act ended (an arrival, a fresh draw of the rules and why their gate re-opened the choice, still held after 3 h) and whether a forced trip fed at its tree; its log and the numbers file say so if a re-made fork is not the saved one (about four minutes of one core)
+pnpm exec tsx scripts/r7b-report.ts --r7 <stage R7's artifacts/r7> [--dir artifacts/r7b] [--md docs/staging/r7b-numbers.md]   # stage R7b: the numbers file (the amended scoring rule on R7's saved runs; repeat, the rules, the body terms, the score variants and the cost of forked outcomes, both iterations, how a forced option ended; the kind of act, the minutes in it and the packet features as predictors of staying on held-out animals, a held-out day and a held-out world)
 ```
 
 **Proposed change to the existing `r7-card.ts` line of `AGENTS.md`:** after "(an engine arm stands beside the
