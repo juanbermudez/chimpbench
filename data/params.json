@@ -16339,6 +16339,33 @@
    "notes": "Stage R2 switch (Track R, packet v4; docs/staging/r2-prereg.md §1 A): the state a decision kernel sees. With 1 observe() returns the stage M1 observation (as observeState 1: body, light, option values) plus the v4 fields: hindgut fill, the feeding drive and the animal's own full ripe-fruit rate in the body; on an option its net rate as a share of that rate, the chance a listed crown is in fruit, the spread of the animal's belief about a crop out of sight, what the option's value changes by if the crown holds less or more than believed (the form rg.ts beliefOffset samples), the odds of winning a contest the valuation assesses (contestAssess), and the company of nest-mates on its own nest (nestCompany); and the marker packet: 4, which selects the v4 wording (words before numbers; src/kernel/packet-words.ts). Every field is computed by the function the rules' valuation calls, from the animal's own body, perception snapshot, memory or a belief the rules hold it to; pure, no world.rng. Nothing in the simulation reads the switch: the world is the same at 0 and 1. 0 = today, bit for bit. Design (what is shown, not a behavioural constant)."
   },
   {
+   "id": "observeV5",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.observeV5",
+   "file": "src/sim/own.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage R8 switch (Track R, packet 5; docs/staging/r8-prereg.md; the user's decision of 10 October 2026): the animal's own experience in the observation. With 1 observe() returns everything observeV4 1 returns (body, light, option values) plus: what the animal is doing, for how long and how the act ended (own.doing); why it is being asked when that is something it perceived or felt, never a loop timer (own.asked); its own foraging returns (own.lately: eating now against the start of the bout, what its last trips gave against the meal it set out for, crowns fed in since it left its nest); its last aggression given or received (own.aggression); on each perceived animal the direction it moves in, whether it is leaving or acting on the focal animal, and the hours since the focal groomed it, was groomed by it and greeted it; on each option what it is in the animal's own terms (about: the form of the act, the tree's species, a companion's name, distance and direction; never the motive); and the marker packet: 5, for which the packet builder writes neutral option labels and none of the rules' wording. The loop then keeps the record chimp.sim.own (src/sim/own.ts), written at decision points, at the start of an act, while feeding and grooming; nothing in the valuation, the gate or a mechanism reads it, so a world with the switch on is the world with it off plus that key. Pure and local in observe(): no world.rng, no write. 0 = today, bit for bit. Design (what is shown, not a behavioural constant)."
+  },
+  {
    "id": "oestrusPullW",
    "group": "social",
    "value": 0,
@@ -16363,6 +16390,29 @@
     "field": 0
    },
    "notes": "Party-size stage (docs/staging/party-size-prereg.md 4.2; field): for males aged 10 y or more, a community female in sight with swelling >= consortSwellingMin (maternal kin excluded, as for mating offers) adds this x her swelling to following her or joining her trip, and to the cost of leaving on a trip of his own. Receptive females raised the number of males in parties at Kanyawara (emeryThompson2014, direction only); the weight is design, not tuned (about two softmax temperatures). 0 = off (hash-identical). Off by default in both profiles: a pre-registered null result (1 October 2026): at 0.3, adult males in parties with a swollen female were 1.05 and 0.68 times those without (seeds 48 and 7). Kept behind the switch."
+  },
+  {
+   "id": "ownKeep",
+   "group": "decision",
+   "value": 8,
+   "units": "records",
+   "range": [
+    4,
+    16
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    64
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.ownKeep",
+   "file": "src/sim/own.ts",
+   "integer": true,
+   "notes": "Stage R8 (observeV5; src/sim/own.ts; docs/staging/r8-prereg.md §3): how many closed trips to a crown, crowns fed in since leaving the nest, and grooming partners in each direction the animal's own record keeps (the oldest goes first). Read only with observeV5 1 and only by that record, which nothing but observe() reads: it changes the packet's words, never behaviour. A memory size; design assumption."
   },
   {
    "id": "pantGruntDistScaleM",

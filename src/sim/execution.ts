@@ -34,6 +34,7 @@ import { callerCrownOn } from './tripbelief';
 import { callCrown, callRecord, callTripOn, ownCall } from './calltrip';
 import { GROOM_BOND_ACTOR, GROOM_BOND_RECIP, GROOM_SOCIAL_ACTOR, GROOM_SOCIAL_RECIP, upkeepOnly } from './upkeep';
 import { bodyOf, carryOn, holdThrough, takeUp } from './deadbody';
+import { ownAte, ownGroomed, ownLeave, ownStart } from './own';
 
 // Bout durations in eco-minutes [min, max] (registry bout*Min / bout*Max).
 const DUR: Record<Action, [ParamId, ParamId]> = {
@@ -201,6 +202,7 @@ export function finish(world: World, c: Chimp): void {
 
 function cleanupPrevious(world: World, c: Chimp): void {
   const x = ix(c);
+  if (paramsOf(world).observeV5 === 1) ownLeave(world, c, paramsOf(world)); // stage R8 (own.ts): the animal's own record; nothing else reads it
   if (x.interId >= 0) { endInteraction(world, x.interId); x.interId = -1; }
   // leaving a crown after feeding in it: what is left becomes the belief about it (stage C7a, field)
   if (c.action === 'forage' && x.phase === 2 && isTreeId(c.targetId) && paramsOf(world).memCropBelief === 1) {
@@ -233,6 +235,7 @@ export function startAction(world: World, c: Chimp, cand: Candidate, source: Dec
   const x = ix(c);
   const meta = candidateMeta.get(cand) ?? { v: V.NONE, aux: -1 };
   const same = c.action === cand.action && c.targetId === cand.targetId;
+  if (paramsOf(world).observeV5 === 1) ownStart(world, c, paramsOf(world), cand, meta); // stage R8 (own.ts): the animal's own record; nothing else reads it
   // stage E3g (experienceValue bit 1; experience.ts): a trip opens an episode, the first act that is neither the trip nor
   // feeding at its crown closes it, and what the animal ate there teaches it what its trips deliver
   if (tripYieldOn(paramsOf(world))) tripAct(world, c, paramsOf(world), cand.action, cand.targetId,
@@ -1130,8 +1133,8 @@ function forageTick(world: World, c: Chimp): void {
   let intake: number;
   if (lazy) intake = eatFruit(world, t, want);
   else { intake = Math.min(t.fruit, want); t.fruit -= intake; }
-  if (led) { const took = eat(c, P, intake * kcalPerFruit, fig ? 'fig' : 'drupe'); if (tripYieldOn(P)) tripAte(c, t.id, took); } // stage E3g
-  else c.hunger = clamp(c.hunger - intake * P.fruitHungerFactor);
+  if (led) { const took = eat(c, P, intake * kcalPerFruit, fig ? 'fig' : 'drupe'); if (tripYieldOn(P)) tripAte(c, t.id, took); if (P.observeV5 === 1) ownAte(c, t.id, took, true); } // stage E3g; stage R8 (own.ts)
+  else { c.hunger = clamp(c.hunger - intake * P.fruitHungerFactor); if (P.observeV5 === 1) ownAte(c, t.id, intake, false); }
   if (!waterOn(P)) c.thirst = clamp(c.thirst - intake * P.fruitThirstFactor); // stage E2g: fruit water is booked by eat (water.ts)
   c.skills.foraging = clamp(c.skills.foraging + (1 - c.skills.foraging) * TICK_HOURS * 0.002);
   if (c.hunger < 0.06) finish(world, c);
@@ -1244,6 +1247,7 @@ function pairTick(world: World, c: Chimp, o: Chimp | undefined): void {
     addBond(c, o.id, GROOM_BOND_ACTOR * TICK_HOURS); addBond(o, c.id, GROOM_BOND_RECIP * TICK_HOURS);
     recordGrooming(world, c, o);
     const ox = ix(o); ox.groomRecv[c.id] = (ox.groomRecv[c.id] ?? 0) + TICK_HOURS;
+    if (P.observeV5 === 1) ownGroomed(world, c, o, P); // stage R8 (own.ts): when each last groomed the other, for their packets only
     c.skills.social = clamp(c.skills.social + (1 - c.skills.social) * TICK_HOURS * 0.002);
   } else if (x.prog >= 60) finish(world, c);
 }

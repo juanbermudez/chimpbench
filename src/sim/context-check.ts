@@ -1,4 +1,4 @@
-import type { BodyPercept, BodySight, DecisionContext, OptionValue, SocialPercept } from '../types';
+import type { BodyPercept, BodySight, DecisionContext, OptionAbout, OptionValue, OwnExperience, SocialPercept } from '../types';
 
 // The request validation every kernel shares (stage R1, docs/staging/r1-prereg.md D5): moved unchanged from
 // server/decide.ts, which re-exports it, so that a kernel deciding inside the tick passes the check the server applies
@@ -57,9 +57,34 @@ const keysWith = (v: JsonRecord, keys: string[], optional: string[]) => keys.eve
   && Object.keys(v).every(k => keys.includes(k) || optional.includes(k));
 const unit = (v: JsonRecord, keys: string[]) => keys.every(k => num(v[k], 0, 1));
 
+// Stage R8 (observeV5 1; src/types.ts): the animal's own experience, each field optional and in its range.
+const COMPASS = new Set(['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest']);
+const FORMS = new Set(['tree', 'leaves', 'joined', 'caller', 'home', 'mother', 'stay', 'build', 'ride', 'body-take', 'body-look', 'body', 'avoid', 'snake', 'calls', 'approach', 'lead', 'join', 'continue', 'plant']);
+const ENDS = new Set(['arrived', 'crop-finished', 'full', 'drunk', 'partner-left', 'partner-gone', 'caught-up', 'lost', 'rain-eased', 'nobody-came', 'over', 'not-possible']);
+const DRIVES = new Set(['hunger', 'thirst', 'fatigue', 'loneliness', 'fear']);
+const opt = (v: unknown, ok: (v: unknown) => boolean) => v === undefined || ok(v);
+function validAbout(a: unknown): a is OptionAbout {
+  return record(a) && keysWith(a, [], ['form', 'place', 'with', 'distM', 'dir']) && opt(a.form, v => oneOf(v, FORMS)) && opt(a.place, v => text(v, 60, 1))
+    && opt(a.with, v => text(v, 40, 1)) && opt(a.distM, v => int(v, 0, 100_000)) && opt(a.dir, v => oneOf(v, COMPASS));
+}
+function validOwn(o: unknown): o is OwnExperience {
+  if (!record(o) || !keysWith(o, [], ['doing', 'asked', 'lately', 'aggression'])) return false;
+  const d = o.doing, a = o.asked, l = o.lately, g = o.aggression;
+  if (d !== undefined && !(record(d) && keysWith(d, ['action', 'minutes'], ['who', 'about', 'ended']) && oneOf(d.action, ACTIONS) && d.action !== 'dead' && int(d.minutes, 0, 1e6)
+    && opt(d.who, v => text(v, 40, 1)) && opt(d.about, validAbout) && opt(d.ended, v => oneOf(v, ENDS)))) return false;
+  if (a !== undefined && !(record(a) && keysWith(a, [], ['event', 'ended', 'felt', 'light']) && Object.keys(a).length > 0 && opt(a.event, v => text(v, 160, 1)) && opt(a.ended, v => oneOf(v, ENDS))
+    && opt(a.felt, v => Array.isArray(v) && v.length >= 1 && v.length <= 5 && v.every(f => record(f) && exactKeys(f, ['drive', 'to', 'up']) && oneOf(f.drive, DRIVES) && int(f.to, 0, 4) && bool(f.up)))
+    && opt(a.light, v => oneOf(v, PHASES)))) return false;
+  if (l !== undefined && !(record(l) && keysWith(l, [], ['eating', 'trips', 'crowns']) && Object.keys(l).length > 0 && opt(l.eating, v => num(v, 0, 10))
+    && opt(l.trips, v => Array.isArray(v) && v.length >= 1 && v.length <= 64 && v.every(y => num(y, 0, 1))) && opt(l.crowns, v => int(v, 1, 64)))) return false;
+  return g === undefined || (record(g) && exactKeys(g, ['hours', 'kind', 'received', 'name']) && num(g.hours, 0, 1e7) && (g.kind === 'threat' || g.kind === 'attack') && bool(g.received) && text(g.name, 40, 1));
+}
+
 function validPercept(p: unknown, focalId: number): p is SocialPercept {
-  return record(p) && keysWith(p, ['id', 'name', 'relation', 'sex', 'ageYears', 'stage', 'rankOrder', 'isAlpha', 'bond', 'distance', 'action', 'swelling', 'injured', 'hasMeat'], ['tension'])
+  return record(p) && keysWith(p, ['id', 'name', 'relation', 'sex', 'ageYears', 'stage', 'rankOrder', 'isAlpha', 'bond', 'distance', 'action', 'swelling', 'injured', 'hasMeat'], ['tension', 'dir', 'away', 'toMe', 'groomedH', 'groomedByH', 'greetedH'])
     && (p.tension === undefined || num(p.tension, 0, 1))
+    && opt(p.dir, v => oneOf(v, COMPASS)) && opt(p.away, bool) && (p.away === undefined || p.dir !== undefined) && opt(p.toMe, bool) // stage R8 (observeV5)
+    && opt(p.groomedH, v => num(v, 0, 1e7)) && opt(p.groomedByH, v => num(v, 0, 1e7)) && opt(p.greetedH, v => num(v, 0, 1e7))
     && int(p.id, 1, 99_999) && p.id !== focalId && text(p.name, 40, 1) && oneOf(p.relation, RELATIONS) && oneOf(p.sex, SEXES)
     && num(p.ageYears, 0, 80) && oneOf(p.stage, STAGES) && int(p.rankOrder, 0, 500) && bool(p.isAlpha) && num(p.bond, -1, 1)
     && num(p.distance, 0, 1000) && oneOf(p.action, ACTIONS) && num(p.swelling, 0, 1) && bool(p.injured) && bool(p.hasMeat);
@@ -101,7 +126,7 @@ function validSight(b: unknown, focalId: number): b is BodySight {
 
 /** Why a context is rejected, or '' when it is valid. Reasons stay server-side and in receipts. */
 export function decisionContextError(value: unknown, limits: MenuLimits = SIM_LIMITS): string {
-  if (!record(value) || !keysWith(value, ['chimpId', 'version', 'time', 'focal', 'environment', 'social', 'recent', 'stimuli', 'candidates'], ['history', 'body', 'light', 'bodies', 'packet'])) return 'context keys';
+  if (!record(value) || !keysWith(value, ['chimpId', 'version', 'time', 'focal', 'environment', 'social', 'recent', 'stimuli', 'candidates'], ['history', 'body', 'light', 'bodies', 'packet', 'own'])) return 'context keys';
   if (!int(value.chimpId, 1, 99_999) || !int(value.version, 0, 1e12) || !num(value.time, 0, 1e7)) return 'context ids';
   const f = value.focal;
   if (!record(f) || !exactKeys(f, ['name', 'ageYears', 'stage', 'sex', 'community', 'rankOrder', 'rankOf', 'isAlpha', 'hunger', 'thirst', 'energy',
@@ -124,7 +149,9 @@ export function decisionContextError(value: unknown, limits: MenuLimits = SIM_LI
   if (!Array.isArray(value.stimuli) || value.stimuli.length > 6 || !value.stimuli.every(s => text(s, 160, 1))) return 'stimuli';
   if (value.history !== undefined && (!Array.isArray(value.history) || value.history.length > MAX_HISTORY || !value.history.every(h => text(h, 120, 1)))) return 'history';
   if (value.body !== undefined && !validBody(value.body)) return 'body';
-  if (value.packet !== undefined && value.packet !== 4) return 'packet version'; // stage R2 (observeV4)
+  // stage R2 (observeV4): 4. Stage R8 (observeV5): 5, which marks a context that carries the animal's own experience (`own`), and only such a context
+  if (value.packet !== undefined && value.packet !== 4 && !(value.packet === 5 && value.own !== undefined)) return 'packet version';
+  if (value.own !== undefined && (value.packet !== 5 || !validOwn(value.own))) return 'own experience'; // stage R8 (observeV5)
   if (value.light !== undefined && !(record(value.light) && exactKeys(value.light, ['level', 'trend']) && num(value.light.level, 0, 1) && num(value.light.trend, -50, 50))) return 'light';
   if (value.bodies !== undefined && (!Array.isArray(value.bodies) || value.bodies.length < 1 || value.bodies.length > MAX_BODIES
     || !value.bodies.every(b => validSight(b, value.chimpId as number)) || new Set((value.bodies as BodySight[]).map(b => b.id)).size !== value.bodies.length
@@ -135,8 +162,9 @@ export function decisionContextError(value: unknown, limits: MenuLimits = SIM_LI
   const seen = new Set<string>();
   const immature = f.stage === 'infant' || f.stage === 'juvenile';
   for (const c of options) {
-    if (!record(c) || !keysWith(c, ['action', 'targetId', 'score', 'reason'], ['value']) || !oneOf(c.action, ACTIONS) || c.action === 'dead'
-      || !int(c.targetId, -1, 1e9) || !num(c.score, -100, 100) || !text(c.reason, 200) || (c.value !== undefined && !validValue(c.value))) return 'option shape';
+    if (!record(c) || !keysWith(c, ['action', 'targetId', 'score', 'reason'], ['value', 'about']) || !oneOf(c.action, ACTIONS) || c.action === 'dead'
+      || !int(c.targetId, -1, 1e9) || !num(c.score, -100, 100) || !text(c.reason, 200) || (c.value !== undefined && !validValue(c.value))
+      || (c.about !== undefined && !validAbout(c.about))) return 'option shape'; // (about: stage R8, observeV5)
     const key = `${c.action}:${c.targetId}`;
     if (seen.has(key)) return 'duplicate option';
     seen.add(key);

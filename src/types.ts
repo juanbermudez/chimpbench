@@ -45,6 +45,33 @@ export interface Candidate {
    * animal can know it. Set only on the copies observe() returns; the simulation's own candidate lists never carry it.
    */
   value?: OptionValue;
+  /**
+   * Optional (stage R8, `observeV5` 1; docs/staging/r8-prereg.md §2): what the option is in the animal's own terms, so a
+   * label can be written without the rules' reason sentence. Set only on the copies observe() returns.
+   */
+  about?: OptionAbout;
+}
+/** Eight-point compass word (stage R8). */
+export type Compass = 'north' | 'northeast' | 'east' | 'southeast' | 'south' | 'southwest' | 'west' | 'northwest';
+/**
+ * Stage R8: which physical form of an act an option (or the act in progress) is, where the act has several. A form says
+ * what is done and where, never why. travel: 'tree' (to a tree), 'joined' (a companion's trip to a tree), 'caller'
+ * (toward a caller), 'home' (back toward the middle of the range). forage: 'tree', 'leaves'. nest: 'mother', 'stay'
+ * (in its own finished nest), 'build'. follow: 'ride' (carried), 'body-take', 'body-look'. groom: 'body'. flee: 'avoid'
+ * (keep away), 'snake', 'calls' (stranger calls heard). patrol: 'approach' (stranger calls), 'lead', 'join', 'continue'.
+ * hunt: 'join'. consort, transfer: 'continue'. beg, share: 'plant' (fruit, not meat).
+ */
+export type ActForm = 'tree' | 'leaves' | 'joined' | 'caller' | 'home' | 'mother' | 'stay' | 'build' | 'ride' | 'body-take' | 'body-look' | 'body'
+  | 'avoid' | 'snake' | 'calls' | 'approach' | 'lead' | 'join' | 'continue' | 'plant';
+/** Stage R8 (`observeV5` 1): an option, or the act in progress, in the animal's own terms. Every field optional. */
+export interface OptionAbout {
+  form?: ActForm;
+  /** The species of the tree the act is in or goes to (a tree the animal sees, remembers or knows from its community's list). */
+  place?: string;
+  /** A companion the act involves besides its target, by name: the leader of a joined trip (seen leaving), the caller walked toward (heard). */
+  with?: string;
+  /** Distance (m) and compass direction to the act's place, when it has one that is not an animal on the nearby list. */
+  distM?: number; dir?: Compass;
 }
 /** Stage M1: an option's Track E values (OptionValue on Candidate). Every field optional; finite numbers only. */
 export interface OptionValue {
@@ -406,6 +433,47 @@ export interface SocialPercept {
   swelling: number; injured: boolean; hasMeat: boolean;
   /** Optional: the focal animal's tension toward this individual, 0..1 (own-community members only). */
   tension?: number;
+  // Stage R8 (`observeV5` 1; docs/staging/r8-prereg.md §2): what the focal animal sees this individual doing, and its own timing with it
+  /** The compass direction it is moving in, while its act is a movement (travel, follow, patrol, flee, transfer). */
+  dir?: Compass;
+  /** With `dir`: true when its distance from the focal animal is growing (it is leaving). */
+  away?: boolean;
+  /** True when its act is aimed at the focal animal (it is grooming, following, charging … the focal). */
+  toMe?: boolean;
+  /** Hours since the focal animal last groomed it, was last groomed by it, and last greeted it (pant-grunt); each absent when it never did, or not within its record. */
+  groomedH?: number; groomedByH?: number; greetedH?: number;
+}
+
+/** Stage R8: how an act came to its own end, as the animal can tell. */
+export type EndWord = 'arrived' | 'crop-finished' | 'full' | 'drunk' | 'partner-left' | 'partner-gone' | 'caught-up' | 'lost' | 'rain-eased' | 'nobody-came' | 'over' | 'not-possible';
+/** Stage R8: the drives of the packet's `feeling` line (fatigue is felt sleepiness under rhythmSleep). */
+export type DriveName = 'hunger' | 'thirst' | 'fatigue' | 'loneliness' | 'fear';
+/**
+ * Stage R8 (`observeV5` 1; docs/staging/r8-prereg.md §2; src/sim/own.ts): the animal's own experience. Built from its
+ * own body, perception, memory and the record the loop keeps for it (chimp.sim.own). No rate, score or ranking of an option.
+ */
+export interface OwnExperience {
+  /**
+   * What it is doing: the act, its partner by name (`who`), its place and form (`about`), the minutes in it, and, when
+   * the act has just come to its own end (or can no longer go on) at the decision point now open, how (`ended`).
+   */
+  doing?: { action: Action; minutes: number; who?: string; about?: OptionAbout; ended?: EndWord };
+  /**
+   * Why it is being asked, only when that is something it perceived or felt; absent when a loop timer opened the
+   * decision point and nothing it feels or sees changed. One of: `event` (the perception that interrupted it, in the
+   * loop's own words); `ended` (its act came to its own end); or a change since it last chose: `felt` (a drive moved to
+   * another word of the packet: `to` 0 none, 1 mild, 2 moderate, 3 strong, 4 severe; `up` grown or eased) and `light`
+   * (the light passed into another phase).
+   */
+  asked?: { event?: string; ended?: EndWord; felt?: { drive: DriveName; to: number; up: boolean }[]; light?: 'dawn' | 'day' | 'dusk' | 'night' };
+  /**
+   * Its own foraging returns. `eating`: the amount eaten in the latest complete slow step (5 min) of this feeding bout
+   * over the amount in its first step (present from two complete steps). `trips`: for its last closed trips to a crown,
+   * oldest first, what it ate there over the meal it set out for (0..1). `crowns`: crowns fed in since it last left a nest.
+   */
+  lately?: { eating?: number; trips?: number[]; crowns?: number };
+  /** Its last aggression given or received within its community: hours since, threat or attack, whether it received it, and the other's name. */
+  aggression?: { hours: number; kind: 'threat' | 'attack'; received: boolean; name: string };
 }
 
 /**
@@ -452,8 +520,14 @@ export interface DecisionContext {
    * clock hour (`environment.hour` stays for the inspector).
    */
   light?: { level: number; trend: number };
-  /** Optional (stage R2, `observeV4` 1): the packet version; 4 = `body` and option `value`s carry the v4 fields and a text builder uses the v4 wording (src/kernel/packet-words.ts). */
-  packet?: 4;
+  /**
+   * Optional: the packet version. 4 (stage R2, `observeV4` 1) = `body` and option `value`s carry the v4 fields and a text
+   * builder uses the v4 wording (src/kernel/packet-words.ts). 5 (stage R8, `observeV5` 1) = the same plus `own`, the
+   * percepts' own fields and each option's `about`; a text builder writes neutral option labels and none of the rules' wording.
+   */
+  packet?: 4 | 5;
+  /** Optional (stage R8, `observeV5` 1): the animal's own experience (OwnExperience). */
+  own?: OwnExperience;
   /**
    * Optional (stage ED, `deadBody` 1): at most 4 bodies in sight, the one the focal cared for first, then nearest first. A body may be the target of a `follow`
    * (walk up to it; its carer takes it up) or a `groom` option; it is never in `social`.
