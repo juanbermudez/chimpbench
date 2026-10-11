@@ -427,10 +427,13 @@ test('W6 review: a body drawn in an act without an announcement (carried, or a f
     readDrawn(tr, t - 2 * T, carried, 1, out);
     assert.deepEqual(out, { action: a, targetId: g, about: false, way: Way.none }, `carried: drawn in ${a} at once`);
   }
-  // Set down by its mother in the middle of that rest, it goes on resting: nothing is about to begin.
-  readDrawn(tr, t - 2 * T, body({ gap: 0 }), 1, out);
-  assert.deepEqual(out, { action: 'rest', targetId: -1, about: false, way: Way.none });
-  // Then it takes a new act: its body is still in the rest it was in on her, not in the nest of the morning.
+  // Set down by its mother in the middle of an act, it is announced like anyone else: if the act is somewhere else
+  // (it must climb back to her to nurse) the tag says so, and the body is in the act it was carried in, not in the nest.
+  const down = fill([['nest', 121236], ['nest', 121236]]); let d0 = down.t[down.head];
+  for (const [a, g] of [['rest', -1], ['nurse', 43]] as [Action, number][]) { d0 += T; pushAct(down, d0, a, g); readDrawn(down, d0 - 2 * T, carried, 1, out); }
+  readDrawn(down, d0 + T, body({ gap: 4, climbing: true }), 1, out);
+  assert.deepEqual(out, { action: 'rest', targetId: -1, about: true, way: Way.climbing });
+  // Set down, it takes a new act: its body is still in the rest it was in on her, not in the nest of the morning.
   t += T; pushAct(tr, t, 'forage', 100200);
   readDrawn(tr, t - 2 * T, body({ gap: 0 }), 1, out);
   assert.deepEqual(out, { action: 'rest', targetId: -1, about: true, way: Way.soon });

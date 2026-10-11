@@ -312,9 +312,6 @@ export function readDrawn(tr: ActTrack, renderT: number, body: BodyState, rate: 
   if (tr.n > 0) {
     const since = tr.since, action = tr.action[h], sign = BODY_SIGN[action];
     if (since > -Infinity && tr.shown !== since && !body.passive && bodyShows(action, body) && (sign !== 'stay' || renderT >= since)) { tr.shown = since; tr.shownAt = renderT; }
-    // A carried or dead body is in the simulation's act such as it is: set down in the middle of it, it goes on with
-    // it and is not announced as about to begin (an infant put down while it rests read "about to rest").
-    if (body.passive && since > -Infinity && tr.shown !== since) { tr.shown = since; tr.shownAt = renderT; }
     const unseen = tr.unseen === since;
     about = aboutTo(action, since, renderT, body, rate, tr.shown === since, unseen);
     if (about) {
