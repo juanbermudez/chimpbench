@@ -3,6 +3,10 @@
 // both units and the smallest difference each can show, where random choice and the mixtures sit against the rules and
 // against the field value, which timing rows tell the rules from random, the two parts of the short scorecard, and the
 // scoring rule for later stages with this run's numbers in it.
+// Amendment A1 (r7-prereg.md §13a; implemented in stage R7b, docs/staging/r7b-prereg.md §1): "closer to the field" is
+// the distance OUTSIDE the band (0 anywhere inside), judged against the best rules-plus-random arm by more than the
+// row's smallest difference D. Sections 6, 8 and 12 read it; the value, the middle of the band and the distance to it as
+// first registered stay beside it as description.
 //
 //   pnpm exec tsx scripts/r7-report.ts [--dir artifacts/r7] [--seeds 48,7] [--md docs/staging/r7-numbers.md] [--bridge <r5 pilot dir>] [--same-as <an earlier unit-F dir>]
 //       [--units F,P] [--engine "label=arm[,arm…][;label=arm…]"]
@@ -36,6 +40,43 @@ export function told(s: Spread, arm: (number | null)[]): boolean | null {
   if (s.mean === null || s.D === null || arm.some(a => a === null) || !arm.length) return null;
   return arm.every(a => a! > s.mean! + s.D!) || arm.every(a => a! < s.mean! - s.D!);
 }
+/** A field band; null = open on that side. An anchor that is one value has lo = hi. */
+export interface Band { lo: number | null; hi: number | null }
+/** Amendment A1: the distance of a value outside its band, in the row's own units; 0 anywhere inside (the edges are inside). */
+export function outside(b: Band, v: number | null | undefined): number | null {
+  if (v === null || v === undefined || !Number.isFinite(v)) return null;
+  if (b.lo !== null && v < b.lo) return b.lo - v;
+  if (b.hi !== null && v > b.hi) return v - b.hi;
+  return 0;
+}
+export interface FamilyRoom {
+  /** Each arm of the rules-plus-random family with its distance outside the band (the rules first). */ arms: { name: string; mean: number; out: number }[];
+  /** The arm with the smallest distance outside the band (the first on a tie: the rules before a mixture). */ best: { name: string; mean: number; out: number };
+  /** The rules' mean lies inside the band: an engine cannot be closer, only stay inside or leave. */ rulesInside: boolean;
+  /** An engine counts as closer only with a distance outside the band below this (best − D); ≤ 0: this unit cannot show one. */ room: number;
+  /** Why no engine can be shown closer on this row at this unit, or '' when one can. */ why: '' | 'rules-inside' | 'arm-inside' | 'within-D';
+}
+/** Amendment A1 for one row at one unit: where the family sits by the distance outside the band, and what is left for an engine. `family[0]` is the rules' mean. */
+export function familyRoom(b: Band, family: { name: string; mean: number | null }[], D: number): FamilyRoom | null {
+  const arms = family.filter((x): x is { name: string; mean: number } => x.mean !== null && Number.isFinite(x.mean)).map(x => ({ ...x, out: outside(b, x.mean)! }));
+  if (!arms.length || family[0].mean === null) return null;
+  const best = arms.reduce((a, x) => (x.out < a.out ? x : a)), rulesInside = arms[0].out === 0, room = best.out - D;
+  return { arms, best, rulesInside, room, why: rulesInside ? 'rules-inside' : best.out === 0 ? 'arm-inside' : room > 0 ? '' : 'within-D' };
+}
+export type Verdict = 'closer' | 'closer-but-guard' | 'not-worse' | 'left' | 'left-in-part' | 'not-closer' | 'no-value';
+/**
+ * Amendment A1 for an engine on one row: closer only if every realization's distance outside the band is smaller than
+ * the best family arm's by more than D, and the guards hold. Where the rules are inside the band it cannot be closer:
+ * it stays inside (not worse) or leaves.
+ */
+export function verdictA1(b: Band, room: FamilyRoom | null, engine: (number | null)[], guardsHold: boolean): Verdict {
+  const d = engine.map(v => outside(b, v));
+  if (!room || !d.length || d.some(x => x === null)) return 'no-value';
+  if (room.rulesInside) return d.every(x => x === 0) ? 'not-worse' : d.every(x => x! > 0) ? 'left' : 'left-in-part';
+  if (room.room > 0 && d.every(x => x! < room.room)) return guardsHold ? 'closer' : 'closer-but-guard';
+  return 'not-closer';
+}
+export const VERDICT_WORDS: Record<Verdict, string> = { closer: '**yes**', 'closer-but-guard': 'no: a guard fails', 'not-worse': 'no: inside the band, as the rules are (not worse)', left: 'no: it left the band the rules are inside', 'left-in-part': 'no: one realization left the band the rules are inside', 'not-closer': 'no', 'no-value': 'no value' };
 const meanOf = (v: (number | null)[]) => { const x = v.filter((a): a is number => a !== null && Number.isFinite(a)); return x.length ? x.reduce((a, b) => a + b, 0) / x.length : null; };
 
 /** Adult by the Taï paper's rule (lemoine2023: males over 12 years, females over 10): the animals the half-hour share is read on at unit P. */
@@ -98,6 +139,8 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
 
   const L: string[] = [], p = (s = '') => L.push(s);
   const f = (v: number | null | undefined, d = 2) => (v === null || v === undefined || !Number.isFinite(v) ? 'no value' : Math.abs(v) >= 1000 ? Math.round(v).toLocaleString('en-US') : v.toFixed(d));
+  /** A distance outside the band: "inside" at 0; a distance too small for the row's digits keeps one significant digit, so a value outside never prints as zero. */
+  const fo = (v: number | null | undefined, d = 2) => (v === null || v === undefined || !Number.isFinite(v) ? 'no value' : v === 0 ? 'inside' : +v.toFixed(d) === 0 ? v.toPrecision(1) : f(v, d));
   const digitsOf = (k: string) => CARD_LABELS[k]?.[1] ?? 2, labelOf = (k: string) => CARD_LABELS[k]?.[0] ?? k;
   const rowDigits = (id: string) => { const t = T(id), w = (t.accept.hi ?? 1) - (t.accept.lo ?? 0); return w >= 100 ? 0 : w >= 10 ? 1 : w >= 1 ? 2 : 3; };
 
@@ -279,15 +322,16 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
   p();
   p('## 6. The short scorecard: 15 rows by value, in two parts');
   p();
-  p(`The part of each row and its flags are read from \`data/targets.json\`: **${held.length} rows held out** and **${fitted.length} rows fitted to field values or tuned** (the fitted rows were available when the rules were built). Unit P is the existing observer code unchanged; unit F is the same code on views of the world that hold the focal animals (the observer rows on the focal adults; T-ENE-3 from the ledger of the lactating focal females; the three community rows are not read at unit F). Distances are from the middle of the field band, in half-widths of the band (1.00 = on the band's edge). No count and no sum over rows.`);
+  p(`The part of each row and its flags are read from \`data/targets.json\`: **${held.length} rows held out** and **${fitted.length} rows fitted to field values or tuned** (the fitted rows were available when the rules were built). Unit P is the existing observer code unchanged; unit F is the same code on views of the world that hold the focal animals (the observer rows on the focal adults; T-ENE-3 from the ledger of the lactating focal females; the three community rows are not read at unit F). **Outside the band** (amendment A1, r7-prereg.md §13a) is the distance of a value outside the field band in the row's own units, 0 anywhere inside it: the measure "closer to the field" is judged by. The last column is the description the stage first registered: the distance from the middle of the band, in half-widths of the band (1.00 = on the band's edge). No count and no sum over rows.`);
+  const bandOf = (t: Target): Band => ({ lo: t.accept.lo, hi: t.accept.hi });
   function scoreTable(unit: Unit, ids: readonly string[]): void {
-    p(`| Row | Field band | Rules: mean ± SD (lowest to highest) | D | ${GROUPS.map(([n, g]) => headLong(n, g)).join(' | ')} | Distance: rules / ${GROUPS.map(([n]) => distName(n)).join(' / ')} |`);
-    p(`| --- | --- | --- | --- | ${GROUPS.map(() => '---').join(' | ')} | --- |`);
+    p(`| Row | Field band | Rules: mean ± SD (lowest to highest) | D | ${GROUPS.map(([n, g]) => headLong(n, g)).join(' | ')} | Outside the band: rules / ${GROUPS.map(([n]) => distName(n)).join(' / ')} | Distance to the middle, half-widths (description): rules / ${GROUPS.map(([n]) => distName(n)).join(' / ')} |`);
+    p(`| --- | --- | --- | --- | ${GROUPS.map(() => '---').join(' | ')} | --- | --- |`);
     for (const id of ids) {
       const t = T(id), s = U[unit].spread[id], d = rowDigits(id);
-      if (!s || s.n === 0) { p(`| ${id} ${t.metric} | ${t.accept.lo} to ${t.accept.hi} ${t.accept.units} | ${unit === 'F' && (POPULATION_ONLY as readonly string[]).includes(id) ? 'not read at this unit (a community row)' : 'no value in any re-draw'} | |${GROUPS.map(() => ' |').join('')} |`); continue; }
+      if (!s || s.n === 0) { p(`| ${id} ${t.metric} | ${t.accept.lo} to ${t.accept.hi} ${t.accept.units} | ${unit === 'F' && (POPULATION_ONLY as readonly string[]).includes(id) ? 'not read at this unit (a community row)' : 'no value in any re-draw'} | |${GROUPS.map(() => ' |').join('')} | |`); continue; }
       const means = GROUPS.map(([, g]) => meanOf(armVals(unit, g, id)));
-      p(`| ${id} ${t.metric} | ${t.accept.lo} to ${t.accept.hi} ${t.accept.units} | ${f(s.mean, d)} ± ${f(s.sd, d)} (${f(s.min, d)} to ${f(s.max, d)})${s.n < 8 ? `; a value in ${s.n} of 8 re-draws` : ''} | ${f(s.D, d)} | ${GROUPS.map(([, g]) => pair(unit, g, id, d)).join(' | ')} | ${[s.mean, ...means].map(v => f(dist(t, v), 2)).join(' / ')} |`);
+      p(`| ${id} ${t.metric} | ${t.accept.lo} to ${t.accept.hi} ${t.accept.units} | ${f(s.mean, d)} ± ${f(s.sd, d)} (${f(s.min, d)} to ${f(s.max, d)})${s.n < 8 ? `; a value in ${s.n} of 8 re-draws` : ''} | ${f(s.D, d)} | ${GROUPS.map(([, g]) => pair(unit, g, id, d)).join(' | ')} | ${[s.mean, ...means].map(v => fo(outside(bandOf(t), v), d)).join(' / ')} | ${[s.mean, ...means].map(v => f(dist(t, v), 2)).join(' / ')} |`);
     }
   }
   for (const [title, ids] of [['Rows held out', held], ['Rows fitted to field values or tuned', fitted]] as [string, readonly string[]][]) {
@@ -304,6 +348,19 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
     const rows = SHORT_ROWS.filter(id => { const s = U[unit].spread[id], t = T(id); if (!s || s.mean === null) return false; const v = armVals(unit, g, id); return told(s, v) === true && v.every(x => dist(t, x)! < dist(t, s.mean)!); });
     const away = SHORT_ROWS.filter(id => { const s = U[unit].spread[id], t = T(id); if (!s || s.mean === null) return false; const v = armVals(unit, g, id); return told(s, v) === true && v.every(x => dist(t, x)! > dist(t, s.mean)!); });
     p(`- Unit ${unit}, ${LABEL[name]}: nearer on ${rows.length ? rows.join(', ') : 'no row'}; farther on ${away.length ? away.join(', ') : 'no row'}.`);
+  }
+  p();
+  p('**By the amended measure** (the line above is the description first registered: on a row the rules already satisfy, "nearer the middle" is not "nearer the field"). A control arm is closer to the field than the rules when both of its realizations lie outside the band by less than the rules\' mean does, by more than the row\'s D; it is farther when both lie outside it by more than the rules\' mean does, by more than D. Rows on which the rules\' mean is inside the band cannot appear as closer:');
+  p();
+  for (const unit of units(['P', 'F'])) {
+    const inside = SHORT_ROWS.filter(id => { const s = U[unit].spread[id]; return !!s && s.mean !== null && outside(bandOf(T(id)), s.mean) === 0; });
+    const out = SHORT_ROWS.filter(id => { const s = U[unit].spread[id]; return !!s && s.mean !== null && outside(bandOf(T(id)), s.mean)! > 0; });
+    p(`- Unit ${unit}: the rules' mean is inside the band on ${inside.length ? inside.join(', ') : 'no row'}; outside it on ${out.length ? out.join(', ') : 'no row'}.`);
+    for (const [name, g] of GROUPS) {
+      const side = (sign: 1 | -1) => SHORT_ROWS.filter(id => { const s = U[unit].spread[id], b = bandOf(T(id)); if (!s || s.mean === null || s.D === null) return false; const r = outside(b, s.mean)!, v = armVals(unit, g, id).map(x => outside(b, x)); return v.length > 0 && v.every(x => x !== null && sign * (r - x) > s.D!); });
+      const closer = side(1), farther = side(-1);
+      p(`- Unit ${unit}, ${LABEL[name]}: closer on ${closer.length ? closer.join(', ') : 'no row'}; farther on ${farther.length ? farther.join(', ') : 'no row'}.`);
+    }
   }
 
   // ------------------------------------------------------------------------------------------------------------------
@@ -328,26 +385,43 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
   p();
   p('## 8. The scoring rule for later stages, with this run\'s numbers');
   p();
-  p('Registered in r7-prereg.md §8. An engine counts as closer to wild chimpanzees on a row only if its distance to the field\'s central value is smaller than the smallest distance in the rules-plus-random family (the rules\' mean, the means of the 10, 20 and 30% mixtures, and random choice\'s mean) by more than the row\'s D at that unit, with all five guards holding. The table gives, per row and unit, the family\'s best arm and the range of values an engine would have to reach. These numbers come from development seeds 48 and 7: a test on its own unit measures its own.');
+  p('**The rule as amended** (r7-prereg.md §8 with amendment A1 of §13a). "Closer to the field" is measured as the distance outside the band, 0 anywhere inside it. An engine counts as closer to wild chimpanzees on a row only if its distance outside the band is smaller than the smallest in the rules-plus-random family (the rules\' mean, the means of the 10, 20 and 30% mixtures, and random choice\'s mean) by more than the row\'s D at that unit, with all five guards holding. On a row where the rules\' mean is inside the band an engine cannot count as closer: it can only stay inside (not worse) or leave. The table gives, per row and unit, where each arm of the family sits by that measure and whether an engine could be shown closer at all. The last column is description only: the middle of the band and the best arm by the distance to it, the measure first registered. These numbers come from development seeds 48 and 7: a test on its own unit measures its own.');
   p();
-  p('| Row | Unit | Middle of the band | Best of the family: arm, mean, distance | D | An engine counts as closer only with a value between |');
-  p('| --- | --- | --- | --- | --- | --- |');
   const family: [string, string[] | null][] = [['the rules', null], ...CONTROL.map(([name, g]) => [LABEL[name], g] as [string, string[]])];
-  function ruleLine(label: string, unit: Unit, key: string, c: number, h: number, d: number, own = false): void {
-    const s = U[unit].spread[key];
-    if (!s || s.mean === null || s.D === null) { p(`| ${label} | ${unit} | ${f(c, d)} | no value | | not readable at this unit |`); return; }
-    const fam = family.map(([name, g]) => ({ name, mean: g ? meanOf(armVals(unit, g, key)) : s.mean })).filter(x => x.mean !== null).map(x => ({ ...x, d: Math.abs(x.mean! - c) }));
-    const best = fam.reduce((a, b) => (b.d < a.d ? b : a)), room = best.d - s.D;
-    p(`| ${label} | ${unit} | ${f(c, d)} | ${best.name}, ${f(best.mean, d)}, ${own ? `${f(best.d, d)} away` : `${f(best.d / h, 2)} half-widths`} | ${f(s.D, d)}${own ? '' : ` (${f(s.D / h, 2)} half-widths)`} | ${room > 0 ? `${f(c - room, d)} and ${f(c + room, d)}` : 'nothing: the family\'s best arm is already within D of the field value, so this unit cannot show an engine to be closer on this row'} |`);
+  /** The family's means on a row at a unit, the rules first. */
+  const familyOf = (unit: Unit, key: string) => { const s = U[unit].spread[key]; return family.map(([name, g]) => ({ name, mean: g ? meanOf(armVals(unit, g, key)) : s?.mean ?? null })); };
+  const roomWords = (r: FamilyRoom, b: Band, d: number, own: boolean) => r.why === 'rules-inside' ? 'no: the rules are already inside the band (an engine can stay inside or leave it)'
+    : r.why === 'arm-inside' ? `no: ${r.best.name} is already inside the band`
+    : r.why === 'within-D' ? `no: the best arm (${r.best.name}) lies within D of the ${own ? 'value' : 'band'}`
+    : `**yes**: with a distance ${own ? 'from the value' : 'outside the band'} below ${f(r.room, d)}, that is a value between ${f((b.lo ?? -Infinity) - r.room, d)} and ${f((b.hi ?? Infinity) + r.room, d)}`;
+  /** One line of the amended rule: the family by the distance outside the band, what is left for an engine, and the registered measure as description. */
+  function ruleLine(label: string, unit: Unit, key: string, b: Band, d: number, own = false): void {
+    const s = U[unit].spread[key], bandText = own ? f(b.lo, d) : `${b.lo ?? ''} to ${b.hi ?? ''}`;
+    if (!s || s.mean === null || s.D === null) { p(`| ${label} | ${unit} | ${bandText} | no value | | | not readable at this unit | |`); return; }
+    const r = familyRoom(b, familyOf(unit, key), s.D)!;
+    // description: the measure first registered (distance to the middle of the band; half-widths where the band has a width)
+    let old = '';
+    if (!own && b.lo !== null && b.hi !== null) {
+      const c = (b.lo + b.hi) / 2, h = (b.hi - b.lo) / 2, fam = familyOf(unit, key).filter(x => x.mean !== null).map(x => ({ ...x, d: Math.abs(x.mean! - c) })), best = fam.reduce((a, x) => (x.d < a.d ? x : a));
+      old = `middle ${f(c, d)}; ${best.name === 'the rules' ? 'the rules are' : `${best.name} is`} nearest it, ${f(best.d / h, 2)} half-widths away (D ${f(s.D / h, 2)})`;
+    }
+    p(`| ${label} | ${unit} | ${bandText} | ${r.arms.map(a => fo(a.out, d)).join(' / ')} | ${r.best.name}, ${f(r.best.mean, d)}, ${fo(r.best.out, d)} | ${f(s.D, d)} | ${roomWords(r, b, d, own)} | ${old} |`);
   }
-  for (const id of SHORT_ROWS) for (const unit of units(['P', 'F'])) { if (unit === 'F' && (POPULATION_ONLY as readonly string[]).includes(id)) continue; const t = T(id); ruleLine(`${id} ${t.metric}`, unit, id, centre(t), half(t), rowDigits(id)); }
-  for (const k of ['visitMean', 'treesPerDay']) for (const unit of units(['P', 'F'])) ruleLine(labelOf(k), unit, k, (ANCHORS[k].lo + ANCHORS[k].hi) / 2, (ANCHORS[k].hi - ANCHORS[k].lo) / 2, digitsOf(k));
+  const ruleHead = (first: string, band: string) => { p(`| ${first} | Unit | ${band} | Outside the band: ${family.map(([n]) => n.replace(' random', '')).join(' / ')} | Best of the family: arm, mean, distance outside | D | Could an engine be shown closer? | The measure first registered (description) |`); p('| --- | --- | --- | --- | --- | --- | --- | --- |'); };
+  ruleHead('Row', 'Field band');
+  for (const id of SHORT_ROWS) for (const unit of units(['P', 'F'])) { if (unit === 'F' && (POPULATION_ONLY as readonly string[]).includes(id)) continue; const t = T(id); ruleLine(`${id} ${t.metric}`, unit, id, bandOf(t), rowDigits(id)); }
+  for (const k of ['visitMean', 'treesPerDay']) for (const unit of units(['P', 'F'])) ruleLine(labelOf(k), unit, k, { lo: ANCHORS[k].lo, hi: ANCHORS[k].hi }, digitsOf(k));
   p();
-  p('For the Taï half-hour shares the anchor is one value without a band; the same rule applies with the distance in the share\'s own units:');
+  for (const unit of units(['P', 'F'])) {
+    const rows = SHORT_ROWS.filter(id => !(unit === 'F' && (POPULATION_ONLY as readonly string[]).includes(id))), rooms = rows.map(id => { const s = U[unit].spread[id]; return { id, r: s && s.mean !== null && s.D !== null ? familyRoom(bandOf(T(id)), familyOf(unit, id), s.D) : null }; });
+    const list = (why: FamilyRoom['why']) => { const v = rooms.filter(x => x.r?.why === why).map(x => x.id); return v.length ? v.join(', ') : 'no row'; };
+    p(`- **Unit ${unit}.** An engine could be shown closer on: ${list('')}. It could not, because the rules are already inside the band, on: ${list('rules-inside')}; because a mixture or random choice is already inside it, on: ${list('arm-inside')}; because the best arm lies within D of the band, on: ${list('within-D')}.${rooms.some(x => !x.r) ? ` No value: ${rooms.filter(x => !x.r).map(x => x.id).join(', ')}.` : ''}`);
+  }
   p();
-  p('| Readout | Unit | Taï | Best of the family: arm, mean, distance | D | An engine counts as closer only with a value between |');
-  p('| --- | --- | --- | --- | --- | --- |');
-  for (const k of HALF_HOUR) for (const unit of units(['P', 'F'])) ruleLine(labelOf(k), unit, k, taiValue[k]!, 1, 3, true);
+  p('For the Taï half-hour shares the anchor is one value without a band, so the distance outside it is the distance to the value, as first registered:');
+  p();
+  ruleHead('Readout', 'Taï');
+  for (const k of HALF_HOUR) for (const unit of units(['P', 'F'])) ruleLine(labelOf(k), unit, k, { lo: taiValue[k]!, hi: taiValue[k]! }, 3, true);
 
   // ------------------------------------------------------------------------------------------------------------------
   // 9. seeds one by one; the bridge to the engine tests
@@ -461,9 +535,9 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
   // 12. engine arms (only with --engine): the registered scoring rule, row by row
   // ------------------------------------------------------------------------------------------------------------------
   if (ENGINE.length) {
-    p('## 12. The engine arms, read by the registered rule');
+    p('## 12. The engine arms, read by the amended rule');
     p();
-    p('Each engine arm against the control arms of the same unit, by the rule of r7-prereg.md §8 as registered (distance to the middle of the field band; the review of 10 October put the alternative, distance outside the band, to the user, and it is not applied here). **Told from the rules**: every realization of the engine lies outside the rules\' mean ± D on the same side. **Closer**: every realization is nearer the field\'s central value than the best arm of the rules-plus-random family by more than the row\'s D, and all five guards hold for it. Rows without a band or an anchor are given by value only. No count over rows and no sum.');
+    p('Each engine arm against the control arms of the same unit, by the rule of r7-prereg.md §8 with amendment A1 of §13a (the distance outside the field band, 0 anywhere inside). **Told from the rules**: every realization of the engine lies outside the rules\' mean ± D on the same side. **Closer**: every realization lies outside the band by less than the best arm of the rules-plus-random family does, by more than the row\'s D, and all five guards hold for it. Where the rules\' mean is inside the band an engine cannot be closer: it is "not worse" while every realization stays inside, and has "left the band" otherwise. The last column is description only: the middle of the band (or the anchor) and the engine\'s distance to it, the measure first registered. Rows without a band or an anchor are given by value only. No count over rows and no sum.');
     for (const unit of units(['F', 'P'])) for (const [name, g] of ENGINE) {
       const guards = g.map(a => GUARDS.map(k => ({ k, fails: guardFails(k, U[unit].spread[k], U[unit].vals[a][k] ?? null) })));
       const holds = guards.map(x => x.every(y => y.fails === false));
@@ -472,24 +546,25 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
       p();
       p(`Guards: ${g.map((a, i) => `\`${a}\` ${holds[i] ? 'all five hold' : `fails ${guards[i].filter(y => y.fails !== false).map(y => `${labelOf(y.k)}${y.fails === null ? ' (no value)' : ''}`).join('; ')}`}`).join('. ')}. Told from the rules on ${toldRows[`${unit}:${name}`].length} of the 14 timing rows.`);
       p();
-      p('| Readout or row | Rules: mean | D | The engine | Told from the rules | Direction | Middle of the band or anchor | Best of the family: arm, distance | The engine\'s distance | Closer by the registered rule |');
-      p('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
-      const line = (label: string, key: string, d: number, c: number | null, h: number, own: boolean): void => {
+      p('| Readout or row | Rules: mean | D | The engine | Told from the rules | Direction | Band or anchor | Outside the band: best of the family (arm, distance) | Outside the band: the engine | Closer by the amended rule | The measure first registered (description) |');
+      p('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+      const line = (label: string, key: string, d: number, b: Band | null, own: boolean): void => {
         const s = U[unit].spread[key], v = armVals(unit, g, key), tl = s ? told(s, v) : null;
         const dir = !s || s.mean === null || v.some(x => x === null) ? '' : v.every(x => x! > s.mean!) ? 'above' : v.every(x => x! < s.mean!) ? 'below' : 'mixed';
-        let fam = '', mine = '', closer = '';
-        if (c !== null && s && s.mean !== null && s.D !== null) {
-          const all = family.map(([n, fg]) => ({ n, mean: fg ? meanOf(armVals(unit, fg, key)) : s.mean })).filter(x => x.mean !== null).map(x => ({ ...x, d: Math.abs(x.mean! - c) })), best = all.reduce((a, b) => (b.d < a.d ? b : a));
-          const ds = v.map(x => (x === null ? null : Math.abs(x - c)));
-          fam = `${best.n}, ${own ? f(best.d, d) : `${f(best.d / h, 2)} half-widths`}`;
-          mine = ds.map(x => (x === null ? 'no value' : own ? f(x, d) : f(x / h, 2))).join(' / ');
-          closer = ds.some(x => x === null) ? 'no value' : ds.every(x => x! < best.d - s.D!) ? (holds.every(Boolean) ? '**yes**' : 'no: a guard fails') : 'no';
+        let band = '', fam = '', mine = '', closer = '', old = '';
+        if (b && s && s.mean !== null && s.D !== null) {
+          const r = familyRoom(b, familyOf(unit, key), s.D);
+          band = own ? f(b.lo, d) : `${b.lo ?? ''} to ${b.hi ?? ''}`;
+          fam = r ? `${r.best.name}, ${fo(r.best.out, d)}` : 'no value';
+          mine = v.map(x => fo(outside(b, x), d)).join(' / ');
+          closer = VERDICT_WORDS[verdictA1(b, r, v, holds.every(Boolean))];
+          if (!own && b.lo !== null && b.hi !== null) { const c = (b.lo + b.hi) / 2, h = (b.hi - b.lo) / 2; old = `middle ${f(c, d)}; the engine ${v.map(x => (x === null ? 'no value' : f(Math.abs(x - c) / h, 2))).join(' / ')} half-widths away, the rules ${f(Math.abs(s.mean - c) / h, 2)}`; }
         }
-        p(`| ${label} | ${f(s?.mean, d)} | ${f(s?.D, d)} | ${v.map(x => f(x, d)).join(' / ')} | ${mark(tl)} | ${dir} | ${c === null ? '' : f(c, d)} | ${fam} | ${mine} | ${closer} |`);
+        p(`| ${label} | ${f(s?.mean, d)} | ${f(s?.D, d)} | ${v.map(x => f(x, d)).join(' / ')} | ${mark(tl)} | ${dir} | ${band} | ${fam} | ${mine} | ${closer} | ${old} |`);
       };
-      for (const k of TIMING_ROWS) { const a = ANCHORS[k], tai = taiValue[k]; line(labelOf(k), k, digitsOf(k), a ? (a.lo + a.hi) / 2 : tai ?? null, a ? (a.hi - a.lo) / 2 : 1, !a); }
-      for (const k of ['reservePctPerDay', 'kmFixPerDay', 'nightsInNest', 'kcalEatenPerDay']) line(labelOf(k), k, digitsOf(k), null, 1, true);
-      for (const id of SHORT_ROWS) { if (unit === 'F' && (POPULATION_ONLY as readonly string[]).includes(id)) continue; const t = T(id); line(`${id} ${t.metric}`, id, rowDigits(id), centre(t), half(t), false); }
+      for (const k of TIMING_ROWS) { const a = ANCHORS[k], tai = taiValue[k]; line(labelOf(k), k, digitsOf(k), a ? { lo: a.lo, hi: a.hi } : tai !== null && tai !== undefined ? { lo: tai, hi: tai } : null, !a); }
+      for (const k of ['reservePctPerDay', 'kmFixPerDay', 'nightsInNest', 'kcalEatenPerDay']) line(labelOf(k), k, digitsOf(k), null, true);
+      for (const id of SHORT_ROWS) { if (unit === 'F' && (POPULATION_ONLY as readonly string[]).includes(id)) continue; const t = T(id); line(`${id} ${t.metric}`, id, rowDigits(id), bandOf(t), false); }
     }
     p();
   }

@@ -70,9 +70,12 @@ test('the report reads a ten-animal test alone and puts engine arms beside the c
   assert.ok(text.includes('| Readout | Rules: mean | SD | lowest to highest | D | Random choice (two salts) | told | 10% random | told | 20% random | told | 30% random | told | night (two salts) | told |'), 'the engine has a column beside the control arms');
   assert.ok(text.includes('| Guard | Rules: mean ± SD | D | Random choice | 10% random | 20% random | 30% random | night |'));
   assert.ok(/\| F \| night \| /.test(text), 'and a line among the arms told from the rules');
-  assert.ok(text.includes('## 12. The engine arms, read by the registered rule') && text.includes('### night, unit F (two salts: `night-a`, `night-b`)') && /Guards: `night-a` (all five hold|fails )/.test(text) && /Told from the rules on \d+ of the 14 timing rows\./.test(text));
-  const row = text.split('\n').find(l => l.startsWith('| C1 act changes per animal-day |') && l.split('|').length === 12);
+  assert.ok(text.includes('## 12. The engine arms, read by the amended rule') && text.includes('### night, unit F (two salts: `night-a`, `night-b`)') && /Guards: `night-a` (all five hold|fails )/.test(text) && /Told from the rules on \d+ of the 14 timing rows\./.test(text));
+  const row = text.split('\n').find(l => l.startsWith('| C1 act changes per animal-day |') && l.split('|').length === 13);
   assert.ok(row && /\| (\*\*yes\*\*|no|no value) \| (above|below|mixed)? ?\|/.test(row), `the engine's line for act changes: ${row}`);
+  // stage R7b (amendment A1, r7-prereg.md §13a): a scorecard row is read by its distance outside the band, and says so
+  const act1 = text.slice(text.indexOf('## 12.')).split('\n').find(l => l.startsWith('| T-ACT-1 ') && l.split('|').length === 13);
+  assert.ok(act1 && /\| 0\.33 to 0\.5 \| [^|]+, (inside|[0-9.e-]+) \| [^|]+ \| (\*\*yes\*\*|no[^|]*|no value) \| middle 0\.415; the engine /.test(act1), `the engine's line for T-ACT-1: ${act1}`);
   // the engine's value in the report is its card's own (nothing is typed or recomputed elsewhere)
   const a = JSON.parse(readFileSync(resolve(dir, 'night-a.json'), 'utf8')) as ArmFile, days = a.card.days.filter(d => ids.includes(d.id));
   const perAnimal = ids.map(id => { const mine = days.filter(d => d.id === id), t = mine.reduce((s, d) => s + d.ticks, 0) / DAY_TICKS; return t > 0 ? mine.reduce((s, d) => s + d.actChanges, 0) / t : null; }).filter((v): v is number => v !== null);
