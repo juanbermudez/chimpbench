@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-  CLUSTER_MAX_SCALE_STRATEGY, CLUSTER_MIN_PX_STRATEGY, CLUSTER_RADIUS, FRUIT_CELL_M, FRUIT_COLOURS, FRUIT_COLOUR_DEFAULT, FRUIT_MAP_FULL, FRUIT_MAP_IN, FRUIT_MIN_SHARE, MARK_STRIDE,
-  agoWords, beliefAlpha, cellMarkPx, cellWeight, clusterColour, clusterLevel, clusterScale, clusterSize, clusterSlots, collectBeliefs, createBeliefMarks, createFruitMarks, cropShare, cropSignature,
+  CLUSTER_MAX_SCALE_STRATEGY, CLUSTER_MIN_PX_STRATEGY, CLUSTER_RADIUS, FRUIT_CELL_M, FRUIT_COLOURS, FRUIT_COLOUR_DEFAULT, FRUIT_MAP_FULL, FRUIT_MAP_IN, FRUIT_MIN_SHARE, MARK_STRIDE, MAX_BELIEFS,
+  FRUIT_SCAN_FRAMES, agoWords, beliefAlpha, cellMarkPx, cellWeight, clusterColour, clusterLevel, clusterScale, clusterSize, clusterSlots, collectBeliefs, createBeliefMarks, createFruitMarks, cropShare, cropSignature, cropSignaturePart,
   crownTint, crownTintByte, fruitColour, fruitMarks, hexBytes, legacySlots, mapLayerWeight, markColour, tintColour, toHex, treeById, treeMarkPx,
 } from '../src/render/env/fruit';
 import { fruitKeyState } from '../src/ui/fruitkey';
@@ -140,13 +140,45 @@ test('map layer on the field world: about one food tree in ten is marked, none d
   for (let i = 0; i < out.nTrees; i++) sumT += out.trees[i * MARK_STRIDE + 2];
   for (let i = 0; i < out.nCells; i++) sumC += out.cells[i * MARK_STRIDE + 2];
   assert.ok(Math.abs(sumT - sumC) < 1e-2 * sumT, 'the cells hold the same crop as the trees');
-  // The signature moves when a sampled crop changes and only then.
+});
+
+test('the crop signature moves when any tree\'s mark would change, and only then (found in review)', () => {
+  // The first version summed every 97th tree, so a crown a party was emptying kept its mark until the next morning.
+  const w = createWorld(48, { profile: 'field' });
   const sig = cropSignature(w.trees);
   assert.equal(cropSignature(w.trees), sig);
-  const t0 = w.trees[0], f0 = t0.fruit;
-  t0.fruit = f0 + 0.25;
+  // Taken in slices, as the map layer takes it, it is the same number.
+  const chunk = Math.ceil(w.trees.length / FRUIT_SCAN_FRAMES);
+  let sliced = w.trees.length;
+  for (let a = 0; a < w.trees.length; a += chunk) sliced += cropSignaturePart(w.trees, a, a + chunk);
+  assert.equal(sliced, sig);
+  assert.equal(cropSignaturePart(w.trees, -5, 0), 0);
+  assert.equal(cropSignaturePart(w.trees, w.trees.length, w.trees.length + 900), 0);
+  // Any marked tree, not only a sampled one: fed down by a quarter of a large crop, then emptied.
+  for (const i of [0, 5, 96, 97, 1234, 20000]) {
+    const k = w.trees.findIndex((t, j) => j >= i && cropShare(t) >= 0.5);
+    assert.ok(k >= i, `a tree with half a crop from index ${i} on`);
+    const t = w.trees[k], f0 = t.fruit;
+    t.fruit = f0 - 0.25 * t.maxFruit;
+    assert.notEqual(cropSignature(w.trees), sig, `tree ${k} fed in`);
+    t.fruit = 0;
+    assert.notEqual(cropSignature(w.trees), sig, `tree ${k} emptied`);
+    t.fruit = f0;
+    assert.equal(cropSignature(w.trees), sig);
+  }
+  // A crop that comes into fruit moves it; a change no mark would show does not (no rebuild for nothing).
+  const bare = w.trees.find(t => t.maxFruit > 0.5 && cropShare(t) < FRUIT_MIN_SHARE / 2)!, b0 = bare.fruit;
+  bare.fruit = b0 + 0.005;
+  assert.equal(cropSignature(w.trees), sig, 'still under the display threshold');
+  bare.fruit = 0.5 * bare.maxFruit;
   assert.notEqual(cropSignature(w.trees), sig);
-  t0.fruit = f0;
+  bare.fruit = b0;
+  const full = w.trees.find(t => cropShare(t) >= 0.5)!, f1 = full.fruit, step = Math.floor(f1 * 16) / 16;
+  full.fruit = step + 1 / 64;
+  const within = cropSignature(w.trees);
+  full.fruit = step + 2 / 64;
+  assert.equal(cropSignature(w.trees), within, 'inside one step of 1/16: the mark would move by less than half a pixel');
+  full.fruit = f1;
   assert.equal(cropSignature(w.trees), sig);
 });
 

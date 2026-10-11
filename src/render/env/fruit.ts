@@ -210,14 +210,26 @@ export function fruitMarks(trees: readonly Tree[], size: number, out: FruitMarks
   return out;
 }
 /**
- * A cheap signature of the crops, so the map layer rebuilds only when they change: the sum of tree.fruit over every
- * `stride`-th tree, with the tree count. The daily refresh moves it; a crown fed in moves it only if it is sampled.
+ * A signature of the crops as the map layer draws them, so it rebuilds when a mark would change and only then: over
+ * every tree, whether it is marked and its crop in steps of 1/16 (about half a pixel of a mark's radius), weighted by
+ * its place in the list, with the tree count. Whole numbers, so a sum taken in slices equals the sum taken at once.
+ * (The first version summed every 97th tree: the daily refresh moved it, but a crown a party was emptying did not
+ * unless it happened to be sampled, so over three simulated days about 13 trees at a time, the ones being fed in,
+ * kept a mark of the wrong size until the next morning.)
  */
-export function cropSignature(trees: readonly Tree[], stride = 97): number {
-  let s = trees.length;
-  for (let i = 0; i < trees.length; i += stride) s += trees[i].fruit * (1 + (i % 7));
+export function cropSignature(trees: readonly Tree[]): number { return trees.length + cropSignaturePart(trees, 0, trees.length); }
+/** The share of trees[from..to) in cropSignature: the map layer scans one slice a frame (FRUIT_SCAN_FRAMES slices a pass). */
+export function cropSignaturePart(trees: readonly Tree[], from: number, to: number): number {
+  let s = 0;
+  const end = Math.min(to, trees.length);
+  for (let i = Math.max(0, from); i < end; i++) {
+    const t = trees[i];
+    if (t.maxFruit > 0 && t.fruit >= FRUIT_MIN_SHARE * t.maxFruit) s += (1 + Math.floor(t.fruit * 16)) * (1 + (i % 7));
+  }
   return s;
 }
+/** Frames one pass of the map layer's scan over the trees takes (half a second at 60 Hz). Design assumption. */
+export const FRUIT_SCAN_FRAMES = 30;
 
 // --- 4. What the selected animal knows -------------------------------------------------------------------------------
 

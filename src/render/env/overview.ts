@@ -4,7 +4,7 @@ import { MAX_TROOPS, Owner, patchMaterial, type SharedUniforms } from './shared'
 import { CANOPY_BROAD, CANOPY_HASH, FIELD_CANOPY_COLOR, createBaseHeight, createCanopyHeight, type RiverInfo } from './terrain';
 import { approach, partyMarkerPx } from './field';
 import { hyp2 } from '../fastmath';
-import { MARK_STRIDE, FRUIT_MAX_CELLS, FRUIT_MAX_TREES, cellMarkPx, cellWeight, createFruitMarks, cropSignature, fruitColour, fruitMarks, mapLayerWeight, markColour, toHex, treeMarkPx } from './fruit';
+import { MARK_STRIDE, FRUIT_MAX_CELLS, FRUIT_MAX_TREES, FRUIT_SCAN_FRAMES, cellMarkPx, cellWeight, createFruitMarks, cropSignature, cropSignaturePart, fruitColour, fruitMarks, mapLayerWeight, markColour, toHex, treeMarkPx } from './fruit';
 import { preToneMapped } from '../creatures/util';
 
 // Field-view overview (C5b; docs/realism-design.md §5.1): the whole ~8 km map at km scale. A canopy surface (the far
@@ -343,9 +343,10 @@ export function createOverview(world: World, river: RiverInfo, uniforms: SharedU
 // Stage W7: the fruit layer (docs/staging/w7-fruit.md). A MAP OVERLAY and a STYLIZATION: one small diamond per tree in
 // fruit (per map cell when zoomed far out), sized by its crop, in the species' fruit colour, drawn above the canopy at
 // strategy and whole-map zooms so a viewer sees where the food is and why parties are where they are. One instanced
-// mesh (one draw call while it shows), its buffers rewritten only when the crops change (the simulation refreshes
-// tree.fruit daily, and when a crown is fed in); per frame it sets four uniforms and, every 30th frame, compares a
-// 250-tree signature of the crops. Diamonds, so they are never read as party markers (discs). Render-only.
+// mesh (one draw call while it shows), its buffers rewritten only when a mark would change (the simulation refreshes
+// tree.fruit daily, and lowers it as a crown is fed in); per frame it sets four uniforms and reads the crops of one
+// thirtieth of the trees (about 800), so a pass over all of them ends every half second and a changed pass rebuilds.
+// Diamonds, so they are never read as party markers (discs). Render-only.
 // ---------------------------------------------------------------------------------------------------------------------
 
 export interface FruitLayerFrame {
@@ -426,9 +427,12 @@ export function createFruitLayer(world: World, owner: Owner): FruitLayer {
     return k;
   };
 
-  let builtFor: World['trees'] | null = null, signature = NaN, rebuilds = 0, frameNo = 0, weight = 0, cellW = 0;
+  let builtFor: World['trees'] | null = null, signature = NaN, rebuilds = 0, weight = 0, cellW = 0;
+  // The scan: where the pass over the trees stands and its sum so far (fruit.ts cropSignaturePart).
+  let scanAt = 0, scanSum = 0;
   function rebuild(w: World) {
     builtFor = w.trees; signature = cropSignature(w.trees); rebuilds++;
+    scanAt = 0; scanSum = w.trees.length;
     fruitMarks(w.trees, w.size, marks, colourOf);
     let n = 0;
     const T = marks.trees, C = marks.cells;
@@ -452,7 +456,6 @@ export function createFruitLayer(world: World, owner: Owner): FruitLayer {
   }
 
   function update(w: World, f: FruitLayerFrame) {
-    frameNo++;
     weight = f.on && !f.perspective ? mapLayerWeight(f.hf) : 0;
     mesh.visible = weight > 0.01;
     if (!mesh.visible) return;
@@ -460,8 +463,14 @@ export function createFruitLayer(world: World, owner: Owner): FruitLayer {
     uniforms.uW.value = weight; uniforms.uCell.value = cellW;
     uniforms.uViewport.value.set(Math.max(1, f.viewW), Math.max(1, f.viewH));
     uniforms.uLight.value = 0.3 + 0.7 * f.daylight;
-    // Rebuild when the crops change: a new tree list at once, else a sampled signature every 30th frame.
-    if (builtFor !== w.trees || (frameNo % 30 === 0 && cropSignature(w.trees) !== signature)) rebuild(w);
+    // Rebuild when the marks would change: a new tree list at once; else one slice of the trees a frame, and when a
+    // pass over all of them does not sum to what was built, the crops have moved (a party feeding, the daily refresh).
+    if (builtFor !== w.trees) { rebuild(w); return; }
+    const n = w.trees.length, end = Math.min(n, scanAt + Math.ceil(n / FRUIT_SCAN_FRAMES));
+    scanSum += cropSignaturePart(w.trees, scanAt, end);
+    if (end < n) scanAt = end;
+    else if (scanSum !== signature) rebuild(w);
+    else { scanAt = 0; scanSum = n; }
   }
 
   return { mesh, update, stats: () => ({ trees: marks.nTrees, cells: marks.nCells, dropped: marks.dropped, rebuilds, weight, cellWeight: cellW }) };
