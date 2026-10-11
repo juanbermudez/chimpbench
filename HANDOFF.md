@@ -139,8 +139,9 @@ of the first clone macOS had evicted 14,230 of 18,704 files (the git pack among 
      flags are set by the code. Adapters: `MGOGO_FT_ROOT` (the folder that holds `adapters/<name>`) and
      `MGOGO_FT_ADAPTERS`. `training/decide_ft/r4_py.sh <script>` sets them all; `parity.py` must print `PARITY OK`.
    - **Measured here:** 0.44 s per decision at 467 tokens for the untuned model, and the packet's length is the only
-     speed lever (plan, "What the review changed"); 0.52 s a call over the population run; the model loads on a
-     worker's first batch, 55 to 220 s; a training runs at 0.6 s an example and 6.1 GiB (`r11-prereg.md` §12).
+     speed lever (plan, "What the review changed"); 0.52 s a call over the population run; a worker holds 1.97 GB at
+     rest and 3.16 GB at peak (6 October) and loads the model on its first batch, in 55 to 220 s; a training runs at
+     0.6 s an example and 6.1 GiB (`r11-prereg.md` §12).
    - **Through the app:** the four variables, then `fnm exec --using=22.22.3 -- pnpm exec vite --host 127.0.0.1 --port
      5183 --strictPort` and `node scripts/verify-browser.mjs http://127.0.0.1:5183` (all 20 checks passed on
      6 October 2026). Everything else runs with `MGOGO_NO_MODEL=1`.
