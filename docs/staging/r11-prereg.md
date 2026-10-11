@@ -1029,6 +1029,7 @@ exercised (the helper by today's population night, the worker and packet 5 by th
 | a warm-up packet on the saved burn-ins of seeds 4111 and 4222, each kind of packet | 14:39 | found on both; the worlds' hashes unchanged |
 | wrong and half-made states of `scripts/r11-run.sh`: a cut-short adapter under `train`, `offline`, `loop`, `arms`, `check`; the hold with scripted swap readings | 12:20; 13:49 | each says what it found and starts nothing; the hold waits 0, 5, 8 and at most 30 minutes |
 | `scripts/r11-run.sh check` | 14:13 | no other model process, the tree clean |
+| a worker that does not hold the arm's adapter (the fake worker; `engine --seed 4111 --arms p5b-s7-top`, where nothing can load) | 14:57 | refused on the worker's ready line before the warm-up: "nothing was asked", exit 1, the loop folder unchanged |
 
 The whole test suite and the build were not run (as the rules of the stage say). `track-e` is still at 241bceb and
 merges with this head without conflict (in memory); it changes nothing under `training/`.
