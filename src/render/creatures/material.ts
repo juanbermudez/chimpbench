@@ -254,7 +254,8 @@ void RE_Direct_Hair( const in IncidentLight directLight, const in vec3 geometryP
     float hall = smoothstep(0.0024, 0.0007, length(ha - hb * clamp(dot(ha, hb) / dot(hb, hb), 0.0, 1.0)));
     float feet = max(toes, hall) * step(vBind.y, 0.07) * (1.0 - smoothstep(0.35, 0.9, fwidth(tx) / 0.0022));
     cCol *= 1.0 - 0.72 * max(fingers, feet) * smoothstep(0.3, 0.7, cSkinM);
-    // Ear hollow (concha): painted on the outer face of the solid ear plate (body.ts EAR), darker toward its middle.
+    // Ear hollow (concha): painted on the outer face of the solid ear plate (body.ts EAR), darker toward its middle
+    // (a stylization: its place, size and colour are not measured).
     vec3 eq = vec3(abs(vBind.x) - ${g(EAR.c[0])}, vBind.y - ${g(EAR.c[1])}, vBind.z - ${g(EAR.c[2])});
     float elx = eq.x * ${g(Math.cos(EAR.rotY))} - eq.z * ${g(Math.sin(EAR.rotY))}, elz = eq.x * ${g(Math.sin(EAR.rotY))} + eq.z * ${g(Math.cos(EAR.rotY))};
     float concha = (1.0 - smoothstep(0.45, 1.0, length(vec2((eq.y - ${g(EAR.concha.c[0])}) / ${g(EAR.concha.r[0])}, (elz - ${g(EAR.concha.c[1])}) / ${g(EAR.concha.r[1])})))) * smoothstep(0.0015, 0.005, elx) * step(length(eq), 0.045);
@@ -281,7 +282,7 @@ void RE_Direct_Hair( const in IncidentLight directLight, const in vec3 geometryP
     // Dark amber-brown iris with a darker limbal ring, near-black pupil, brown-pigmented sclera; the upper lid
     // shades the eye (no emissive: the "glow" was a saturated orange iris).
     // Iris albedo at 0.62 of its old value: it used to show through a gate of about one third, so at full strength
-    // the old colour read as a bright yellow ring (W3).
+    // the old colour read as a bright yellow ring (W3). The factor is a look, not a measurement (stylization).
     vec3 iris = mix(vec3(0.043, 0.022, 0.009), vec3(0.10, 0.053, 0.019), ring) * (0.8 + 0.35 * smoothstep(0.009, 0.004, r));
     iris *= (1.0 - 0.45 * smoothstep(0.0065, 0.0096, r)) * (1.0 - 1.6 * vP5.y);
     vec3 sclera = vec3(0.028, 0.02, 0.016);
@@ -365,7 +366,8 @@ void RE_Direct_Hair( const in IncidentLight directLight, const in vec3 geometryP
   reflectedLight.indirectSpecular *= ambientOcclusion;
   // Dry hair scatters rather than mirrors: damp and warm-tint the specular lobe on fur (a white GGX lobe
   // turns black fur grey); wet fur gets its gloss back.
-  // W3: wet fur keeps 0.3 of the lobe (was 0.6) and half of its warm tint, so it glistens without turning to chrome.
+  // W3: wet fur keeps 0.3 of the lobe (was 0.6) and half of its warm tint, so it glistens without turning to chrome
+  // (amounts are a look: stylization).
   float cSpecK = mix(mix(0.08, 0.3, cWet), 1.0, cSkinM);
   vec3 cSpecTint = mix(vP0.rgb * 6.0 + vec3(0.1), vec3(1.0), clamp(cSkinM + cWet * 0.5, 0.0, 1.0));
   reflectedLight.directSpecular *= cSpecK * cSpecTint;
