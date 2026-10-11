@@ -154,12 +154,13 @@ Packet lengths (the server's token estimate, shuffle 0) and what one model pass 
 | groomed with her in the previous two years `groomed-prev` | own | 0.317 (0.222 to 0.393) | 0.27 (0.185 to 0.377) | 0.099 (0.029 to 0.161) | 0.091 (0.017 to 0.198) | 0.324 | 0 |
 | most grooming with her in the previous two years `groomdur-prev` | own | 0.307 (0.208 to 0.383) | 0.252 (0.158 to 0.365) | 0.089 (0.012 to 0.149) | 0.074 (-0.014 to 0.188) | 0.331 | 0 |
 | her close kin `kin` | own | 0.241 (0.203 to 0.286) | 0.222 (0.157 to 0.306) | 0.023 (0 to 0.066) | 0.043 (0 to 0.104) | 0.283 | 0 |
-| the highest-ranking female present `rank-high` | own | 0.31 (0.221 to 0.385) | 0.201 (0.115 to 0.293) | 0.093 (0.024 to 0.152) | 0.023 (-0.047 to 0.094) | 0.31 | 0 |
+| the highest-ranking female present, by rank over the previous two years `rank-high` | own | 0.254 (0.193 to 0.311) | 0.191 (0.129 to 0.253) | 0.037 (-0.007 to 0.084) | 0.012 (-0.036 to 0.06) | 0.276 | 0 |
 | not a newcomer `resident` | own | 0.265 (0.218 to 0.299) | 0.209 (0.153 to 0.267) | 0.047 (0.031 to 0.062) | 0.03 (0.007 to 0.054) | 0.269 | 0 |
 | attacked alongside her most often before `allied-before` | own | 0.417 (0.272 to 0.534) | 0.285 (0.201 to 0.377) | 0.199 (0.079 to 0.304) | 0.106 (0.046 to 0.173) | 0.428 | 0 |
 | most often in joint attacks before `frequent-aggressor` | own | 0.367 (0.246 to 0.458) | 0.259 (0.154 to 0.361) | 0.15 (0.053 to 0.226) | 0.08 (-0.011 to 0.17) | 0.379 | 0 |
 | stack: attacked alongside her before, then most often in her party, then most often in joint attacks `stack` | own | 0.395 (0.233 to 0.522) | 0.248 (0.149 to 0.351) | 0.177 (0.039 to 0.29) | 0.069 (0 to 0.147) | 0.4 | 0 |
 | comparison only (looks ahead): most often in her party in the period of the event `assoc-now` | lookahead | 0.4 (0.241 to 0.535) | 0.31 (0.182 to 0.446) | 0.182 (0.049 to 0.302) | 0.131 (0.019 to 0.263) | 0.4 | 0 |
+| comparison only (looks ahead): the highest-ranking female present, by rank over the period of the event `rank-now` | lookahead | 0.31 (0.221 to 0.385) | 0.201 (0.115 to 0.293) | 0.093 (0.024 to 0.152) | 0.023 (-0.047 to 0.094) | 0.31 | 0 |
 | check, not a rule: the first option `first-option` | own | 0.2 (0.144 to 0.274) | 0.205 (0.104 to 0.328) | -0.018 (-0.075 to 0.07) | 0.027 (-0.069 to 0.143) | 0.2 | 0 |
 
 By cut (score pooled, ties split; records and females in the heading; the first row is chance):
@@ -173,12 +174,13 @@ By cut (score pooled, ties split; records and females in the heading; the first 
 | `groomed-prev` | 0.394 | 0.191 | 0.313 | 0.253 |
 | `groomdur-prev` | 0.359 | 0.222 | 0.299 | 0.255 |
 | `kin` | 0.314 | 0.121 | 0.198 | 0.187 |
-| `rank-high` | 0.456 | 0.073 | 0.215 | 0.25 |
+| `rank-high` | 0.363 | 0.076 | 0.228 | 0.232 |
 | `resident` | 0.356 | 0.116 | 0.21 | 0.193 |
 | `allied-before` | 0.496 | 0.287 | 0.393 | 0.344 |
 | `frequent-aggressor` | 0.487 | 0.173 | 0.313 | 0.27 |
 | `stack` | 0.481 | 0.255 | 0.364 | 0.313 |
 | `assoc-now` | 0.489 | 0.255 | 0.346 | 0.319 |
+| `rank-now` | 0.456 | 0.073 | 0.215 | 0.25 |
 | `first-option` | 0.278 | 0.073 | 0.168 | 0.138 |
 
 Option order: the same records under several shuffles (top-1 of the answered option). The order check must sit at chance.
@@ -191,20 +193,21 @@ Option order: the same records under several shuffles (top-1 of the answered opt
 | `groomed-prev` | 5 | 0.324, 0.331, 0.324, 0.317, 0.331 | 0.014 | 0.168 (0.163) |
 | `groomdur-prev` | 5 | 0.331, 0.317, 0.317, 0.345, 0.303 | 0.041 | 0.163 (0.163) |
 | `kin` | 5 | 0.283, 0.214, 0.2, 0.228, 0.221 | 0.083 | 0.178 (0.163) |
-| `rank-high` | 5 | 0.31, 0.31, 0.31, 0.31, 0.31 | 0 | 0.154 (0.163) |
+| `rank-high` | 5 | 0.276, 0.269, 0.269, 0.283, 0.241 | 0.041 | 0.161 (0.163) |
 | `resident` | 5 | 0.269, 0.228, 0.262, 0.241, 0.248 | 0.041 | 0.164 (0.163) |
 | `allied-before` | 5 | 0.428, 0.4, 0.421, 0.414, 0.421 | 0.028 | 0.154 (0.163) |
 | `frequent-aggressor` | 5 | 0.379, 0.366, 0.366, 0.372, 0.359 | 0.021 | 0.171 (0.163) |
 | `stack` | 5 | 0.4, 0.393, 0.4, 0.4, 0.386 | 0.014 | 0.15 (0.163) |
 | `assoc-now` | 5 | 0.4, 0.4, 0.4, 0.4, 0.4 | 0 | 0.138 (0.163) |
+| `rank-now` | 5 | 0.31, 0.31, 0.31, 0.31, 0.31 | 0 | 0.154 (0.163) |
 | `first-option` | 5 | 0.2, 0.186, 0.172, 0.255, 0.179 | 0.083 | 1 (0.163) |
 
 Packet lengths (the server's token estimate, shuffle 0) and what one model pass over this part would take, from 0.44 s at 467 tokens growing as tokens to the power 1.5 (no model was run):
 
 | view | kernel | records | kernel calls | tokens: median | 90th percentile | largest | estimated time |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| own | plain (one call a record) | 145 | 145 | 324 | 438 | 549 | 37 s |
-| own | fanned out, +fan2 (55 menus wider than 8) | 145 | 255 | 271 | 336 | 371 | 49 s |
+| own | plain (one call a record) | 145 | 145 | 335 | 445 | 553 | 37 s |
+| own | fanned out, +fan2 (55 menus wider than 8) | 145 | 255 | 280 | 345 | 379 | 50 s |
 
 ## Kanyawara: who attacked alongside a participant, development part
 
@@ -218,12 +221,13 @@ Packet lengths (the server's token estimate, shuffle 0) and what one model pass 
 | groomed with her in the previous two years `groomed-prev` | own | 0.327 (0.251 to 0.397) | 0.291 (0.206 to 0.378) | 0.088 (0.024 to 0.149) | 0.045 (-0.004 to 0.107) | 0.379 | 0 |
 | most grooming with her in the previous two years `groomdur-prev` | own | 0.384 (0.274 to 0.519) | 0.373 (0.232 to 0.529) | 0.145 (0.053 to 0.257) | 0.127 (0.015 to 0.265) | 0.379 | 0 |
 | her close kin `kin` | own | 0.33 (0.225 to 0.468) | 0.325 (0.223 to 0.433) | 0.091 (0 to 0.212) | 0.079 (0 to 0.164) | 0.448 | 0 |
-| the highest-ranking female present `rank-high` | own | 0.414 (0.25 to 0.63) | 0.464 (0.231 to 0.687) | 0.175 (0.029 to 0.382) | 0.218 (0.018 to 0.413) | 0.414 | 0 |
+| the highest-ranking female present, by rank over the previous two years `rank-high` | own | 0.315 (0.188 to 0.483) | 0.357 (0.218 to 0.509) | 0.076 (-0.036 to 0.223) | 0.112 (-0.009 to 0.251) | 0.31 | 0 |
 | not a newcomer `resident` | own | 0.311 (0.252 to 0.395) | 0.338 (0.221 to 0.481) | 0.073 (0.043 to 0.122) | 0.093 (0.028 to 0.177) | 0.379 | 0 |
 | attacked alongside her most often before `allied-before` | own | 0.552 (0.394 to 0.673) | 0.419 (0.275 to 0.573) | 0.314 (0.157 to 0.425) | 0.173 (0.036 to 0.326) | 0.586 | 0 |
 | most often in joint attacks before `frequent-aggressor` | own | 0.534 (0.333 to 0.69) | 0.431 (0.226 to 0.664) | 0.296 (0.11 to 0.435) | 0.185 (0.007 to 0.377) | 0.517 | 0 |
 | stack: attacked alongside her before, then most often in her party, then most often in joint attacks `stack` | own | 0.621 (0.435 to 0.765) | 0.495 (0.272 to 0.726) | 0.382 (0.213 to 0.504) | 0.249 (0.049 to 0.449) | 0.621 | 0 |
 | comparison only (looks ahead): most often in her party in the period of the event `assoc-now` | lookahead | 0.345 (0.15 to 0.533) | 0.3 (0.113 to 0.497) | 0.106 (-0.088 to 0.287) | 0.054 (-0.141 to 0.252) | 0.345 | 0 |
+| comparison only (looks ahead): the highest-ranking female present, by rank over the period of the event `rank-now` | lookahead | 0.414 (0.25 to 0.63) | 0.464 (0.231 to 0.687) | 0.175 (0.029 to 0.382) | 0.218 (0.018 to 0.413) | 0.414 | 0 |
 | check, not a rule: the first option `first-option` | own | 0.379 (0.194 to 0.556) | 0.331 (0.138 to 0.536) | 0.141 (-0.056 to 0.337) | 0.085 (-0.132 to 0.315) | 0.379 | 0 |
 
 By cut (score pooled, ties split; records and females in the heading; the first row is chance):
@@ -237,12 +241,13 @@ By cut (score pooled, ties split; records and females in the heading; the first 
 | `groomed-prev` | 0.375 | 0.219 | 0.352 | 0.313 |
 | `groomdur-prev` | 0.446 | 0.247 | 0.444 | 0.369 |
 | `kin` | 0.414 | 0.142 | 0.274 | 0.268 |
-| `rank-high` | 0.55 | 0.111 | 0.333 | 0.35 |
+| `rank-high` | 0.396 | 0.136 | 0.333 | 0.269 |
 | `resident` | 0.368 | 0.187 | 0.263 | 0.292 |
 | `allied-before` | 0.59 | 0.469 | 0.535 | 0.526 |
 | `frequent-aggressor` | 0.575 | 0.444 | 0.444 | 0.5 |
 | `stack` | 0.7 | 0.444 | 0.556 | 0.6 |
 | `assoc-now` | 0.4 | 0.222 | 0.278 | 0.2 |
+| `rank-now` | 0.55 | 0.111 | 0.333 | 0.35 |
 | `first-option` | 0.35 | 0.444 | 0.333 | 0.4 |
 
 Option order: the same records under several shuffles (top-1 of the answered option). The order check must sit at chance.
@@ -255,18 +260,19 @@ Option order: the same records under several shuffles (top-1 of the answered opt
 | `groomed-prev` | 5 | 0.379, 0.517, 0.276, 0.276, 0.345 | 0.241 | 0.186 (0.199) |
 | `groomdur-prev` | 5 | 0.379, 0.483, 0.31, 0.345, 0.379 | 0.172 | 0.193 (0.199) |
 | `kin` | 5 | 0.448, 0.414, 0.345, 0.31, 0.379 | 0.138 | 0.159 (0.199) |
-| `rank-high` | 5 | 0.414, 0.414, 0.414, 0.414, 0.414 | 0 | 0.207 (0.199) |
+| `rank-high` | 5 | 0.31, 0.414, 0.241, 0.276, 0.31 | 0.172 | 0.186 (0.199) |
 | `resident` | 5 | 0.379, 0.448, 0.414, 0.207, 0.345 | 0.241 | 0.152 (0.199) |
 | `allied-before` | 5 | 0.586, 0.655, 0.517, 0.517, 0.621 | 0.138 | 0.255 (0.199) |
 | `frequent-aggressor` | 5 | 0.517, 0.552, 0.517, 0.517, 0.552 | 0.034 | 0.207 (0.199) |
 | `stack` | 5 | 0.621, 0.621, 0.621, 0.621, 0.621 | 0 | 0.228 (0.199) |
 | `assoc-now` | 5 | 0.345, 0.345, 0.345, 0.345, 0.345 | 0 | 0.228 (0.199) |
+| `rank-now` | 5 | 0.414, 0.414, 0.414, 0.414, 0.414 | 0 | 0.207 (0.199) |
 | `first-option` | 5 | 0.379, 0.241, 0.276, 0.241, 0.207 | 0.172 | 1 (0.199) |
 
 Packet lengths (the server's token estimate, shuffle 0) and what one model pass over this part would take, from 0.44 s at 467 tokens growing as tokens to the power 1.5 (no model was run):
 
 | view | kernel | records | kernel calls | tokens: median | 90th percentile | largest | estimated time |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| own | plain (one call a record) | 29 | 29 | 268 | 405 | 464 | 7 s |
-| own | fanned out, +fan2 (9 menus wider than 8) | 29 | 47 | 282 | 351 | 384 | 9 s |
+| own | plain (one call a record) | 29 | 29 | 258 | 409 | 469 | 7 s |
+| own | fanned out, +fan2 (9 menus wider than 8) | 29 | 47 | 288 | 358 | 390 | 9 s |
 

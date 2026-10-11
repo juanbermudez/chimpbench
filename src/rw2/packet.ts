@@ -25,15 +25,16 @@ export const RW2_DATASETS: Rw2Dataset[] = ['tai-groom', 'kanyawara-coalition'];
  * kept. Taï: `rank` among those in sight (1 highest), `above` the focal, `bond` with the focal (1 strongest), `past`
  * (1 = groomed first most often before), `lastToday`, and the bystander orders `thirdMax`, `thirdMean` (1 strongest).
  * Kanyawara: `rank` (1 highest, direction inferred), `assoc`, `near`, `groomDur` from the previous two-year period,
- * `known` (a row in that period), `allied`, `aggressor` from earlier days, and the look-ahead `assocNow`, `nearNow`,
- * `groomedNow` of the period that contains the event. The `…Open` fields exist on sealed records only: the same
+ * `known` (a row in that period), `allied`, `aggressor` from earlier days, and the look-ahead `rankNow`, `assocNow`,
+ * `nearNow`, `groomedNow` of the period that contains the event (rank too is a two-year average in the source, so the
+ * event's own period looks ahead: review amendment 5). The `…Open` fields exist on sealed records only: the same
  * history from train and development events alone.
  */
 export interface Rw2Option {
   sex?: 'm' | 'f'; state?: '' | 'swollen' | 'infant'; above?: boolean; aggr?: boolean; lastToday?: boolean;
   rank?: number; bond?: number; past?: number; thirdMax?: number; thirdMean?: number;
   newcomer?: boolean; kin?: boolean; known?: boolean; groomed?: boolean; groomedNow?: boolean;
-  assoc?: number; near?: number; groomDur?: number; assocNow?: number; nearNow?: number; allied?: number; aggressor?: number;
+  assoc?: number; near?: number; groomDur?: number; rankNow?: number; assocNow?: number; nearNow?: number; allied?: number; aggressor?: number;
   pastOpen?: number; lastTodayOpen?: boolean; alliedOpen?: number; aggressorOpen?: number;
 }
 /** One derived record (private: artifacts/rw2). `chooser` is a hashed label for intervals over individuals; options have no identity. */
@@ -63,13 +64,13 @@ const NEUTRAL_COMMUNITY = 'wild';
 
 type Field = keyof Rw2Option;
 const BOOLS: Field[] = ['above', 'aggr', 'lastToday', 'newcomer', 'kin', 'known', 'groomed', 'groomedNow'];
-const RANKS: Field[] = ['rank', 'bond', 'past', 'thirdMax', 'thirdMean', 'assoc', 'near', 'groomDur', 'assocNow', 'nearNow', 'allied', 'aggressor'];
+const RANKS: Field[] = ['rank', 'bond', 'past', 'thirdMax', 'thirdMean', 'assoc', 'near', 'groomDur', 'rankNow', 'assocNow', 'nearNow', 'allied', 'aggressor'];
 /** The fields of each view (prereg §2.4, §3.4). Nothing else of a record reaches a request. */
 export const VIEW_FIELDS: Record<Rw2Dataset, Record<Rw2View, Field[]>> = {
   'tai-groom': { own: ['sex', 'state', 'above', 'aggr', 'lastToday', 'rank', 'bond', 'past'], third: ['sex', 'state', 'above', 'aggr', 'lastToday', 'rank', 'bond', 'past', 'thirdMax', 'thirdMean'],
     lookahead: ['sex', 'state', 'above', 'aggr', 'lastToday', 'rank', 'bond', 'past'] },
   'kanyawara-coalition': { own: ['newcomer', 'kin', 'known', 'groomed', 'rank', 'assoc', 'near', 'groomDur', 'allied', 'aggressor'], third: ['newcomer', 'kin', 'known', 'groomed', 'rank', 'assoc', 'near', 'groomDur', 'allied', 'aggressor'],
-    lookahead: ['newcomer', 'kin', 'known', 'groomed', 'rank', 'assoc', 'near', 'groomDur', 'allied', 'aggressor', 'assocNow', 'nearNow', 'groomedNow'] },
+    lookahead: ['newcomer', 'kin', 'known', 'groomed', 'rank', 'assoc', 'near', 'groomDur', 'allied', 'aggressor', 'rankNow', 'assocNow', 'nearNow', 'groomedNow'] },
 };
 /** History fields a sealed record also holds from the open parts alone (`history: 'open'`). */
 const OPEN_TWIN: Partial<Record<Field, Field>> = { past: 'pastOpen', lastToday: 'lastTodayOpen', allied: 'alliedOpen', aggressor: 'aggressorOpen' };
@@ -176,6 +177,7 @@ export function narrowRw2Request(request: KernelRequest, positions: number[]): R
 const P = {
   rank: 'Rank here, highest first: ', bond: 'My bond with each, strongest first: ', past: 'I groomed first before, most often first: ',
   thirdMax: 'Bond with someone else here, strongest first: ', thirdMean: 'Bonds with the others here on average, strongest first: ',
+  rankPrev: 'Rank here over the previous two years, highest first: ',
   assoc: 'In my party in the previous two years, most often first: ', near: 'Within 5 m of me in the previous two years, most often first: ',
   groomed: 'Groomed with me in the previous two years, most first: ', unknown: 'No history with me yet: ',
   allied: 'Attacked alongside me before, most often first: ', aggressor: 'In joint attacks before, most often first: ',
@@ -223,8 +225,8 @@ export function rw2Lines(request: KernelRequest): { me: string; now: string; nea
     now: `in a party with ${s.others} other adult females; I am attacking another chimpanzee`,
     nearby: o.map((x, i) => `${name[i]}: adult female${x.newcomer ? ', newcomer to the community' : ''}${x.kin ? '; my close kin (mother, daughter or sister)' : ''}`),
     last: [],
-    history: line(orderLine(P.rank, ranked('rank')),
-      ...(bonds ? [orderLine(P.assoc, ranked('assoc')), orderLine(P.near, ranked('near')), orderLine(P.groomed, o.map((x, i) => ({ name: name[i], rank: x.groomed ? Math.max(1, x.groomDur ?? 1) : 0 }))),
+    history: line(
+      ...(bonds ? [orderLine(P.rankPrev, ranked('rank')), orderLine(P.assoc, ranked('assoc')), orderLine(P.near, ranked('near')), orderLine(P.groomed, o.map((x, i) => ({ name: name[i], rank: x.groomed ? Math.max(1, x.groomDur ?? 1) : 0 }))),
         unknown.length ? P.unknown + unknown.join(', ') : ''] : []),
       orderLine(P.allied, ranked('allied')), orderLine(P.aggressor, ranked('aggressor'))),
   };

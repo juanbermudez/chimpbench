@@ -229,6 +229,10 @@ test('reader: Kanyawara menus are rebuilt for every participant, repeats of a da
     assert.ok(b.options.every(o => o.known === false && o.assoc === 0 && o.near === 0 && !o.groomed));
     assert.equal(a.options[a.labels[0]].newcomer, true); assert.equal(a.options[a.labels[0]].known, false);
     assert.equal(a.options.filter(o => o.known).length, 3); assert.deepEqual(a.options.filter(o => o.known).map(o => o.assoc).sort(), [1, 2, 3]);
+    // rank, like the bonds, is of the previous period (the source's value is a two-year average that contains the event): the
+    // newcomer has none, the others keep their order; the event's own period stays apart as the look-ahead rankNow
+    assert.equal(a.options[a.labels[0]].rank, 0); assert.ok(a.options[a.labels[0]].rankNow! > 0); assert.ok(b.options.every(o => o.rank === 0 && o.rankNow! > 0));
+    assert.deepEqual(a.options.filter(o => o.known).map(o => o.rank).sort(), [1, 2, 3]); assert.deepEqual(a.options.map(o => o.rankNow).sort(), [1, 2, 3, 4]);
     // the repeat of the same day and the same participants is written and left out
     for (const m of made[1].members) { const r = find(made[1], m); assert.equal(r.eligible, false); assert.equal(r.why, 'same-day-repeat'); }
     // coalition history is of earlier days only: the first event does not know the repeat, and the repeat does not know the first (same day)
@@ -236,7 +240,8 @@ test('reader: Kanyawara menus are rebuilt for every participant, repeats of a da
     assert.equal(a.options[a.labels[0]].allied, 0); assert.equal(again.options[again.labels[0]].allied, 0, 'an event of the same day is not history');
     const text = rw2Text(buildRw2Packet(b).request);
     assert.match(text, /newcomer to the community, wild chimpanzee/); assert.match(text, /No history with me yet: /); assert.match(text, /Attack alongside /);
-    assert.ok(!text.includes(RW2_PREFIXES.assoc), 'no order of a bond she does not have');
+    assert.ok(!text.includes(RW2_PREFIXES.assoc) && !text.includes('Rank here'), 'no order of a bond or of a rank she does not have');
+    assert.match(rw2Text(buildRw2Packet(a).request), /Rank here over the previous two years, highest first: /);
     // the kin pair
     const kin = train.filter(r => r.options.some(o => o.kin));
     assert.ok(kin.length > 0 && kin.every(r => r.options.filter(o => o.kin).length === 1));
@@ -267,7 +272,7 @@ function tai(options: Rw2Option[], over: Partial<Rw2Record> = {}): Rw2Record {
 const wide = (n: number) => tai(Array.from({ length: n }, (_, i) => ({ rank: i + 1, bond: n - i, above: i < 3, sex: i % 2 ? 'm' : 'f', past: i === 4 ? 1 : 0, thirdMax: i + 1, thirdMean: n - i })), { key: `wide${n}` });
 function fox(options: Rw2Option[], over: Partial<Rw2Record> = {}): Rw2Record {
   return { dataset: 'kanyawara-coalition', key: `f${options.length}`, chooser: 'a111', part: 'train', stratum: 'train', eligible: true, why: '', act: 'attack-with', focal: { sex: 'f', newcomer: false, bonds: true },
-    options: options.map(o => ({ newcomer: false, kin: false, known: true, groomed: false, groomedNow: false, rank: 1, assoc: 1, near: 1, groomDur: 1, assocNow: 1, nearNow: 1, allied: 0, aggressor: 0, ...o })), labels: [0], ...over };
+    options: options.map(o => ({ newcomer: false, kin: false, known: true, groomed: false, groomedNow: false, rank: 1, assoc: 1, near: 1, groomDur: 1, rankNow: 1, assocNow: 1, nearNow: 1, allied: 0, aggressor: 0, ...o })), labels: [0], ...over };
 }
 
 test('packet: a valid request of the shared contract, the registered words, nothing outside its view', () => {
@@ -319,7 +324,8 @@ test('packet: a block that holds anything but its coarse facts is refused, and t
   assert.match(bad(r => { r.context.social[0].name = 'Q10'; }), /names/);
   const f = fox([{ assocNow: 1 }, { assocNow: 2 }, { assocNow: 3 }]), own = buildRw2Packet(f).request, ahead = buildRw2Packet(f, { view: 'lookahead' }).request;
   assert.equal(rw2RequestError(own), ''); assert.equal(rw2RequestError(ahead), '');
-  assert.ok(own.wild2.options.every(o => o.assocNow === undefined && o.nearNow === undefined && o.groomedNow === undefined));
+  assert.ok(own.wild2.options.every(o => o.rankNow === undefined && o.assocNow === undefined && o.nearNow === undefined && o.groomedNow === undefined));
+  assert.ok(ahead.wild2.options.every(o => o.rankNow === 1));
   assert.ok(own.options.every(c => c.action === 'follow') && own.mask.options.includes('action'));
   assert.throws(() => rw2Lines(ahead), /never written as text/); assert.throws(() => buildRw2Question(ahead), /never written as text/);
   // a sealed record's open-only history replaces the full one on request
@@ -367,16 +373,18 @@ test('rules: each registered rule picks what its definition says', async () => {
   const fresh = tai([{ rank: 2, thirdMean: 1 }, { rank: 1, above: true, thirdMean: 1 }, { rank: 3, thirdMean: 2, lastToday: true }]);
   assert.deepEqual(await top(fresh, 'stack-own'), [2]); assert.deepEqual(await top(fresh, 'stack-third'), [2]); assert.deepEqual(await top(fresh, 'past-partner'), [0, 1, 2]);
   await assert.rejects(async () => rw2RuleKernel('tai-groom', 'third-mean-low').decide(buildRw2Packet(t).request, { random: () => 0 }), /needs the third view/);
-  const k = fox([{ assoc: 2, near: 1, rank: 3, allied: 0, aggressor: 2, assocNow: 3 }, { assoc: 1, near: 3, rank: 2, groomed: true, groomDur: 2, aggressor: 1, assocNow: 2 }, { assoc: 3, near: 2, rank: 1, kin: true, groomed: true, groomDur: 1, assocNow: 1 },
-    { assoc: 0, near: 0, known: false, newcomer: true, rank: 4, allied: 1, assocNow: 4 }]);
+  const k = fox([{ assoc: 2, near: 1, rank: 3, rankNow: 2, allied: 0, aggressor: 2, assocNow: 3 }, { assoc: 1, near: 3, rank: 2, rankNow: 1, groomed: true, groomDur: 2, aggressor: 1, assocNow: 2 }, { assoc: 3, near: 2, rank: 1, rankNow: 3, kin: true, groomed: true, groomDur: 1, assocNow: 1 },
+    { assoc: 0, near: 0, known: false, newcomer: true, rank: 0, rankNow: 4, allied: 1, assocNow: 4 }]);
   assert.deepEqual(await top(k, 'assoc-prev'), [1]); assert.deepEqual(await top(k, 'near-prev'), [0]); assert.deepEqual(await top(k, 'groomed-prev'), [1, 2]); assert.deepEqual(await top(k, 'groomdur-prev'), [2]);
   assert.deepEqual(await top(k, 'kin'), [2]); assert.deepEqual(await top(k, 'rank-high'), [2]); assert.deepEqual(await top(k, 'resident'), [0, 1, 2]); assert.deepEqual(await top(k, 'allied-before'), [3]);
-  assert.deepEqual(await top(k, 'frequent-aggressor'), [1]); assert.deepEqual(await top(k, 'stack'), [3]); assert.deepEqual(await top(k, 'assoc-now'), [2]);
+  assert.deepEqual(await top(k, 'frequent-aggressor'), [1]); assert.deepEqual(await top(k, 'stack'), [3]); assert.deepEqual(await top(k, 'assoc-now'), [2]); assert.deepEqual(await top(k, 'rank-now'), [1]);
   await assert.rejects(async () => rw2RuleKernel('kanyawara-coalition', 'assoc-now').decide(buildRw2Packet(k).request, { random: () => 0 }), /needs the lookahead view/);
+  await assert.rejects(async () => rw2RuleKernel('kanyawara-coalition', 'rank-now').decide(buildRw2Packet(k).request, { random: () => 0 }), /needs the lookahead view/);
   await assert.rejects(async () => rw2RuleKernel('tai-groom', 'rank-high').decide(buildRw2Packet(k).request, { random: () => 0 }), /takes a tai-groom request/);
   const lines = rw2Lines(buildRw2Packet(k).request);
-  assert.equal(lines.history.length, 7); assert.ok(lines.history[3].startsWith(RW2_PREFIXES.groomed) && lines.history[4].startsWith(RW2_PREFIXES.unknown));
-  assert.equal(rw2Lines(buildRw2Packet({ ...k, focal: { sex: 'f', newcomer: false, bonds: false } }).request).history.length, 3, 'no bond line where the data hold no previous period');
+  assert.equal(lines.history.length, 7); assert.ok(lines.history[0].startsWith(RW2_PREFIXES.rankPrev) && lines.history[3].startsWith(RW2_PREFIXES.groomed) && lines.history[4].startsWith(RW2_PREFIXES.unknown));
+  assert.equal(lines.history[0].slice(RW2_PREFIXES.rankPrev.length).split(', ').length, 3, 'the option without a rank in the previous period is not in the rank line');
+  assert.equal(rw2Lines(buildRw2Packet({ ...k, focal: { sex: 'f', newcomer: false, bonds: false } }).request).history.length, 2, 'no bond line and no rank line where the data hold no previous period');
 });
 
 test('scores: intervals over individuals, equal weight beside pooled, multi-partner records, aggregate output only', async () => {

@@ -373,9 +373,12 @@ def fox_records(pairs, events, opened):
             now = [e['pair'].get(frozenset((me, x))) or pairs.get((frozenset((me, x)), e['period'])) for x in others]
             was = [pairs.get((frozenset((me, x)), prev)) if prev else None for x in others]
             get = lambda rows, col: [number(r[col]) if r else None for r in rows]
-            cols = {'rank': dense(get(now, 'ranksumbi_z'), high_first=False),   # the lowest pair sum is the highest-ranking option (direction inferred)
+            # rank: the lowest pair sum is the highest-ranking option. Like the bonds it is taken from the PREVIOUS period: the
+            # file's value is each female's rank averaged over the two years that contain the event, from aggression among
+            # females (paper Methods 2c), so it looks ahead (review amendment 5); the event's own period is kept as rankNow
+            cols = {'rank': dense(get(was, 'ranksumbi_z'), high_first=False),
                     'assoc': dense(get(was, 'SRI_bi_z')), 'near': dense(get(was, 'index_5m_bi_z')), 'groomDur': dense(get(was, 'gmdur_index_z')),
-                    'assocNow': dense(get(now, 'SRI_bi_z')), 'nearNow': dense(get(now, 'index_5m_bi_z'))}
+                    'rankNow': dense(get(now, 'ranksumbi_z'), high_first=False), 'assocNow': dense(get(now, 'SRI_bi_z')), 'nearNow': dense(get(now, 'index_5m_bi_z'))}
             hist = {}
             for names, pool in ((('allied', 'aggressor'), [x for x in before if sealed or x['part'] != 'sealed']), (('alliedOpen', 'aggressorOpen'), [x for x in before if x['part'] != 'sealed'])):
                 if names[0] != 'allied' and not sealed:
@@ -407,7 +410,7 @@ def fox_manifest(path, events, all_rows, records, opened):
             ev = [e for e in events if e['part'] == part]
             mine = [r for r in records if r['part'] == part]
             ok = [r for r in mine if r['eligible']]
-            info.update({'opened': True, 'memberRecords': len(mine), 'eligible': len(ok), 'eligibleChoosers': len({r['chooser'] for r in ok}),
+            info.update({'opened': True, 'memberRecords': len(mine), 'eligible': len(ok), 'eligibleParticipants': len({r['chooser'] for r in ok}),   # no chooser here: the females who took part
                          'dateAndMemberSetUnits': len({(e['date'], tuple(e['members'])) for e in ev}),
                          'leftOut': dict(sorted(collections.Counter(r['why'] for r in mine if not r['eligible']).items())),
                          'coalitionSizes': dict(sorted(collections.Counter(str(len(e['members'])) for e in ev).items())),
