@@ -11,7 +11,7 @@ Everything in this stage is a **stylization**. `docs/research.md` holds no sourc
 - **The groomer works.** Its hands move to a new place on the partner every 9 seconds (lower back, mid back, shoulders, nape, flanks). One hand holds the hair apart, the other combs in short strokes, and the head comes down toward the hands. On `track-e` the hands stayed on one spot.
 - **The receiver is not always sitting.** For each bout of 40 to 70 seconds it sits hunched (40% of bouts on the ground), lies on its belly (22%), lies on its side (18%) or sits with one arm raised (20%). In a tree it only sits or raises an arm.
 - **A mother grooming the infant she holds** now holds it on her belly and works on its back with her head down. Before, her arms folded up in a tangle (the review's "both arms straight up, no visible partner").
-- **A grooming chain** (A grooms B while B grooms C) now shows B grooming. Before, B was drawn as a passive receiver and nobody's hands were on C.
+- **A grooming chain** (A grooms B while B grooms C) now shows B grooming. Before, B was drawn as a passive receiver and nobody's hands were on C (read from the code on `track-e`; its harness has no option to picture it).
 
 Picks taken to the mouth stay switched off, as on `gfx-next` (`GROOM_PICK_TO_MOUTH = false` in `src/render/creatures/poses.ts`): they need the per-clip elbow pole the user deferred.
 
@@ -96,7 +96,7 @@ So on that day three quarters of grooming was in trees, where no receiver lies d
 
 - **Clip functions.** All 46 clips were run on 4,000 random contexts each, on `track-e` and on the branch. 44 write bit-identical poses. Only `groom` and `groomee` differ, and `groomee` differs only in the three new postures (the seated one is bit-identical). `clips-compare.json`.
 - **Tiles.** The small map's harness tiles (`mode=tiles`, 30 actions), with the effects layer's `Math.random` on a fixed sequence: 28 of 30 tiles are pixel-identical. `groom` changed. `hunt` differs in 209 pixels in a 29 by 16 pixel box at its top edge, where the grooming pair stands in the background of that tile's camera. No other animal changed clip or role. `tiles-diff.json`, `before/tiles.png`, `after/tiles.png`.
-- **Tests.** `tests/render-*.test.ts`: 115 of 115 pass in 17 files, 4 of them new (`tests/render-groom.test.ts`: hand travel, picks to the mouth off, the lap variant keeps the arms below the shoulders, prone limbs carry no IK, the posture rule and its two exclusions). `tsc --noEmit` passes.
+- **Tests.** `tests/render-*.test.ts`: 115 of 115 pass in 17 files. Four are new, in `tests/render-groom.test.ts`: hand travel and picks to the mouth off; the lap variant keeps the arms below the shoulders; every receiver posture is a finite pose and prone limbs carry no IK; the posture rule and its two exclusions. `tsc --noEmit` passes.
 
 ## Per-frame work
 
@@ -118,7 +118,7 @@ Measured in node on this computer under shared load, 2,000,000 calls, three roun
 | groomee on track-e | 255 to 262 |
 | groomee on the branch (any posture) | 91 to 136 |
 
-Heap growth stayed between 0.1 and 2.1 bytes per call for every row, `track-e` included: no object per call. A groomer costs about 0.09 microseconds more and a receiver about 0.13 less. No GPU timing was run, as instructed.
+Heap growth stayed between 0.1 and 2.1 bytes per call for every row, `track-e` included: no object per call. A groomer costs about 0.1 microseconds more per pose and a receiver at least 0.12 less. No GPU timing was run, as instructed.
 
 ## Limits, and what is not done
 
@@ -126,7 +126,7 @@ Heap growth stayed between 0.1 and 2.1 bytes per call for every row, `track-e` i
 - **No lie-down motion.** A receiver goes from seated to lying in about 0.7 s, the renderer's ordinary blend (`after/pose-groom-change.png`). It reads as quick.
 - **Picks taken to the mouth: off.** Unchanged from `gfx-next`.
 - **The face-to-hair distance was not measured.**
-- **Mutual grooming** was 58% of groomer-ticks on the scanned day. It uses the prototype's three face-to-face sites; the hands now travel (hand targets 30 by 15 by 7 cm against 10 by 0 by 0 on `track-e`, `clip-targets.json`). One harness sheet was looked at (`after/case-mutual.png`); the two animals' forearms cross each other, as they did before. No mutual pair was filmed in the app.
+- **Mutual grooming** was 58% of groomer-ticks on the scanned day. It uses the prototype's three face-to-face sites; the hands now travel (the left hand's target ranges over 30 by 15 by 7 cm in 14 s against 10 by 0 by 0 on `track-e`, `clip-targets.json`). One harness sheet was looked at (`after/case-mutual.png`); the two animals' forearms cross each other, as they did before. No mutual pair was filmed in the app.
 - **No pair in a tree was filmed**, though most grooming is there. The code path is the same; the receiver only sits or raises an arm.
 - **The lap variant is approximate.** Her hands come to the infant's back and rump, not always onto the surface. The infant's wide-armed cling is the existing carry clip. With a large infant (1.8 years) it reads less well than with a small one.
 - **On its side** reads as slumped more than as lying. **Arm raised** holds the hand above the head, not on it.
