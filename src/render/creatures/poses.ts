@@ -5,7 +5,7 @@
 // pitches spine/head forward). Poses are sampled every frame (or less often
 // for distant animals) and crossfaded by the animator.
 import type { CallKind, LifeStage, Mood } from '../../types';
-import { B, PI, LIMB, type Pose } from './rig';
+import { B, PI, LIMB, bodyMass, type Pose } from './rig';
 import { hyp2 } from '../fastmath';
 import { Listen, PatrolRole } from './patrol';
 
@@ -196,6 +196,62 @@ function partnerPoint(c: PoseCtx, h: number, inset = 0.16, lateral = 0): readonl
   return PP;
 }
 const mouthPoint = [0, 0.78, 0.36] as const; // approximate seated mouth position (unit space)
+
+// Grooming choreography v2 (stage W5, docs/staging/w5-grooming.md; first built as prototype 2 of the graphics
+// assessment on branch gfx-next). Stylization, no source: the work sites, stroke
+// lengths and timings below are design choices made to read as grooming from the strategy camera and up close (the
+// hands travel over the partner's body, the face comes down to the hair, the receiver lies down or folds an arm onto
+// its head; picks taken to the mouth are written but switched off). Only the lip-smack is sourced (see the clip).
+/** Groomee postures (the `role` of the 'groomee' clip; creatures.ts picks one per pair and bout). */
+export const GROOMEE = { sit: 0, prone: 2, side: 3, present: 4 } as const;
+/** Role of the 'groom' clip for an animal grooming the infant it holds on its belly (0 = behind the partner, 1 = mutual). */
+export const GROOM_LAP = 2;
+/**
+ * The receiver's posture for one bout (stylization, no source; the shares are design choices): seated 40%, an arm raised
+ * 20%, prone 22%, on its side 18%; off the ground, or with an infant on its body, seated 40% and an arm raised 60%.
+ * `pick` is a 0..1 hash per pair and bout; `forced` is the harness override.
+ * Lying postures need the ground under the receiver and nothing on its body: `holds` (an infant on it, alive or dead)
+ * turns them into the raised arm, and `seated` (it cradles a dead infant in the left arm, or the groomer is the infant
+ * it holds) keeps it in the plain seated posture whatever was picked or forced.
+ */
+export function groomeePosture(pick: number, ground: boolean, holds: boolean, seated: boolean, forced?: number): number {
+  if (seated) return GROOMEE.sit;
+  const role = forced ?? (pick < 0.4 ? GROOMEE.sit : pick < 0.6 || !ground ? GROOMEE.present : pick < 0.82 ? GROOMEE.prone : GROOMEE.side);
+  return (!ground || holds) && (role === GROOMEE.prone || role === GROOMEE.side) ? GROOMEE.present : role;
+}
+/** Seconds the groomer works one site before moving on, and the move's duration. */
+const GROOM_SITE_S = 9, GROOM_MOVE_S = 1.4;
+/** Picks taken to the mouth every 6–10 s. Off: with the trunk hunched forward the arm's elbow pole (rig.ts LIMBS, it
+ * rides with the chest) points up, so the folded arm lifts its elbow over the head (three iterations, 6 October). It
+ * needs a per-clip elbow pole in the rig before it can go on. */
+const GROOM_PICK_TO_MOUTH = false;
+// Work sites on the partner as (height fraction along its spine chain, lateral offset in partner sizes): lower back,
+// mid back, left and right shoulder, nape, left and right flank. Mutual grooming (face to face) uses the next three,
+// an infant held on the belly the last three (its lower back, mid back and nape).
+const GROOM_SITES: readonly (readonly [number, number])[] = [[0.2, 0], [0.33, 0.03], [0.43, 0.11], [0.43, -0.11], [0.5, 0], [0.27, 0.1], [0.27, -0.1], [0.4, 0.12], [0.4, -0.12], [0.5, 0.05], [0.26, 0.03], [0.36, -0.03], [0.47, 0]];
+function groomSite(c: PoseCtx, n: number, role: number): readonly [number, number] {
+  const k = Math.abs((n * 7919 + Math.round(c.seed * 977)) % (role === 0 ? 7 : 3));
+  return GROOM_SITES[role === 1 ? 7 + k : role === GROOM_LAP ? 10 + k : k];
+}
+/** Head size for the body as rig.ts computeMorph sets it: 1 in adults, up to 1.75 in infants. */
+function headScale(age: number, male: boolean) { return Math.min(1.75, Math.pow(Math.cbrt(bodyMass(Math.max(0, age), male ? 'male' : 'female') / 45), -0.5)); }
+/** The seated receiver's slow lean (a step of 0.12 rad, five positions by bout number and individual). */
+function groomeeLean(k: number, seed: number) { return (((k * 7919 + Math.round(seed * 1000)) % 5) - 2) * 0.12; }
+/**
+ * Lying on the belly, the forearms folded on the ground in front of the face, the legs loose behind (stylization, as
+ * the rest of the choreography). The limbs are
+ * posed by joint angles, not by IK targets (stage W5): with the trunk level the limb poles of the rig (rig.ts LIMBS,
+ * they ride with the chest and hips) point up, and IK stood the elbows and knees in the air.
+ */
+function lieProne(w: Pw, c: PoseCtx) {
+  w.root(0, 0.115, -0.24);
+  w.r(B.hips, 1.5).r(B.spine, 0.06).r(B.chest, 0.04).r(B.neck, -0.5).r(B.head, -0.25);
+  w.r(B.uarmL, -0.65, -0.87, 1.8).r(B.farmL, -2.05).r(B.uarmR, -0.65, 0.87, -1.8).r(B.farmR, -2.19);
+  w.r(B.thighL, 0.05, 0, 0.28).r(B.shinL, 0.3).r(B.thighR, 0.05, 0, -0.24).r(B.shinR, 0.2);
+  w.r(B.footL, 1.3).r(B.footR, 1.3);
+  relaxHands(w);
+  w.a(B.chest, sin(c.time * 1.2 + c.seed * 9) * 0.015);
+}
 
 // ---------------------------------------------------------------------------
 // Locomotion
@@ -402,34 +458,83 @@ export const CLIPS: Record<string, Clip> = {
     w.face(0.08 + 0.06 * pulse(c.t * 5), 0.55);
   },
   groom(w, c) {
-    // Groomer: seated close behind (or facing) the partner, leaning in; both hands low on the partner's
-    // back/flank, one slowly parting the hair, the other picking with small, slow movements. Lip-smacking.
-    sitBase(w, c, 0.5, 0.25);
-    w.a(B.spine, 0.18).a(B.chest, 0.15).a(B.head, 0.4).a(B.neck, 0.08);
-    const mutual = c.role === 1;
+    // Groomer (v2, stylization: see GROOM_SITE_S above): seated close behind (or facing) the partner. The work site
+    // travels over the partner's body every ~9 s; the trunk leans and the head turns down to it; one hand holds the
+    // hair apart while the other combs in strokes of 0.07 body lengths, about 10 cm on an adult (picks taken to the
+    // mouth are written but off: GROOM_PICK_TO_MOUTH).
+    // Mother-and-infant variant (role GROOM_LAP; stage W5, stylization, no source): the infant she holds clings to her
+    // belly with its back outward; she sits more upright with her knees apart, one hand under its rump, and combs
+    // shorter strokes over its back, looking down at it.
+    const mutual = c.role === 1, lap = c.role === GROOM_LAP, T = c.pairT;
+    sitBase(w, c, lap ? 0.1 : 0.5, lap ? 0.9 : 0.25);
+    let lean = 0.5, yaw = 0, toMouth = 0;
     if (c.hasTarget && c.tdist < 2.4) {
-      const [px, py, pz] = partnerPoint(c, mutual ? 0.42 : 0.38, 0.17, 0);
-      const part = sin(c.pairT * 0.45) * 0.035;
-      // Copy the partner point: reach() below calls partnerPoint's shared buffer again only through px/py/pz.
-      const gx = px, gy = py, gz = pz;
-      reach(w, 0, gx + 0.07 + part, gy + 0.02, gz, -1.3, 0, 0.35, 0.35);
-      reach(w, 1, gx - 0.05 + sin(c.pairT * 1.6) * 0.012, gy - 0.03 + sin(c.pairT * 1.1) * 0.01, gz + 0.01, -1.35, 0, -0.35, 0.35);
-      grip(w, 0, 0.25); grip(w, 1, 0.5 + 0.25 * pulse(c.pairT * 1.6));
+      // A lying partner's spine is level: the hair is above the bones, not in front of them.
+      const lying = !lap && c.hasBones ? 1 - smooth((c.pb[13] - c.pb[1] - 0.1) / 0.2) : 0;
+      const n = Math.floor(T / GROOM_SITE_S), u = smooth(((T / GROOM_SITE_S) % 1) * GROOM_SITE_S / GROOM_MOVE_S);
+      const s0 = groomSite(c, n - 1, c.role), s1 = groomSite(c, n, c.role);
+      // The held infant's back is its far side: the point is pushed outward instead of toward the groomer.
+      const pp = partnerPoint(c, s0[0] + (s1[0] - s0[0]) * u, lap ? -0.12 : 0.17 - 0.13 * lying, (s0[1] + (s1[1] - s0[1]) * u) * c.tsize);
+      // Hands lift off the hair while they move to the next site (off: toward the groomer, or away from her in the
+      // lap variant); len is the stroke length. The point is read out of partnerPoint's shared buffer at once.
+      const hop = sin(Math.PI * u) * (u < 1 ? 0.05 : 0), off = lap ? -0.6 : 1, len = lap ? 0.045 : 0.07;
+      const gx = pp[0], gy = pp[1] + lying * 0.1 * c.tsize + hop * lying, gz = pp[2] - hop * (1 - lying) * off;
+      // Comb stroke: a slow pull through the hair (down a seated back, along a lying body), a quick return off the hair.
+      const st = (T * 1.5) % 1, pull = st < 0.72 ? smooth(st / 0.72) : 1 - smooth((st - 0.72) / 0.28), back = st < 0.72 ? 0 : sin(Math.PI * (st - 0.72) / 0.28);
+      const P = 6.5 + 4 * c.seed, m = (T + c.seed * 3) % P;
+      toMouth = mutual || lap || !GROOM_PICK_TO_MOUTH ? 0 : m < 0.45 ? smooth(m / 0.45) : m < 0.95 ? 1 : m < 1.45 ? 1 - smooth((m - 0.95) / 0.5) : 0;
+      lean = lap ? 0.85 : clamp(0.5 + (0.6 - gy) * 1.2 + (gz - 0.55) * 0.8, 0, 1);
+      yaw = clamp(Math.atan2(gx, Math.max(0.1, gz)), -0.7, 0.7);
+      // Parting hand: rests beside the site, shifting its hold every few seconds. With an infant on the belly it is
+      // the supporting hand instead, under the infant's rump (its hips, or its root before its bones are known).
+      const hold = sin(T * 0.45) * 0.02 + Math.pow(pulse(T * 0.85 + c.seed * 5), 8) * 0.03;
+      if (lap) reach(w, 0, (c.hasBones ? c.pb[0] : c.tx) + 0.08, (c.hasBones ? c.pb[1] : c.ty + 0.1 * c.tsize) + 0.01, (c.hasBones ? c.pb[2] : c.tz) + 0.05 * c.tsize, -0.9, 0, 1.3, 0.3);
+      else reach(w, 0, gx + 0.065 + hold, gy + 0.025, gz, -1.3, 0, 0.35, 0.35);
+      const sx = gx - (lap ? 0.015 : 0.04) + lying * (pull - 0.5) * 0.07, sy = gy + (0.5 - pull) * len * (1 - lying) + back * 0.02 * lying, sz = gz + 0.01 - back * 0.025 * (1 - lying) * off;
+      const mx = -0.04, my = 0.72 - 0.08 * lean, mz = 0.36 + 0.1 * lean;
+      reach(w, 1, sx + (mx - sx) * toMouth, sy + (my - sy) * toMouth, sz + (mz - sz) * toMouth, lap ? -1.1 : -1.35 - 0.6 * toMouth, 0, lap ? -0.9 : -0.35, 0.35);
+      grip(w, 0, lap ? 0.5 : 0.25); grip(w, 1, 0.45 + 0.4 * pull + 0.3 * toMouth);
     } else { reach(w, 0, 0.12, 0.38, 0.4, -1.3, 0, 0.3, 0.35); reach(w, 1, -0.06, 0.36, 0.42, -1.35, 0, -0.3, 0.35); }
+    // The trunk leans a little toward a low or far site; the neck and head do most of it (the arms' elbow pole rides
+    // with the chest: a chest pitched far forward sends the elbows up over the head) and lift for a pick taken to the mouth.
+    // With an infant on the belly the trunk stays near the nursing posture (the infant hangs from the chest bone).
+    const trunk = lap ? 0.3 : 1;
+    w.a(B.hips, 0.12 * (lean - 0.5) * trunk).a(B.spine, (0.18 + 0.08 * (lean - 0.5)) * trunk, yaw * 0.2).a(B.chest, (0.15 + 0.08 * (lean - 0.5)) * trunk, yaw * 0.25);
+    w.a(B.neck, 0.08 + 0.22 * lean - 0.1 * toMouth, yaw * 0.3).a(B.head, 0.4 + 0.25 * lean - 0.3 * toMouth, yaw * 0.3);
     // Lip-smacking while grooming: quick lip presses with a slightly open jaw [M, Parr et al. 2007 action units].
-    w.face(0.05 + 0.06 * pulse(c.t * 5), 0.2);
-    w.set('press', 0.7 * pulse(c.t * 5.5)).set('brow', 0.15);
+    w.face(0.05 + 0.06 * pulse(c.t * 5) + 0.22 * toMouth, 0.2);
+    w.set('press', 0.7 * pulse(c.t * 5.5) * (1 - toMouth)).set('brow', 0.15);
     w.set('look', 0.35);
   },
   groomee(w, c) {
-    // Receiver: sits relaxed presenting the back or flank, head lowered, eyes half closed. Shifts posture every
-    // 20–60 s (stylization): a slow lean and turn, eased over a second.
+    // Receiver (v2, stylization): by role it sits hunched presenting the back, lies on its belly or side, or sits with
+    // one arm folded onto its head to present the flank. Seated postures shift every 20–60 s: a slow lean and turn, eased over a second.
+    if (c.role === GROOMEE.prone) { lieProne(w, c); w.a(B.head, 0.05 * sin(c.time * 0.31 + c.seed * 7), 0.1 * sin(c.time * 0.13 + c.seed * 3)); w.set('eyes', 0.85).set('brow', 0.05); return; }
+    if (c.role === GROOMEE.side) {
+      const sx = c.seed > 0.5 ? 1 : -1, down = sx > 0;
+      lieSide(w, c, sx, 0.55);
+      // Legs by joint angles, as in lieProne (stylization): under IK the knee of the leg underneath went 0.10 to 0.13
+      // body lengths through the ground (the leg pole rides with the rolled hips), and the body was lifted to stand on it.
+      w.ik(LIMB.legL, 0, 0, 0, 0, 0).ik(LIMB.legR, 0, 0, 0, 0, 0);
+      w.r(down ? B.thighR : B.thighL, -1, 0, sx * 0.15).r(down ? B.shinR : B.shinL, 1.5);
+      w.r(down ? B.thighL : B.thighR, -1.3, 0, -sx * 0.25).r(down ? B.shinL : B.shinR, 1.3);
+      w.set('eyes', 0.8).set('brow', 0.05); return;
+    }
     sitBase(w, c, 0.9, 0.1);
     w.a(B.head, 0.35).a(B.neck, 0.1);
     { const per = 20 + 40 * c.seed, n = Math.floor(c.pairT / per), u = smooth(((c.pairT / per) % 1) * per / 1.2);
-      const pose = (k: number) => (((k * 7919 + Math.round(c.seed * 1000)) % 5) - 2) * 0.12;
-      const lean = pose(n - 1) + (pose(n) - pose(n - 1)) * u;
+      const lean = groomeeLean(n - 1, c.seed) + (groomeeLean(n, c.seed) - groomeeLean(n - 1, c.seed)) * u;
       w.a(B.spine, 0, lean, lean * 0.4).a(B.chest, lean * 0.5, lean * 0.6, 0); }
+    if (c.role === GROOMEE.present) {
+      // One arm raised and folded, the hand on the back of the head: the flank and underarm are open to the groomer
+      // (stylization, no source). The hand's place is an offset from the seated head bone (about 0.03, 0.58, 0.07) that
+      // grows with the head: an infant's head is up to 1.75 times an adult's for its body (rig.ts computeMorph).
+      // As brought from the prototype the hand was held 0.4 body lengths above the head on a straight arm.
+      const side: 0 | 1 = c.seed > 0.5 ? 1 : 0, sx = side ? -1 : 1, hs = headScale(c.age, c.male);
+      reach(w, side, sx * (0.03 + 0.06 * hs), 0.58 + 0.11 * hs, 0.07 - 0.07 * hs, -2.6, 0, sx * 0.3, 0.2);
+      grip(w, side, 0.4);
+      w.a(B.chest, 0, 0, -sx * 0.12).a(B.head, 0, 0, -sx * 0.18);
+    }
     w.set('eyes', 0.65).set('brow', 0.1);
   },
   play(w, c) {

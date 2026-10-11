@@ -12,7 +12,7 @@ import {
   B, PI, PARAM_TEXEL, POSE_SIZE, ROW_TEXELS, boneWorld, computeMorph, copyPose, createFK, createMorph, createPose,
   lowestPoint, quat, solveFK, writeSkin, type FKState, type Morph, type Pose,
 } from './creatures/rig';
-import { CLIPS, PROP, Pw, cradle, cradleFor, gaitFrequency, vocalOverlay, type Gait, type PoseCtx } from './creatures/poses';
+import { CLIPS, GROOMEE, GROOM_LAP, PROP, Pw, cradle, cradleFor, gaitFrequency, groomeePosture, vocalOverlay, type Gait, type PoseCtx } from './creatures/poses';
 import { clamp, damp, dampAngle, hash01, linearRGB, mixRGB, pixelSize, preToneMapped, smoothstep, vividColor } from './creatures/util';
 import { createProps } from './creatures/props';
 import { createSelection } from './creatures/selection';
@@ -142,6 +142,8 @@ export interface Anim {
   bodyQ: Float32Array; bx: number; by: number; bz: number; lift: number;
   elevated: number;                // 0 ground .. 1 in a tree
   carry: 0 | 1 | 2; carryBlend: number; carrierId: number;
+  /** Another animal is on its body (an infant it carries, alive or dead), by the carry state of the last frame. */
+  holds: boolean;
   // Appearance and overlays.
   fur: Float32Array; skin: Float32Array; gray: number; beard: number; bald: number; tuft: number; mottle: number;
   bristle: number; dim: number; fade: number; blinkAt: number; mouth: number; grin: number;
@@ -321,7 +323,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   // lodFade false: a mesh-level change is drawn at once. The harness tile sheets update the layer once per tile with
   // dt 0, so a cross-fade never advanced and each tile showed the level chosen for the tile before it (W3).
   // blink false: eyes stay open (the face sheet is a check of the eyes; a blink lasts 0.13 s and hides them).
-  const debug: { clip: string | null; attention: boolean; lodFade: boolean; blink: boolean; anim?: (id: number) => Anim | undefined; feet?: (id: number) => unknown; lodSwitches: number; lodBlends: number } = { clip: null, attention: true, lodFade: true, blink: true, anim: id => anims.get(id), lodSwitches: 0, lodBlends: 0 };
+  const debug: { clip: string | null; attention: boolean; lodFade: boolean; blink: boolean; /** Harness: forces the groomee posture (GROOMEE). */ groomee?: number; anim?: (id: number) => Anim | undefined; feet?: (id: number) => unknown; lodSwitches: number; lodBlends: number } = { clip: null, attention: true, lodFade: true, blink: true, anim: id => anims.get(id), lodSwitches: 0, lodBlends: 0 };
   // Harness probe (?debug=feet): ankle and wrist world points, stance flags, lock states and counters.
   const FEET = [B.handL, B.handR, B.footL, B.footR];
   debug.feet = (id: number) => {
@@ -367,7 +369,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       attn: createAttention(), lk: [{ x: 0, v: 0 }, { x: 0, v: 0 }, { x: 0, v: 0 }], lookW: 0, eye: [{ x: 0, v: 0 }, { x: 0, v: 0 }], blink: createBlink(chimp.id), exert: 0,
       rs: [{ x: 0, v: 0 }, { x: 0, v: 0 }, { x: 0, v: 0 }],
       tx: chimp.position[0], tz: chimp.position[2], headingTarget: null,
-      bodyQ: new Float32Array([0, 0, 0, 1]), bx: 0, by: 0, bz: 0, lift: 0, elevated: 0, carry: 0, carryBlend: 0, carrierId: -1,
+      bodyQ: new Float32Array([0, 0, 0, 1]), bx: 0, by: 0, bz: 0, lift: 0, elevated: 0, carry: 0, carryBlend: 0, carrierId: -1, holds: false,
       fur: new Float32Array(3), skin: new Float32Array(3), gray: 0, beard: 0, bald: 0, tuft: 0, mottle: 0,
       bristle: 0, dim: 0, fade: 0, blinkAt: hash01(chimp.id, 9) * 4, mouth: 0, grin: 0, appearanceAt: -1, deadAt: null,
       px: 0, visible: true, lod: 2, lodFrom: 2, lodT: 99, poseAccum: 99, lastSkinFrame: -1, head: new THREE.Vector3(), top: 1, troopColor: '#cccccc',
@@ -441,6 +443,15 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   const pairings: Pairing[] = [];
   const receiver = new Map<number, Pairing>();
   const pairPool: Pairing[] = [];
+  /** True when the animal is itself grooming a third animal it can be paired with (the reach and partner tests of pairingFor). */
+  function groomsThird(b: Anim, a: Anim): boolean {
+    const bc = b.chimp;
+    if (bc.action !== 'groom' || bc.targetId == null || bc.targetId < 0 || bc.targetId === a.id) return false;
+    const t = anims.get(bc.targetId);
+    if (!t || t === b || !t.chimp.alive || !PASSIVE.has(t.chimp.action)) return false;
+    const tc = t.chimp;
+    return hyp2(tc.position[0] - bc.position[0], tc.position[2] - bc.position[2]) <= 4.5 && Math.abs((tc.position[1] ?? 0) - (bc.position[1] ?? 0)) <= 1.5;
+  }
   function pairingFor(a: Anim): void {
     const c = a.chimp;
     if (!c.alive || c.targetId == null || c.targetId < 0) return;
@@ -452,6 +463,19 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     if (d > 4.5 || Math.abs((bc.position[1] ?? 0) - (c.position[1] ?? 0)) > 1.5) return;
     let kind = '', sep = 0, bHeading = 0, clipA: string | null = null, clipB: string | null = null, roleA = 0, roleB = 0;
     const mutual = bc.targetId === c.id && bc.action === c.action;
+    if (c.action === 'groom') {
+      // Mother-and-infant grooming (stage W5; stylization, no source): an animal grooming the infant it holds works on it
+      // where it clings (carryMode keeps it on the belly, poses.ts GROOM_LAP). The infant keeps its carry clip and nobody
+      // is laid out: before this the groomer's hands chased a partner drawn on its own body.
+      if (b.carry !== 0 && b.carrierId === a.id) {
+        const p = pairPool.pop() ?? ({} as Pairing);
+        p.a = a; p.b = b; p.kind = 'lap'; p.sep = 0; p.bHeading = 0; p.clipA = null; p.clipB = null; p.roleA = GROOM_LAP; p.roleB = 0;
+        pairings.push(p);
+        return;
+      }
+      // The held infant grooming its carrier back: her lap pairing above draws the pair.
+      if (mutual && a.carry !== 0 && a.carrierId === b.id) return;
+    }
     // Mutual pairs are laid out once; a mating pair always from the male (he mounts from behind).
     if (mutual) {
       if (c.action === 'mate' && c.sex !== bc.sex) { if (c.sex !== 'male') return; }
@@ -462,7 +486,23 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         // Groomer sits behind the groomee (or face to face when mutual) with a clear gap between bodies.
         kind = 'groom'; sep = mutual ? 0.44 : 0.4;
         if (mutual) { clipB = 'groom'; roleA = roleB = 1; bHeading = Math.PI; }
-        else if (PASSIVE.has(bc.action)) { clipB = 'groomee'; roleB = 0; bHeading = hash01(a.id, 21) > 0.35 ? 0 : 0.6 * (hash01(b.id, 5) > 0.5 ? 1 : -1); }
+        // A receiver that is itself grooming a third animal keeps its own grooming clip and place (stage W5; a drawing
+        // rule, not a source): no receiver clip or posture for it; this groomer works on it where it sits.
+        else if (groomsThird(b, a)) clipB = null;
+        else if (PASSIVE.has(bc.action)) {
+          clipB = 'groomee'; bHeading = hash01(a.id, 21) > 0.35 ? 0 : 0.6 * (hash01(b.id, 5) > 0.5 ? 1 : -1);
+          // Groomee posture (grooming v2; stylization, no source): one per pair and bout of 40–70 s. Lying postures
+          // only on the ground; a prone receiver lies across the groomer's front, one on its side turns its back.
+          const period = 40 + 30 * hash01(b.id, 29), bout = Math.floor((animClock + hash01(a.id * 13 + b.id, 31) * period) / period);
+          const pick = hash01(b.id * 7 + bout, 37), ground = (bc.position[1] ?? 0) < 0.5 && b.elevated < 0.5 && b.carry === 0;
+          // Stage W5: an animal with an infant on its body never lies down under the groomer (the infant would be
+          // pressed into the ground), and one cradling a dead infant, or groomed by the infant it holds, stays seated
+          // (the cradling arm is the left one: no raised arm either). The harness override passes the same tests.
+          const dead = (bc.carryingDeadId ?? -1) >= 0;
+          roleB = groomeePosture(pick, ground, dead || b.holds, dead || (a.carry !== 0 && a.carrierId === b.id), debug.groomee);
+          if (roleB === GROOMEE.prone) bHeading = (hash01(b.id, 5) > 0.5 ? 1 : -1) * Math.PI / 2;
+          else if (roleB === GROOMEE.side) bHeading = 0;
+        }
         else return;
         break;
       case 'play':
@@ -690,7 +730,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     if (!carried) return 0;
     a.carrierId = m.id;
     const up = (mc.position[1] ?? 0) > 0.3 || mc.action === 'climb';
-    if (c.age < 0.45 || c.action === 'nurse' || mc.action === 'nurse' || up || (mc.action === 'nest' && c.age < 2)) return 1;
+    // Held on the belly too while its carrier grooms it (stage W5; stylization): she cannot reach an infant riding on her own back.
+    if (c.age < 0.45 || c.action === 'nurse' || mc.action === 'nurse' || up || (mc.action === 'nest' && c.age < 2) || (mc.action === 'groom' && mc.targetId === c.id)) return 1;
     return 2;
   }
 
@@ -812,7 +853,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       pctx.hasTarget = true; pctx.tx = lx / s; pctx.tz = lz / s; pctx.ty = dy / s;
       pctx.tdist = hyp2(lx, lz) / s; pctx.tsize = partner.morph.size / s;
       // Partner's posed spine chain in our unit body space (it was evaluated earlier this frame when it receives).
-      pctx.hasBones = partner.lastSkinFrame >= 0 && partner.carry === 0;
+      // A carried partner's bones are no target (it rides on someone), except the infant this animal holds and grooms:
+      // those are last frame's (infants are posed after their carriers), a frame behind a body that moves with hers.
+      pctx.hasBones = partner.lastSkinFrame >= 0 && (partner.carry === 0 || (role === GROOM_LAP && clip === 'groom' && partner.carrierId === a.id));
       if (pctx.hasBones) for (let k = 0; k < 5; k++) {
         boneWorld(partner.fk, partner.bodyQ, partner.bx, partner.by, partner.bz, partner.lift, PAIR_BONES[k], TP, TQ4);
         const bx = TP[0] - a.x, bz = TP[2] - a.z;
@@ -873,7 +916,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       // Larger pose changes take longer: base time × (0.6 + 0.5 × largest joint change in radians), ≤ 0.7 s.
       let big = 0;
       for (let i = 3; i < PI.root; i++) big = Math.max(big, Math.abs(cv[i] - ov[i]));
-      startInertia(a.inert, ov, a.outVel, cv, Math.min(0.7, transitionTime(prevClip, clip) * Math.max(1, 0.6 + 0.5 * big)), a.skip);
+      // A receiver changing posture (same clip, another role) may be lying down or sitting up: the lying-down time.
+      startInertia(a.inert, ov, a.outVel, cv, Math.min(0.7, (clip === 'groomee' && prevClip === 'groomee' ? 0.55 : transitionTime(prevClip, clip)) * Math.max(1, 0.6 + 0.5 * big)), a.skip);
     }
     else if (pop) { a.skip.fill(0); a.holdMask = 0; startInertia(a.inert, ov, a.outVel, cv, 0.25, a.skip); a.inert.t = -dtAnim; }
     const blending = a.inert.t < a.inert.end;
@@ -1211,7 +1255,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     }
     const g = ctx.groundHeight(x, z);
     const clip = a.clip;
-    const align = clip === 'walk' || clip === 'gallop' || clip === 'sneak' || clip === 'stand' || clip === 'drink' || clip === 'hunt' || clip === 'charge' || clip === 'crouch' || clip === 'dead' || clip === 'sleep' || clip === 'rest' || (clip === 'listen' && a.role !== Listen.tall) ? 0.85 : 0.4;
+    // A receiver lying down to be groomed (stage W5) follows the slope as the other lying clips do: at the seated
+    // clips' 0.4 a prone body stays near level and one end of it hangs in the air on a hillside.
+    const lying = clip === 'groomee' && (a.role === GROOMEE.prone || a.role === GROOMEE.side);
+    const align = clip === 'walk' || clip === 'gallop' || clip === 'sneak' || clip === 'stand' || clip === 'drink' || clip === 'hunt' || clip === 'charge' || clip === 'crouch' || clip === 'dead' || clip === 'sleep' || clip === 'rest' || lying || (clip === 'listen' && a.role !== Listen.tall) ? 0.85 : 0.4;
     if (!a.planted) a.drop *= 0.8;
     bodyFrame(a, x, z, g + a.drop, align);
   }
@@ -1333,11 +1380,16 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     for (const p of pairings) pairPool.push(p);
     pairings.length = 0; receiver.clear();
     interpolateAll(frame.subTick ?? 0, dt);
-    for (const a of animList) { a.paired = false; a.pairClip = null; a.partnerId = -1; a.headingTarget = null; a.tx = a.deadDrop ? a.dropX : a.track.x; a.tz = a.deadDrop ? a.dropZ : a.track.z; }
+    for (const a of animList) { a.paired = false; a.pairClip = null; a.partnerId = -1; a.headingTarget = null; a.holds = false; a.tx = a.deadDrop ? a.dropX : a.track.x; a.tz = a.deadDrop ? a.dropZ : a.track.z; }
+    for (const a of animList) if (a.carry !== 0 && a.carrierId >= 0) { const m = anims.get(a.carrierId); if (m) m.holds = true; }
     for (const a of animList) pairingFor(a);
     // Each animal is positioned by one pairing only: its own (as actor) first, else the first that targets it.
     actorIds.clear();
     for (const p of pairings) actorIds.add(p.a.id);
+    // A receiver that is the actor of a pairing of its own (it begs, shares or plays while it is groomed) keeps the
+    // plain seated posture (stage W5): its role is rewritten by its own pairing every frame, so any other posture
+    // was dropped and started again about three times a second without ever being reached.
+    for (const p of pairings) if (p.clipB === 'groomee' && p.roleB !== GROOMEE.sit && actorIds.has(p.b.id)) p.roleB = GROOMEE.sit;
     placedIds.clear();
     contactPairs.clear();
     for (const p of pairings) {
@@ -1346,6 +1398,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       if (p.clipB) { b.paired = true; b.partnerId = a.id; }
       else if (b.partnerId < 0) b.partnerId = a.id;
       if (p.sep < 0.3) contactPairs.add(a.id < b.id ? a.id * 100003 + b.id : b.id * 100003 + a.id);
+      if (p.kind === 'lap') continue; // the infant is on her body: nothing to lay out
       const placeB = !!p.clipB && !actorIds.has(b.id) && !placedIds.has(b.id);
       if (placedIds.has(a.id)) continue;
       placedIds.add(a.id);

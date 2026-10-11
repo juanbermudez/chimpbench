@@ -153,7 +153,27 @@ function setupAction(action: Action, x: number, z: number, moving: boolean) {
   const male = (s: Partial<ChimpOpts> = {}) => chimp({ age: 24, sex: 'male', x, z, action, heading, ...s });
   const female = (s: Partial<ChimpOpts> = {}) => chimp({ age: 21, sex: 'female', x, z, action, heading, ...s });
   switch (action) {
-    case 'groom': { const b = female({ action: 'rest', x: x + 0.9, z: z + 0.3 }); const a = male({ target: b.id }); interaction('groom', a, b); break; }
+    case 'groom': {
+      // &infant=<age>: a mother grooming her own infant (drawn on her when under 1.2 y, with &nursing=1, or with
+      // &riding=1: the simulation's stacked position); &mutual=1: the infant grooms her back.
+      if (q.has('infant')) {
+        const m = female({ age: 24 });
+        const inf = chimp({ age: Number(q.get('infant')), sex: 'male', x: x + (q.has('riding') ? 0.1 : 0.35), z, y: q.has('riding') ? 0.5 : 0, action: q.has('mutual') ? 'groom' : q.has('nursing') ? 'nurse' : 'rest', mother: m.id });
+        m.targetId = inf.id; if (q.has('mutual')) inf.targetId = m.id;
+        interaction('groom', m, inf);
+        break;
+      }
+      const b = female({ action: 'rest', x: x + 0.9, z: z + 0.3 }); const a = male({ target: b.id }); interaction('groom', a, b);
+      // &mutual=1: the two groom each other; &deadinfant=1: the receiver cradles a dead infant; &heldinfant=<age>: she
+      // holds a living one; &chain=1: the receiver is itself grooming a third animal; &begs=1: it begs from a third
+      // animal that holds meat (the receiver is then the actor of a pairing of its own).
+      if (q.has('mutual')) { b.action = 'groom'; b.targetId = a.id; }
+      if (q.has('deadinfant')) { const inf = chimp({ age: 0.6, sex: 'male', x: x + 0.9, z: z + 0.3, action: 'dead', mother: b.id }); inf.deathTime = world.time - 30; b.carryingDeadId = inf.id; }
+      if (q.has('heldinfant')) chimp({ age: Number(q.get('heldinfant')), sex: 'male', x: x + 0.9, z: z + 0.3, action: 'rest', mother: b.id });
+      if (q.has('begs')) { const t = chimp({ age: 19, sex: 'female', x: x + 1.9, z: z + 0.7, action: 'rest', heading, meat: 0.5 }); b.action = 'beg'; b.targetId = t.id; }
+      if (q.has('chain')) { const t = chimp({ age: 19, sex: 'female', x: x + 1.9, z: z + 0.7, action: 'rest', heading }); b.action = 'groom'; b.targetId = t.id; interaction('groom', b, t); }
+      break;
+    }
     case 'play': { const a = chimp({ age: 6, sex: 'male', x, z, action: 'play', heading, vocal: 'laugh', mood: 'playful' }); const b = chimp({ age: 5, sex: 'female', x: x + 0.6, z, action: 'play', target: a.id, mood: 'playful' }); a.targetId = b.id; interaction('play', a, b); break; }
     case 'climb': { const t = tree(x + 0.3, z - 0.6, mode === 'sheet' ? 6 : 12); const a = male({ target: t.id, y: 2.5 }); movers.push({ c: a, cx: x, cz: z, r: 0, speed: 0.6, ang: 0, vertical: true }); break; }
     case 'nest': { const th = mode === 'sheet' ? 4 : 8; const t = tree(x + 0.2, z - 0.5, th); const a = female({ y: th * 0.8 }); a.nest = { treeId: t.id, position: [x + 1.5, th * 0.8, z] }; a.actionTime = q.has('build') ? 30 : 3600; break; }
@@ -490,8 +510,10 @@ function trunkAt(id: number, y: number, out: THREE.Vector4) {
   return true;
 }
 const layer = createCreatures({ scene, world, container: stage, groundHeight, treeAnchor, trunkAt }) as ReturnType<typeof createCreatures> & { debug: { clip: string | null } };
-const dbg = layer.debug as { clip: string | null; attention: boolean; lodFade: boolean; blink: boolean; anim?: (id: number) => { lod: number } | undefined };
+const dbg = layer.debug as { clip: string | null; attention: boolean; lodFade: boolean; blink: boolean; groomee?: number; anim?: (id: number) => { lod: number } | undefined };
 if (q.get('clip')) dbg.clip = q.get('clip');
+// &groomee=0|2|3|4: forces the receiver's posture in grooming pairs (poses.ts GROOMEE: sit, prone, side, present).
+if (q.has('groomee')) dbg.groomee = Number(q.get('groomee'));
 // Face tiles: seated facing the camera, gaze held forward (&attn=1 lets the attention system move the heads) and
 // eyes held open (&blink=1 lets them blink: two of the twelve were caught mid-blink at the usual 11 s capture).
 if (mode === 'faces') { dbg.clip = q.get('clip') ?? 'portrait'; dbg.attention = q.has('attn'); dbg.blink = q.has('blink'); }
