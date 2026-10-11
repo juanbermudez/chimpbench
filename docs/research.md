@@ -4293,22 +4293,23 @@ from DataCite (checked 6 October 2026). Access level is stated per entry: FT = f
   chose closer partners, males weakly so.
 - **Licence.** CC0 1.0 (DataCite). Credit the authors and the DOI anyway.
 - **Evidence level.** [M]: a primary field study of one site over about 3 years with a modest number of focal animals;
-  the DOI and counts are checked, the data file is not yet opened.
+  the DOI and counts are checked; the data file was opened on 11 October 2026 (the last bullet below).
 - **Limits.** Western subspecies at Taï, not eastern Kibale. Pools two species in the data and the 1,529; chimpanzee
   rows must be isolated before any count. Only the first initiation of each session is a choice; later partners are
   dropped as non-independent. Adults only; the potential-partner set is "adults within visual range", which is a
   party proxy and not everyone in the community. About 20 focal chimpanzees. Elo rank and DDSI are the authors'
   modelled quantities, not direct measurements.
-- **What the files contain: not obtained.** On 6 October 2026 the Dryad landing page (public, HTTP 200) listed three
-  files: `Data Model1.csv` (1.95 MB), `Data Model2.csv` (1.76 MB) and `Script Model 1 and 2.R` (6.81 KB); the paper's Data
-  accessibility statement says they hold the "grooming decision data for all models" and the scripts. The public
-  per-file links `https://datadryad.org/downloads/file_stream/77592`, `/77593` and `/77594` each returned
-  HTTP 403 (a bare "403 Forbidden" page from the load balancer, `server: awselb/2.0`). Tried once, not retried, no
-  header changes. The "Download full dataset" button assembles its zip in the browser (a service worker), so there is no
-  plain URL for it. **Needs a manual download by the user** into `data/raw/dryad-t8c88vh/`. Until then it is unknown
-  whether the file records the chosen partner and the set of available partners; the paper's Methods say the models
-  code each potential partner as chosen or not, with an offset for the number of potential partners (so each decision
-  has one row per potential partner), but that is the paper's description, not a check of the file.
+- **What the files contain: obtained and checked (11 October 2026; `docs/staging/rw2-prereg.md` §2).** Manual download by the
+  user; one audit and one sceptic. `Data+Model2.csv` (7,781 rows, chimpanzees only) holds 1,372 events, one row per
+  analysed adult in the focal's party when it started a grooming session, `gr.initiated` flagging the one it groomed
+  first; 2 to 13 options (median 5); 20 choosers (10 males with 1,193 events, 10 females with 179), 28 partners;
+  October 2013 to May 2015. `Data+Model1.csv` adds 157 mangabey events and is not used. So the file does record the
+  chosen partner and the set available, as: the first adult groomed, among the analysed adults in sight (usually 30
+  to 50 m), in a session the focal started, with at least two such adults present. Methods re-read through the
+  Europe PMC full text of PMC6083658 (Data collection; Models and statistical analysis). Not in the paper:
+  `z.average.ddsi.partner`, identified from the file as the candidate's mean bond with the other adults present; the
+  treatment of a first partner among the seven left-out females; why no event has a single option. Registered as a
+  wild choice record with a sealed part (599, 353, 420 events). [H for the file counts; M for the Methods reading]
 
 ### Budongo party scans [ramosFernandez2018]
 
@@ -4333,19 +4334,27 @@ from DataCite (checked 6 October 2026). Access level is stated per entry: FT = f
 - **Licence.** CC0 1.0 (DataCite). The same deposit holds gelada (Simien Mountains, 2014, 2015) and spider monkey
   (Yucatán, 2009) files; only the two chimpanzee files are in scope of the approved download.
 - **Evidence level.** [M] for what the deposit is (abstract plus the repository description); the paper's methods and
-  the sampling rules are not read.
+  the sampling rules were not read when this entry was written, and were read on 11 October 2026 (the last two
+  bullets below).
 - **Limits.** Party membership only: no behaviour, no partner choice, no rank, sex or age columns are described.
   A presence matrix at 15-minute scans, so "available partners" would mean "everyone seen in the party", and the
   observers' definition of a subgroup (distance, visibility) is in the full text, which is not opened. Two years only.
-  Raw coordinates are not in the deposit (no spatial column is described).
-- **What the files contain: not obtained.** The landing page lists the chimpanzee files as
-  `subgroup_composition_chimpanzees_2008.csv` (698.34 KB) and `subgroup_composition_chimpanzees_2009.csv` (882.16 KB).
-  Their public per-file links `https://datadryad.org/downloads/file_stream/74570` and `/74571` each returned HTTP 403
-  (bare "403 Forbidden" page, `server: awselb/2.0`) on 6 October 2026. Tried once each, not retried, no header changes.
-  **Needs a manual download by the user** into `data/raw/dryad-51b68/` (only the two chimpanzee files). Until then
-  the unit of observation, the number of individuals and scans, who the individuals are and the observation effort are
-  unknown. From the repository description only: one row per 15-minute scan and one 0/1 column per individual, so the
-  party is recorded (the set of animals present) but no chosen partner.
+  Raw coordinates are not in the deposit (no spatial column is described). (Written before the files were fetched.
+  The two bullets below correct it: a subgroup is everyone within 35 to 50 m of a focal animal, and a pair of rows
+  is not a 15-minute step.)
+- **Paper Methods, read 11 October 2026** from the authors' accepted manuscript (Liverpool John Moores repository,
+  https://researchonline.ljmu.ac.uk/id/eprint/8830/), section 2.1, Figure 1 and Discussion; the published version and
+  its supplement remain unread (publisher 403, Europe PMC 500, PMC bot check). Sonso community, Budongo, January 2008
+  to December 2009; instantaneous scans every 15 minutes during focal follows, 06:00 to 18:00; a subgroup is everyone
+  visible or known to be present within 35 to 50 m of the focal animal; only adults present all year (20 females in
+  2008, 21 in 2009, 9 males); 10,616 and 12,935 scans. The Acknowledgements say the long-term data were shared by
+  V. Reynolds (the field station's routine records).
+- **What the files contain: obtained and checked (11 October 2026; `docs/staging/rw2-prereg.md` §4).** 10,747 rows and 29
+  individual columns (2008), 13,134 and 30 (2009); cells 0 or 1, and an undocumented 2 on 201 rows of 2009; the first
+  column is a row number. No date, clock, observer, focal, sex or behaviour. The rows mix at least two lists taken at
+  the same times and written in turn, so a pair of rows is not a 15-minute step and a 0 never means "left". **Not a
+  choice record: a yardstick only** (party size among resident adults: mean 4.8 and 5.2; one such adult on 0.20 and
+  0.23 of scans). The sex of each column is unknown (the supplement was not obtained). [H for the file; M for the Methods]
 
 ### Kanyawara female relationships and coalition partners [fox2022]
 
@@ -4373,18 +4382,29 @@ from DataCite (checked 6 October 2026). Access level is stated per entry: FT = f
   same dyad information and "which dyad formed the coalition out of all available partners at the time", which makes it
   a chosen-and-available design by the repository's own description. Plus `README_femalecoal_dryad.docx` (15.24 KB).
 - **Licence.** CC0 1.0 (DataCite). Credit the authors and the DOI anyway.
-- **Evidence level.** [M] for what the deposit is; the paper's methods, sample sizes and definitions of "available" are
-  not read.
+- **Evidence level.** [M] for what the deposit is; the paper's methods, sample sizes and definitions of "available" were
+  not read when this entry was written, and were read on 11 October 2026 (the last two bullets below).
 - **Limits.** Females only, one community, a decade. Aggressive coalitions, not grooming or associating: the "choice" is
   who joined whom against a target. Whether "available partners" means all females present, all in the party or all
   in earshot is a paper-methods question not yet answered. The rank, relationship and kinship columns are the authors'
-  derived measures. Rates are per two-year period, so analysis 1 is not event-level.
-- **What the files contain: not obtained.** The public per-file links for `analysis1_datashare.csv`
-  (`https://datadryad.org/downloads/file_stream/1869835`), `analysis2_datashare.csv` (`.../1869837`) and
-  `README_femalecoal_dryad.docx` (`.../1869836`) each returned HTTP 403 (bare "403 Forbidden" page,
-  `server: awselb/2.0`) on 6 October 2026. Tried once each, not retried, no header changes. **Needs a manual download
-  by the user** into `data/raw/dryad-44j0zpchh/`. Until then the column names, row counts, number of females and the
-  observation effort are unknown; the only description of the contents is the repository's text above.
+  derived measures. Rates are per two-year period, so analysis 1 is not event-level. (Written before the files were
+  fetched. The two bullets below answer it: the party is every individual within 50 m of any other, and the record
+  names no chooser and no joiner.)
+- **Paper Methods, read 11 October 2026** from the copy in NSF's public access repository
+  (par.nsf.gov/servlets/purl/10478051, publisher's layout), Methods 2a to 2e and Results, and the authors' analysis
+  script (Zenodo doi:10.5281/zenodo.7039524, MIT, read as text, never run). 122 coalitions of two or more adult
+  females in joint aggression, recorded ad libitum, 1 January 2010 to 31 December 2019; party = all individuals within
+  50 m of any other, read every 15 minutes; events with an adult male among the aggressors not analysed; 129 targets
+  (56 resident adult females, 18 immigrant females, 42 males under 15, 13 adult males); for each coalition every
+  female of the party is paired with each coalition female; predictors are the pair's values for the two-year period
+  that contains the event (rank included: Elo ratings from aggression and submission among females, as an ordinal
+  rank per day averaged over each two-year period, Methods 2c). No initiator or joiner is defined.
+- **What the files contain: obtained and checked (11 October 2026; `docs/staging/rw2-prereg.md` §3).** `analysis2_datashare.csv`:
+  1,815 rows, one per pair (a participant, one other adult female in the party) per event, flagged when the two
+  attacked together; 122 events on 100 dates; 2 to 16 other females present (median 7). `analysis1_datashare.csv`: 811
+  rows, one per pair per two-year period (29 females). A symmetric record with no chooser, no "stay out", the victim
+  unrecorded and probably among the candidates in about half the events: **a small test, never a teacher** (73, 13
+  and 36 sealed events). [H for the file counts; M for the Methods reading]
 
 ### Ngogo fission, full paper and supplement [sandel2026]
 

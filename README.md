@@ -11,12 +11,12 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Open [the forest](http://127.0.0.1:5173) and [the About page](http://127.0.0.1:5173/about). `pnpm dev` starts one resident GLiNER2.5-Decide worker (see below); set `MGOGO_NO_MODEL=1` to run without it.
+Open [the forest](http://127.0.0.1:5173) and [the About page](http://127.0.0.1:5173/about). The decision model runs in your browser by default (Browser GLiNER, below). `pnpm dev` also tries to start one resident server worker. That worker runs code from a private repository, so on a fresh clone it reports itself missing and the forest runs without it; set `MGOGO_NO_MODEL=1` to skip it.
 
 ```sh
 pnpm test                      # simulation, clock, decision loop and server validation (node:test)
 pnpm build                     # typecheck + production build
-node scripts/verify-browser.mjs  # end-to-end check against a running `pnpm dev` (real model); add --no-model for a MGOGO_NO_MODEL=1 server
+node scripts/verify-browser.mjs  # end-to-end check against a running `pnpm dev` (real model: needs the server worker, see below); add --no-model for a MGOGO_NO_MODEL=1 server
 pnpm exec tsx scripts/bench-sim.ts
 ```
 
@@ -31,7 +31,7 @@ pnpm exec tsx scripts/bench-sim.ts
 
 ## Time
 
-Every chimp runs every 15-second ecological tick at every speed. Faster playback runs more ticks per frame; it never enlarges the tick. Presets: real time (1 s/s: one tick every 15 real seconds, with motion interpolated between ticks), 1 min/s, 10 min/s, 1 h/s, 6 h/s, 1 day/s, and Max (as many ticks as fit in the frame: about 65% of the frame, minus render and UI time, adapted to 60 or 120 Hz). The time bar shows the achieved rate and says when the simulation, not the preset, is the limit. The default world simulates a day in about 0.13 s in Node (Apple M3 Pro). Animals are drawn between the last two ticks, so motion stays continuous at every speed.
+Every chimp runs every 15-second ecological tick at every speed. Faster playback runs more ticks per frame; it never enlarges the tick. Eight presets: real time (1 s/s: one tick every 15 real seconds, with motion interpolated between ticks), a watching speed ("Watch 4×", 4 s/s: on the field map a walk is drawn at walking pace, with feet that stay where they land), 1 min/s, 10 min/s, 1 h/s, 6 h/s, 1 day/s, and Max (as many ticks as fit in the frame: about 65% of the frame, minus render and UI time, adapted to 60 or 120 Hz). The time bar shows the achieved rate and says when the simulation, not the preset, is the limit. On the field map everything from 1 min/s up is time-lapse (animals cover ground faster than steps can show), and the time bar says so. The default world simulates a day in about 0.13 s in Node (Apple M3 Pro). Animals are drawn between the last two ticks, so motion stays continuous at every speed.
 
 Settings also offer a life-course clock (one biological year per ecological day) for watching generations. Behavior stays on ecological time; this separation is an experimental control, not a biological claim.
 
@@ -50,7 +50,7 @@ Model policies:
 
 The roster is the selected chimp, a focal set (each alpha, a mother with an infant, a juvenile), or everyone.
 
-The **Mind** tab shows each decision as SAW → OPTIONS → GLiNER vs RULES → APPLIED, with the full distribution and the complete percept.
+The **Mind** tab shows each decision as SAW → OPTIONS → GLiNER vs RULES → APPLIED, with the full distribution and the complete percept. For an animal the loop has not asked about, it shows a live card of the rules' own options, each with its reason.
 
 **Field experiments** change the world the model perceives:
 
@@ -82,7 +82,7 @@ Tokenization matches the export's classification layout; shared prompt construct
 
 ### Server GLiNER
 
-`pnpm dev` retains the existing resident Python/MPS worker and `/api/decide` boundary. Use `server.baseUrl` to point at another compatible gateway. A static host only serves the frontend: it cannot start that Python worker. The external gateway must provide authentication/CORS appropriate to its deployment; the local dev bridge intentionally rejects cross-origin POSTs.
+`pnpm dev` retains the existing resident Python/MPS worker and `/api/decide` boundary. The worker's code is in a private repository (see Local GLiNER2.5-Decide), so this route works only on a computer that has that checkout; Browser GLiNER is the public route. Use `server.baseUrl` to point at another compatible gateway. A static host only serves the frontend: it cannot start that Python worker. The external gateway must provide authentication/CORS appropriate to its deployment; the local dev bridge intentionally rejects cross-origin POSTs.
 
 ### Jev API
 
@@ -92,27 +92,30 @@ A purely static deployment has no Jev gateway. To use Jev from it, configure a s
 
 ## Local GLiNER2.5-Decide
 
+The server worker needs a private checkout of the model's serving code (the repository GHN), which is not part of this repository. Without it the worker reports that it is missing and the app uses the browser model or the rules.
+
 - **Model:** `fastino/GLiNER2.5-Decide`, revision `7ee5da4c2415e32259bcdc0b1a7367c32ce8d6f6`.
-- **Worker:** `~/Desktop/GHN/experiments/active_perception/decide_provider.py`, identity-checked by source hash and never modified.
-- **Interpreter:** `~/Desktop/GHN/data/raw/decide-env/bin/python`.
+- **Worker:** `experiments/active_perception/decide_provider.py` in the private checkout (looked for at `~/Desktop/GHN` unless `MGOGO_GHN_ROOT` names another place), identity-checked by source hash and never modified.
+- **Interpreter:** `data/raw/decide-env/bin/python` under that checkout, or `MGOGO_DECIDE_PYTHON`.
 - **Device:** MPS with FP16. Set `MGOGO_DECIDE_DEVICE=cpu` to force CPU; CPU speed is unverified. Path overrides are in `.env.example`.
 
 ## Controls
 
 - **Mouse:** drag to pan, right-drag to orbit, scroll to zoom. Click a chimp, roster entry, event or minimap point to select.
-- **Playback:** Space pauses; `1`–`7` pick speeds (`1` is real time).
+- **Playback:** Space pauses; `1`–`8` pick speeds (`1` is real time, `2` the watching speed, `3` 1 min/s).
 - **Camera:** `F` focuses, `C` toggles close view, `V` toggles the cinematic director, `R` returns to the overview (strategy view). The overview shows a map scale bar; Reset camera frames the whole map.
 - **Range map:** the camera menu (views, Reset camera) and the layer toggles run along its foot; hover a control for what it does. The community key sits in the map's bottom-left corner: hover it to see the map underneath, click a community to highlight it. Scroll or pinch over the map to zoom (1–8×), drag to pan when zoomed; with the map focused, `+` `−` zoom and `0` shows the whole map.
-- **Panels:** three panels frame the forest. Left: the field log (`B` hides it) and the range map. Right: a sidebar that rests on Communities and switches with `T` (Society: kinship, dominance, bonds and alpha history as lists; "Full view" opens the kinship forest and the bond network full screen), `E` (Experiments: hover or focus a row for what it does, click to run it) and `M` (the decision model); the same key or Esc returns to Communities, `Shift`+`B` hides the sidebar. Bottom: the selected chimp, with a snapshot, its community and key details, and the tabs Overview, Log (the field log filtered to that chimp), Mind, Family and Relations; `I` collapses it to a strip. The alpha carries a gold “α” badge everywhere, as on its name tag in the forest. `L` toggles labels. `[` and `]` cycle chimps.
-- **Sound:** starts on your first click or key (browser autoplay rule). `S` or the speaker button mutes; Settings › Sound has Master, Ambience, Animals and Weather volumes.
+- **Panels:** three panels frame the forest. Left: the field log (`B` hides it) and the range map. Right: a sidebar that rests on Communities and switches with `T` (Society: kinship, dominance, bonds and alpha history as lists; "Full view" opens the kinship forest and the bond network full screen), `E` (Experiments: hover or focus a row for what it does, click to run it) and `M` (the decision model); the same key or Esc returns to Communities, `Shift`+`B` hides the sidebar. Bottom: the selected chimp, with a snapshot, its community and key details, what it is doing and the simulation's reason for it, and the tabs Overview, Log (the field log filtered to that chimp), Mind, Family and Relations; `I` collapses it to a strip. A name tag reads "about to …" until the drawn body has begun the act. The alpha carries a gold “α” badge everywhere, as on its name tag in the forest. `L` toggles labels. `[` and `]` cycle chimps.
+- **Sound:** starts on your first click or key (browser autoplay rule), once the sound files exist locally (a fresh clone has none: see Sound). `S` or the speaker button mutes; Settings › Sound has Master, Ambience, Animals and Weather volumes.
 - **Simulations:** the name in the menu bar opens Simulations (new, open, rename, duplicate, delete, export, import). `Ctrl`/`⌘`+`S` saves now.
 
 ## Sound
 
 Spatial, simulation-driven audio (`src/audio/*`, Web Audio). The listener stands at the camera's focus and turns with the camera, so panning and distance match the screen. Calls play when the simulation emits them (`world.calls`) or when a salient interaction starts (fights, chases, play, alarms, displays), at each caller's position, with distance loss and air/foliage low-pass. Animals are full in the close and cinematic views and fade out as the overview zooms out, leaving the ambience. Beds follow the clock and weather: dawn and dusk bird choruses, night insects, rain, storm with delayed thunder, and the stream by proximity. At 10 min/s calls are subsampled, at 1 h/s only choruses and nearby screams play, and from 6 h/s only ambience.
 
-- **Assets:** `node scripts/build-audio.mjs` rebuilds `public/audio/` (≈7 MB of AAC) from the Epidemic Sound files in `~/Downloads`. `public/audio/SOURCES.md` lists every clip's source, span, species and classification confidence.
-- **License:** Epidemic Sound, licensed to the user's subscription. Do not redistribute the raw files or deploy the build publicly without checking the license.
+- **A fresh clone has no sound.** The sound files are not in this repository: they are cut from recordings licensed to the owner's own Epidemic Sound subscription, which may not be redistributed, so `public/audio/` is git-ignored and was removed from the public history. The app runs silent without it (one console warning).
+- **Assets:** `node scripts/build-audio.mjs` rebuilds `public/audio/` (≈7 MB of AAC) locally from your own licensed Epidemic Sound downloads in `~/Downloads`, and writes `public/audio/SOURCES.md` there (every clip's source, span, species and classification confidence).
+- **License:** Epidemic Sound, licensed to the subscriber. Do not commit or redistribute the raw files or the built clips, and do not deploy a build with sound publicly without checking the license.
 - **Species and sites:** chimpanzee voices are library clips of unknown site. Files labelled "Bonobos" are a different species (higher-pitched, no pant-hoot) and are used only behind Settings › Sound › "Fill gaps with bonobo recordings", off by default. The birds and rain were recorded in the Andaman Islands and the storm in the Himalaya: stand-ins for Kibale. Buttress drumming and laughter are synthesized; `alarm-hoo` uses single hoos cut from whimper recordings (a proxy); per-individual pitch is a stylization.
 - **Checks:** `node scripts/audio-probe.mjs` records the output losslessly in fixed scenarios (needs `?audiodebug=1`, done by the script) and reports loudness, true peak and dropouts.
 

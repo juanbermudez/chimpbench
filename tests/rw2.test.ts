@@ -418,7 +418,12 @@ test('compromised lists: the first entry and further label sources are read, and
   assert.equal(lists.length, 2);
   const marks = (labelSources: string[]) => lists.flatMap(l => [...compromisedFor({ labelSources }, l).keys()]);
   assert.deepEqual(marks(['field choices, Tai first grooming partner']), ['T-HUN-9']); assert.deepEqual(marks(['field choices, ngogo male grooming']), ['T-SOC-1']); assert.deepEqual(marks(['the rules']), []);
-  assert.deepEqual(compromisedLists(JSON.parse(readFileSync('data/rw-compromised.json', 'utf8'))).map(l => l.labelSource), ['field choices, Ngogo male grooming']);
+  // the file itself: stage RW's entry first, then the two label sources stage RW2 proposed (docs/staging/rw2-prereg.md §10.5)
+  const file = compromisedLists(JSON.parse(readFileSync('data/rw-compromised.json', 'utf8')));
+  assert.deepEqual(file.map(l => l.labelSource), ['field choices, Ngogo male grooming', 'field choices, Tai first grooming partner', 'field co-participation, Kanyawara female coalitions']);
+  assert.deepEqual(file.map(l => l.targets.map(t => t.id)), [['T-SOC-1', 'T-SOC-2', 'T-FIS-1', 'T-FIS-3', 'T-FIS-5'], ['T-HUN-9', 'T-END-12'], []]);
+  assert.deepEqual(file.map(l => (l.flagged ?? []).length), [0, 4, 20]);
+  assert.ok(file.every(l => (l.flagged ?? []).every(f => typeof f.id === 'string' && typeof f.overlap === 'string' && !l.targets.some(t => t.id === f.id))), 'a flagged entry is an id with its overlap, and is not also a target');
 });
 
 test('GLiNER path: stage RW\'s adapter is sent the RW2 text packet (a fake worker; no model)', async () => {

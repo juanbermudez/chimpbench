@@ -727,6 +727,16 @@ the request, a real choice (two options or more), the request validation ([conte
 - `kernelNoRulesPick` 1: the rules' pick is withheld from the menu of every kernel other than the rules: the menu is
   built the same way from the legal list without it and `rulesIndex` is −1. (Dropping only its guaranteed slot would
   change nothing: the menu is built from the rules' ranking, whose top option is the pick.)
+- `kernelNullShare` below 1 (stage R7; default 1): under `kernelSim` 1 only that share of decision points goes to the
+  null kernel (one coin from `world.rng`), the rest to the rules' own policy; `kernelFocal` 1 (default 0) restricts the
+  in-tick kernel to chimps marked `controller: 'model'` with the model policy off. Control arms for engine
+  comparisons ([staging/r7-prereg.md](staging/r7-prereg.md)).
+
+Two diagnostic taps sit beside these, null in every simulation and set only by scripts; they read only. `offerTap`
+([candidates.ts](../src/sim/candidates.ts); stage R7): called at every `offer()` with the option and what became of it,
+and once per decision with the size of the trip pool before the shortlist. `loopTap`
+([decide.ts](../src/sim/decide.ts); stage R10): `point` at every decision point with the interrupt that raised it,
+`gate` with the loop gate's verdict.
 
 **Packet v4, one menu, activity first (stage R2, Track R; [staging/r2-prereg.md](staging/r2-prereg.md); switches
 `observeV4`, `menuParity`, `activityFirst`, and `kernelSim` 2; all off by default).**
@@ -766,6 +776,15 @@ the request, a real choice (two options or more), the request validation ([conte
   request alone: each option's published value (`score`) plus, in mode `sample`, a draw from the belief the v4 packet
   carries; the highest wins. `kernelSim` 2 runs it inside the tick through the shared step. It does not re-derive a
   valuation from the body state: `computeCandidates` still values every option, and the packet carries the result.
+
+**Packet 5: the animal's own experience (stage R8, Track R; [staging/r8-prereg.md](staging/r8-prereg.md); switch
+`observeV5`, off by default).** With 1, `observe()` adds `own` (what the animal is doing and how its act ended; why it
+is asked, only when it perceived or felt the reason; its foraging returns; its last aggression), the percepts' own
+fields (the direction a companion moves in, whether it is leaving or acting on the focal animal, hours since grooming
+and greeting) and each option's `about`, with `packet: 5`. The packet builder then writes neutral option labels (the
+act, its target, the animal's belief words) and none of the rules' wording, and lists the animals nearby nearest first
+(the observation's order follows the rules' scores). The loop keeps `chimp.sim.own` ([own.ts](../src/sim/own.ts));
+nothing but `observe()` reads it.
 
 ---
 
