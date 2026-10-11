@@ -20,8 +20,9 @@ const SUN_DISC_CEILING = 40;
 /**
  * One horizon colour (stage W2). Distance fades to the fog colour, so the fog colour is also what the sky must be
  * where it meets the land. Before, the dome came from the Preetham model and a separate overcast grey while the fog
- * came from the FOG_COLOR ramp: at sunrise and in rain a pale haze band sat under a dark sky (haze 20 times the sky at
- * 07:05, 4 times in rain) and through twilight the dome was darker than at night. Now one function feeds three
+ * came from the FOG_COLOR ramp: at sunrise and in rain a pale haze band sat under a dark sky (the haze 12 to 24 times
+ * the sky above it at 07:03, 5 to 7 times in rain) and through twilight the dome was darker than at night under a
+ * forest lit like day (haze 50 to 130 times the dome; docs/staging/w2-bloom-sky.md). Now one function feeds three
  * things: the fog, the lowest band of the dome (painted with it, HORIZON_BAND_* of sine elevation high, wider in
  * rain and dawn mist) and the overcast dome (OVERCAST_DOME of it at the horizon). Stylization: the fog ramp is a
  * hand-set palette, and the sky is brought to it rather than the other way round so that the look inside the forest
@@ -38,8 +39,8 @@ const OVERCAST_DOME = 0.5;
  * held at or above the radiance of a white matte surface lit by the rig's own sky light (the hemisphere light) plus
  * SKY_FLOOR_SUN of the key light while the sun carries it. The Preetham model goes dark below about 6 degrees of sun
  * while the key light keeps 72% of its strength down to 3 degrees (the long golden hour), which left a sunlit forest
- * under a night-blue dome; by day the dome is 3 to 25 times this floor, so it acts at low sun, through twilight and
- * under heavy cloud only, and it fades out with nightfall (the night dome is its own gradient). Stylization.
+ * under a night-blue dome; by day the dome is about 3 to 25 times this floor, so it acts at low sun, through twilight
+ * and under heavy cloud only, and it fades out with nightfall (the night dome is its own gradient). Stylization.
  */
 const SKY_FLOOR_SUN = 0.08;
 /**
