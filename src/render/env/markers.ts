@@ -130,12 +130,16 @@ export interface BeliefMarkers {
   mesh: THREE.Mesh;
   update(world: World, frame: BeliefFrame): void;
   /** Probes: marks drawn (memory, options, target), the label's text and the overlay's opacity. */
-  stats(): { marks: number; memory: number; options: number; target: number; label: string; alpha: number };
+  stats(): { marks: number; memory: number; options: number; target: number; label: string; /** The words on screen now ('' while the line of text is hidden). */ shown: string; alpha: number };
   dispose(): void;
 }
 
-/** position(id, out): where the animal is drawn (the scene's getPosition). */
-export function createBeliefMarkers(world0: World, owner: Owner, container: HTMLElement, position: (id: number, out: THREE.Vector3) => boolean): BeliefMarkers {
+/**
+ * position(id, out): where the animal is drawn (the scene's getPosition). about(id): whether its drawn body has yet to
+ * begin the act the simulation has it in (stage W4, creatures/drawn.ts: the body is drawn two ticks behind): the line
+ * of text then says "about to", as the animal's name tag does.
+ */
+export function createBeliefMarkers(world0: World, owner: Owner, container: HTMLElement, position: (id: number, out: THREE.Vector3) => boolean, about?: (id: number) => boolean): BeliefMarkers {
   const baseHeight = createBaseHeight(world0.seed);
   const MAX = MAX_BELIEFS + 1;   // + the line to the target
   const quad = owner.own(new THREE.InstancedBufferGeometry());
@@ -233,7 +237,7 @@ export function createBeliefMarkers(world0: World, owner: Owner, container: HTML
   let worldRef = world0;
   const treeOf = (id: number) => treeById(worldRef.trees, id);
   let n = 0, nMem = 0, nOpt = 0, target = -1, lastTick = -1, lastId = -2, lastMode: ViewMode | '' = '', lastTrees: World['trees'] | null = null;
-  let alpha = 0, text = '', shownText = '', shown = false, lpx = -1, lpy = -1;
+  let alpha = 0, text = '', textAbout = '', shownText = '', shown = false, lpx = -1, lpy = -1;
   const from = new THREE.Vector3(), tmp = new THREE.Vector3();
 
   function rebuild(w: World, id: number, mode: ViewMode) {
@@ -241,7 +245,7 @@ export function createBeliefMarkers(world0: World, owner: Owner, container: HTML
     let c: World['chimps'][number] | undefined;
     for (let i = 0; i < w.chimps.length; i++) if (w.chimps[i].id === id) { c = w.chimps[i]; break; }
     const count = c ? collectBeliefs(c, w.time, treeOf, marks) : 0;
-    n = 0; nMem = 0; nOpt = 0; target = -1; text = '';
+    n = 0; nMem = 0; nOpt = 0; target = -1; text = ''; textAbout = '';
     // Last to first: collectBeliefs puts the act's tree first and the options next, and they are drawn over the rest.
     for (let i = count - 1; i >= 0; i--) {
       const b = marks[i];
@@ -250,7 +254,14 @@ export function createBeliefMarkers(world0: World, owner: Owner, container: HTML
       const t = treeOf(b.treeId);
       at[n * 3] = b.x; at[n * 3 + 1] = Math.max(1, baseHeight(b.x, b.z)) + (t ? t.height : 20); at[n * 3 + 2] = b.z;
       style[n * 3] = b.kind === 2 ? 12 : b.kind === 1 ? 9.5 : 7.5; style[n * 3 + 1] = b.kind; style[n * 3 + 2] = b.kind === 0 ? beliefAlpha(b.hours) : 1;
-      if (b.kind === 2) { target = n; const ago = agoWords(b.hours); text = `${c!.action === 'travel' ? 'going to' : c!.action === 'nest' ? 'nesting in' : 'in'} a ${t ? t.common : 'tree'} it ${b.hours < 0 ? 'knows of' : 'remembers'}${ago ? ` · ${ago}` : ''}`; }
+      if (b.kind === 2) {
+        target = n;
+        const ago = agoWords(b.hours), act = c!.action;
+        const rest = ` a ${t ? t.common : 'tree'} it ${b.hours < 0 ? 'knows of' : 'remembers'}${ago ? ` · ${ago}` : ''}`;
+        text = (act === 'travel' ? 'going to' : act === 'nest' ? 'nesting in' : 'in') + rest;
+        // While the drawn body has not begun the act (it trails the simulation by two ticks and may still be walking in).
+        textAbout = (act === 'travel' ? 'about to go to' : act === 'nest' ? 'about to nest in' : act === 'forage' ? 'about to feed in' : 'about to climb') + rest;
+      }
       else if (b.kind === 1) nOpt++; else nMem++;
       n++;
     }
@@ -293,7 +304,8 @@ export function createBeliefMarkers(world0: World, owner: Owner, container: HTML
           const px = Math.round((tmp.x * 0.5 + 0.5) * f.viewW), py = Math.round((-tmp.y * 0.5 + 0.5) * f.viewH);
           if (px !== lpx) { lpx = px; label.style.setProperty('--ox', `${px}px`); }
           if (py !== lpy) { lpy = py; label.style.setProperty('--oy', `${py}px`); }
-          if (text !== shownText) { shownText = text; label.textContent = text; }
+          const words = about && about(id) ? textAbout : text;
+          if (words !== shownText) { shownText = words; label.textContent = words; }
         }
       }
     }
@@ -302,7 +314,7 @@ export function createBeliefMarkers(world0: World, owner: Owner, container: HTML
 
   return {
     mesh, update,
-    stats: () => ({ marks: n, memory: nMem, options: nOpt, target: target >= 0 ? 1 : 0, label: text, alpha }),
+    stats: () => ({ marks: n, memory: nMem, options: nOpt, target: target >= 0 ? 1 : 0, label: text, shown: shown ? shownText : '', alpha }),
     dispose() { root.remove(); },
   };
 }

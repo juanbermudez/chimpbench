@@ -188,7 +188,8 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
   // and the selected animal's remembered trees. Each is one instanced mesh that draws only while it shows.
   const fruitLayer = field ? createFruitLayer(world, owner) : null;
   if (fruitLayer) scene.add(fruitLayer.mesh);
-  const beliefs = createBeliefMarkers(world, owner, container, getPosition);
+  const beliefDrawn: DrawnAct = { action: 'rest', targetId: -1, about: false };
+  const beliefs = createBeliefMarkers(world, owner, container, getPosition, id => !!creatures?.drawnAct?.(id, beliefDrawn) && beliefDrawn.about);
   scene.add(beliefs.mesh);
   const fruitView: FruitView = { camera: rig.camera, viewH: 1, on: true };
   const fruitFrame: FruitLayerFrame = { on: true, camera: rig.camera, hf: 0, perspective: false, viewW: 1, viewH: 1, daylight: 1 };
