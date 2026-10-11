@@ -13,5 +13,50 @@
       "reason": "Lethal violence after the fission comes from the same data package, and the networks behind the fission result are built from these scans." },
     { "id": "T-FIS-5", "overlap": "A: the same data package (sandel2026)",
       "reason": "Patrols after the fission come from the same data package (its patrol and population files, which the wild-choice benchmark does not read)." }
+  ],
+  "sources": [
+    {
+      "labelSource": "field choices, Tai first grooming partner",
+      "decision": "Proposed by stage RW2 (docs/staging/rw2-prereg.md section 2.7), awaiting the user's ruling. No target cites the paper or shares its records.",
+      "targets": [
+        { "id": "T-HUN-9", "overlap": "C: the same animals and years, other records (samuni2018, Tai 2013-2015)",
+          "reason": "Its Tai row is meat sharing by bond partner, with the same kind of bond index on the same animals; a kernel trained on these choices is shown the order of that index." },
+        { "id": "T-END-12", "overlap": "C: the same team and communities, probably the same follows (preis2018, samuni2017); moderate confidence",
+          "reason": "Affiliation around intergroup conflict was measured on these animals in follows that probably include these sessions." }
+      ],
+      "flagged": [
+        { "id": "T-BRD-1", "overlap": "C: Tai East and South 2013-2016, a different behaviour (lemoine2023)" },
+        { "id": "T-END-1", "overlap": "C or D: Tai males; the period was not checked (preis2019)" },
+        { "id": "T-END-2", "overlap": "C or D: Tai males; the period was not checked (preis2019)" },
+        { "id": "T-SOC-9", "overlap": "by topic only: reconciliation, other populations" }
+      ]
+    },
+    {
+      "labelSource": "field co-participation, Kanyawara female coalitions",
+      "decision": "Stage RW2 registers this record as a test only (docs/staging/rw2-prereg.md section 3.7): no kernel is to be trained on it. The list applies if one ever is.",
+      "targets": [],
+      "flagged": [
+        { "id": "T-ACT-1", "overlap": "same animals or community, other records (the target mentions Kanyawara females)" },
+        { "id": "T-PTY-1", "overlap": "same animals or community, other records (the target mentions Kanyawara females)" },
+        { "id": "T-RNG-5", "overlap": "same animals or community, other records (the target mentions Kanyawara females)" },
+        { "id": "T-IGE-3", "overlap": "same animals or community, other records (the target mentions Kanyawara females)" },
+        { "id": "T-IGE-4", "overlap": "same animals or community, other records (the target mentions Kanyawara females)" },
+        { "id": "T-HUN-5", "overlap": "same animals or community, other records (the target mentions Kanyawara females)" },
+        { "id": "T-SOC-4", "overlap": "same animals or community, other records (the target mentions Kanyawara females)" },
+        { "id": "T-DEM-10", "overlap": "same animals or community, other records (the target mentions Kanyawara females)" },
+        { "id": "T-COM-6", "overlap": "same animals or community, other records (the target mentions Kanyawara females)" },
+        { "id": "T-DEM-23", "overlap": "same animals or community, other records (the target mentions Kanyawara females)" },
+        { "id": "T-ENE-1", "overlap": "same animals or community, other records (the target mentions Kanyawara females)" },
+        { "id": "T-ENE-2", "overlap": "same animals or community, other records (the target mentions Kanyawara females)" },
+        { "id": "T-ENE-3", "overlap": "same animals or community, other records (the target mentions Kanyawara females)" },
+        { "id": "T-ENE-6", "overlap": "same animals or community, other records (the target mentions Kanyawara females)" },
+        { "id": "T-ENE-7", "overlap": "same animals or community, other records (the target mentions Kanyawara females)" },
+        { "id": "T-ENE-9", "overlap": "same animals or community, other records (the target mentions Kanyawara females)" },
+        { "id": "T-END-3", "overlap": "same animals or community, other records (the target mentions Kanyawara females)" },
+        { "id": "T-END-6", "overlap": "same animals or community, other records (the target mentions Kanyawara females)" },
+        { "id": "T-END-7", "overlap": "same animals or community, other records (the target mentions Kanyawara females)" },
+        { "id": "T-SOC-14", "overlap": "same animals or community, other records (the target mentions Kanyawara females)" }
+      ]
+    }
   ]
 }
