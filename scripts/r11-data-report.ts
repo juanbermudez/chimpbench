@@ -84,6 +84,7 @@ if (process.argv[1]?.endsWith('r11-data-report.ts')) {
   row('label entropy, nats: mean (median; quartiles)', l => `${f(l.entropy.mean)} (${f(l.entropy.median)}; ${f(l.entropy.q1)} to ${f(l.entropy.q3)})`);
   row('label mass on the option the rules took', l => f(l.massOnTheRealisedPick));
   row('the label\'s top option is the one the rules took', l => f(l.labelTopIsTheRealisedPick));
+  row('mean of the label\'s top mass (the most any reader of state and menu can agree with the rules\' pick)', l => f(l.meanTopMass));
   row('chance (1 over the menu size)', l => f(l.chance));
   row('clear labels (top mass 0.99 or more)', l => f(l.clear));
   row('labels whose top mass is under 0.5', l => f(l.topUnderHalf));

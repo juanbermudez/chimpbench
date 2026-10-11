@@ -80,6 +80,8 @@ export function labelStats(rows: R11Row[]): Record<string, unknown> {
   return { fresh: f.length, options: { median: quant(f.map(r => r.options.length), 0.5), mean: r4(mean(f.map(r => r.options.length))) },
     entropy: { mean: r4(mean(H)), median: r4(quant(H, 0.5)), q1: r4(quant(H, 0.25)), q3: r4(quant(H, 0.75)) },
     massOnTheRealisedPick: r4(mean(onPick)), labelTopIsTheRealisedPick: r4(mean(f.map((r, i) => +(argmax(q[i]) === r.rgIndex)))), chance: r4(mean(f.map(r => 1 / r.options.length))),
+    // the mean of the label's top mass: how often the best possible guess from the state and the menu is the option the rules take
+    meanTopMass: r4(mean(top)),
     clear: r4(mean(top.map(t => +(t >= 0.99)))), topUnderHalf: r4(mean(top.map(t => +(t < 0.5)))), withABeliefDraw: f.filter(r => (r.beliefs ?? 0) > 0).length,
     l1FixedMenuAgainstLabel: r4(mean(f.map((r, i) => { const j = Object.values(r.softFixed!); return q[i].reduce((s, v, k) => s + Math.abs(v - j[k]), 0); }))),
     sameMenuRedraws: { median: quant(f.map(r => r.sameMenu ?? 0), 0.5), under500: f.filter(r => (r.sameMenu ?? 0) < 500).length }, redrawsPerDraw: { mean: Math.round(mean(f.map(r => r.redraws ?? 0))) },
