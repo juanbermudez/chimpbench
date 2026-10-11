@@ -7,6 +7,7 @@
 // Reads the World only; no three.js. The wording, the window and the thresholds are interface conventions
 // (stylizations), not observations of chimpanzees.
 import type { Action } from '../../types';
+import { HIST, type Track } from './playback';
 
 const TICK_HOURS = 15 / 3600;   // one simulation tick (playback.ts TICK_HOURS)
 
@@ -16,11 +17,17 @@ export const ABOUT_TICKS = 6;
 /** Tick states kept: the window, the two ticks of lag, the state before the act, and one to spare. */
 export const ACT_HIST = 10;
 /** A body within this distance (m) of where the simulation has the animal has arrived (a stylization: about half an
- * adult body length; the simulation's own small shuffles stay below it). */
+ * adult body length). A feeding shuffle can leave the body further behind than this: see SHUFFLE_SHARE. */
 export const ARRIVED_M = 0.75;
+/** A shuffle on the spot against a walk to a place: the share of the world's walking speed at or below which the
+ * simulation's own movement of an animal counts as part of a stationary act, not as getting to it (a stylization,
+ * read from the simulation: its ground foragers eat from their first tick while creeping at 0.3 of a walk,
+ * src/sim/execution.ts forageTick, which on the field map leaves the drawn body about 3 m behind; every approach is
+ * walked at 0.9 of a walk or faster, or climbed). */
+export const SHUFFLE_SHARE = 0.45;
 /** Speed of the drawn path (m per ecological second), over the ground or up and down, above which the body is on the
- * move (a stylization: a seventh of the field map's walking speed, well over a shuffle on the spot). Read from the
- * path, not from the clip, so it holds at every playback rate and whatever gait the body is drawn in. */
+ * move (a stylization: a seventh of the field map's walking speed). Read from the path, not from the clip, so it holds
+ * at every playback rate and whatever gait the body is drawn in. */
 export const PATH_MOVING_MPS = 0.05;
 /** Above this playback rate (ecological seconds per real second) the gap is too short to read and is not announced (a
  * stylization: at 10 min/s two ticks are three frames). The default 1 min/s and everything slower are below it. */
@@ -108,27 +115,70 @@ export interface BodyState {
   climbing: boolean;
   /** Distance (m) from the drawn body to where the simulation has the animal now. */
   gap: number;
+  /** The simulation moved the animal no faster than a feeding shuffle over the two ticks the body still has to play
+   * (shuffles(), SHUFFLE_SHARE): what is left for the body is the act's own creeping, not a walk or a climb to a place. */
+  shuffling: boolean;
   /** Carried (an infant on its mother) or dead: never announced, the body follows something else. */
   passive: boolean;
 }
 
-/** True when the body shows the act: it has set off (a trip), or it is where the animal is (a stationary act). */
-export function bodyShows(action: Action, body: BodyState): boolean {
+/**
+ * True when the simulation moved the animal no faster than maxMps (m per ecological second, in three dimensions) over
+ * each of the two newest steps of its position record. With one state per tick those are the two ticks the drawn body
+ * still has to play (the playback lag), so what is left for the body is a shuffle on the spot. False while the record
+ * holds fewer than three states: nothing is known yet.
+ */
+export function shuffles(tr: Track, maxMps: number): boolean {
+  if (tr.n < 3) return false;
+  const h = tr.hist;
+  let newer = tr.head * 4;
+  for (let k = 1; k <= 2; k++) {
+    const older = ((tr.head - k + HIST) % HIST) * 4;
+    const far = maxMps * (h[newer] - h[older]) * 3600;
+    const dx = h[newer + 1] - h[older + 1], dy = h[newer + 2] - h[older + 2], dz = h[newer + 3] - h[older + 3];
+    if (!(far > 0) || dx * dx + dy * dy + dz * dz > far * far) return false;
+    newer = older;
+  }
+  return true;
+}
+
+/**
+ * Fills `out` from an animal's drawn path (tr: its position record sampled at the drawn time, playback.ts and
+ * motion.ts) and where the simulation has the animal now (x, y, z; y never below the ground). clipMoving: the
+ * renderer draws it in a walking or running clip; walkMps: the world's walking speed (m per ecological second).
+ */
+export function readBody(out: BodyState, tr: Track, x: number, y: number, z: number, clipMoving: boolean, passive: boolean, walkMps: number): BodyState {
+  const on = PATH_MOVING_MPS * 3600;   // track velocities are metres per ecological hour
+  out.moving = clipMoving || Math.sqrt(tr.vx * tr.vx + tr.vz * tr.vz) > on;
+  out.climbing = Math.abs(tr.vy) > on;
+  out.gap = Math.hypot(tr.x - x, tr.y - y, tr.z - z);
+  out.shuffling = shuffles(tr, SHUFFLE_SHARE * walkMps);
+  out.passive = passive;
+  return out;
+}
+
+/**
+ * True when the body shows the act: it has set off (a trip), or it is where the animal is (a stationary act).
+ * inAct: the body's drawn time has reached the state that first showed the act. A stationary act is then also shown
+ * by a body with only a shuffle left to play: the simulation's ground foragers eat as they creep along, so the body
+ * trails them by metres while it is already feeding, and "about to forage" over it would be false.
+ */
+export function bodyShows(action: Action, body: BodyState, inAct = false): boolean {
   const sign = BODY_SIGN[action];
-  return sign === 'go' ? body.moving || body.climbing : sign === 'stay' ? body.gap <= ARRIVED_M : true;
+  return sign === 'go' ? body.moving || body.climbing : sign === 'stay' ? body.gap <= ARRIVED_M || (inAct && body.shuffling) : true;
 }
 
 /**
  * True while the simulation has begun an act that the drawn body has not. `since`: when the act was first seen;
  * `renderT`: the body's drawn time; `shown`: the body has already been seen to begin this act.
  * A trip is announced while the body neither walks nor comes down; a stationary act while the body is still away
- * from where the animal is. It ends when the body shows the act, and at the latest ABOUT_TICKS of drawn time after
- * the state that first showed it.
+ * from where the animal is (and has more than a shuffle left to play, once its drawn time is inside the act). It ends
+ * when the body shows the act, and at the latest ABOUT_TICKS of drawn time after the state that first showed it.
  */
 export function aboutTo(action: Action, since: number, renderT: number, body: BodyState, rate: number, shown = false): boolean {
   if (shown || body.passive || rate > ABOUT_MAX_RATE) return false;
   if (!(renderT < since + ABOUT_TICKS * TICK_HOURS)) return false;
-  return !bodyShows(action, body);
+  return !bodyShows(action, body, renderT >= since);
 }
 
 /** What the renderer reports for one drawn animal (CreatureLayer.drawnAct). The object is the caller's and is reused. */
@@ -150,7 +200,8 @@ export function readDrawn(tr: ActTrack, renderT: number, body: BodyState, rate: 
   let about = false;
   if (tr.n > 0) {
     const since = actSince(tr), action = tr.action[h];
-    if (since > -Infinity && tr.shown !== since && !body.passive && bodyShows(action, body) && (BODY_SIGN[action] !== 'stay' || renderT >= since)) tr.shown = since;
+    const inAct = renderT >= since;
+    if (since > -Infinity && tr.shown !== since && !body.passive && bodyShows(action, body, inAct) && (BODY_SIGN[action] !== 'stay' || inAct)) tr.shown = since;
     about = aboutTo(action, since, renderT, body, rate, tr.shown === since)
       // Held through the playback lag once announced: there the body can stand where the animal is for a moment (the
       // foot of the tree it is about to climb) before the simulation's next move reaches it.
