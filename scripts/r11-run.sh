@@ -12,7 +12,7 @@
 #   scripts/r11-run.sh dry                    seed 48, one day: the control arms, then the model arms' own path (worker process, guarded scorer, GLiNER
 #                                             kernel, packet 5, receipts, decode, replay) against a fake worker that holds no model; then every report on it
 #   scripts/r11-run.sh replay <seed> <a,b>    replay arms already on file from their receipts
-#   scripts/r11-run.sh report                 every table from what is on file -> artifacts/r11/tables
+#   scripts/r11-run.sh report                 every table from what is on file -> artifacts/r11/tables (R11_SEEDS=4111: one test seed alone)
 #   scripts/r11-run.sh publish                copy the generated tables into docs/staging, once, after the last model step; then commit them
 #   scripts/r11-run.sh check                  the pre-flight of a model step, starting nothing: folders, files, adapters, swap, other model processes
 #   model (the integrator):
@@ -168,7 +168,8 @@ case "$1" in
   report)
     mkdir -p "$TABLES"
     [ -f "$FT/manifest.json" ] && { step $TSX scripts/r11-data-report.ts --manifest "$FT/manifest.json" --md "$TABLES/r11-data.md" --json "$TABLES/r11-manifest.json"; step $TSX scripts/r11-offline.ts --dir "$FT" --md "$TABLES/r11-offline.md"; }
-    S=""; for s in 4111 4222; do [ -f "$LOOP/F/s$s/rules-8.json" ] && S="$S${S:+,}$s"; done
+    S="${R11_SEEDS:-}"   # R11_SEEDS=4111: one seed alone (the engine arms read are those on file for every seed named)
+    [ -n "$S" ] || for s in 4111 4222; do [ -f "$LOOP/F/s$s/rules-8.json" ] && S="$S${S:+,}$s"; done
     if [ -n "$S" ]; then tai "$LOOP"; reports "$LOOP" "$S" r11; else echo "R11 report: no control arms on file under $LOOP yet"; fi ;;
   publish)
     n=0

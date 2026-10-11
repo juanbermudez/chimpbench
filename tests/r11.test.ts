@@ -18,6 +18,9 @@ import { DAY_TICKS } from '../scripts/lib/timing-card';
 import { calibration, rowOf, uniqueIds, type R11Row } from '../scripts/r11-assemble';
 import { SAME_MIN, type R11Rec } from '../scripts/r11-contexts';
 import { ADAPTERS, carryTally, controlArm, engineArm, engineRun, LOOP_SWITCHES, packetOf, registeredArms, SEALED_SEEDS, seedRefusal, spy, TEST_SEEDS } from '../scripts/r11-loop';
+import { auc, boot, kindPrior } from '../scripts/r11-offline';
+import { guardFails, outside } from '../scripts/r11-report';
+import { spreadOf } from '../scripts/r7-report';
 import { decodeDiffers, replayKernel, type Receipt } from '../scripts/r5-pilot';
 import { ARMS as CONTROL_ARMS } from '../scripts/r7-card';
 import { OWN_INSTRUCTION } from '../src/kernel/packet-own';
@@ -211,6 +214,26 @@ test('the files and their manifest: fresh draws only in training, hashes of what
   for (const x of testRows) { const p = byId.get(x.id)!; assert.ok(p.p5a && p.p5b); assert.equal(!!p.p5bNoDoing, x.carryOn >= 0 || x.label === 'kept'); if (p.p5bNoDoing) assert.ok(!('doing' in p.p5bNoDoing.state) && !('doing' in p.p5aNoDoing.state)); }
   assert.equal(all.length, testRows.length + probes.length); assert.ok(probes.every(x => byId.get(x.id)!.p5aProbe && byId.get(x.id)!.p5bProbe));
   assert.equal(m.splits.test.packetsToScore.p5b, testRows.length);
+});
+
+test('the offline readouts and the loop\'s rules: the area under the curve, the bootstrap, the kind-prior baseline, a guard, the distance outside a band', () => {
+  assert.equal(auc([0.1, 0.2, 0.8, 0.9], [0, 0, 1, 1]), 1); assert.equal(auc([0.9, 0.8, 0.2, 0.1], [0, 0, 1, 1]), 0); assert.equal(auc([0.5, 0.5, 0.5, 0.5], [0, 1, 0, 1]), 0.5); assert.ok(Number.isNaN(auc([0.1, 0.2], [1, 1])));
+  near(auc([0.1, 0.4, 0.35, 0.8], [0, 0, 1, 1]), 0.75, 1e-12, 'one pair of four in the wrong order');
+  // the bootstrap resamples animals, is seeded, and brackets the mean
+  const values = Array.from({ length: 200 }, (_, i) => ({ key: `a${i % 10}`, v: (i * 37 % 100) / 100 })), b1 = boot(values, 't'), b2 = boot(values, 't');
+  assert.deepEqual(b1, b2); assert.ok(b1.lo <= b1.mean && b1.mean <= b1.hi && b1.n === 200); assert.equal(boot([], 't').n, 0);
+  // the kind-prior baseline: per family the mean label mass an option of it carries on the training rows; a menu's prediction sums to one
+  const row = (fams: string[], soft: number[]): R11Row => ({ id: 'x', split: 'train', seed: 48, base: 'W50', tick: 0, time: 30, hour: 12, phase: 'day', chimpId: 1, cls: '', age: 20, sex: 'male', why: 'ended', label: 'fresh', rgIndex: 0, pick: 'c0', rulesIndex: 0,
+    soft: Object.fromEntries(soft.map((v, i) => [`c${i}`, v])), options: fams.map((f, i) => ({ alias: `c${i}`, action: 'rest', targetId: -1, family: f })), act: { action: 'rest', targetId: -1, seconds: 0, finished: false, onMenu: true }, carryOn: -1, tokens: 0 });
+  const prior = kindPrior([row(['rest', 'feed'], [0.8, 0.2]), row(['rest', 'feed', 'feed'], [0.6, 0.4, 0]), row(['rest', 'greet'], [1, 0])]);
+  const p = prior(row(['rest', 'feed', 'call'], [1, 0, 0]));
+  near(sum(p), 1, 1e-12, 'the prediction'); near(p[0] / p[1], (2.4 / 3) / (0.6 / 3), 1e-9, 'rest against feed, by their mean mass per option'); assert.ok(p[2] > 0, 'a family the training file never showed still gets some mass');
+  // a guard fails for a set of realizations only when every one is beyond the rules' mean by more than D on a harmful side
+  const s = spreadOf([10, 11, 9, 10, 12, 8, 10, 10]), D = s.D!;
+  assert.equal(guardFails('nightsInNest', s, [10 - D - 0.1, 10 - D - 1]), true); assert.equal(guardFails('nightsInNest', s, [10 + D + 1]), false); assert.equal(guardFails('kmFixPerDay', s, [10 + D + 1]), true);
+  assert.equal(guardFails('kmFixPerDay', s, [10 + D + 1, 10]), false); assert.equal(guardFails('kmFixPerDay', s, [10 + D + 1, 10 - D - 1]), false); assert.equal(guardFails('kmFixPerDay', s, [null]), null);
+  // the distance outside a band is 0 inside it; an anchor without a band is a distance to it
+  assert.equal(outside(30, 27, 46.2), 0); near(outside(18, 27, 46.2), 9, 1e-12, 'below'); near(outside(50, 27, 46.2), 3.8, 1e-9, 'above'); near(outside(0.4, 0.476, 0.476), 0.076, 1e-12, 'an anchor'); assert.equal(outside(0.01, null, 0.05), 0);
 });
 
 // ---------------------------------------------------------------------------------------------------------------------

@@ -540,9 +540,10 @@ only): 9 tests, 9 pass.
 
 ### 10.10 Checks at the end of this agent's work
 
-`tests/r11.test.ts` 9 tests (the label arithmetic; the sampler on two worlds with `--check`; rows and calibration; the
-P5a variant; the files and their manifest; the registered arms and seeds; an engine arm with a stand-in kernel:
-packet 5 reaches it, the card reads it, the replay reproduces it). Results of it and of the neighbouring files are in
+`tests/r11.test.ts` 10 tests (the label arithmetic; the sampler on two worlds with `--check`; rows and calibration;
+the P5a variant; the files and their manifest; the reports' helpers; the registered arms and seeds; an engine arm with
+a stand-in kernel: packet 5 reaches it, the card reads it, the replay reproduces it). Two sampling runs of one world
+give byte-identical records (checked once, on a short window). Results of it and of the neighbouring files are in
 §10.12. Nothing under `src/` or `data/` was changed by this stage (`scripts/r5-pilot.ts` gained three optional
 arguments, `scripts/r8-contexts.ts` one optional hook and `scripts/r7-report.ts` an optional title and note; absent,
 all three run as before), so the goldens and the field pin cannot have moved; `tests/sim-track-e.test.ts`, the whole suite and the build were not run.
@@ -566,7 +567,7 @@ all three run as before), so the goldens and the field pin cannot have moved; `t
 
 | File | Tests | Pass |
 | --- | --- | --- |
-| `tests/r11.test.ts` | 9 | 9 |
+| `tests/r11.test.ts` (10 since 04:12: one more for the reports' helpers) | 10 | 10 |
 | `tests/r5-pilot.test.ts` | 5 | 5 |
 | `tests/r9-decode.test.ts` | 11 | 11 |
 | `tests/r4b.test.ts` | 8 | 8 |
@@ -628,6 +629,8 @@ scripts/r11-run.sh publish                                 # copies the tables t
 
 - **The decode flag.** Set `R11_DECODE` to what stage R9's result names. Leave it unset if R9 names no standard: each
   new adapter then runs with the top pick and a draw arm beside it (about 1 h 15 min a seed).
+- **One seed first:** `R11_SEEDS=4111 scripts/r11-run.sh report` reads seed 4111 alone (a report of both seeds shows
+  only the engine arms on file for both).
 - **If time is short:** P5b before P5a (as ordered above), and `scripts/r11-run.sh arms <seed> <a,b>` runs any subset
   (`scripts/r11-loop.ts list --decode draw` prints the registered names). A loop step cut short before its replays:
   `scripts/r11-run.sh replay <seed> <a,b>`. `loop` leaves out, and names, any arm whose adapter is not trained yet.

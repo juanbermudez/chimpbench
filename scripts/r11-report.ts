@@ -100,7 +100,7 @@ if (process.argv[1]?.endsWith('r11-report.ts')) {
   // -------------------------------------------------------------------------------------------------------------------
   // 2. the engine arms
   // -------------------------------------------------------------------------------------------------------------------
-  const families = [...new Set(engineNames.map(a => familyOf(engineArm(a)!.decodeName)))], named = arg('decode', '');
+  const families = [...new Set(engineNames.map(a => familyOf(engineArm(a)!.decodeName)))], named = arg('decode', '') === 'none' ? '' : arg('decode', '');
   const primary = named && families.includes(named) ? named : families.includes('top') ? 'top' : families[0] ?? '';
   const armsOf = (key: string, fam: string) => engines.get(`${key}-${fam}`) ?? [];
   const NEW: Record<'p5b' | 'p5a', string[]> = { p5b: ['p5b-s7', 'p5b-s11'], p5a: ['p5a-s7', 'p5a-s11'] };
