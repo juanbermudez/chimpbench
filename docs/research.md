@@ -4726,3 +4726,47 @@ through the NCBI BioC API (PMC3812987, CC BY, full text); nothing else was fetch
   immature chimpanzees behind pontzer2016's basal rate); Demment & Van Soest 1985 and Müller et al. 2013 (allometric
   coefficients); chiversHladik1980's specimen table; any gut volume, digesta mass, retention time, intake in grams per
   minute or cost of transport measured on an immature ape.
+
+## Addendum: R7 timing card (10 October 2026)
+
+Read for stage R7, first half ([staging/r7-prereg.md](staging/r7-prereg.md) §3 and §4): how two sources already listed
+define a bout, a patch and a half-hour record. Every value is a yardstick, never an input. Both texts were read through
+the session's page-fetch tool, which returns sentences a small model extracts; the strings marked *checked* were
+confirmed character for character by a second pass over the same page, the others were not checked by eye. The second
+review of the stage (10 October) then found every lemoine2023 string quoted below, character for character, in the
+publisher's page (journals.plos.org, read directly; the ">" signs are written as entities there). The potts2011
+strings not marked *checked* remain unchecked by eye.
+
+- **How the Taï activity file was built** [lemoine2023] (FT, journals.plos.org, open access, CC BY 4.0; *P. t. verus*)
+  [M]. Extends the E.47 entry.
+  - Data collection: "Human observers used nest-to-nest continuous focal follows on adult chimpanzees" "(males > 12
+    years old, females > 10 years old)"; orphans of 3 to 12 years were followed but only adult follows were kept;
+    observations with the focal out of sight and "all events of hunt and intergroup encounters" were removed; one focal
+    was kept where several were in one party.
+  - Activities: "We computed the recorded activities of the focal individual for each minute of observation."; three
+    activities, "feeding, resting, and traveling".
+  - Activity analyses: minute observations are "strongly dependent", so points 30 minutes apart were kept: "We chose
+    30 min intervals as it corresponds to twice the average lengths of activity bouts"; "We obtained a reduced dataset
+    of 42,385 minute-points."
+  - Derived (this project, not the paper): an average activity bout of about 15 minutes; half an hour therefore spans
+    about two bouts, so the share of half-hour pairs in the same activity is a direction, not a rate of switching.
+  - The project's fact-check of 10 October (outside the repository) found the file holds about 30,341 distinct
+    follow-by-half-hour slots: about 12,000 slots carry a second record 4 to 18 seconds from the half hour. Stage R7
+    collapses them to one record per slot (aggregates only; `scripts/lib/timing-card.ts`).
+  - Use in R7: the definition of the half-hour persistence readout and of its sampling hours. Western subspecies,
+    three activities: a yardstick only (user decision of 10 October 2026).
+- **A patch, a feeding bout and the scoring minute, Kibale** [potts2011] (FT, Harvard DASH author copy, served without
+  a bot check on 10 October 2026) [H]. Extends the C7b, E.39 and "Activity budgets by site and class" entries.
+  - Methods, Data collection: "We defined "feeding bout length" as the total amount of time that the focal individual
+    fed in a given patch." (*checked*); "We defined a "patch" as an aggregation of food items that allowed uninterrupted
+    feeding or foraging movements" (*checked*) "by individuals or parties"; "Generally, this was a single tree or large
+    sapling, but it also included multiple adjacent stems of terrestrial vegetation".
+  - Feeding was scored when "uninterrupted by other behaviors for at least one minute", travel as "sustained
+    movements" longer than a minute, rest as any sustained period with neither; follows "ideally lasted for one full
+    feeding bout and one full travel bout between consecutive feeding patches".
+  - Result: patch residency "(46.2 vs. 27.0 minutes/patch/visit)" (*checked*), Kanyawara against Ngogo; CV 0.94 (317
+    patch visits) and 1.32 (348); the variances differ (F = 6.24, P = 0.013). The Methods do not define residency
+    apart from the feeding bout: a visit's residency is the time fed in the patch.
+  - Use in R7: the definition of the card's patch visit and of feeding time per visit; the two site means as the
+    anchor beside it. Not a target (as recorded at C7b).
+- lemoine2023 and potts2011 are already listed; the entries above add findings, not sources.

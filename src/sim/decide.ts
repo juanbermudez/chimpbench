@@ -25,6 +25,9 @@ export function isModelControlled(world: World, c: Chimp): boolean {
  * Stage R1 (docs/staging/r1-prereg.md; all three switches 0 = this paragraph, bit for bit): with kernelGate the loop's
  * intention gate runs before any kernel other than the rules is asked (a kept act is not parked and not asked about);
  * with kernelSim 1 the null kernel decides here, inside the tick, for rules-driven chimps aged rgMinAge and over.
+ * Stage R7 (docs/staging/r7-prereg.md §2; defaults = the paragraph above, bit for bit): kernelNullShare below 1 hands only
+ * that share of decision points to the null kernel and the rest to the rules' own policy; kernelFocal 1 restricts the
+ * in-tick kernel to the animals a harness marked.
  */
 export function decisionPoint(world: World, c: Chimp): void {
   const x = ix(c);
@@ -44,8 +47,18 @@ export function decisionPoint(world: World, c: Chimp): void {
     return;
   }
   // stage R2 (kernelSim 2; docs/staging/r2-prereg.md §1 D): the packet-reading rules through the same step
-  if (P.kernelSim >= 1 && c.age >= P.rgMinAge) {
-    if (!(P.kernelGate === 1 && loopGate(world, c, list))) kernelStep(world, c, P.kernelSim === 2 ? packetRulesKernel : nullKernel);
+  // stage R7 (kernelFocal 1; docs/staging/r7-prereg.md §2): only the animals a harness marked (controller 'model', policy off)
+  if (P.kernelSim >= 1 && c.age >= P.rgMinAge && (P.kernelFocal !== 1 || c.controller === 'model')) {
+    // stage R7 (kernelNullShare; a control arm, a design assumption): the rules with a share of choices random. At 1 (the
+    // default) no coin is drawn and the null kernel decides, as before; at 0 no coin is drawn and the rules decide; between,
+    // one coin from world.rng says which. A share of decision points, not of the rules' fresh draws.
+    const share = P.kernelSim === 1 ? P.kernelNullShare : 1, mixed = share < 1;
+    if (mixed && !(share > 0 && random(world) < share)) { decideByRules(world, c, true); return; }
+    if (!(P.kernelGate === 1 && loopGate(world, c, list))) {
+      kernelStep(world, c, P.kernelSim === 2 ? packetRulesKernel : nullKernel);
+      // the animal is now in an act the rules did not choose: their gate must not act later on the intention it left behind
+      if (mixed && P.kernelGate !== 1) delete x.rgIntent;
+    }
     return;
   }
   decideByRules(world, c, true);
