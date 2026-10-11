@@ -426,6 +426,16 @@ first two; the rest need a few lines in `scripts/lib/who-decided.ts` once the na
 9. The time of each death (the saved arm files list who died and of what, not when; the ledger ends a dead animal's
    window at its last receipt). A population night has many more animals in which a death can fall.
 
+*Read on branch `r10-night` at 9d3508f by the review (10 October 2026; it may have moved since):* the night script
+already logs items 1 and 2, under other names than this ledger reads, so a short adapter is owed at the merge and
+`scripts/lib/who-decided.ts` must not be pointed at a night log as it is. An ask line (`k: 'ask'`) holds `opts` as
+`[act, target, variant, aux]` (the ledger reads the first two) and the trigger as `trig.gate` (the gate's reason) and
+`trig.why` (`interrupt`, `finished`, `bout-end`, `waiting`) where the ledger reads `why`. A held line (`k: 'held'`)
+holds `how` (`kept` or `arrived`), `act` and one `fam` where the ledger reads `by: 'gate'`, `refusal`, `opts` and
+`fam` as lists and `picked: 0`; and its `v` is the decision version after the act was set, one more than the ledger's
+count of hidden events expects (use `v - 1`; as logged, the first held line after each ask would read as one hidden
+event and the bracket would not close).
+
 **Likely conflicts.** `src/sim/candidates.ts`: the tap's declaration after `aggrBit`, five edits inside `offer()` and
 one line before the trip shortlist. Any branch that edits `offer()` will conflict there; the tap's calls are the only
 additions and can be re-applied by hand. `scripts/lib/` gains three files with new names. No shared document was
