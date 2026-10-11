@@ -26,7 +26,7 @@ import { ACT_PATROLLING, ACT_TRAVELLING, GOAL_CALL, GOAL_NONE, TRAIL_SAMPLES, cr
 // holding a model-driven animal has a gold ring, and a long call draws an arc that grows to its audible radius, the
 // parties inside it flashing as it passes. What a party says is worked out by render/env/party-map.ts (the same
 // reading the 3D map uses, from this card's own tracker); the marks are map conventions, stylizations. The arc is
-// drawn on the camera overlay, which is the only canvas redrawn every frame while a call is fresh; the trails and
+// drawn on the camera overlay, the only canvas redrawn while a call is fresh (20 times a second); the trails and
 // ticks are part of the ordinary redraw (the interface tick). Nothing here allocates per draw.
 
 const STEP = 2;          // zoom per button press or key
@@ -161,13 +161,17 @@ export function createMinimap(root: HTMLElement, ctx: Ctx) {
 
   // Camera footprint (scene.getFootprint): the ground the unobstructed view covers, and the focus as a dot that stays
   // visible when the footprint is a few pixels (close views on the 8 km field map). Neutral white: gold is the selection.
-  let fpVersion = -1, fpWorld: World | null = null, fpView = -1, arcsDrawn = false;
+  let fpVersion = -1, fpWorld: World | null = null, fpView = -1, arcsDrawn = false, arcDrawAt = -1e9;
+  const ARC_EVERY_S = 0.05;
   function drawFootprint(w: World) {
     const fp = ctx.deps.getScene()?.getFootprint?.();
     // Stage W10: while a call's arc is live the overlay is redrawn every frame (and once more to clear the last one).
-    const now = clockS(), live = w.size > 1000 && arcsLive(now);
-    if (!fp) { if (fpVersion !== -1 || live || arcsDrawn) { v.clearRect(0, 0, viewCanvas.width, viewCanvas.height); fpVersion = -1; if (live) drawArcs(w, now); arcsDrawn = live; } return; }
-    if (fp.version === fpVersion && fpWorld === w && fpView === viewVer && !live && !arcsDrawn) return;
+    // The arcs move at 20 frames a second on the card (ARC_EVERY_S): a canvas redrawn on every frame is a second
+    // surface for the browser to composite beside the 3D view, and a card 280 px wide does not need it.
+    const now = clockS(), live = w.size > 1000 && arcsLive(now), due = live ? now - arcDrawAt >= ARC_EVERY_S : arcsDrawn;
+    if (!fp) { if (fpVersion !== -1 || due) { v.clearRect(0, 0, viewCanvas.width, viewCanvas.height); fpVersion = -1; if (live) drawArcs(w, now); arcsDrawn = live; arcDrawAt = now; } return; }
+    if (fp.version === fpVersion && fpWorld === w && fpView === viewVer && !due) return;
+    arcDrawAt = now;
     fpVersion = fp.version; fpWorld = w; fpView = viewVer;
     const k = W / 300, p = fp.pts;
     v.clearRect(0, 0, W, H);

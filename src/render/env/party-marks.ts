@@ -330,7 +330,7 @@ export function createCallArcs(owner: Owner, heights: MarkHeights): CallArcs {
         if ( a < 0.01 ) discard;
         gl_FragColor = vec4( vCol.rgb, a );
       }`,
-    transparent: true, depthTest: false, depthWrite: false, fog: false, side: THREE.DoubleSide,
+    transparent: true, depthTest: false, depthWrite: false, fog: false, side: THREE.DoubleSide, forceSinglePass: true,
   }));
   const mesh = new THREE.Mesh(geometry, material);
   mesh.name = 'overview-call-arcs';
