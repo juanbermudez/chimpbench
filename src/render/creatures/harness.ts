@@ -5,6 +5,7 @@
 // &patrol=out|listen|incursion|return runs the course as a two-animal patrol on that leg).
 // patrol (&phase=out|listen|incursion|return|release|heard|cycle|none, &n=6: a border patrol in single file with a
 // published Party.patrolPhase; docs/realism-design.md §5.3.1 P4b; the camera follows the middle animal).
+// single also takes &age=, &sex=male|female and &swelling=0..1 for its first animal.
 // Other params: zoom=close|mid|far|rts, rain=0..1, night=1, sel=<id>, labels=1,
 // social=1, perception=1, hl=<troopId>, rate=<eco s per s>, moving=1.
 import * as THREE from 'three';
@@ -140,7 +141,9 @@ function interaction(kind: InteractionKind, a: Chimp, b: Chimp | null, intensity
 interface Mover { c: Chimp; cx: number; cz: number; r: number; speed: number; ang: number; vertical?: boolean; }
 const movers: Mover[] = [];
 const captions: { x: number; y: number; z: number; text: string }[] = [];
-const tiles: { x: number; z: number; text: string; action: Action }[] = [];
+const tiles: { x: number; z: number; text: string; action: Action; id: number }[] = [];
+/** Mesh level each tile's own animal was drawn on in the last frame (window.__tileLods; 3 hero, 0 fine, 1 mid, 2 coarse). */
+const tileLods: number[] = [];
 
 const ACTIONS: Action[] = ['rest', 'forage', 'drink', 'travel', 'groom', 'play', 'follow', 'climb', 'patrol', 'display', 'flee', 'hunt', 'mate', 'nurse', 'dead',
   'nest', 'pant-grunt', 'charge', 'attack', 'submit', 'reconcile', 'console', 'share', 'beg', 'guard', 'consort', 'shelter', 'call', 'transfer', 'alarm'];
@@ -204,8 +207,9 @@ if (mode === 'sheet') {
   const cols = Number(q.get('cols') ?? 6);
   list.forEach((act, i) => {
     const cx = (i % cols) * 14, cz = Math.floor(i / cols) * 14;
+    const id = nextId; // the tile's first animal
     setupAction(act, cx, cz, q.has('moving'));
-    tiles.push({ x: cx, z: cz, text: act, action: act });
+    tiles.push({ x: cx, z: cz, text: act, action: act, id });
   });
 } else if (mode === 'faces') {
   const list: [number, Sex, string, number?][] = [[0.3, 'female', 'infant 0.3 y'], [2, 'male', 'infant 2 y'], [4.5, 'female', 'infant 4.5 y'], [7, 'male', 'juvenile 7 y'], [12, 'female', 'adolescent ♀ 12'], [14, 'male', 'adolescent ♂ 14'],
@@ -214,7 +218,7 @@ if (mode === 'sheet') {
     const x = (i % 6) * 14, z = Math.floor(i / 6) * 14;
     const c = chimp({ age, sex, x, z, action: 'rest', heading: 0, vocal: (q.get('vocal') as CallKind | null) ?? null, mood: (q.get('mood') as Mood | null) ?? 'calm' });
     if (v) c.appearance = { fur: v === 1 ? 0.9 : 0.1, face: v === 1 ? 0.95 : 0.05, build: 0.5, brow: v === 2 ? 1 : 0.5, ears: v === 1 ? 1 : 0.2 };
-    tiles.push({ x, z, text, action: 'rest' });
+    tiles.push({ x, z, text, action: 'rest', id: c.id });
   });
 } else if (mode === 'stages') {
   const list: [number, Sex, string, Partial<ChimpOpts>][] = [
@@ -254,6 +258,11 @@ if (mode === 'sheet') {
 } else if (mode === 'single') {
   const act = (q.get('action') ?? 'groom') as Action;
   setupAction(act, 0, 0, q.has('moving'));
+  // &age=, &sex=, &swelling=: override the first animal of the tile (a swollen female or an infant on its own, W3).
+  const first = world.chimps[0];
+  if (first && q.has('age')) { first.age = Number(q.get('age')); first.stage = stageOf(first.age); }
+  if (first && q.has('sex')) first.sex = q.get('sex') === 'female' ? 'female' : 'male';
+  if (first && q.has('swelling')) first.swelling = Number(q.get('swelling'));
   camTarget.set(0.4, 0.6, 0); camPos.set(2.8, 2.0, 4.6);
   if (act === 'nest' || act === 'climb') { camTarget.set(0.5, 5, 0); camPos.set(6, 7, 10); }
 } else if (mode === 'scene' || mode === 'perf') {
@@ -481,11 +490,15 @@ function trunkAt(id: number, y: number, out: THREE.Vector4) {
   return true;
 }
 const layer = createCreatures({ scene, world, container: stage, groundHeight, treeAnchor, trunkAt }) as ReturnType<typeof createCreatures> & { debug: { clip: string | null } };
-const dbg = layer.debug as { clip: string | null; attention: boolean };
+const dbg = layer.debug as { clip: string | null; attention: boolean; lodFade: boolean; blink: boolean; anim?: (id: number) => { lod: number } | undefined };
 if (q.get('clip')) dbg.clip = q.get('clip');
-// Face tiles: seated facing the camera, gaze held forward (&attn=1 lets the attention system move the heads).
-if (mode === 'faces') { dbg.clip = q.get('clip') ?? 'portrait'; dbg.attention = q.has('attn'); }
+// Face tiles: seated facing the camera, gaze held forward (&attn=1 lets the attention system move the heads) and
+// eyes held open (&blink=1 lets them blink: two of the twelve were caught mid-blink at the usual 11 s capture).
+if (mode === 'faces') { dbg.clip = q.get('clip') ?? 'portrait'; dbg.attention = q.has('attn'); dbg.blink = q.has('blink'); }
 if (tiles.length) { for (const t of tiles) captions.push({ x: t.x, y: 0, z: t.z, text: t.text }); document.head.insertAdjacentHTML('beforeend', '<style>.crl-root{display:none}</style>'); }
+// Tile sheets update the layer once per tile camera, with dt 0 after the first: a mesh-level cross-fade would never
+// advance, and every tile would be drawn on the level chosen for the camera of the tile before it.
+if (tiles.length) dbg.lodFade = false;
 const tileCam = new THREE.PerspectiveCamera(30, 1, 0.05, 400);
 const followId = q.get('follow') != null ? Number(q.get('follow')) : patrolRig ? patrolRig.file[Math.floor(patrolRig.file.length / 2)].id : null;
 const followTmp = new THREE.Vector3();
@@ -559,6 +572,7 @@ function frame(now: number) {
       tileCam.position.set(cx0 + ox * dist, ty + oy * dist, t.z + oz * dist);
       tileCam.lookAt(cx0, ty, t.z);
       layer.update({ ...f, dt: i === 0 ? dt : 0, camera: tileCam });
+      tileLods[i] = dbg.anim?.(t.id)?.lod ?? -1;
       if (i === 0) t1 = performance.now();
       renderer.setViewport(cx * tw, innerHeight - (cy + 1) * th, tw, th);
       renderer.setScissor(cx * tw, innerHeight - (cy + 1) * th, tw, th);
@@ -587,4 +601,4 @@ function frame(now: number) {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(t => { stats.last = t; frame(t); });
-Object.assign(window, { __creatures: layer, __world: world });
+Object.assign(window, { __creatures: layer, __world: world, __tileLods: tileLods });

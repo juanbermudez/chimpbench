@@ -4770,3 +4770,74 @@ strings not marked *checked* remain unchecked by eye.
   - Use in R7: the definition of the card's patch visit and of feeding time per visit; the two site means as the
     anchor beside it. Not a target (as recorded at C7b).
 - lemoine2023 and potts2011 are already listed; the entries above add findings, not sources.
+
+## Addendum: W3 body defects (10 October 2026)
+
+Written for stage W3 (`docs/staging/w3-body-defects.md`; render only, nothing under `src/sim`): what the body's corrected
+landmarks rely on. research.md was searched first: it had nothing on the knuckle-walking hand, on where the sexual
+swelling sits or on the infant's tail tuft (the swelling appears only as a state in the reproduction and patrol
+entries). Five sources were opened this session, each once: two PubMed abstracts through NCBI E-utilities, two
+open-access papers through the NCBI BioC API (full text, CC BY) and one page of the Animal Diversity Web. FT = full
+text read; Abs = abstract only. No host showed a bot check. The review's other candidate pages (an encyclopaedia
+article, two zoo fact sheets, a museum page, a sanctuary blog, a forum quotation of Aiello and Dean 1990) were not
+opened and are not cited. No behavioural constant, parameter or simulation code is involved.
+
+- **Knuckle-walking: the support surface** [tamagawa2020] (FT, PMC7197777) [M]. Tamagawa T, Lundh T, Shigetoshi K,
+  Nitta N, Ushio N, Inubushi T, Shiino A, Karlsson A, Inoue T, Mera Y, Hino K, Komori M, Morikawa S, Sawajiri S, Naka S,
+  Honma S, Kimura T, Uchimura Y, Imai S, Egi N, Otani H, Udagawa J. 2020. Correlation between musculoskeletal structure
+  of the hand and primate locomotion: morphometric and mechanical analysis in prehension using the cross- and
+  triple-ratios. *PLoS ONE* 15(5):e0232397. [doi:10.1371/journal.pone.0232397](https://doi.org/10.1371/journal.pone.0232397).
+  Methods: "Pan troglodytes and Gorilla gorilla travel on the ground by knuckle-walking, during which they support
+  their forelimb on the dorsal surface of their fingers." The sentence is background in a morphometric study of hand
+  specimens, not one of its measurements.
+- **Knuckle-walking: which segment, and the joint at the base of the fingers** [matarazzo2015] (FT, PMC4368714) [M].
+  Matarazzo SA. 2015. Trabecular architecture of the manual elements reflects locomotor patterns in primates.
+  *PLoS ONE* 10(3):e0120436. [doi:10.1371/journal.pone.0120436](https://doi.org/10.1371/journal.pone.0120436).
+  Introduction: "The middle phalanges of knuckle walkers (Pan and Gorilla) experience considerable compressive forces as
+  they support the body during knuckle walking, with pressure focused on the 2nd and 3rd digits." Discussion: a
+  trabecular orientation that "could mitigate strain caused via hyperextension at the metacarpophalangeal joint during
+  knuckle walking". A skeletal study; both statements are its framing of earlier work, not its own observation of
+  living animals.
+- **Knuckle-walking: joint angles** [thompson2020] (Abs) [M] captive animals; the sample is not in the abstract.
+  Thompson NE. 2020. The biomechanics of knuckle-walking: 3-D kinematics of the chimpanzee and macaque wrist, hand and
+  fingers. *J Exp Biol* 223(14):jeb224360. [doi:10.1242/jeb.224360](https://doi.org/10.1242/jeb.224360)
+  ([PubMed](https://pubmed.ncbi.nlm.nih.gov/32554524/)). "Maximum extension of the chimpanzee wrist was slight (5-20
+  deg)"; "maximum metacarpophalangeal extension angles during knuckle-walking (26-59 deg) were generally higher than
+  previously considered". These are maxima within a stride; the abstract gives no standing value and no finger-joint
+  angle. A correction exists (jeb242409, 2021; not read).
+- **Knuckle-walking: load by digit** [wunderlich2009] (Abs) [M] two captive chimpanzees. Wunderlich RE, Jungers WL.
+  2009. Manual digital pressures during knuckle-walking in chimpanzees (*Pan troglodytes*). *Am J Phys Anthropol*
+  139(3):394–403. [doi:10.1002/ajpa.20994](https://doi.org/10.1002/ajpa.20994)
+  ([PubMed](https://pubmed.ncbi.nlm.nih.gov/19170201/)). "In chimpanzees, digit 5 typically bears relatively little
+  load regardless of hand position or substrate"; in young animals pressure was equally high on digits 2 to 4 on the
+  ground, in older animals higher on digits 2 and 3.
+- **Sexual swelling and the infant's tail tuft** [shefferly2005] (FT of a tertiary account) [L]. Shefferly N. 2005.
+  "*Pan troglodytes*" (On-line), Animal Diversity Web, University of Michigan Museum of Zoology (editor T. Dewey; last
+  updated 13 November 2005). <https://animaldiversity.org/accounts/Pan_troglodytes/>. Physical description: "Infant
+  chimpanzees have a white tuft of hair on their rumps, which identifies their age quite clearly. This white tail tuft
+  is lost as an individual ages." (the account's references for that passage: Jones, Jones, Jones & Wilson 1996,
+  *Mammalian Species* 529; Napier & Napier 1985; Nowak 1999; none read). Reproduction: "When the anogenital skin is fully
+  engorged, it is typically bright pink, and can measure from 938 to 1400 cc." (its reference: Goodall 1986, *The
+  Chimpanzees of Gombe*; not read, so the volume is second-hand). The account gives no age at which the tuft goes and
+  no linear size for either.
+
+**Use in W3, and what stays a stylization.**
+- `src/render/creatures/poses.ts` `fist()`: the weight is on the backs (dorsal surface) of the middle finger segments,
+  the joint at the base of the fingers is bent back (extended) and the finger joint flexed [M, the first three
+  sources]. The amounts (0.387 rad of extension, a finger joint flexed until the segment lies level) are design
+  assumptions chosen so the hand keeps the height it had; thompson2020's 26 to 59 degrees are peaks within a stride.
+  The four fingers are one slab on two bones in this body, so the difference between digits (wunderlich2009) is not drawn.
+- `src/render/creatures/body.ts` `SWELL`, `TUFT`: the swelling is anogenital skin and the tuft is on the rump [L,
+  shefferly2005], so both masks sit low on the back of the pelvis instead of on the lower back. Their exact centres,
+  the mask sizes (the swelling's an ellipsoid of 384 cc, 366 cc before; the tuft's unchanged), the 5 cm inflation at
+  full swelling (unchanged) and the 16 mm the tuft stands proud (new) are stylizations. The drawn swelling is well
+  under the 938 to 1,400 cc the account gives (its mask ellipsoid is cut by the body surface); enlarging it changes
+  the animal's outline and was left for the user. The age at which the tuft fades (3 to 5.5 years,
+  `src/render/creatures.ts`) was already in the code and has no source here.
+- Stylizations with no source: the young animal's larger, darker iris (`creatures.ts` P5.y, `material.ts`); the eye
+  paint's rim; the ear hollow painted on a solid ear plate; the dark grooves between fingers and between toes; the
+  hair highlight's lobe widths, weights and mask limits (already listed under §14).
+- **Not found or not looked for:** a primary source for the swelling's volume or linear size (Goodall 1986 was not
+  read; Deschner et al. 2003, 2004 are named elsewhere in this file as not verified); the tuft's size and the age it
+  is lost; eye or iris size by age; ear dimensions; the finger-joint angle and the standing posture of the
+  knuckle-walking hand (not in what was opened).
