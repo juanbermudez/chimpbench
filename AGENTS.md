@@ -102,7 +102,7 @@ Frame loop order (in `src/main.ts`): `pumpDecisions` → `advance` (clock runs `
 
 ## Verifying a change
 
-1. `pnpm test` and `pnpm build`. Add tests in the matching `tests/*.test.ts` (sim tests are `tests/sim-*.test.ts`). `tsc --noEmit` covers `src/` only (`tsconfig.json`): type-check new scripts and tests by hand with the same strict options.
+1. `pnpm test` and `pnpm build`. Add tests in the matching `tests/*.test.ts` (sim tests are `tests/sim-*.test.ts`). `tsc --noEmit` covers `src/` and `vite.config.ts` only (`tsconfig.json`): type-check new scripts and tests by hand with the same strict options.
 2. Sim changes: run the bench and `scripts/sim-metrics.ts`, and compare with the metrics table in `docs/simulation.md`.
 3. Visual changes: screenshot with `scripts/shot.mjs` on a no-model server. Use the harnesses to isolate work:
    - `/src/render/env/harness.html?hour=&rain=&view=&quality=` (`&profile=field`, `&advance=<hours>`, `&rate=<eco s per s>`, `&focus=<id>`, `&params={"walkGait":1}` for parameter overrides)
