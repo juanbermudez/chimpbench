@@ -86,6 +86,25 @@ export const socialBit = (P: Params, bit: number): boolean => (P.socialTiming & 
 export const aggrBit = (P: Params, bit: number): boolean => (P.aggressionGaps & bit) !== 0;
 
 /**
+ * Stage R7 (docs/staging/r7-ledger.md §6): what became of one call of offer(). 'kept': a slot of its own. 'better' and
+ * 'worse': the same act and target was already offered, and this offer replaced it or was dropped (the option stays).
+ * 'evict': it took the slot of the worst target of its action (`other`), which the slot cap thereby removes. 'slot':
+ * refused, the action's slots hold better targets. 'threshold': a score at or below −0.4. 'silent': a patrol's silence.
+ * 'pool': the pool of 48 is full.
+ */
+export type OfferFate = 'kept' | 'better' | 'worse' | 'evict' | 'slot' | 'threshold' | 'silent' | 'pool';
+/**
+ * Stage R7 (the "who decided" ledger, scripts/r7-ledger.ts): `fn` is called at every offer() with the option, its score
+ * before the candidate jitter and its fate; `pool` once per decision with the number of remembered and listed trees that
+ * passed the trip conditions, before the shortlist. Both are null in every simulation (a flag that is off by default);
+ * they read only and draw nothing, so the world is unchanged (tests/r7-ledger.test.ts).
+ */
+export const offerTap: {
+  fn: ((action: Action, target: number, score: number, v: number, aux: number, fate: OfferFate, other: number) => void) | null;
+  pool: ((n: number) => void) | null;
+} = { fn: null, pool: null };
+
+/**
  * Where a male leads a consortship (execution.ts onStart): a point at 0.85 of the community's range radius from its
  * centre, on the bearing of the male from the centre turned by a hash of the pair and the day. Pure; writes `out`.
  */
@@ -133,8 +152,8 @@ let curP: Params;
 let curSilent = false;
 
 function offer(action: Action, target: number, score: number, v: number = V.NONE, aux = -1, bel: number[] | null = null): void {
-  if (!(score > -0.4)) return;
-  if (curSilent && (action === 'call' || action === 'display')) return;
+  if (!(score > -0.4)) { if (offerTap.fn) offerTap.fn(action, target, score, v, aux, 'threshold', -1); return; }
+  if (curSilent && (action === 'call' || action === 'display')) { if (offerTap.fn) offerTap.fn(action, target, score, v, aux, 'silent', -1); return; }
   const base = score, jit = (hash01(cur.id, cur.decisionVersion, CODE[action], target) - 0.5) * curP.candidateJitterSpan;
   score += jit;
   // stage E3 (urgencySwitchCost; docs/staging/e3-prereg.md §5): no continuation bonus or finished penalty. The cost of
@@ -151,14 +170,21 @@ function offer(action: Action, target: number, score: number, v: number = V.NONE
   for (let i = 0; i < n; i++) {
     const s = pool[i];
     if (s.action !== action) continue;
-    if (s.target === target) { if (score > s.score) { s.score = score; s.v = v; s.aux = aux; s.raw = raw; s.jit = jit; s.bel = bel; } return; }
+    if (s.target === target) { const up = score > s.score; if (up) { s.score = score; s.v = v; s.aux = aux; s.raw = raw; s.jit = jit; s.bel = bel; } if (offerTap.fn) offerTap.fn(action, target, base, v, aux, up ? 'better' : 'worse', -1); return; }
     if (grouped && (s.v === V.TREE && s.aux > 0) !== join) continue;
     count++;
     if (worst < 0 || s.score < pool[worst].score) worst = i;
   }
   let slot: Slot;
-  if (count >= (join ? 1 : action === 'forage' ? curP.slotsForage : MULTI[action] ? curP.slotsMulti : 1)) { if (score <= pool[worst].score) return; slot = pool[worst]; }
-  else { if (n >= pool.length) return; slot = pool[n++]; }
+  if (count >= (join ? 1 : action === 'forage' ? curP.slotsForage : MULTI[action] ? curP.slotsMulti : 1)) {
+    if (score <= pool[worst].score) { if (offerTap.fn) offerTap.fn(action, target, base, v, aux, 'slot', -1); return; }
+    slot = pool[worst];
+    if (offerTap.fn) offerTap.fn(action, target, base, v, aux, 'evict', slot.target);
+  } else {
+    if (n >= pool.length) { if (offerTap.fn) offerTap.fn(action, target, base, v, aux, 'pool', -1); return; }
+    slot = pool[n++];
+    if (offerTap.fn) offerTap.fn(action, target, base, v, aux, 'kept', -1);
+  }
   slot.action = action; slot.target = target; slot.score = score; slot.v = v; slot.aux = aux; slot.raw = raw; slot.jit = jit; slot.bel = bel;
 }
 
@@ -582,6 +608,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     // offer only the tree with the most believed value per metre, at its usual score. Stage C7e (§9): with goalDistScaleM D > 0
     // the rank is value × D / (D + d) instead, between route chaining (D → 0) and no distance preference (D → ∞); fitted (C7e) against Taï
     const D = P.goalDistScaleM;
+    if (offerTap.pool && shortlist) offerTap.pool(_rk.length); // stage R7: the trees the shortlist below chooses among (read only)
     // a shortlisted trip's belief (stage E3e): [tree, crop, hours since seen, feeders, distance] and, for a listed crown valued
     // as a chance of fruit (E3h bit 4), the share in fruit
     const belAt = (t: Tree, e: number): number[] => { const b = [t.id, _bl[4 * e], _bl[4 * e + 1], 0, _bl[4 * e + 2]]; if (Number.isFinite(_bl[4 * e + 3])) b.push(_bl[4 * e + 3]); return b; };
