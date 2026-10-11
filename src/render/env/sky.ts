@@ -17,6 +17,32 @@ import { BLOOM_THRESHOLD, HAZE_START_PERSPECTIVE, Owner, setAtmosphere, type Env
  */
 const SKY_CEILING = BLOOM_THRESHOLD * 0.85;
 const SUN_DISC_CEILING = 40;
+/**
+ * One horizon colour (stage W2). Distance fades to the fog colour, so the fog colour is also what the sky must be
+ * where it meets the land. Before, the dome came from the Preetham model and a separate overcast grey while the fog
+ * came from the FOG_COLOR ramp: at sunrise and in rain a pale haze band sat under a dark sky (haze 20 times the sky at
+ * 07:05, 4 times in rain) and through twilight the dome was darker than at night. Now one function feeds three
+ * things: the fog, the lowest band of the dome (painted with it, HORIZON_BAND_* of sine elevation high, wider in
+ * rain and dawn mist) and the overcast dome (OVERCAST_DOME of it at the horizon). Stylization: the fog ramp is a
+ * hand-set palette, and the sky is brought to it rather than the other way round so that the look inside the forest
+ * does not change.
+ */
+function horizonColor(altDeg: number, dayLevel: number, overcast: number, rain: number, out: THREE.Color) {
+  ramp(altDeg, FOG_COLOR, out);
+  return out.lerp(tmpA.setRGB(0.3, 0.34, 0.36).multiplyScalar(0.2 + dayLevel * 0.8), Math.min(1, overcast + rain * 0.3));
+}
+const HORIZON_BAND_CLEAR = 0.06, HORIZON_BAND_HAZE = 0.26;   // sine of elevation: about 3.4 and 15 degrees
+const OVERCAST_DOME = 0.5;
+/**
+ * Luminance floor of the dome (stage W2). A sky cannot be darker than a white card lying under it, so the dome is
+ * held at or above the radiance of a white matte surface lit by the rig's own sky light (the hemisphere light) plus
+ * SKY_FLOOR_SUN of the key light while the sun carries it. The Preetham model goes dark below about 6 degrees of sun
+ * while the key light keeps 72% of its strength down to 3 degrees (the long golden hour), which left a sunlit forest
+ * under a night-blue dome; by day the dome is 3 to 25 times this floor, so it acts at low sun, through twilight and
+ * under heavy cloud only, and it fades out with nightfall (the night dome is its own gradient). Stylization.
+ */
+const SKY_FLOOR_SUN = 0.08;
+const luma = (c: THREE.Color) => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
 /** Skyglow floor for the strategy view at night (linear irradiance multiplier on albedo). */
 const NIGHT_FLOOR_RTS = 0.08;
 const tmpA = new THREE.Color(); const tmpB = new THREE.Color();
@@ -65,12 +91,16 @@ export function createSky(uniforms: SharedUniforms, owner: Owner): SkyRig {
     uFlash: { value: 0 }, uMoonDir: { value: new THREE.Vector3(0, -1, 0) }, uSunDirW: { value: new THREE.Vector3(0, 1, 0) },
     uMoonLight: { value: 0 }, uNightTint: { value: new THREE.Color('#0b1426') }, uSkyGain: { value: 0.5 },
     uSkyCeil: { value: SKY_CEILING }, uDiscCeil: { value: SUN_DISC_CEILING },
+    // Stage W2: the horizon colour (= the fog colour), the height of the band painted with it (sine of elevation), the
+    // dome's luminance floor (a colour whose luminance is the floor) and uDome, 0 while the image-based light renders.
+    uHorizon: { value: new THREE.Color() }, uHorizonBand: { value: HORIZON_BAND_CLEAR }, uSkyFloor: { value: new THREE.Color(0, 0, 0) }, uDome: { value: 1 },
   });
   material.fragmentShader = material.fragmentShader
     .replace('void main() {', /* glsl */`
       uniform float uNight; uniform float uOvercast; uniform vec3 uOvercastColor; uniform float uFlash;
       uniform vec3 uMoonDir; uniform vec3 uSunDirW; uniform float uMoonLight; uniform vec3 uNightTint; uniform float uSkyGain;
       uniform float uSkyCeil; uniform float uDiscCeil;
+      uniform vec3 uHorizon; uniform float uHorizonBand; uniform vec3 uSkyFloor; uniform float uDome;
       float starHash( vec3 p ) { p = fract( p * 0.3183099 + 0.1 ); p *= 17.0; return fract( p.x * p.y * p.z * ( p.x + p.y + p.z ) ); }
       // Per channel: unchanged below 80% of the ceiling m, then an exponential shoulder that never passes m.
       vec3 skyShoulder( vec3 c, float m ) { float a = m * 0.8, w = m - a; return min( c, vec3( a ) ) + w * ( 1.0 - exp( - max( c - a, 0.0 ) / w ) ); }
@@ -112,7 +142,15 @@ export function createSky(uniforms: SharedUniforms, owner: Owner): SkyRig {
       // Overcast and rain flatten the sky into luminous grey with a brighter horizon.
       vec3 overcast = uOvercastColor * ( 0.6 + 0.4 * ( 1.0 - smoothstep( -0.05, 0.35, direction.y ) ) );
       col = mix( col, overcast, uOvercast );
+      // Luminance floor (stage W2): a smooth maximum (4-norm) of the dome and the floor, a little brighter toward the
+      // horizon; the floor's hue fills in where the dome is dark. Zero at night and in the image-based light.
+      vec3 skyFloor = uSkyFloor * uDome * ( 1.1 - 0.4 * up );
+      float floorL = dot( skyFloor, vec3( 0.2126, 0.7152, 0.0722 ) ), skyL = dot( col, vec3( 0.2126, 0.7152, 0.0722 ) );
+      float s2 = skyL * skyL, f2 = floorL * floorL;
+      col += skyFloor * ( ( sqrt( sqrt( s2 * s2 + f2 * f2 ) ) - skyL ) / max( floorL, 1e-5 ) );
       col += vec3( 0.55, 0.6, 0.8 ) * uFlash * ( 0.3 + 0.7 * smoothstep( -0.05, 0.4, direction.y ) );
+      // One horizon colour (stage W2): the lowest band of the dome is the fog colour, so haze and sky meet without a seam.
+      col = mix( col, uHorizon, uDome * ( 1.0 - smoothstep( 0.0, uHorizonBand, direction.y ) ) );
       // Bloom guard, last so that nothing the dome adds can pass it: the sky stays under the bloom threshold, the disc at a fixed value.
       col = skyShoulder( col, mix( uSkyCeil, uDiscCeil, sundisc ) );
       gl_FragColor = vec4( col, 1.0 );`);
@@ -144,6 +182,7 @@ export function createSky(uniforms: SharedUniforms, owner: Owner): SkyRig {
 
   const sunColor = new THREE.Color(); const skyColor = new THREE.Color(); const groundColor = new THREE.Color();
   const keyColor = new THREE.Color();
+  const overcastDome = new THREE.Color(); const overcastIbl = new THREE.Color();
   let exposureTarget = 1;
   const flashPulses = [[0, 0.1, 1], [0.2, 0.08, 0.7], [0.38, 0.22, 1.1], [0.72, 0.14, 0.5]];
   let flashStart = -99;
@@ -174,7 +213,11 @@ export function createSky(uniforms: SharedUniforms, owner: Owner): SkyRig {
       const overcast = THREE.MathUtils.smoothstep(cloud, 0.55, 0.95) * 0.85 + rain * 0.15;
       skyU.uOvercast.value = Math.min(0.95, overcast);
       const dayLevel = THREE.MathUtils.smoothstep(altDeg, -8, 20);
-      (skyU.uOvercastColor.value as THREE.Color).setRGB(0.05, 0.058, 0.062).multiplyScalar(0.06 + dayLevel * 0.94).lerp(tmpA.setRGB(0.012, 0.014, 0.02), rain * 0.5 * dayLevel);
+      // The overcast dome is a share of the horizon colour (stage W2). The image-based light keeps the grey it had.
+      horizonColor(altDeg, dayLevel, overcast, rain, fogColor);
+      overcastDome.copy(fogColor).multiplyScalar(OVERCAST_DOME);
+      overcastIbl.setRGB(0.05, 0.058, 0.062).multiplyScalar(0.06 + dayLevel * 0.94).lerp(tmpA.setRGB(0.012, 0.014, 0.02), rain * 0.5 * dayLevel);
+      skyU.uOvercastColor.value = overcastDome;
 
       // Lightning: new strike time from the sim, or a fallback cadence in storms if the sim has no strikes.
       if (Number.isNaN(lastLightning)) lastLightning = env.lightningAt;   // don't flash for a strike older than the view
@@ -219,7 +262,11 @@ export function createSky(uniforms: SharedUniforms, owner: Owner): SkyRig {
       const twilight = THREE.MathUtils.smoothstep(altDeg, -11, -2) * (1 - THREE.MathUtils.smoothstep(altDeg, -2, 7));
       const golden = THREE.MathUtils.smoothstep(altDeg, -3, 1) * (1 - THREE.MathUtils.smoothstep(altDeg, 4, 16)) * (1 - cloud * 0.6);
       hemi.color.lerp(tmpA.set('#d9a07a'), golden * 0.35);
-      hemi.intensity = (THREE.MathUtils.lerp((0.45 + env.moonLight * 0.35) * (perspective ? 1.6 : 1), 0.75, skyLum) * (1 + overcast * 0.6) * (1 + twilight * 0.9)) + flashLevel * 2.5;
+      const skyLight = THREE.MathUtils.lerp((0.45 + env.moonLight * 0.35) * (perspective ? 1.6 : 1), 0.75, skyLum) * (1 + overcast * 0.6) * (1 + twilight * 0.9);
+      hemi.intensity = skyLight + flashLevel * 2.5;
+      // Dome floor: the radiance of a white card under this sky light plus a share of the sun, in the sky light's hue.
+      const floorL = (1 - env.night) * (luma(hemi.color) * skyLight + SKY_FLOOR_SUN * luma(sunColor) * sunI) / Math.PI;
+      (skyU.uSkyFloor.value as THREE.Color).copy(hemi.color).multiplyScalar(floorL / Math.max(1e-4, luma(hemi.color)));
       // Readability fill, added after canopy occlusion: a moonlit/blue-hour floor so close views never go black.
       // Night skyglow floor: present even under overcast at new moon (cloud scatters what little light
       // there is), so crowns, clearings and the stream stay legible. Moonlight adds on top when the sky is clear.
@@ -231,12 +278,13 @@ export function createSky(uniforms: SharedUniforms, owner: Owner): SkyRig {
       rig.twilight = twilight;
 
       // Fog and valley mist: thick at dawn in the humid wet season, lighter at midday, grey in rain.
-      ramp(altDeg, FOG_COLOR, fogColor);
-      fogColor.lerp(tmpA.setRGB(0.3, 0.34, 0.36).multiplyScalar(0.2 + dayLevel * 0.8), Math.min(1, overcast + rain * 0.3));
+      // The colour is the one horizon colour (set above); a lightning flash lifts fog and horizon together.
       fogColor.lerp(tmpA.setRGB(0.75, 0.8, 1.0), flashLevel * 0.4);
       fog.color.copy(fogColor);
+      (skyU.uHorizon.value as THREE.Color).copy(fogColor);
       const hour = env.hour;
       const dawnMist = Math.max(0, 1 - Math.abs(hour - 6.9) / 2.2) * (0.5 + env.humidity * 0.5);
+      skyU.uHorizonBand.value = THREE.MathUtils.lerp(HORIZON_BAND_CLEAR, HORIZON_BAND_HAZE, Math.min(1, Math.max(rain, dawnMist * 0.6)));
       const mist = THREE.MathUtils.clamp(dawnMist * 0.8 + env.night * 0.2 + rain * 0.3, 0, 0.95);
       const density = (perspective ? 0.0011 + rain * 0.006 : 0.0024 + rain * 0.0026) + dawnMist * (perspective ? 0.0012 : 0.002);
       // Perspective: no haze or ground mist within ~15 m so the followed animal is never erased at dawn.
@@ -258,9 +306,11 @@ export function createSky(uniforms: SharedUniforms, owner: Owner): SkyRig {
         pmrem ??= new THREE.PMREMGenerator(renderer);
         // The sun disc must stay out of the IBL: the key light already carries it. The bloom guard is lifted for
         // this render, so reflections (water, wet leaves) keep the sky's full range as before.
-        skyU.showSunDisc.value = 0; skyU.uSkyCeil.value = 1e6;
+        // The horizon band, the floor and the new overcast dome are also left out of it (uDome 0): they correct what
+        // the viewer sees of the sky, and the light on the forest, the water and wet leaves stays what it was.
+        skyU.showSunDisc.value = 0; skyU.uSkyCeil.value = 1e6; skyU.uDome.value = 0; skyU.uOvercastColor.value = overcastIbl;
         const next = pmrem.fromScene(envScene, 0, 0.1, 1000);
-        skyU.showSunDisc.value = 1; skyU.uSkyCeil.value = SKY_CEILING;
+        skyU.showSunDisc.value = 1; skyU.uSkyCeil.value = SKY_CEILING; skyU.uDome.value = 1; skyU.uOvercastColor.value = overcastDome;
         envTarget?.dispose();
         envTarget = next;
         scene.environment = envTarget.texture;
