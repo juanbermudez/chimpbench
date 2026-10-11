@@ -4,7 +4,7 @@ import { MAX_TROOPS, Owner, patchMaterial, type SharedUniforms } from './shared'
 import { CANOPY_BROAD, CANOPY_HASH, FIELD_CANOPY_COLOR, createBaseHeight, createCanopyHeight, type RiverInfo } from './terrain';
 import { approach, partyMarkerPx } from './field';
 import { hyp2 } from '../fastmath';
-import { MARK_STRIDE, FRUIT_MAX_CELLS, FRUIT_MAX_TREES, FRUIT_SCAN_FRAMES, cellMarkPx, cellWeight, createFruitMarks, cropSignature, cropSignaturePart, fruitColour, fruitMarks, mapLayerWeight, markColour, toHex, treeMarkPx } from './fruit';
+import { MARK_STRIDE, FRUIT_CELL_M, FRUIT_MAX_CELLS, FRUIT_MAX_TREES, FRUIT_SCAN_FRAMES, cellMarkPx, cellWeight, createFruitMarks, cropSignaturePart, fruitColour, fruitMarks, mapLayerWeight, markColour, toHex, treeMarkPx } from './fruit';
 import { preToneMapped } from '../creatures/util';
 
 // Field-view overview (C5b; docs/realism-design.md §5.1): the whole ~8 km map at km scale. A canopy surface (the far
@@ -430,21 +430,30 @@ export function createFruitLayer(world: World, owner: Owner): FruitLayer {
   let builtFor: World['trees'] | null = null, signature = NaN, rebuilds = 0, weight = 0, cellW = 0;
   // The scan: where the pass over the trees stands and its sum so far (fruit.ts cropSignaturePart).
   let scanAt = 0, scanSum = 0;
+  // Ground height under each tree and each cell centre, looked up once (three noise samples each): a rebuild while a
+  // party feeds comes every few seconds at 1 min/s, and would otherwise sample the terrain 3,000 times each time.
+  let treeY = new Float32Array(0);
+  const cellY = new Float32Array(Math.ceil(world.size / FRUIT_CELL_M) ** 2).fill(NaN);
   function rebuild(w: World) {
-    builtFor = w.trees; signature = cropSignature(w.trees); rebuilds++;
+    if (builtFor !== w.trees || treeY.length !== w.trees.length) { treeY = new Float32Array(w.trees.length).fill(NaN); cellY.fill(NaN); }
+    builtFor = w.trees; rebuilds++;
     scanAt = 0; scanSum = w.trees.length;
-    fruitMarks(w.trees, w.size, marks, colourOf);
+    signature = fruitMarks(w.trees, w.size, marks, colourOf).signature;   // one pass over the trees gives both
     let n = 0;
     const T = marks.trees, C = marks.cells;
     for (let i = 0; i < marks.nTrees; i++, n++) {
-      const o = i * MARK_STRIDE, x = T[o], z = T[o + 1], k = T[o + 4];
-      centre[n * 3] = x; centre[n * 3 + 1] = Math.max(1, baseHeight(x, z)) + T[o + 3]; centre[n * 3 + 2] = z;
+      const o = i * MARK_STRIDE, x = T[o], z = T[o + 1], k = T[o + 4], ti = T[o + 5];
+      let y = treeY[ti];
+      if (y !== y) y = treeY[ti] = Math.max(1, baseHeight(x, z));
+      centre[n * 3] = x; centre[n * 3 + 1] = y + T[o + 3]; centre[n * 3 + 2] = z;
       style[n * 2] = treeMarkPx(T[o + 2]); style[n * 2 + 1] = 0;
       colour[n * 3] = palette[k * 3]; colour[n * 3 + 1] = palette[k * 3 + 1]; colour[n * 3 + 2] = palette[k * 3 + 2];
     }
     for (let i = 0; i < marks.nCells; i++, n++) {
-      const o = i * MARK_STRIDE, x = C[o], z = C[o + 1], k = C[o + 4];
-      centre[n * 3] = x; centre[n * 3 + 1] = Math.max(1, baseHeight(x, z)) + 24; centre[n * 3 + 2] = z;
+      const o = i * MARK_STRIDE, x = C[o], z = C[o + 1], k = C[o + 4], ci = C[o + 5];
+      let y = cellY[ci];
+      if (y !== y) y = cellY[ci] = Math.max(1, baseHeight(x, z));
+      centre[n * 3] = x; centre[n * 3 + 1] = y + 24; centre[n * 3 + 2] = z;
       style[n * 2] = cellMarkPx(C[o + 2]); style[n * 2 + 1] = 1;
       colour[n * 3] = palette[k * 3]; colour[n * 3 + 1] = palette[k * 3 + 1]; colour[n * 3 + 2] = palette[k * 3 + 2];
     }

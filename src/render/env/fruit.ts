@@ -161,20 +161,22 @@ export function cellWeight(metresPerPx: number): number { const u = Math.min(1, 
 export const MARK_SPECIES = 16;
 /** Caller-owned buffers of the map layer's data (no allocation per rebuild). */
 export interface FruitMarks {
-  /** MARK_STRIDE floats a tree: x, z, crop (tree.fruit), tree height, colour index. */
+  /** MARK_STRIDE floats a tree: x, z, crop (tree.fruit), tree height, colour index, its place in the tree list. */
   trees: Float32Array;
-  /** MARK_STRIDE floats a cell: x, z of its centre, the crop summed over it, 0, the colour index of the species with the most crop in it. */
+  /** MARK_STRIDE floats a cell: x, z of its centre, the crop summed over it, 0, the colour index of the species with the most crop in it, the cell's number (row × cells a side + column). */
   cells: Float32Array;
   /** Scratch: crop per cell and species. */
   tally: Float32Array;
   nTrees: number; nCells: number;
   /** Trees over the capacity (not drawn as tree marks; still counted in their cell). */
   dropped: number;
+  /** cropSignature of the trees these marks were made from (taken in the same pass over them). */
+  signature: number;
 }
-export const MARK_STRIDE = 5;
+export const MARK_STRIDE = 6;
 export function createFruitMarks(size: number, cell = FRUIT_CELL_M): FruitMarks {
   const n = Math.ceil(size / cell);
-  return { trees: new Float32Array(FRUIT_MAX_TREES * MARK_STRIDE), cells: new Float32Array(Math.min(FRUIT_MAX_CELLS, n * n) * MARK_STRIDE), tally: new Float32Array(n * n * MARK_SPECIES), nTrees: 0, nCells: 0, dropped: 0 };
+  return { trees: new Float32Array(FRUIT_MAX_TREES * MARK_STRIDE), cells: new Float32Array(Math.min(FRUIT_MAX_CELLS, n * n) * MARK_STRIDE), tally: new Float32Array(n * n * MARK_SPECIES), nTrees: 0, nCells: 0, dropped: 0, signature: NaN };
 }
 /**
  * The map layer's data from the simulation's trees (tree.fruit as the simulation publishes it: refreshed daily, and
@@ -186,13 +188,14 @@ export function fruitMarks(trees: readonly Tree[], size: number, out: FruitMarks
   const n = Math.ceil(size / cell), half = size / 2;
   const T = out.trees, C = out.cells, tally = out.tally;
   tally.fill(0);
-  let nt = 0, dropped = 0;
+  let nt = 0, dropped = 0, sig = trees.length;
   const maxT = Math.floor(T.length / MARK_STRIDE);
   for (let i = 0; i < trees.length; i++) {
     const t = trees[i];
     if (cropShare(t) < FRUIT_MIN_SHARE) continue;
+    sig += signatureOf(t, i);
     const x = t.position[0], z = t.position[2], k = colourOf(t.species);
-    if (nt < maxT) { const o = nt++ * MARK_STRIDE; T[o] = x; T[o + 1] = z; T[o + 2] = t.fruit; T[o + 3] = t.height; T[o + 4] = k; } else dropped++;
+    if (nt < maxT) { const o = nt++ * MARK_STRIDE; T[o] = x; T[o + 1] = z; T[o + 2] = t.fruit; T[o + 3] = t.height; T[o + 4] = k; T[o + 5] = i; } else dropped++;
     const ci = Math.min(n - 1, Math.max(0, Math.floor((x + half) / cell))), cj = Math.min(n - 1, Math.max(0, Math.floor((z + half) / cell)));
     tally[(cj * n + ci) * MARK_SPECIES + Math.min(MARK_SPECIES - 1, k)] += t.fruit;
   }
@@ -204,9 +207,9 @@ export function fruitMarks(trees: readonly Tree[], size: number, out: FruitMarks
     if (!(sum > 0)) continue;
     const o = nc++ * MARK_STRIDE;
     // The cell's centre: a mark per cell on a regular grid reads as a map symbol, not as a tree.
-    C[o] = -half + (c % n + 0.5) * cell; C[o + 1] = -half + (Math.floor(c / n) + 0.5) * cell; C[o + 2] = sum; C[o + 3] = 0; C[o + 4] = best;
+    C[o] = -half + (c % n + 0.5) * cell; C[o + 1] = -half + (Math.floor(c / n) + 0.5) * cell; C[o + 2] = sum; C[o + 3] = 0; C[o + 4] = best; C[o + 5] = c;
   }
-  out.nTrees = nt; out.nCells = nc; out.dropped = dropped;
+  out.nTrees = nt; out.nCells = nc; out.dropped = dropped; out.signature = sig;
   return out;
 }
 /**
@@ -224,10 +227,12 @@ export function cropSignaturePart(trees: readonly Tree[], from: number, to: numb
   const end = Math.min(to, trees.length);
   for (let i = Math.max(0, from); i < end; i++) {
     const t = trees[i];
-    if (t.maxFruit > 0 && t.fruit >= FRUIT_MIN_SHARE * t.maxFruit) s += (1 + Math.floor(t.fruit * 16)) * (1 + (i % 7));
+    if (cropShare(t) >= FRUIT_MIN_SHARE) s += signatureOf(t, i);   // the very test fruitMarks marks a tree by
   }
   return s;
 }
+/** One marked tree's share of the signature: its crop in steps of 1/16, weighted by its place in the list. */
+const signatureOf = (t: Tree, i: number): number => (1 + Math.floor(t.fruit * 16)) * (1 + (i % 7));
 /** Frames one pass of the map layer's scan over the trees takes (half a second at 60 Hz). Design assumption. */
 export const FRUIT_SCAN_FRAMES = 30;
 

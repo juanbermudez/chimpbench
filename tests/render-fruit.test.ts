@@ -109,7 +109,8 @@ test('map layer: one mark per tree in fruit, one per cell holding one, in the do
   assert.equal(out.nTrees, 5);
   assert.equal(out.dropped, 0);
   const T = out.trees;
-  assert.deepEqual([...T.slice(0, MARK_STRIDE)], [10, 10, 0.5, 20, colourOf('Ficus natalensis')]);
+  assert.deepEqual([...T.slice(0, MARK_STRIDE)], [10, 10, 0.5, 20, colourOf('Ficus natalensis'), 0]);
+  assert.equal(T[3 * MARK_STRIDE + 5], 4, 'each mark carries its tree\'s place in the list (the layer keeps the ground height by it)');
   assert.equal(T[3 * MARK_STRIDE + 3], 25, 'the tree height rides along (marks sit on the crown)');
   // Cells: (10,10), (40,30), (60,20) share one 250 m cell; Mimusops carries 1.1 of its 1.6.
   assert.equal(out.nCells, 3);
@@ -120,6 +121,8 @@ test('map layer: one mark per tree in fruit, one per cell holding one, in the do
   assert.equal(centre[4], colourOf('Mimusops bagshawei'), 'the species with the most crop gives the colour');
   assert.ok(cells.some(c => Math.abs(c[2] - 0.3) < 1e-6 && c[4] === colourOf('Pterygota mildbraedii')));
   assert.ok(cells.some(c => c[0] === 4000 - FRUIT_CELL_M / 2 && c[1] === -4000 + FRUIT_CELL_M / 2), 'a tree on the map edge lands in the last cell');
+  assert.equal(centre[5], 16 * 32 + 16, 'a cell carries its number');
+  assert.equal(new Set(cells.map(c => c[5])).size, 3);
   // The same input gives the same data, and a second call overwrites the first.
   const again = fruitMarks(trees, 8000, createFruitMarks(8000), colourOf);
   assert.deepEqual([...again.trees.slice(0, again.nTrees * MARK_STRIDE)], [...out.trees.slice(0, out.nTrees * MARK_STRIDE)]);
@@ -152,6 +155,9 @@ test('the crop signature moves when any tree\'s mark would change, and only then
   let sliced = w.trees.length;
   for (let a = 0; a < w.trees.length; a += chunk) sliced += cropSignaturePart(w.trees, a, a + chunk);
   assert.equal(sliced, sig);
+  // And the marks carry the signature of the trees they were made from (else the layer would rebuild on every pass).
+  const marks = fruitMarks(w.trees, w.size, createFruitMarks(w.size), () => 0);
+  assert.equal(marks.signature, sig);
   assert.equal(cropSignaturePart(w.trees, -5, 0), 0);
   assert.equal(cropSignaturePart(w.trees, w.trees.length, w.trees.length + 900), 0);
   // Any marked tree, not only a sampled one: fed down by a quarter of a large crop, then emptied.
