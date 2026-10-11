@@ -34,6 +34,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { gunzipSync, gzipSync } from 'node:zlib';
 import { nullKernel, rulesKernel } from '../src/kernel/kernels';
 import type { Kernel } from '../src/kernel/types';
+import { requestFor } from '../src/sim/decide';
 import { createWorld, tickWorld } from '../src/simulation';
 import type { World } from '../src/types';
 import { worldHash } from '../tests/fixtures/golden';
@@ -44,8 +45,8 @@ import { glinerKernel } from './lib/kernels';
 import { buildStateOnlyQuestion, STATE_PACKET_VERSION } from './lib/packet-state';
 import { decodedKernel, decodeRefusal, type DecodeMode } from './lib/r10-decode';
 import { replayReport, replayRun } from './lib/r10-read';
-import { DAY, DayFiles, dayName, diskRefusal, meterStart, MIN_AGE, newestCkpt, pruneCkpts, readCkpt, readLines, readRegistry, RECEIPT_SCHEMA, RunStopped, runDay, runningModelProcesses, setAside, STOP, stopCheck, swapUsedMB,
-  UNDER_AGE, writeCkpt, writeRegistry, type Arrival, type DaySummary, type Engine, type Registry, type Row, type Tap } from './lib/r10-run';
+import { DAY, DayFiles, dayName, diskRefusal, meterStart, MIN_AGE, newestCkpt, pruneCkpts, readCkpt, readLines, readRegistry, RECEIPT_SCHEMA, RunStopped, runDay, runningModelProcesses, setAside, STOP, stopCheck, swapUsedMB, warmedWorker,
+  UNDER_AGE, writeCkpt, writeRegistry, type Arrival, type DaySummary, type Engine, type Line, type Registry, type Row, type Tap } from './lib/r10-run';
 import { ARMS, armWorld, GuardedScorer } from './r5-pilot';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -149,6 +150,16 @@ async function run(a: Args): Promise<number> {
     if (process.env.MGOGO_DECIDE_SERVER) throw new Refused('MGOGO_DECIDE_SERVER is set: a night runs one private worker, not the shared batching server');
     for (const k of ['MGOGO_GHN_ROOT', 'MGOGO_DECIDE_PYTHON', 'HF_HOME', 'HF_HUB_CACHE', 'MGOGO_FT_ROOT']) if (!process.env[k]) throw new Refused(`${k} is not set: a model arm needs the runtime variables of HANDOFF.md §3 item 3 and MGOGO_FT_ROOT (docs/staging/r10-prereg.md §8)`);
     if (!existsSync(process.env.MGOGO_DECIDE_PYTHON!)) throw new Refused(`MGOGO_DECIDE_PYTHON does not exist: ${process.env.MGOGO_DECIDE_PYTHON}`);
+    if (process.cwd() !== ROOT) throw new Refused(`run a model arm from the repo root (${ROOT}): the worker is started from training/decide_ft under the current directory`);
+    if (spec.adapter !== 'base') {
+      // the adapter must be where the worker will look for it, and named for loading (training/decide_ft/adapters.py)
+      const weights = resolve(ROOT, process.env.MGOGO_FT_ROOT!, 'adapters', spec.adapter!, 'adapter_model.safetensors');
+      if (!existsSync(weights)) throw new Refused(`no adapter at ${weights}: point MGOGO_FT_ROOT at the folder whose adapters/ holds ${spec.adapter}`);
+      if (!(process.env.MGOGO_FT_ADAPTERS ?? '').split(',').includes(spec.adapter!)) throw new Refused(`MGOGO_FT_ADAPTERS must name ${spec.adapter} (it is "${process.env.MGOGO_FT_ADAPTERS ?? ''}"): the worker loads only the adapters it lists`);
+      const sha = createHash('sha256').update(readFileSync(weights)).digest('hex');
+      if (resuming && reg.adapterSha256 && reg.adapterSha256 !== sha) throw new Refused(`the adapter's weights changed since the run began (${sha.slice(0, 12)}, was ${reg.adapterSha256.slice(0, 12)})`);
+      reg.adapterSha256 = sha;
+    }
     const others = runningModelProcesses();
     if (others.length) throw new Refused(`another model process is running (${others.map(p => `pid ${p.pid}: ${p.command}`).join(' | ')}): one model process at a time`);
   }
@@ -215,22 +226,32 @@ async function run(a: Args): Promise<number> {
       let waited = 0;
       while ((swapUsedMB() ?? 0) > SWAP_HOLD_MB && waited < SWAP_HOLD_MIN && !signal) { log(`hold: swap ${swapUsedMB()} MB in use, above ${SWAP_HOLD_MB} MB (${waited} min waited)`); await sleep(60_000); waited++; }
       event(`before the model load: load ${loadavg().map(v => v.toFixed(2)).join(' ')}, swap ${swapUsedMB()} MB in use, waited ${waited} min`);
-      guard = new GuardedScorer(async () => { const w = new Worker(a.flag('device', 'mps')); await w.start(); reg.worker = w.ready; return w; }, reg.timeoutS * 1000);
-      await guard.start();
+      // every worker of the night (the first, and any replacement) answers one real packet before it serves
+      const first = e.world.chimps.filter(c => c.alive && c.age >= reg.minAge).map(c => requestFor(e.world, c)).find(r => r.refusal === '');
+      if (!first) throw new Refused('no animal on the kernel has a real choice to warm the worker up with');
+      guard = new GuardedScorer(warmedWorker(async () => { const w = new Worker(a.flag('device', 'mps')); await w.start(); reg.worker = w.ready; return w; }, spec.adapter!, buildStateOnlyQuestion(first.request.context), first.request.options.length, log), reg.timeoutS * 1000);
+      try { await guard.start(); } catch (error) { throw new Refused(error instanceof Error ? error.message : String(error)); }
       const adapters = (reg.worker?.adapters ?? {}) as Record<string, string>;
-      if (spec.adapter !== 'base' && !adapters[spec.adapter!]) throw new Refused(`the worker holds no adapter "${spec.adapter}" (it has: ${Object.keys(adapters).join(', ') || 'none'}): point MGOGO_FT_ROOT at the folder whose adapters/ holds it`);
+      if (spec.adapter !== 'base' && adapters[spec.adapter!] !== reg.adapterSha256) throw new Refused(`the worker reports adapter "${spec.adapter}" as ${adapters[spec.adapter!] ?? 'absent'}, the file read before the start was ${reg.adapterSha256}`);
       event(`worker ready: ${JSON.stringify(reg.worker)}`);
       kernel = decodedKernel(glinerKernel(guard, spec.adapter!, { packet: r => buildStateOnlyQuestion(r.context) }), reg.decode as DecodeMode);
     } else kernel = spec.kernel === 'rules' ? null : spec.kernel === 'null' ? nullKernel : rulesKernel;
     writeRegistry(out, reg);
 
     const crashAt = a.has('crash-at-tick') ? +a.flag('crash-at-tick') : -1;
-    let ticks = e.day * DAY;
-    const stop = () => { if (++ticks === crashAt) process.kill(process.pid, 'SIGKILL'); return signal ? `signal ${signal}` : ''; };
+    let ticks = e.day * DAY, beat = Date.now(), asked = 0;
+    // after every tick: the crash switch, a line every simulated hour once two minutes have passed since the last line (a model day is silent for 15 to 25 minutes otherwise), and the signal
+    const stop = () => {
+      if (++ticks === crashAt) process.kill(process.pid, 'SIGKILL');
+      if (ticks % 240 === 0 && Date.now() - beat > 120_000) { beat = Date.now(); const k = ticks - e.day * DAY; log(`  day ${e.day + 1}: ${Math.floor(k / 240)} of 24 simulated hours, ${asked} asks so far${guard ? `, ${guard.timeouts} timeouts in the run` : ''}`); }
+      return signal ? `signal ${signal}` : '';
+    };
     while (e.day < reg.daysAsked) {
       const files = new DayFiles(out, e.day + 1, reg.contexts);
+      asked = 0;
+      const sink = { arrival: (x: Arrival) => files.arrival(x), lines: (l: Line[]) => { files.lines(l); for (const x of l) if (x.k === 'ask') asked++; }, context: (c: Parameters<DayFiles['context']>[0]) => files.context(c) };
       let res: Awaited<ReturnType<typeof runDay>>;
-      try { res = await runDay(e, kernel, { sink: files, journal, guard: guard ?? undefined, stop, minAge: reg.minAge }); }
+      try { res = await runDay(e, kernel, { sink, journal, guard: guard ?? undefined, stop, minAge: reg.minAge }); beat = Date.now(); }
       catch (error) {
         files.close(null);
         if (!(error instanceof RunStopped)) { reg.state = 'interrupted'; reg.ended = `failed inside day ${e.day + 1}: ${error instanceof Error ? error.message : error}; the checkpoint of day ${e.day} stands`; event(reg.ended); writeRegistry(out, reg); throw error; }

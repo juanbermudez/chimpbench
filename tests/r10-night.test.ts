@@ -8,7 +8,7 @@ import { glinerKernel } from '../scripts/lib/kernels';
 import { buildStateOnlyQuestion } from '../scripts/lib/packet-state';
 import { decode, decodedKernel, decodeRefusal } from '../scripts/lib/r10-decode';
 import { BESIDE, replayReport, replayRun, SHORT_ROWS, type FieldReadout } from '../scripts/lib/r10-read';
-import { ancestors, comparable, DAY, DayFiles, dayName, diskRefusal, isDriven, keyOf, listCkpts, meterStart, MIN_AGE, modelProcesses, newestCkpt, pruneCkpts, readCkpt, readLines, receiptKernel, RECEIPT_SCHEMA, runDay, RunStopped, setAside, STOP, stopCheck,
+import { ancestors, comparable, DAY, DayFiles, dayName, diskRefusal, isDriven, keyOf, listCkpts, meterStart, MIN_AGE, modelProcesses, newestCkpt, pruneCkpts, readCkpt, readLines, receiptKernel, RECEIPT_SCHEMA, runDay, RunStopped, setAside, STOP, stopCheck, warmedWorker,
   writeCkpt, writeRegistry, type Arrival, type AskLine, type DaySummary, type Engine, type HeldLine, type Line, type Registry, type Row, type Tap } from '../scripts/lib/r10-run';
 import { resultName } from '../scripts/r10-night';
 import { ARMS, armWorld, GuardedScorer } from '../scripts/r5-pilot';
@@ -233,6 +233,14 @@ test('the null kernel resumes exactly too; a signal ends the day cleanly; kernel
   const got = healed.lines.filter((l): l is AskLine => l.k === 'ask');
   assert.deepEqual([made, stopped, day.summary.workerStarts], [2, 1, 2], 'one dead worker, one replacement');
   assert.ok(got.some(l => l.refusal === 'kernel-error' && l.detail === 'worker gone') && got.filter(l => l.by === 'kernel').length > 50 && got[got.length - 1].by === 'kernel', 'after the replacement the kernel answers again');
+  // every worker answers one packet before it serves (the model is loaded by the first batch), and one that cannot is not used
+  const calls: string[] = [], said: string[] = [];
+  const fake = (ok: boolean) => async () => ({ stop() { calls.push('stop'); }, score: async (batch: { adapter: string; packet: unknown }[]) => { calls.push(`${batch[0].adapter}:${JSON.stringify(batch[0].packet)}`); if (!ok) throw new Error('no such adapter'); return [[0.7, 0.2, 0.1]]; } });
+  const w = await warmedWorker(fake(true), 'r4-rules-state', { q: 1 }, 3, m => said.push(m))();
+  assert.deepEqual(calls, ['r4-rules-state:{"q":1}']); assert.match(said[0], /worker warm: the model answered its first packet in \d+ s/); assert.deepEqual(await w.score([{ adapter: 'x', packet: 2 }]), [[0.7, 0.2, 0.1]]);
+  await assert.rejects(warmedWorker(fake(false), 'r4-rules-state', {}, 3, () => {})(), /could not answer a warm-up packet with adapter "r4-rules-state": no such adapter/);
+  await assert.rejects(warmedWorker(fake(true), 'r4-rules-state', {}, 5, () => {})(), /does not fit its menu of 5/);
+  assert.equal(calls.filter(c => c === 'stop').length, 2, 'a worker that fails its warm-up is stopped');
 });
 
 test('the replay of a run folder reproduces every day, reads the run through the observer and steps a tap; a damaged receipt file is caught', async () => {

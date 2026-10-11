@@ -591,6 +591,26 @@ export function swapUsedMB(): number | null {
   try { const m = /used = ([0-9.]+)M/.exec(execFileSync('sysctl', ['-n', 'vm.swapusage'], { encoding: 'utf8' })); return m ? Math.round(+m[1]) : null; } catch { return null; }
 }
 
+/**
+ * A worker that has answered one real packet before it serves. The worker of the decide-ft harnesses reports "ready"
+ * at once and loads the model on its first batch (55 to 145 s measured on this machine), so without this the first ask
+ * after every start, and after every replacement in the night, would race the guard's time limit and fall to the
+ * rules. `make` starts a worker; the warm-up call is made outside any time limit and its answer is thrown away (it is
+ * built from a request no one applies, so the world is not touched). A worker that cannot answer it is stopped and
+ * the start fails, loudly, instead of a night of fallbacks.
+ */
+export function warmedWorker<W extends { score(batch: { adapter: string; packet: unknown }[]): Promise<number[][]>; stop(): void }>(make: () => Promise<W>, adapter: string, packet: unknown, options: number, log: (s: string) => void): () => Promise<W> {
+  return async () => {
+    const w = await make(), t0 = Date.now();
+    try {
+      const [p] = await w.score([{ adapter, packet }]);
+      if (!Array.isArray(p) || p.length !== options || !p.every(v => typeof v === 'number' && Number.isFinite(v))) throw new Error(`the warm-up answer does not fit its menu of ${options} (${JSON.stringify(p)?.slice(0, 120)})`);
+      log(`worker warm: the model answered its first packet in ${Math.round((Date.now() - t0) / 1000)} s (the answer is not used)`);
+      return w;
+    } catch (error) { w.stop(); throw new Error(`the worker could not answer a warm-up packet with adapter "${adapter}": ${error instanceof Error ? error.message : error}`); }
+  };
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 // The registry (run.json)
 // ---------------------------------------------------------------------------------------------------------------------
@@ -604,7 +624,7 @@ export interface Registry {
   paramsFile: string; paramsSha256: string; params: Record<string, number>;
   /** The loop switches the run is made with (the first two at creation, the last two on the burned-in world: scripts/r5-pilot.ts armWorld). */
   switches: { observeV4: number; menuParity: number; kernelGate: number; kernelNoRulesPick: number };
-  arm: string; kernel: string; adapter: string | null; decode: string; packet: string;
+  arm: string; kernel: string; adapter: string | null; /** sha256 of the adapter's weights file, read before the worker starts. */ adapterSha256?: string; decode: string; packet: string;
   /** The name a result of this run must carry (IMPLEMENTATION_PLAN.md, "Names every result must use"). */ name: string;
   minAge: number; /** Who decides for animals under minAge. */ under: string;
   burnInHash: string; startHash: string;

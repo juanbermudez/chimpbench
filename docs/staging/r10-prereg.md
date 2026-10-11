@@ -305,3 +305,16 @@ cover `src/sim/decide.ts`. 4. The field smoke (§7, 5 to 8). 5. Results in §10;
   starts a new one for the next call (still one worker process at a time); a broken pipe is logged and survived; any
   other uncaught error ends the run with the registry saying so. The limit of 50 errors in a row still ends the run.
   A resume that finds the checkpoint of day 5 but no stop check (the run died between the two) reads the check then.
+- **A8 (20:34, before the runs reported in §10.3). The model's start.** Reading `training/decide_ft/worker.py` and
+  `adapters.py` showed two things the night would have tripped on. (1) The worker says "ready" at once and loads the
+  model on its first batch (55 to 145 s measured on this machine), so the first ask after every start, and after every
+  replacement during the night, would race the 120 s limit and fall to the rules, again and again on a busy machine.
+  Now every worker answers one real packet, outside any time limit, before it serves; the answer is thrown away (it
+  comes from a request no one applies). A worker that cannot answer it stops the start. (2) The worker loads only the
+  adapters named in `MGOGO_FT_ADAPTERS`, and without it three older ones. Now a model arm refuses to start unless the
+  adapter's weights file exists under `MGOGO_FT_ROOT`, `MGOGO_FT_ADAPTERS` names it, and the run is launched from the
+  repo root; the file's sha256 goes into the registry and must be the one the worker reports. Also: another model
+  process is recognised by the program a process runs (a Python that is the Decide environment's or runs a Decide
+  script), not by a name anywhere in a command line, because the shell that launches the night carries the
+  interpreter's path in its own command line; a model day prints a line every simulated hour once two minutes have
+  passed, so a day of 15 to 25 minutes is not silent.
