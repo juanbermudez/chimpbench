@@ -78,7 +78,7 @@ reports() { # <loop dir> <seeds> <prefix> [dry]
   engine="$($TSX scripts/r11-report.ts --dir "$1" --seeds "$2" --engine-arg)" || { echo "R11 failed: the engine arms on file under $1"; exit 1; }
   if [ -n "$engine" ]; then step $TSX scripts/r7-report.ts --dir "$1" --units F --seeds "$2" --engine "$engine" --md "$TABLES/$3-card.md"
   else step $TSX scripts/r7-report.ts --dir "$1" --units F --seeds "$2" --md "$TABLES/$3-card.md"; fi
-  step $TSX scripts/r11-report.ts --dir "$1" --seeds "$2" --md "$TABLES/$3-numbers.md" ${4:+--dry}
+  step $TSX scripts/r11-report.ts --dir "$1" --seeds "$2" --md "$TABLES/$3-numbers.md" ${4:+--dry} ${R11_DECODE:+--decode "$R11_DECODE"}
 }
 
 case "$1" in
@@ -170,7 +170,7 @@ case "$1" in
     if [ -n "$S" ]; then tai "$LOOP"; reports "$LOOP" "$S" r11; else echo "R11 report: no control arms on file under $LOOP yet"; fi ;;
   publish)
     n=0
-    for f in r11-data.md r11-manifest.json r11-offline.md r11-card.md r11-numbers.md r11-dry-card.md r11-dry-numbers.md r11-dry-offline.md; do
+    for f in r11-data.md r11-manifest.json r11-offline.md r11-card.md r11-numbers.md r11-dry-numbers.md; do   # (the dry run's card and offline tables stay under artifacts: a fake worker's numbers)
       [ -f "$TABLES/$f" ] || continue
       if cmp -s "$TABLES/$f" "$DOCS/$f"; then echo "R11 publish: $DOCS/$f is already the generated table"; else cp "$TABLES/$f" "$DOCS/$f" && echo "R11 publish: $TABLES/$f -> $DOCS/$f"; n=$((n + 1)); fi
     done
