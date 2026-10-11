@@ -188,7 +188,7 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
   p('| --- | --- | --- | --- | --- | --- | --- |');
   const rel = (s: Spread | undefined) => (s && s.mean !== null && s.D !== null && Math.abs(s.mean) > 0.05 ? `${f(100 * s.D / Math.abs(s.mean), 0)}%` : '');
   for (const k of [...TIMING_ROWS, 'reservePctPerDay', 'kmFixPerDay', 'nightsInNest', 'kcalEatenPerDay']) { const a = U.F.spread[k], b = U.P.spread[k], d = digitsOf(k); p(`| ${labelOf(k)} | ${f(a?.mean, d)} | ${f(a?.D, d)} | ${rel(a)} | ${f(b?.mean, d)} | ${f(b?.D, d)} | ${rel(b)} |`); }
-  for (const id of SHORT_ROWS) { const a = U.F.spread[id], b = U.P.spread[id], d = rowDigits(id); p(`| ${id} ${T(id).metric} | ${f(a?.mean, d)} | ${f(a?.D, d)} | ${rel(a)} | ${f(b?.mean, d)} | ${f(b?.D, d)} | ${rel(b)} |`); }
+  for (const id of SHORT_ROWS) { const a = U.F.spread[id], b = U.P.spread[id], d = rowDigits(id), noF = (POPULATION_ONLY as readonly string[]).includes(id); p(`| ${id} ${T(id).metric} | ${noF ? 'not read at unit F' : f(a?.mean, d)} | ${noF ? '' : f(a?.D, d)} | ${rel(a)} | ${f(b?.mean, d)} | ${f(b?.D, d)} | ${rel(b)} |`); }
 
   // ------------------------------------------------------------------------------------------------------------------
   // 4. which timing rows tell the rules from the control arms
@@ -294,24 +294,24 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
   p();
   p('Registered in r7-prereg.md §8. An engine counts as closer to wild chimpanzees on a row only if its distance to the field\'s central value is smaller than the smallest distance in the rules-plus-random family (the rules\' mean, the means of the 10, 20 and 30% mixtures, and random choice\'s mean) by more than the row\'s D at that unit, with all five guards holding. The table gives, per row and unit, the family\'s best arm and the range of values an engine would have to reach. These numbers come from development seeds 48 and 7: a test on its own unit measures its own.');
   p();
-  p('| Row | Unit | Middle of the band | Best of the family: arm, mean, distance | D | An engine counts as closer only between |');
+  p('| Row | Unit | Middle of the band | Best of the family: arm, mean, distance | D | An engine counts as closer only with a value between |');
   p('| --- | --- | --- | --- | --- | --- |');
   const family: [string, string[] | null][] = [['the rules', null], ...GROUPS.map(([name, g]) => [LABEL[name], g] as [string, string[]])];
-  function ruleLine(label: string, unit: Unit, key: string, c: number, h: number, d: number): void {
+  function ruleLine(label: string, unit: Unit, key: string, c: number, h: number, d: number, own = false): void {
     const s = U[unit].spread[key];
     if (!s || s.mean === null || s.D === null) { p(`| ${label} | ${unit} | ${f(c, d)} | no value | | not readable at this unit |`); return; }
     const fam = family.map(([name, g]) => ({ name, mean: g ? meanOf(armVals(unit, g, key)) : s.mean })).filter(x => x.mean !== null).map(x => ({ ...x, d: Math.abs(x.mean! - c) }));
     const best = fam.reduce((a, b) => (b.d < a.d ? b : a)), room = best.d - s.D;
-    p(`| ${label} | ${unit} | ${f(c, d)} | ${best.name}, ${f(best.mean, d)}, ${f(best.d / h, 2)} half-widths | ${f(s.D, d)} (${f(s.D / h, 2)} half-widths) | ${room > 0 ? `${f(c - room, d)} and ${f(c + room, d)}` : 'nothing: the family\'s best arm is already within D of the middle, so this unit cannot show an engine to be closer on this row'} |`);
+    p(`| ${label} | ${unit} | ${f(c, d)} | ${best.name}, ${f(best.mean, d)}, ${own ? `${f(best.d, d)} away` : `${f(best.d / h, 2)} half-widths`} | ${f(s.D, d)}${own ? '' : ` (${f(s.D / h, 2)} half-widths)`} | ${room > 0 ? `${f(c - room, d)} and ${f(c + room, d)}` : 'nothing: the family\'s best arm is already within D of the field value, so this unit cannot show an engine to be closer on this row'} |`);
   }
   for (const id of SHORT_ROWS) for (const unit of ['P', 'F'] as Unit[]) { if (unit === 'F' && (POPULATION_ONLY as readonly string[]).includes(id)) continue; const t = T(id); ruleLine(`${id} ${t.metric}`, unit, id, centre(t), half(t), rowDigits(id)); }
   for (const k of ['visitMean', 'treesPerDay']) for (const unit of ['P', 'F'] as Unit[]) ruleLine(labelOf(k), unit, k, (ANCHORS[k].lo + ANCHORS[k].hi) / 2, (ANCHORS[k].hi - ANCHORS[k].lo) / 2, digitsOf(k));
   p();
   p('For the Taï half-hour shares the anchor is one value without a band; the same rule applies with the distance in the share\'s own units:');
   p();
-  p('| Readout | Unit | Taï | Best of the family: arm, mean, distance | D | An engine counts as closer only between |');
+  p('| Readout | Unit | Taï | Best of the family: arm, mean, distance | D | An engine counts as closer only with a value between |');
   p('| --- | --- | --- | --- | --- | --- |');
-  for (const k of HALF_HOUR) for (const unit of ['P', 'F'] as Unit[]) ruleLine(labelOf(k), unit, k, taiValue[k]!, 1, 3);
+  for (const k of HALF_HOUR) for (const unit of ['P', 'F'] as Unit[]) ruleLine(labelOf(k), unit, k, taiValue[k]!, 1, 3, true);
 
   // ------------------------------------------------------------------------------------------------------------------
   // 9. seeds one by one; the bridge to the engine tests

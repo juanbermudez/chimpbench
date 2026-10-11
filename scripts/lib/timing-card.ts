@@ -199,7 +199,7 @@ export function mergeHist(list: Hist[]): Hist { const out: Hist = {}; for (const
 export const TIMING_ROWS = ['actChanges', 'switchesPerWakingHour', 'boutFeedMedian', 'boutRestMedian', 'boutTravelMedian', 'boutGroomMedian', 'tripsBegun', 'tripsDone', 'visitMean', 'runMedian', 'treesPerDay', 'sameHalfHour', 'sameFromRest', 'sameFromFeed'] as const;
 export const GUARD_ROWS = ['reservePctPerDay', 'kmFixPerDay', 'nightsInNest', 'actChanges', 'tripsDone'] as const;
 export const CARD_LABELS: Record<string, [string, number]> = {
-  actChanges: ['C1 act changes per animal-day', 1], switchesPerWakingHour: ['C2 switches of activity per waking hour', 2], stableSwitchesPerWakingHour: ['C2b the same, states held a minute or more', 2],
+  actChanges: ['C1 act changes per animal-day', 1], switchesPerWakingHour: ['C2 switches of activity per waking hour', 2], stableSwitchesPerWakingHour: ['C2b switches per waking hour between states held a minute or more', 2],
   boutFeedMedian: ['C3 feeding bout, median min', 2], boutFeedQ1: ['C3 feeding bout, lower quartile min', 2], boutFeedQ3: ['C3 feeding bout, upper quartile min', 2], boutFeedMean: ['C3 feeding bout, mean min', 2],
   boutRestMedian: ['C3 rest bout, median min', 2], boutRestQ1: ['C3 rest bout, lower quartile min', 2], boutRestQ3: ['C3 rest bout, upper quartile min', 2], boutRestMean: ['C3 rest bout, mean min', 2],
   boutTravelMedian: ['C3 travel bout, median min', 2], boutTravelQ1: ['C3 travel bout, lower quartile min', 2], boutTravelQ3: ['C3 travel bout, upper quartile min', 2], boutTravelMean: ['C3 travel bout, mean min', 2],
@@ -209,7 +209,7 @@ export const CARD_LABELS: Record<string, [string, number]> = {
   visitMean: ['C6 patch residency, mean feeding min per visit', 2], visitMedian: ['C6 patch residency, median min', 2], visitQ1: ['C6 patch residency, lower quartile min', 2], visitQ3: ['C6 patch residency, upper quartile min', 2],
   runMedian: ['C7 continuous feeding at one tree, median min', 2], runQ1: ['C7 continuous feeding at one tree, lower quartile min', 2], runQ3: ['C7 continuous feeding at one tree, upper quartile min', 2],
   treesPerDay: ['C8 feeding trees per animal-day', 2],
-  sameHalfHour: ['C9 half-hour pairs in the same activity, share', 3], sameFromRest: ['C9 the same, first mark resting', 3], sameFromTravel: ['C9 the same, first mark travelling', 3], sameFromFeed: ['C9 the same, first mark feeding', 3],
+  sameHalfHour: ['C9 half-hour pairs in the same activity, share', 3], sameFromRest: ['C9 half-hour pairs in the same activity, first mark resting', 3], sameFromTravel: ['C9 half-hour pairs in the same activity, first mark travelling', 3], sameFromFeed: ['C9 half-hour pairs in the same activity, first mark feeding', 3],
   reservePctPerDay: ['reserve change, % of the reserve cap per day', 3], kmFixPerDay: ['distance by 5-min fixes, km per day', 2], kmPerDay: ['distance by every tick, km per day', 2], nightsInNest: ['nights in a nest, share of nights', 3],
   kcalEatenPerDay: ['energy eaten, kcal per day (the field\'s formula measure; not a guard)', 0], kcalInPerDay: ['usable energy in, kcal per day', 0], dmInPerDay: ['dry matter eaten, g per day', 0],
   shareFeed: ['awake time feeding, share', 3], shareRest: ['awake time resting, share', 3], shareTravel: ['awake time travelling, share', 3], shareGroom: ['awake time grooming, share', 3], shareSocial: ['awake time in other social acts, share', 3], shareAgonistic: ['awake time agonistic, share', 3],
