@@ -118,11 +118,17 @@ export interface StayFit {
   /** What (c) adds over (b) as a share of what (b) gains over the base rate. */ shareOfB: number | null;
 }
 
-/** The comparison on held-out animals for one label: every moment predicted by a model that never saw its animal. */
-export function evaluate(moments: Moment[], label: 'stay' | 'stayKind' = 'stay', lambda = 1, resamples = 2000, k = 5): StayFit {
+/**
+ * The comparison on held-out animals for one label: every moment predicted by a model that never saw its animal.
+ * `heldOut` 'seed' (a check added after the registered result; description): one fold per seed instead, so every moment
+ * is predicted by a model fitted on another world.
+ */
+export function evaluate(moments: Moment[], label: 'stay' | 'stayKind' = 'stay', lambda = 1, resamples = 2000, k = 5, heldOut: 'animal' | 'seed' = 'animal'): StayFit {
   const y = moments.map(m => m[label] as number), animal = moments.map(m => `${m.seed}:${m.id}`);
   // the animals in the order of a hash of seed and id (the sampler's own hash is by tick too; this one must not be): a fixed, label-free deal
-  const order = [...new Set(animal)].sort((a, b) => hashOf(a) - hashOf(b) || (a < b ? -1 : 1)), fold = foldsByCluster(animal, order, k);
+  const order = [...new Set(animal)].sort((a, b) => hashOf(a) - hashOf(b) || (a < b ? -1 : 1)), seedsIn = [...new Set(moments.map(m => m.seed))].sort((a, b) => a - b);
+  if (heldOut === 'seed') k = seedsIn.length;
+  const fold = heldOut === 'seed' ? moments.map(m => seedsIn.indexOf(m.seed)) : foldsByCluster(animal, order, k);
   const preds: Record<string, number[]> = {}, models: ModelScore[] = [];
   const add = (id: string, words: string, features: number, p: number[]) => { preds[id] = p; models.push({ id, words, features, logLoss: logLoss(p, y), auc: auc(p, y) }); };
   // the base rate: the share staying among the other folds' moments

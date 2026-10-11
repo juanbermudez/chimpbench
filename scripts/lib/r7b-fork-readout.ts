@@ -62,6 +62,7 @@ export interface Readout {
   rulesTook: Share; rulesTop: Share; rulesTookKind?: Share; chanceRules: number;
   /** Among points with a distinguishable winner that is not the rules' option: the rules' option is told below the winner. */ rulesToldWorse: Share;
   /** Kinds of the eight-replicate winners, of the options the rules took, and of all options on the menus. */ winnerKinds: Record<string, number>; rulesKinds: Record<string, number>; menuKinds: Record<string, number>;
+  /** Kinds of the winners at the points where the winner is distinguishable. */ winnerKindsDistinguishable: Record<string, number>;
   /** Per term: the mean share of its variance between options, what noise alone gives, the points at which it varies at all, and repeat if the score were that term alone. */
   terms: { term: string; between: number | null; noise: number | null; varies: number; repeat: Share }[];
   /** Per variant: points whose eight-replicate winner (kinds: its kind) differs from the registered score's, on all points and on those whose registered winner is distinguishable; the winners' kinds. */
@@ -91,6 +92,7 @@ export function readout(all: PointFile[], q: Question, h: number): Readout {
     winnerKinds: counts(pts.map((p, i) => (stand[i].winner < 0 ? 'no value' : p.options[S[i].opts[stand[i].winner]].family))),
     rulesKinds: counts(pts.map(p => (p.rulesTook < 0 ? 'not on the menu' : p.options[p.rulesTook].family))),
     menuKinds: counts(pts.flatMap((p, i) => S[i].opts.map(o => p.options[o].family))),
+    winnerKindsDistinguishable: counts(pts.flatMap((p, i) => (dist[i] === true ? [p.options[S[i].opts[stand[i].winner]].family] : []))),
     terms: [], variants: [], f1: false, f2: false, f3: null, f3On: 'all', f3Worst: null,
   };
   if (q === 'kinds') {

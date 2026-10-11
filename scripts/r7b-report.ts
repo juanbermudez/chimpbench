@@ -47,7 +47,7 @@ if (process.argv[1]?.endsWith('r7b-report.ts')) {
     const family: [string, string[] | null][] = [['the rules', null], ['random choice', ['random-a', 'random-b']], ['10% random', ['mix10-a', 'mix10-b']], ['20% random', ['mix20-a', 'mix20-b']], ['30% random', ['mix30-a', 'mix30-b']]];
     const digits = (id: string) => { const t = T(id), w = (t.accept.hi ?? 1) - (t.accept.lo ?? 0); return w >= 100 ? 0 : w >= 10 ? 1 : w >= 1 ? 2 : 3; };
     const fo = (v: number | null, d: number) => (v === null ? 'no value' : v === 0 ? 'inside' : +v.toFixed(d) === 0 ? v.toPrecision(1) : f(v, d));
-    p(`Read from the 64 arm files of stage R7 (\`${r7}\`; no run was made). **Outside the band** is the distance of a value outside its field band in the row's own units, 0 anywhere inside (amendment A1, [r7-prereg.md](r7-prereg.md) §13a). An engine counts as closer to the field on a row only if it lies outside the band by less than the best arm of the rules-plus-random family, by more than D. The full tables, with the measure first registered beside them as description, are in [r7-numbers.md](r7-numbers.md) sections 6 and 8, written by the amended \`scripts/r7-report.ts\`.`);
+    p(`Read from the 64 arm files of stage R7 (\`${r7.replace(/^.*\/(\.claude\/worktrees\/)/, '$1')}\` of the main checkout, read only; no run was made). **Outside the band** is the distance of a value outside its field band in the row's own units, 0 anywhere inside (amendment A1, [r7-prereg.md](r7-prereg.md) §13a). An engine counts as closer to the field on a row only if it lies outside the band by less than the best arm of the rules-plus-random family, by more than D. The full tables, with the measure first registered beside them as description, are in [r7-numbers.md](r7-numbers.md) sections 6 and 8, written by the amended \`scripts/r7-report.ts\`.`);
     p();
     p('| Row | Unit | Field band | The rules: mean | Outside the band: the rules / random choice / 10% / 20% / 30% random | D | Could an engine be shown closer? |');
     p('| --- | --- | --- | --- | --- | --- | --- |');
@@ -131,7 +131,7 @@ if (process.argv[1]?.endsWith('r7b-report.ts')) {
     p(`For kinds, the winning option itself (not only its kind) repeats at ${H.map(h => `${sh(R[`kinds:${h}`].repeatOption!)} after ${hw[h]} (chance ${f(R[`kinds:${h}`].chanceOption)})`).join(' and ')}; a menu holds ${f(R['kinds:0'].meanKinds, 1)} kinds on average.`);
     const trips2 = pts.filter(q => reads(q, 'food') && optionsOf(q, 'food').filter(i => q.options[i].family === 'food-trip').length >= 2), comp = pts.filter(q => reads(q, 'food'));
     p();
-    p(`"Which food" is read on ${comp.length} points: ${comp.filter(q => optionsOf(q, 'food').some(i => q.options[i].family === 'feed')).length} hold feeding here beside at least one trip, ${trips2.length} hold two or more trips. On the ${trips2.length} points with two or more trips alone, repeat is ${H.map(h => `${sh(readout(trips2, 'food', h).repeat)} after ${hw[h]}`).join(' and ')}.`);
+    p(`"Which food" is read on ${comp.length} points: ${comp.filter(q => optionsOf(q, 'food').some(i => q.options[i].family === 'feed')).length} hold feeding here beside at least one trip, ${trips2.length} hold two or more trips. ${trips2.length ? `On the ${trips2.length} points with two or more trips alone, repeat is ${H.map(h => `${sh(readout(trips2, 'food', h).repeat)} after ${hw[h]}`).join(' and ')}.` : 'No menu of the sample holds two trips to food, so the question read here is "feed here or go to another tree"; which of several trees cannot be read on the rules\' menu at all.'}`);
     p();
     p('### 2.4 Three hours against six');
     p();
@@ -147,9 +147,9 @@ if (process.argv[1]?.endsWith('r7b-report.ts')) {
     const n0 = R['kinds:0'].points, menuN = Object.values(R['kinds:0'].menuKinds).reduce((a, b) => a + b, 0);
     p('**Kinds of the winners beside the kinds the rules took** (shares of the points of the kinds question; the menu column is the kind\'s share of all options offered):');
     p();
-    p('| Kind | Share of the options on the menus | The rules took | Winner after 3 h | Winner after 6 h |');
-    p('| --- | --- | --- | --- | --- |');
-    for (const kd of kindsAll) p(`| ${kd} | ${pct((R['kinds:0'].menuKinds[kd] ?? 0) / menuN)} | ${pct((R['kinds:0'].rulesKinds[kd] ?? 0) / n0)} | ${pct((R['kinds:0'].winnerKinds[kd] ?? 0) / n0)} | ${pct((R['kinds:1'].winnerKinds[kd] ?? 0) / R['kinds:1'].points)} |`);
+    p(`| Kind | Share of the options on the menus | The rules took | Winner after 3 h | Winner after 6 h | Winner after 3 h, the ${R['kinds:0'].distinguishable.yes} distinguishable points (count) | Winner after 6 h, the ${R['kinds:1'].distinguishable.yes} distinguishable points (count) |`);
+    p('| --- | --- | --- | --- | --- | --- | --- |');
+    for (const kd of kindsAll) p(`| ${kd} | ${pct((R['kinds:0'].menuKinds[kd] ?? 0) / menuN)} | ${pct((R['kinds:0'].rulesKinds[kd] ?? 0) / n0)} | ${pct((R['kinds:0'].winnerKinds[kd] ?? 0) / n0)} | ${pct((R['kinds:1'].winnerKinds[kd] ?? 0) / R['kinds:1'].points)} | ${R['kinds:0'].winnerKindsDistinguishable[kd] ?? 0} | ${R['kinds:1'].winnerKindsDistinguishable[kd] ?? 0} |`);
     p();
     p('### 2.6 Which body state decides');
     p();
@@ -194,11 +194,13 @@ if (process.argv[1]?.endsWith('r7b-report.ts')) {
     if (seeds.every(s => existsSync(resolve(ownDir, `s${s}.json`)))) {
       const own = seeds.flatMap(s => readFileSync(resolve(ownDir, `s${s}.points.jsonl`), 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l) as PointFile));
       const ownMeta = seeds.map(s => JSON.parse(readFileSync(resolve(ownDir, `s${s}.json`), 'utf8')) as ForkMeta & { ownNoise?: boolean });
-      const keyOf = (q: PointFile) => `${q.seed}:${q.tick}:${q.id}:${q.mode}`, byKey = new Map(own.map(q => [keyOf(q), q])), same = pts.filter(q => byKey.has(keyOf(q)));
+      const keyOf = (q: PointFile) => `${q.seed}:${q.tick}:${q.id}:${q.mode}`, byKey = new Map(own.map(q => [keyOf(q), q]));
+      // iteration 1 on the same points and the same options: an option iteration 2 could not apply under a re-drawn jitter is left out of both
+      const same = pts.filter(q => byKey.has(keyOf(q))).map(q => ({ ...q, forks: q.forks.map((x, i) => (byKey.get(keyOf(q))!.forks[i] ? x : null)) }));
       p();
       p('### 2.9 Iteration 2: the animal\'s own hashed noise re-drawn too');
       p();
-      p(`The rules' evaluation jitter and bout lengths are hashes of the animal's own decision count, which a salt in the random stream never re-draws: in section 2.8 every replicate of an option carries the same jitter. Here a replicate's salt also moves the forked animal's decision count, so its jitter and bout lengths are drawn again in every replicate (\`--own-noise\`; runs at head ${[...new Set(ownMeta.map(m => `${m.head}${m.dirty ? ' (dirty)' : ''}`))].join(', ')}; the parent untouched: ${ownMeta.every(m => m.parentUntouched) ? 'yes' : 'NO'}). ${own.length} points: the first of each seed's main sample in hash order, so each is also a point of sections 2.1 to 2.8 (${same.length} found there). Both columns are read on those same points.`);
+      p(`The rules' evaluation jitter and bout lengths are hashes of the animal's own decision count, which a salt in the random stream never re-draws: in section 2.8 every replicate of an option carries the same jitter. Here a replicate's salt also moves the forked animal's decision count, so its jitter and bout lengths are drawn again in every replicate (\`--own-noise\`; runs at head ${[...new Set(ownMeta.map(m => `${m.head}${m.dirty ? ' (dirty)' : ''}`))].join(', ')}; the parent untouched: ${ownMeta.every(m => m.parentUntouched) ? 'yes' : 'NO'}). ${own.length} points: the first of each seed's main sample in hash order, so each is also a point of sections 2.1 to 2.8 (${same.length} found there). ${costs(own).notApplicable} of ${costs(own).options} options could not be applied in at least one replicate (the list of legal options is cut by a score that holds the jitter, so a re-drawn jitter can take an option off it); such an option is left out of both columns, which are read on the same points and the same options.`);
       p();
       p('| Question | Horizon | Points | Repeat, salt in the random stream only | Repeat, its own noise re-drawn too | 95% interval | Chance | Distinguishable: stream only | Distinguishable: own noise too | Repeat among distinguishable, own noise too | The eight-replicate winner is the same in the two sets of forks | F1, own noise too | F2 | Worth a ruling (F4: F1 or F2 in both iterations) |');
       p('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
@@ -279,7 +281,7 @@ if (process.argv[1]?.endsWith('r7b-report.ts')) {
     table(fit);
     const bc = fit.differences.find(d => d.from === 'b' && d.to === 'c')!;
     p();
-    p(`**Reading.** (c) ${fit.cBeatsB ? 'beats' : 'does not beat'} (b) beyond bootstrap noise: the interval of the gain is ${ci(bc.ci, 4)}. ${fit.shareOfB === null ? '' : `What the packet features add is ${pct(fit.shareOfB)} of what the kind of act and the minutes gain over the base rate.`}`);
+    p(`**Reading.** (c) ${fit.cBeatsB ? 'beats' : 'does not beat'} (b) beyond bootstrap noise: the interval of the gain is ${ci(bc.ci, 4)}. ${fit.shareOfB === null ? '' : `What the packet features add is ${pct(fit.shareOfB)} of what the kind of act and the minutes gain over the base rate, and ${(100 * bc.logLoss / fit.models[0].logLoss).toFixed(1)}% of the base rate's log-loss.`}`);
     p();
     p('### 3.4 The description label: still in an act of the same kind');
     p();
@@ -290,6 +292,12 @@ if (process.argv[1]?.endsWith('r7b-report.ts')) {
     p('| Penalty | Log-loss of (b) | Log-loss of (c) | Gain of (c) over (b) |');
     p('| --- | --- | --- | --- |');
     for (const lam of [0.1, 1, 10]) { const x = lam === 1 ? fit : evaluate(moments, 'stay', lam, 0); const b = x.models.find(m => m.id === 'b')!.logLoss, cc = x.models.find(m => m.id === 'c')!.logLoss; p(`| ${lam} | ${f(b, 4)} | ${f(cc, 4)} | ${f(b - cc, 4)} |`); }
+    p();
+    p('### 3.5b Held-out world (a check added after the registered result; description)');
+    p();
+    p('Animals of one world share its days: a model that never saw an animal has still seen its party on the same afternoon. Here each seed\'s moments are predicted by models fitted on the other seed\'s world alone (two folds by seed; intervals over animals as before).');
+    p();
+    table(evaluate(moments, 'stay', 1, 2000, 2, 'seed'));
     p();
     p('### 3.6 Which packet features carry it (description)');
     p();

@@ -216,7 +216,9 @@ export function outOfFold(X: number[][], y: number[], fold: number[], lambda = 1
   for (let f = 0; f < k; f++) {
     const train = fold.map((v, i) => (v !== f ? i : -1)).filter(i => i >= 0), test = fold.map((v, i) => (v === f ? i : -1)).filter(i => i >= 0);
     if (!test.length) continue;
-    const m = fitLogistic(train.map(i => X[i]), train.map(i => y[i]), lambda), p = predictLogistic(m, test.map(i => X[i]));
+    const m = fitLogistic(train.map(i => X[i]), train.map(i => y[i]), lambda);
+    if (!m.converged) throw new Error(`fold ${f}: the logistic fit did not converge in ${m.iterations} steps`);
+    const p = predictLogistic(m, test.map(i => X[i]));
     test.forEach((i, j) => { out[i] = p[j]; });
   }
   return out;
