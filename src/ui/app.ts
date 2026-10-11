@@ -299,12 +299,16 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
   const feed = createFeed(q('.p-feed'), ctx);
   const minimap = createMinimap(q('.map-host'), ctx);
   const scaleBar = createScaleBar(q('.scalebar'), q('#viewport'), () => deps.getScene());
-  // Stage W7: the key to the Food layer's diamonds, above the scale bar. The selected animal's name is looked up only when the selection changes.
-  let keyFor = -2, keyName: string | null = null;
+  // Stage W7: the key to the Food layer's diamonds, above the scale bar. The selected animal is looked up only when the selection
+  // changes or another simulation is opened (the same id is another animal there); no name once it has died (its marks are gone too).
+  let keyFor = -2, keyWorld: World | null = null, keyChimp: Chimp | undefined;
+  const keyState: { layerOn: boolean; field: boolean; selectedName: string | null } = { layerOn: true, field: false, selectedName: null };   // one record, rewritten each frame
   const fruitKey = createFruitKey(q('.fruitkey'), q('#viewport'), () => deps.getScene(), () => {
     const id = state.selectedId ?? -1, w = deps.getWorld();
-    if (id !== keyFor) { keyFor = id; const c = id >= 0 ? w.chimps.find(x => x.id === id) : undefined; keyName = c && c.alive ? c.name : null; }
-    return { layerOn: state.layers.fruit, field: w.size > 1000, selectedName: keyName };
+    if (id !== keyFor || w !== keyWorld) { keyFor = id; keyWorld = w; keyChimp = id >= 0 ? w.chimps.find(x => x.id === id) : undefined; }
+    keyState.selectedName = keyChimp && keyChimp.alive ? keyChimp.name : null;
+    keyState.layerOn = state.layers.fruit; keyState.field = w.size > 1000;
+    return keyState;
   });
   const chimpPanel = createChimpPanel(q('.chimp-panel'), ctx);
   const commPanel = createCommunityPanel(q('[data-pane="communities"]'), ctx);
