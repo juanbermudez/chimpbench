@@ -33,6 +33,7 @@ import { referenceRate, smallMapPace } from './creatures/pace';
 import { applyInertia, blinkAt, createAttention, createBlink, createInertia, scanAngles, selectAttention, springStep, startInertia, type AttnCand, type Attention, type Blink, type Inertia } from './creatures/secondary';
 import type { KeepCandidate } from './env/occluders';
 import { createTreeIndex, type TreeIndex } from './creatures/tree-index';
+import { holding, listening } from './creatures/heard';
 import {
   Listen, PatrolCode, RELEASE_BRISTLE_TAU, RELEASE_DRUM_REACH, RELEASE_WINDOW_H, backSide, createFileCue, createPatrolLook, fileCue, listenVariant,
   patrolClip, patrolLook, patrolTension, phasedParties, stepLeg, type PatrolClip,
@@ -114,6 +115,9 @@ const LOCOMOTION_FAST = new Set(['gallop', 'swagger']);
 // Attention off (eyes shut or no control of the head) or damped (eyes half closed, clinging, building).
 const ATTN_OFF = new Set(['sleep', 'dead', 'deadCarried']);
 const ATTN_LOW = new Set(['carryVentral', 'nestBuild', 'groomee', 'shelter']);
+// Stage W10: the stationary clips a listener holds for a moment when a long call reaches it (creatures/heard.ts).
+// Not the contact pairs (wrestling, mating, embraces, fights), whose two bodies must keep time, nor a caller's own clip.
+const HEARD_HOLD = new Set(['forage', 'groom', 'groomee', 'sitIdle', 'perch', 'stand', 'drink', 'rest', 'nurse', 'play', 'beg', 'share', 'guard']);
 /** Inertialization time for a clip change (s): quick for gait changes and fights, slow into lying down. */
 function transitionTime(from: string, to: string): number {
   if (LOCOMOTION.has(from) && LOCOMOTION.has(to)) return 0.25;
@@ -934,6 +938,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         v[B.chest * 3 + 1] += lead; v[B.neck * 3 + 1] += lead * 0.8; v[B.hips * 3 + 1] -= lead * 0.3;
       }
     }
+    // ---- Stage W10 (calls you can see; creatures/heard.ts): a stationary listener holds its clip for a moment once a
+    // long call's arc has reached it, and is released through the pop guard's blend below. A stylization. ----
+    const heardRelease = heardHold(a, clip, start);
     // Inertialized transition (secondary.ts): the new clip plays at once; the old output's offset and velocity
     // decay over the transition instead of a frozen pose crossfading out.
     const cv = a.cur.v, ov = a.out.v;
@@ -945,7 +952,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       const pc = a.prevCur;
       for (let i = 3; i < PI.root; i++) jump = Math.max(jump, Math.abs(cv[i] - pc[i]));
       for (let l = 0; l < 4; l++) { const o = PI.ik + l * 5; if (cv[o + 3] > 0.01 && pc[o + 3] > 0.01) jump = Math.max(jump, 3 * Math.abs(cv[o] - pc[o]), 3 * Math.abs(cv[o + 1] - pc[o + 1]), 3 * Math.abs(cv[o + 2] - pc[o + 2])); }
-      pop = jump > Math.max(0.45, 6 * dtAnim);
+      pop = jump > Math.max(0.45, 6 * dtAnim) || heardRelease;   // W10: a held clip resumes through the same blend
     }
     a.prevCur.set(cv);
     if (start) {
@@ -1067,9 +1074,32 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     for (let k = 0; k < 3; k++) springStep(a.lk[k], GOAL[k], hl, dt);
     return w;
   }
+  // ---- Stage W10 (calls you can see; creatures/heard.ts, fx.ts noteListeners): a separate block. An animal a long
+  // call has just reached looks toward where it came from, whatever the distance (the candidate below turns heads only
+  // for a caller within 20 m), and a stationary one holds its clip for a moment. Stylizations; field map only. ----
+  function heardAttention(a: Anim, dt: number): number {
+    const H = fx.heard;
+    if (!listening(H, a.slot, a.id, lastElapsed)) return 0;
+    const dx = H.x[a.slot] - a.x, dz = H.z[a.slot] - a.z;
+    if (dx * dx + dz * dz < 0.25) return 0;
+    dirGoal(a, Math.atan2(dx, dz), 0.05, 8 * a.morph.size);
+    if (a.lastSkinFrame < 0 || !Number.isFinite(a.lk[0].x) || Math.abs(a.lk[0].x - GOAL[0]) > 40) for (let k = 0; k < 3; k++) { a.lk[k].x = GOAL[k]; a.lk[k].v = 0; }
+    for (let k = 0; k < 3; k++) springStep(a.lk[k], GOAL[k], 0.12, dt);
+    return 0.9;
+  }
+  /** Holds the clip's pose while a stationary listener listens; true on the frame the hold ends (the caller blends out of it). */
+  function heardHold(a: Anim, clip: string, start: boolean): boolean {
+    const H = fx.heard, was = H.held[a.slot] === 1;
+    const hold = !start && a.lastSkinFrame >= 0 && a.carry === 0 && !a.moving && a.chimp.alive && HEARD_HOLD.has(clip) && holding(H, a.slot, a.id, lastElapsed);
+    if (hold) a.cur.v.set(a.prevCur);
+    H.held[a.slot] = hold ? 1 : 0;
+    return was && !hold;
+  }
   function updateAttention(a: Anim, partner: Anim | undefined, dt: number): number {
     const c = a.chimp;
     if (a.pCode !== PatrolCode.none && a.pCode !== PatrolCode.return) return patrolAttention(a, dt);
+    // ---- Stage W10 (separate block): a long call just heard takes the gaze for a moment (heardAttention above). ----
+    { const hw = heardAttention(a, dt); if (hw > 0) return hw; }
     candN = 0;
     if (partner) addCand(4, partner.id);
     for (const call of world.calls) {

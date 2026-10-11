@@ -4,10 +4,18 @@
 // flare for alpha takeovers, soft light links for grooming/consolation and
 // motion streaks behind chases. All timing is in real seconds so effects stay
 // readable at any simulation speed.
+// Stage W10 (field map): a call ring is still drawn at the caller, sized for a close view (5 to 18 m, not the call's
+// reach: the reach is the arc of the strategy and map views, render/env/party-marks.ts). What is new here is the
+// listeners: when a long call is first seen, every drawn animal inside its radius is noted (creatures/heard.ts; the
+// pose code turns its head and holds its clip), and in the strategy view a small ring blips on each of them as the
+// arc reaches it (drawn over the canopy, from a fixed table: one more draw call only while a blip is live). The blip
+// is a stylization.
 import * as THREE from 'three';
-import type { CallKind, Interaction, World } from '../../types';
+import type { Call, CallKind, Interaction, World } from '../../types';
 import type { Anim, CreatureContext, CreatureFrame } from '../creatures';
 import { clamp } from './util';
+import { FRESH_CALL_H, arrivalDelay, drawsReach } from '../callreach';
+import { HEARD_MAX_RATE, createHeard, noteHeard } from './heard';
 
 const MAX_RINGS = 192;
 const MAX_PARTICLES = 1600;
@@ -145,6 +153,67 @@ export function createFX(parent: THREE.Object3D, ctx: CreatureContext) {
   const lastAlpha = new Map<number, number>();
   let spawnBudget = 0;
 
+  // ---- Stage W10: listeners (field map only; the 160 m map keeps its 20 m rule in creatures.ts) -------------------
+  const fieldMap = ctx.world.size > 1000;
+  const heard = createHeard(256);
+  const BLIP: Partial<Record<CallKind, THREE.Color>> = { scream: COL.scream, bark: COL.bark, 'alarm-hoo': COL.alarm, drum: COL.drum };
+  // Listener blips (strategy view): the ring quads again, but drawn over the canopy (no depth test: listeners sit under
+  // crowns, where a depth-tested ring is hidden from above). A fixed table, one more draw call only while any is live.
+  const MAX_BLIPS = 96, BLIP_LIFE = 0.9;
+  const blipGeo = own(new THREE.InstancedBufferGeometry());
+  blipGeo.index = base.index; blipGeo.setAttribute('position', base.getAttribute('position')); blipGeo.setAttribute('uv', base.getAttribute('uv'));
+  const bRing = new THREE.InstancedBufferAttribute(new Float32Array(MAX_BLIPS * 4), 4).setUsage(THREE.DynamicDrawUsage);
+  const bStyle = new THREE.InstancedBufferAttribute(new Float32Array(MAX_BLIPS * 4), 4).setUsage(THREE.DynamicDrawUsage);
+  const bColor = new THREE.InstancedBufferAttribute(new Float32Array(MAX_BLIPS * 3), 3).setUsage(THREE.DynamicDrawUsage);
+  blipGeo.setAttribute('aRing', bRing); blipGeo.setAttribute('aStyle', bStyle); blipGeo.setAttribute('aColor', bColor);
+  blipGeo.instanceCount = 0;
+  const blipMat = own(ringMat.clone()); blipMat.depthTest = false;
+  const blipMesh = new THREE.Mesh(blipGeo, blipMat);
+  blipMesh.frustumCulled = false; blipMesh.renderOrder = 12; blipMesh.visible = false;
+  group.add(blipMesh);
+  // Per blip: x, y, z, final radius; start time; colour.
+  const blipAt = new Float32Array(MAX_BLIPS * 4), blipStart = new Float64Array(MAX_BLIPS).fill(-Infinity), blipCol = new Float32Array(MAX_BLIPS * 3);
+  let blipNext = 0, blipUntil = -Infinity;
+  function blip(x: number, y: number, z: number, r1: number, start: number, color: THREE.Color) {
+    const k = blipNext; blipNext = (k + 1) % MAX_BLIPS;
+    blipAt[k * 4] = x; blipAt[k * 4 + 1] = y; blipAt[k * 4 + 2] = z; blipAt[k * 4 + 3] = r1; blipStart[k] = start;
+    blipCol[k * 3] = color.r; blipCol[k * 3 + 1] = color.g; blipCol[k * 3 + 2] = color.b;
+    blipUntil = Math.max(blipUntil, start + BLIP_LIFE);
+  }
+  function updateBlips(now: number, closeView: boolean) {
+    if (now >= blipUntil || closeView) { if (blipMesh.visible) { blipMesh.visible = false; blipGeo.instanceCount = 0; } return; }
+    const R = bRing.array as Float32Array, S = bStyle.array as Float32Array, Cc = bColor.array as Float32Array;
+    let n = 0;
+    for (let k = 0; k < MAX_BLIPS; k++) {
+      const t = (now - blipStart[k]) / BLIP_LIFE;
+      if (!(t >= 0 && t < 1)) continue;
+      const e = 1 - Math.pow(1 - t, 2.2), r1 = blipAt[k * 4 + 3];
+      R[n * 4] = blipAt[k * 4]; R[n * 4 + 1] = blipAt[k * 4 + 1]; R[n * 4 + 2] = blipAt[k * 4 + 2]; R[n * 4 + 3] = r1 * (0.35 + 0.65 * e);
+      S[n * 4] = 0.1; S[n * 4 + 1] = 0.85 * (1 - t) * Math.min(1, t * 8); S[n * 4 + 2] = 0; S[n * 4 + 3] = 0.12;
+      Cc[n * 3] = blipCol[k * 3]; Cc[n * 3 + 1] = blipCol[k * 3 + 1]; Cc[n * 3 + 2] = blipCol[k * 3 + 2];
+      n++;
+    }
+    blipGeo.instanceCount = n; blipMesh.visible = n > 0;
+    bRing.needsUpdate = bStyle.needsUpdate = bColor.needsUpdate = true;
+  }
+  /** Notes every drawn animal inside the call's radius; in the strategy view each gets a small ring as the arc arrives. */
+  function noteListeners(call: Call, frame: CreatureFrame, anims: Map<number, Anim>, now: number) {
+    const cx = call.position[0], cz = call.position[2], r2 = call.radius * call.radius;
+    for (const b of anims.values()) {
+      const c = b.chimp;
+      if (!c.alive || b.id === call.callerId) continue;
+      const dx = c.position[0] - cx, dz = c.position[2] - cz, d2 = dx * dx + dz * dz;
+      if (d2 > r2) continue;
+      const delay = arrivalDelay(Math.sqrt(d2), call.radius);
+      // The head turn and the hold have a refractory time (heard.ts); the blip marks every call the animal is inside.
+      noteHeard(heard, b.slot, b.id, now + delay, cx, cz);
+      if (frame.closeView || !b.visible || b.carry !== 0) continue;
+      // A ring about 22 px in radius around the animal's disc at any strategy zoom (design assumption).
+      const s = b.morph.size, r1 = Math.max(1.9 * s, 22 * s / Math.max(1, b.px));
+      blip(b.bx, (b.elevated > 0.5 ? b.by : ctx.groundHeight(b.bx, b.bz)) + 0.12, b.bz, r1, now + delay, BLIP[call.kind] ?? COL.hoot);
+    }
+  }
+
   function callPattern(kind: CallKind, x: number, y: number, z: number, radius: number, s: number, now: number, gy: number) {
     const R = clamp(radius, 5, 18);
     const mk = (r1: number, life: number, thick: number, alpha: number, color: THREE.Color, jag = 0, fill = 0, yy = y): RingSpec => ({ x, y: yy, z, r0: 0.25 * s, r1, life, thick, alpha, color, jag, fill, follow: 0 });
@@ -187,6 +256,8 @@ export function createFX(parent: THREE.Object3D, ctx: CreatureContext) {
     for (const call of world.calls ?? []) {
       if (seenCalls.has(call.id)) continue;
       seenCalls.add(call.id);
+      // Stage W10: who hears it (not at speeds where a second of looking would span minutes).
+      if (fieldMap && drawsReach(call.kind) && world.time - call.time <= FRESH_CALL_H && frame.simRate <= HEARD_MAX_RATE) noteListeners(call, frame, anims, now);
       if (world.time - call.time > 0.25 || spawnBudget < 1) continue;
       const a = anims.get(call.callerId);
       if (a && !a.visible && rings.length > MAX_RINGS * 0.5) continue;
@@ -291,6 +362,7 @@ export function createFX(parent: THREE.Object3D, ctx: CreatureContext) {
     lGeo.setDrawRange(0, baseOff + tn * 2);
     lGeo.attributes.position.needsUpdate = true; lGeo.attributes.color.needsUpdate = true;
 
+    updateBlips(now, frame.closeView);
     // Scheduled rings.
     for (let i = scheduled.length - 1; i >= 0; i--) if (scheduled[i].at <= now) { ring(scheduled[i].spec, now); scheduled.splice(i, 1); }
     // Ring attributes.
@@ -397,6 +469,8 @@ export function createFX(parent: THREE.Object3D, ctx: CreatureContext) {
     update,
     /** Test hook: fire a call pattern at a position. */
     ring, callPattern,
+    /** Stage W10: the animals a long call has just reached (creatures/heard.ts), read by the pose code. */
+    heard,
     dispose() { parent.remove(group); base.dispose(); disposables.forEach(d => d.dispose()); },
   };
 }
