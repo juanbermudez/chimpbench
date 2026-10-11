@@ -591,131 +591,383 @@ made: the comparison column's arithmetic counted a tie twice when two belief off
 thousandths (it cannot happen with the simulation's own offsets, and the training label does not use that code).
 Not run: the whole suite, the build, `tests/sim-track-e.test.ts`.
 
+## 11. Review and amendments (the reviewer, 11 October 2026; logged at 12:01 EDT, before any model run)
+
+The builder stalled at 04:19 inside its last check and wrote no report. A second agent reviewed the branch on 11
+October from 11:30 EDT and finishes the stage here. When this section was written: no process of the model's Python
+environment had ever been started by this stage, no adapter existed, the control arms of seeds 4111 and 4222 were on
+file and had been read (§10.7), and stages R8, R9 and R7b had reported (frozen checkout `bench-t1` at a11c45c; tables
+`r8-wording-numbers.md`, `r9-numbers.md`, `r9-seed2-numbers.md`, `r7b-numbers.md`). So §11.1 to §11.4 are written with
+the control arms and those three results in view and with no engine arm of this stage in existence. None of them
+makes a registered mark or statement easier to meet: two add a mark that can fail (N1, W1), one adds a table, one
+fixes an order and says what one training seed may carry, one withdraws a claim. Marks O1 to O4, statements S0 to S3,
+L1, the ablation rule, D and the guards stand as registered in §6.
+
+### 11.1 The decode: the top pick, a draw arm beside it, and nights in a nest under a draw (amends §5)
+
+**What stage R9 found** (ten focal animals, five days, seeds 21 and 5, the gate on; r9-numbers.md). A draw does what it
+is for: the first adapter begins 5.0 trips a day against 2.3 with the top pick (the rules 8.3) and changes act 46.4
+times against 33.6 (the rules 47.6). It fails "does no harm": nights in a nest 49 and 48 of 50 against 50, and
+reserves lower in one salt. A held draw is worse for the first adapter (42 of 50 nights, 145 kcal less a day). By the
+registered statements and R9's amendment A1 neither decode becomes the standard. R9's reading: a hedged model plus a
+draw makes the occasional other choice exactly where the rules are near-certain (nesting at dusk).
+
+**So, for this stage:**
+
+- **The registered primary decode is the top pick.** S0 to S3, L1 and the ablation are read on the top-pick arms.
+- **One draw arm (decode salt 1) runs beside the top pick for every new adapter**; `p5b-s7` also runs salt 2, so one
+  salt spread is on file. This is the branch §5 registered for "R9 names no standard". The branches `draw` and `held`
+  of §5 are closed: `scripts/r11-run.sh` refuses `R11_DECODE` set to anything but the top pick.
+- The statements are repeated for the draw arms as a second line, as §5 registered; no outcome is named from it.
+- **The reading, fixed now.** This stage's adapters are taught the rules' own odds, not one-hot picks. Where the rules
+  are near-certain (0.396 of training labels put 0.99 or more on one option, §10.4) such an adapter should be
+  near-certain too, so a draw from its odds should stop costing nests while still spreading choices where the rules
+  themselves are spread.
+- **Mark N1, nights in a nest under a draw** (it can fail). Read for each draw arm of an adapter, its two seeds pooled
+  (50 animal-nights when nobody dies; a night counts from 0.9 of its dark ticks in a nest, the card's rule):
+  1. no more than one night out of a nest beyond the same adapter's top-pick arm, and the paired 95% interval over
+     animals of the difference in the share of nights (draw less top pick) not wholly below 0. This is R9's rule H1;
+  2. the arm's share of nights in a nest not below the rules' mean by more than D on this test's own control arms.
+     This is the registered guard of §6.2, read for the arm alone (the guard of §6.2 fails for a recipe only when
+     every realization is below the line). On the control arms on file the rules spent 398 of 400 nights in a nest
+     (two re-draws lost one night each), mean 0.995, D 0.023: the line is 0.972, so **49 of 50 nights keep it and 48
+     do not**.
+  An adapter meets N1 when every draw arm of it on file meets both parts. **The recipe P5b meets N1 only when both its
+  trainings do.** If it does, the result reads: for a model taught the rules' own odds the draw no longer costs nests
+  on these worlds. If it does not: the draw still costs nests even then, and it stays an arm beside the top pick,
+  whatever it does to timing. N1 replaces no guard and enters no statement of §6.2. What it cannot show: one night is
+  a fiftieth of an arm, so N1 tells a draw that loses two or more nights from one that loses none, and cannot tell one
+  lost night from none (two of the rules' own eight re-draws lose one).
+- **Offline, beside N1 (a table, no mark):** on the held-out fresh draws where the label puts 0.99 or more on one
+  option, and on those of them at dusk or night whose option is a nest, the adapter's mean probability on that option,
+  the share at 0.9 or more, and 1 less the mean: how often one draw would leave the rules' option at such an ask
+  (`r11-offline.md` §11).
+- **One optional arm, last in the order:** the old adapter under a draw (`old-draw-1`) on the same worlds, as a
+  reference for N1 (its draw arms on seeds 21 and 5 kept 49 and 50 of 50 nights). No statement or mark needs it;
+  `scripts/r11-run.sh arms <seed> old-draw-1` runs it if time allows.
+
+### 11.2 Training seeds: the order when model time is short, and what one seed per arm may carry (amends §4 and §5)
+
+**What stage R9's second training seed found** (r9-seed2-numbers.md, r9-numbers.md). The first recipe trained again
+with seed 11 equals its first training offline (0.597 against 0.609 on the rules' decision; trip probability 0.148
+against 0.155) and is the same animal in the loop under the top pick (trips begun 2.4 against 2.3 a day; act changes
+33.2 against 33.6). Under a draw the two trainings differ more (trips begun 7.4 against 5.0: a difference of 2.4,
+above the 1.72 that one arm can show at this unit).
+
+**So:**
+
+- Two training seeds per arm stay registered, and S0 with its consequence (three seeds) stays as it is.
+- **The order when model time is short** (replaces "P5b before P5a; within an arm training seed 7 before 11"): train
+  `p5b` seed 7, then `p5a` seed 7, then `p5b` seed 11, then `p5a` seed 11. The loop arms follow the same order, the
+  top pick before the draw: `p5b-s7-top`, `p5a-s7-top`, `p5b-s7-draw-1`, `p5a-s7-draw-1`, then the same four for seed
+  11, then `p5b-s7-draw-2`; the old adapter's top-pick arm last. An arm's world stream is fixed by its name (§10.2,
+  A1), so the order changes no arm.
+- **What may be claimed from one training seed per arm.** Nothing registered for a recipe: S0 to S3, L1 as a recipe's
+  mark, N1 for the recipe, the ablation's rule and the offline marks O1 to O4 all need both trainings, and the reports
+  print "not read" until both are on file. What may be said is this, in these words: "one training of the recipe":
+  per adapter, on which timing rows its top-pick arm is told from the rules, which guards it holds, its offline
+  readouts and its lock-in share; and, because the first recipe's two trainings agreed under the top pick, that a
+  second training is expected to agree under the top pick, which is an expectation and not a result. A difference
+  between P5b and P5a from one training each is a description. Anything read on a draw arm from one training is a
+  description only: under a draw the first recipe's trainings differed by more than D.
+
+### 11.3 Scoring: this stage claims nothing about wild chimpanzees (amends §6.2, "Closer to wild chimpanzees")
+
+**What stage R7b found** (no model; r7b-numbers.md). With "closer to the field" measured as the distance outside the
+band (R7's amendment, §13a), the rules already sit inside the band on 11 of the 15 scorecard rows at the population
+unit and on 10 of 12 at ten animals; an engine can be shown closer on one row at the population unit and on none at
+ten animals. This stage's own control arms say the same (§10.7: on all twelve scorecard rows that have a value at
+this unit some arm of the rules-plus-random family is already inside the band). Forked body outcomes do not repeat
+(0.39 against a registered line of 0.70), so no outcome labels are added to this recipe.
+
+**So:**
+
+- **The paragraph "Closer to wild chimpanzees" of §6.2 is withdrawn for this stage.** No row, and no engine, is
+  reported as closer to wild chimpanzees, whatever the numbers are. The registered rule is not loosened; the claim is
+  removed.
+- **The stage's claims are about timing against the rules and the control arms**, on the test's own worlds: the five
+  timing rows against the rules' mean ± D, with random choice and the mixtures beside them; the five guards; lock-in
+  (L1); nights in a nest under a draw (N1).
+- **The timing card's field anchors are printed as description:** patch residency beside the two Kibale site means
+  (27.0 and 46.2 minutes) and the half-hour share beside the Taï value (0.476; another subspecies, a direction only).
+  The report's §5 keeps the arithmetic of R7's amended rule so that a reader sees where each arm stands; its cells say
+  "nearer (description)", never "closer", and its heading says that nothing there is a result.
+
+### 11.4 The wording test as this stage's baseline (adds to §6.1)
+
+**What stage R8's wording test found** (r8-wording-numbers.md). The existing adapter `r4-rules-state` picks the rules'
+decision on 0.609 of its 954 held-out fresh draws with today's packet and on 0.386 with neutral option labels (paired
+difference −0.223, −0.262 to −0.184 over animals; chance 0.186; the untuned model 0.286). By kind: feeding 0.357 to
+0.213, rest 0.822 to 0.530, social 0.541 to 0.195, travel 0.707 to 0.783. More than half of what it had learned over
+chance was read from the rules' own sentences. That adapter was trained with the wording, so 0.386 is a floor for
+what the state alone can teach, not a ceiling.
+
+**So, for this stage:**
+
+- **The baseline is 0.386**: the first adapter's top-1 agreement with the rules' decision once the wording is gone.
+  Beside it, on this stage's own 1,500 held-out fresh draws (§10.6): chance 0.183; the kind-prior baseline, which
+  holds no model and knows only which kinds of act are on the menu, 0.381; and the ceiling 0.839 (the label's top
+  option is the option the rules took on that share of these draws, so no reader of the state and the menu can agree
+  more). The old adapter without the wording thus read about as much as a table of how often each kind of act is
+  taken.
+- **W1** (it can fail), per adapter, on the 1,500 held-out fresh draws on its own arm's packets: its top-1 agreement
+  with the rules' pick lies above 0.386 with the whole of its 95% interval over animals, **and** above the kind-prior
+  baseline on the same draws with a paired interval above 0. For the recipe P5b both trainings must meet it. If they
+  do, the result reads: the honest packet teaches more from the state than the first adapter had without the rules'
+  wording. If an adapter is at or under either number: this recipe taught no more from the state than a table of
+  kinds, whatever it learned about rates. The table also prints how far each model is from chance to the ceiling.
+- **A yardstick, not a pair.** 0.386 comes from other draws of the same seed and bases (stage R4's held-out days; this
+  stage's held-out days are later and longer). The like-for-like figure, the first adapter scored on this stage's
+  held-out draws on its own packet with neutral options, is not built (§11.8).
+- **Agreement with the rules is not the goal of this stage.** The teacher is the rules, so the ceiling of agreement is
+  the rules themselves, and a model at the ceiling would be no better than its teacher and no nearer to a chimpanzee.
+  The stage asks whether honest inputs and labels give the rules' timing in the loop (S1), whether the limit is what
+  the packet shows (S2), whether showing the act in progress locks the model in (O4, L1), and whether a draw then stops
+  costing nests (N1). W1 is a reading beside the marks O1 to O4, not one of them.
+
+### 11.5 What the review re-derived (no model; plain python3 and one short simulation on seed 48)
+
+- **The registration came first.** Commit 456640f (03:06:19) holds §1 to §9 and nothing else; the sampler's parts are
+  dated 03:26 to 03:46 and the 32 control-arm files of seeds 4111 and 4222 03:58 to 04:02, every one at head 8d91c8b
+  on a clean tree. The three scratch runs disclosed in §10.1 came after the registration and before any label file.
+- **The label, from the jitter-free scores.** On 2,460 labelled fresh draws of three worlds, the rules' rule applied to
+  the saved values, jitter and belief draws gives the realised pick 2,460 times, and the published score saved on
+  every option is the value plus the jitter, clamped and rounded. On a dozen records (four clear, four near ties,
+  four with a belief draw) a brute-force redraw written for the review (200,000 redraws each) reproduces the files'
+  fixed-menu column within 0.003; every label sums to one; the 53 cases whose values are further apart than the
+  jitter span carry all the mass on the realised pick in both columns; near ties share it (mean top mass 0.48 in the
+  fixed-menu column, 0.50 in the trained label).
+- **The trained label, by a second route.** A separate script (another sequence of decision versions, a fresh
+  candidate list per redraw, the simulation's own `beliefOffset` on a private random state, 4,000 redraws a decision)
+  was run beside the builder's `labelData` on 215 fresh draws of a short world (seed 48, two days of burn-in, one day
+  sampled). The two estimates agree within Monte Carlo error (mean squared z 1.18 over 415 options; top option the
+  same on 214 of 215; mass on the realised pick 0.789 and 0.790; by family within 0.002), the tapped world equals
+  the untapped one and `world.rng` is where it was. The rules' rule in `src/sim/rg.ts` (`rgChoice`, `choiceBelief` 2)
+  was read against the label code: the first maximum, in menu order, of the published score plus the belief offset.
+- **Nothing of the rules' valuation in a training row or packet.** A training row holds, per option, the alias, the
+  act, the target and the family; no score. The options stand in one fixed order of acts on every menu (238 pairs of
+  acts, none ever in the other order) and, within an act, in order of the target's id (928 of 928); the first of two
+  such options carries 0.118 of the label and the second 0.114. The `nearby` line is in order of distance on 2,845 of
+  2,845 packets; the partner of the rules' social pick stands first on it at 0.533 against 0.412 if its place were
+  random (the rules prefer near partners, which the distances show), where every earlier packet listed the rules'
+  first partner first (162 of 162, stage R8). A predictor that knows only the position of an option agrees with the
+  rules at 0.240 (chance 0.180; the kind-prior baseline, which knows the kinds, 0.381). No removed wording, no word
+  such as "score", "urgent" or "should" and no decimal fraction in any training packet.
+- **Splits.** Training and development: seeds 48 and 7, 61 and 15 animals, none in both; held out: seed 21 only, 38
+  animals; no id in two files; the earliest record is at simulated hour 144 (day 6); 780 and 75 rows per world, taken
+  in a hash order of the record's id and never by label; training and development rows are fresh draws only; the two
+  arms hold the same records, order and labels.
+- **P5a against P5b.** Over 3,420 rows the two packets differ in the lines `lately` (3,420), `last` (3,300) and
+  `memories` (2,528) and in nothing else; the instruction and the options are the same. **The `memories` difference
+  matters for how the ablation is read:** without `last`, P5a carries one memory line in every row (P5b in 1,272 of
+  3,120), often the animal's latest grooming or greeting ("Groomed Aroko 2 times, most recently 15 h ago"). So the
+  ablation compares "the lines `lately` and `last`" with "one memory line as in every earlier packet", not with "no
+  social timing at all". §1 registered this; the report must say it when the ablation is read.
+- **Seeds.** 4111, 4222, 4333 and 4444 lie in no reserved or retired range of `AGENTS.md`. Files named for 4111 or
+  4222 exist only under this worktree's `artifacts/r11/loop` (the control arms and their burn-ins); nothing is named
+  for 4333 or 4444 anywhere under the main checkout or a worktree. Stage R12's design proposes the same pair for the
+  loop test of its second build step (r12-prereg.md): since this stage has opened it, R12 takes 4333 and 4444, and a
+  new sealed pair must be named for whatever comes after (the user's decision, below).
+- **The trainer.** `train_r11.py` was read line by line against `train_r4.py` (the diff is the six changes of §10.9;
+  no class weight, no resampling, no temperature, the same seeds, schedule and LoRA placement). The loss was checked
+  by hand in plain python3: for logits 2, 1, 0 and a label 0.7, 0.2, 0.1 the loss is 0.807606 by hand and by
+  `soft_loss.py`; it equals the label's entropy plus the divergence; with a one-hot label it is the usual
+  cross-entropy; its gradient is the softmax less the label; the shuffle keeps every option's mass with its text.
+
+### 11.6 Defects found by the review and repaired (none changes a label, a packet, a training file or a mark)
+
+1. **A wrong arm name could wait half an hour before it was refused.** `scripts/r11-run.sh arms <seed> <names>` checked
+   the names only inside the loop script, after the swap hold (up to 30 minutes) and after the burn-in was read. Now
+   the names, the control arms on file, the arms already on file and the adapters needed are all checked first.
+   (The builder's last check could not have blocked: its seven calls all refuse on their arguments at once. But it
+   proved nothing: the tool's shell does not split an unquoted variable, so every call reached the script as one
+   word and printed the usage line. Run properly, 15 wrong calls are refused in under a second each.)
+2. **An arm could be answered by the untuned model.** The worker loads only the adapters it is told to and finds, and
+   answers every name with the untuned model when it loaded none. `arms` did not check that the adapter exists. Now
+   the run script refuses an arm whose adapter is not trained, and `scripts/r11-loop.ts` checks the worker's ready
+   line before the first ask and stops if the arm's adapter is not there.
+3. **A second `loop` call ran every arm again.** With the trainings spread over two nights the first night's arms
+   would have been run twice, a second draw of a result. Now `loop` skips an arm that is on file (and replays one
+   whose replay is missing), and `arms` refuses one unless `R11_RERUN=1` is set after the reason is logged here.
+4. **Any number was taken as a training seed.** `train p5b 1` would have trained an adapter no arm reads. Now 7 and 11.
+5. **No log was written**, though the launch notes said logs were kept. Every model step now writes its output to
+   `artifacts/r11/logs` as well as to the terminal, and keeps the step's own exit status.
+6. After a swap hold the script did not look again for another model process. It does now. `check` now prints every
+   reason a model step would refuse or wait, not only the first.
+7. `R11_DECODE` set to an unknown word reached the swap hold before failing; with §11.1 it is refused at once unless
+   it names the top pick.
+
+### 11.7 Real token counts (the tokenizer alone, CPU, no weights; 11:56 EDT)
+
+Taken by the review with `training/decide_ft/r8_tokens.py` on every training packet and every held-out packet.
+Training file, P5b: median 340, 95th percentile 468, largest 548 (the estimate's median was 409; real over estimate
+0.83); 1,399 of 3,120 packets are over 350. P5a: median 295, 95th percentile 408, largest 488 (0.90). Held-out fresh
+draws: P5b 337 (462, 562), P5a 292 (406, 484). **P5b is under the 350-token target at the median, by ten tokens**; the
+two lines of the ablation cost 45 real tokens at the median. By the stage's own time law (0.85 s an example at 450
+real tokens, time as tokens to the power 1.5) the projected training cost is 0.58 s an example for P5b and 0.48 s
+for P5a: about 1 h 31 min and 1 h 14 min for three epochs of 3,120 rows, before the development passes.
+
+### 11.8 Not done by the review
+
+- Nothing was trained and no model was loaded: a whole-population run on the real model held the GPU from 11:27.
+- The like-for-like wording baseline (the first adapter on this stage's held-out draws, its own packet with neutral
+  options) is not built: about 30 minutes of model time and a second packet rendering in the held-out file.
+- P5a was left as registered (one memory line comes back). A stricter ablation, P5b with the two lines deleted and
+  nothing else changed, would need the files assembled again and is the user's choice.
+- The whole test suite and the build were not run; the merge with `track-e` (which moved to 241bceb at 11:32) was
+  tested for conflicts in memory only (`git merge-tree`: none) and not run.
+
 ## For the integrator
 
-**Read first.** (1) The label is not the one registered at 03:05: §10.1 says why, and the two marks that now guard
-it (M1, M2) are met. (2) Nothing here is a result about an engine: the stage delivers data, a trainer, a loop arm and
-the control arms. (3) Seeds 4111 and 4222 are now open (their control arms ran); 4333 and 4444 are still sealed. The
-parallel stages (`r12-menu-design`, `r7b-forks`) must not take 4111 or 4222 for a test.
+*(Rewritten by the reviewer on 11 October 2026 after §11; the builder's notes are kept where they still hold.)*
 
-**One defect outside this stage, seen tonight and not repaired.** The guard of `scripts/r9-run.sh` and
-`scripts/r9-seed2.sh` (and any script that copies it) looks for another model process by the interpreter's path. On
-this machine a started interpreter is listed under the framework's own path: at 02:55, while the chain's scorer
-(`em_score.py`) was running, no process line held the interpreter's path. So that guard would not have refused a
-second model process. `scripts/r11-run.sh` also looks for the model scripts by name (`model_procs`); that second
-pattern, run alone at 04:09, listed the chain's worker (`… Python -B worker.py …`). The same two lines belong in the
-R9 and R10 scripts. Nothing under the chain's folder was touched.
+**Read first.** (1) Nothing here is a result about an engine: the stage delivers data, a trainer, a loop arm, the
+control arms and the reports. No model was loaded and the trainer has never been executed. (2) The label is not the
+one registered at 03:05: §10.1 says why, the two marks that guard it (M1, M2) are met, and the review re-derived it by
+a second route (§11.5). (3) Four amendments were logged before any model run (§11.1 to §11.4): the top pick is the
+primary decode with a draw arm beside it and a mark for nights in a nest under a draw (N1); the order of the trainings
+is p5b 7, p5a 7, p5b 11, p5a 11; the stage claims nothing about wild chimpanzees; the wording test's 0.386 is the
+baseline of a new reading (W1). (4) Seeds 4111 and 4222 are open (their control arms ran); 4333 and 4444 are sealed.
 
-**Where the files are.** Data and (later) adapters: `artifacts/decide-ft/r11` of this worktree. Control arms and
-burn-ins: `artifacts/r11/loop`. Both are git-ignored. From another checkout either point `R11_FT_ROOT` and `R11_OUT` at
-them (absolute paths work), or make them again: `scripts/r11-run.sh sample` (about 30 minutes; the manifest must come
-out with the hashes of [r11-manifest.json](r11-manifest.json)) and `scripts/r11-run.sh controls 4111`, `controls 4222`
-(about 2 minutes each). A burn-in made with another parameter registry is refused: after a merge that adds a
-parameter, delete the two burn-in files and run the controls again.
+**One defect outside this stage, seen by the builder and not repaired.** The guard of `scripts/r9-run.sh` and
+`scripts/r9-seed2.sh` looks for another model process by the interpreter's path. On this machine a started
+interpreter is listed under the framework's own path, so that guard does not see it. `scripts/r11-run.sh` also looks
+for the model scripts by name (`model_procs`): at 11:42 on 11 October it listed the population run's worker
+(`… Python -B worker.py --device mps`) and refused. The same two lines belong in the R9 scripts.
 
-**What to launch, in order** (one model process at a time; every model step holds while swap in use is above 6 GB,
-refuses a tree that is not clean and refuses while another model process is alive; logs under `artifacts/r11/logs`):
+**Where the files are.** Data and (later) adapters: `artifacts/decide-ft/r11` of the worktree `r11-honest-retrain`.
+Control arms and burn-ins: `artifacts/r11/loop` there. Real token counts: `artifacts/decide-ft/r11/eval/tokens.jsonl`
+(taken by the review). All are git-ignored, so a frozen checkout reaches them by two variables (below). To make them
+again instead: `scripts/r11-run.sh sample` (about 30 minutes; the manifest must come out with the hashes of
+[r11-manifest.json](r11-manifest.json): train P5b `38bddc0d…`, P5a `a96521c2…`) and `scripts/r11-run.sh controls 4111`,
+`controls 4222` (about 2 minutes each; the same end hashes). A burn-in made with another parameter registry is
+refused: after a merge that adds a parameter, delete the two burn-in files and run the controls again.
+
+**What to launch, in order.** From a frozen detached checkout of the head that holds this branch (after the merge
+into `track-e`, or the branch head itself), one model process at a time, in a terminal that stays open. Every model
+step checks its arguments first, refuses while another model process is alive or the tree is not clean, holds while
+swap in use is above 6 GB, and writes a log under `artifacts/r11/logs` of the checkout it runs from.
 
 ```sh
-scripts/r11-run.sh check                                   # starts nothing: files, adapters, swap, other model processes
-scripts/r11-run.sh parity p5b && scripts/r11-run.sh parity p5a   # CPU, a few minutes each: must print PARITY OK
-scripts/r11-run.sh tokens                                  # CPU, the tokenizer alone: real lengths into r11-offline.md §9
-scripts/r11-run.sh train p5b 7                             # about 1 h 42 min (projected; R4's settings; soft labels)
-scripts/r11-run.sh train p5b 11                            # about 1 h 42 min
-scripts/r11-run.sh offline                                 # the untuned model (about 51 min) and each adapter on file (about 29 min for P5b, 21 for P5a); marks O1 to O4
-scripts/r11-run.sh train p5a 7                             # about 1 h 15 min
-scripts/r11-run.sh train p5a 11                            # about 1 h 15 min
-scripts/r11-run.sh offline                                 # scores only what is new
-R11_DECODE=<draw|held|top> scripts/r11-run.sh loop 4111    # about 1 h 10 min: this stage's adapters, then r4-rules-state on its own packet, then the replays
-R11_DECODE=<draw|held|top> scripts/r11-run.sh loop 4222    # about 1 h 10 min
-R11_DECODE=<draw|held|top> scripts/r11-run.sh report       # r11-card.md (R7's card with the engine arms) and r11-numbers.md (S0 to S3, L1, the ablation, the spreads)
-scripts/r11-run.sh publish                                 # copies the tables to docs/staging; then commit them
+# 0. the frozen checkout and the files on hand (a minute)
+git -C /Volumes/Drive/chimpbench/MGOGO worktree add --detach .claude/worktrees/bench-r11 <the head>
+cd /Volumes/Drive/chimpbench/MGOGO/.claude/worktrees/bench-r11 && ln -s /Volumes/Drive/chimpbench/MGOGO/node_modules node_modules
+export R11_FT_ROOT=/Volumes/Drive/chimpbench/MGOGO/.claude/worktrees/r11-honest-retrain/artifacts/decide-ft/r11
+export R11_OUT=/Volumes/Drive/chimpbench/MGOGO/.claude/worktrees/r11-honest-retrain/artifacts/r11/loop
+
+# 1. before any load (starts nothing; a minute): must end with "no other model process" and "the tree is clean"
+scripts/r11-run.sh check
+
+# 2. the trainer's inputs against the serving path (CPU, a few minutes each): each must print PARITY OK
+scripts/r11-run.sh parity p5b && scripts/r11-run.sh parity p5a
+
+# 3. night one: the first training seed of each arm (§11.2)
+scripts/r11-run.sh train p5b 7      # about 1 h 40 min. Its first lines must show "loss self-check passed"; its "s/example" line replaces every estimate here
+scripts/r11-run.sh train p5a 7      # about 1 h 20 min
+scripts/r11-run.sh offline          # about 1 h 40 min: the untuned model on both arms' packets (about 50 min), then each adapter on file (about 28 min P5b, 23 min P5a); decides O1 to O4 and W1 for one training
+scripts/r11-run.sh loop 4111        # about 1 h: p5b-s7-top, p5a-s7-top, p5b-s7-draw-1, p5a-s7-draw-1, p5b-s7-draw-2, then old-top, then their replays
+scripts/r11-run.sh loop 4222        # about 1 h
+scripts/r11-run.sh report           # no model, a minute: what one training of each arm shows (§11.2 says what may be said)
+
+# 4. night two: the second training seeds
+scripts/r11-run.sh train p5b 11     # about 1 h 40 min
+scripts/r11-run.sh train p5a 11     # about 1 h 20 min
+scripts/r11-run.sh offline          # about 50 min: scores only the two new adapters; the marks O1 to O4 and W1 can now be read
+scripts/r11-run.sh loop 4111        # about 40 min: only the arms not on file (the four of training seed 11)
+scripts/r11-run.sh loop 4222        # about 40 min
+scripts/r11-run.sh arms 4111 old-draw-1 && scripts/r11-run.sh arms 4222 old-draw-1   # optional, about 15 min each: the reference for N1
+
+# 5. the result (no model)
+scripts/r11-run.sh report           # r11-offline.md, r11-card.md, r11-numbers.md under artifacts/r11/tables: S0 to S3, L1, N1, the ablation
+scripts/r11-run.sh publish          # copies the tables to docs/staging; then commit them on a branch (never from the frozen checkout's detached head onto track-e)
 ```
 
-- **The decode flag.** Set `R11_DECODE` to what stage R9's result names. Leave it unset if R9 names no standard: each
-  new adapter then runs with the top pick and a draw arm beside it (about 1 h 15 min a seed).
-- **One seed first:** `R11_SEEDS=4111 scripts/r11-run.sh report` reads seed 4111 alone (a report of both seeds shows
-  only the engine arms on file for both).
-- **If time is short:** P5b before P5a (as ordered above), and `scripts/r11-run.sh arms <seed> <a,b>` runs any subset
-  (`scripts/r11-loop.ts list --decode draw` prints the registered names). A loop step cut short before its replays:
-  `scripts/r11-run.sh replay <seed> <a,b>`. `loop` leaves out, and names, any arm whose adapter is not trained yet.
-- **Optional, offline only:** `scripts/r11-run.sh train-hard p5b 7` (about 1 h 42 min) trains the one-hot comparison
+- **Time in all:** training about 6 h, offline scoring about 2 h 30 min, the loop about 3 h 20 min (30 minutes more
+  with the optional arm): about twelve hours of model time, so two nights. Night one alone is about 6 h 50 min.
+- **How the estimates were made** (arithmetic, not measurements). Training: the stage's time law (stage R4's 0.85 s an
+  example at 450 real tokens, time as tokens to the power 1.5) on the real token counts of §11.7, plus four passes
+  over the 300 development rows. Offline: stage R4's 0.59 s a packet at 452 real tokens, scaled the same way; an arm
+  has 4,420 packets to score, the untuned model both arms'. Loop: stage R9's arms took 0.57 to 0.66 s an ask at 467
+  tokens and 1,350 to 1,830 asks an arm and seed, which scales to about 10 minutes an arm and seed for P5b, 8 for P5a
+  and 15 for the old adapter. The builder's loop figure (1 h 10 min a seed) used 0.28 s an ask and is too low.
+- **A step cut short.** Training: delete the half-made folder under `adapters/` and run the step again (the script
+  refuses to overwrite). Offline: run `offline` again (a `.part` file is not read). Loop: run `loop <seed>` again; it
+  skips the arms on file and replays any arm whose replay is missing.
+- **One seed first:** `R11_SEEDS=4111 scripts/r11-run.sh report` reads seed 4111 alone.
+- **Optional, offline only:** `scripts/r11-run.sh train-hard p5b 7` (about 1 h 40 min) trains the one-hot comparison
   on the same rows; `offline` then scores it. No rule reads it.
-- **Time in all:** training about 5 h 54 min, offline scoring about 2 h 30 min, the loop about 2 h 20 min: near eleven
-  hours of model time, so two nights, or one if P5a waits. Per-ask and per-example times are projections: the first
-  training log's "s/example" line and the first loop arm's seconds replace them.
-- **How the estimates were made** (arithmetic, not measurements). Training: [r11-data.md](r11-data.md) §6, from R4's
-  0.85 s per example at about 450 real tokens and time growing as tokens to the power 1.5, on projected real lengths
-  (0.85 of the estimate). Offline: R4 scored at 0.58 to 0.60 s a packet at a median of 452 real tokens, which scales
-  to about 0.40 s for P5b and 0.29 s for P5a; an arm has 4,420 packets to score (2,000 records, 1,340 without `doing`,
-  1,080 probe packets), the untuned model both arms'. Loop: about 1,500 asks per arm and seed (five animals, five
-  days, about 60 asks an animal-day: the dry run gave 50 to 69, stage R5-gate 54 to 64) at 0.28 s for P5b and 0.21 s
-  for P5a (the review's 0.44 s at 467 tokens, scaled), so about 7.5 and 5.5 minutes an arm and seed; the first
-  adapter's arm as stage R9 costed it, about 15 minutes a seed; eight or nine new arms and one old arm a seed.
+- **Never:** `R11_RERUN=1` without a logged reason; an arm on file is a result. `R11_ALLOW_OTHER_MODEL=1` only for the
+  CPU step `tokens`, which is done.
 
-**How to read the result.** `r11-offline.md` §10 prints O1 to O4 per adapter; a mark holds only if both P5b trainings
-meet it. `r11-numbers.md` §4 prints S0, S1, S2, S3 in their registered order with the outcome, then the ablation and
-L1; §5 prints which rows could show "closer to wild chimpanzees" (two) and whether a recipe does. S2 reads the offline
-summary (`artifacts/r11/tables/r11-offline.json`), so run `offline` before `report`.
+**How to read the result.** `r11-offline.md` §10 prints O1 to O4 and W1 per adapter; a mark holds for the recipe only
+if both P5b trainings meet it; §11 there is the near-certainty table, §12 the wording baseline. `r11-numbers.md` §4
+prints S0, S1, S2, S3 in their registered order with the outcome for the top pick first, then the draw arms as a
+second line, then the ablation and L1; §4a prints N1; §5 prints the field anchors as description. S2 reads the
+offline summary (`artifacts/r11/tables/r11-offline.json`), so run `offline` before `report`. When the ablation is
+read, say that P5a still carries one memory line (§11.5).
 
 **Proposed lines for the shared files.**
 
-`IMPLEMENTATION_PLAN.md`, a new block after Stage R10:
+`IMPLEMENTATION_PLAN.md`, the Status of "Stage R11":
 
-> ## Stage R11: Re-teach the small model on the honest packet
-> **Goal**: the first training on honest inputs and honest labels. Inputs: packet 5 in its short variant, in two arms
-> one change apart (P5b the whole packet; P5a without the lines `lately` and `last`). Labels: on fresh draws only, the
-> probability that the rules take each option given the state and the menu shown (the candidate jitter and the belief
-> draw redrawn through the simulation's own menu code); kept and arrived acts are scored apart. Two training seeds per
-> arm, R4's settings, soft cross-entropy. In the loop: packet 5 to the kernel, the gate on, the decode stage R9 names,
-> ten fresh focal animals for five days on the fresh seeds 4111 and 4222, beside R7's sixteen control arms and the
-> first adapter on its own packet.
-> **Success Criteria** (registered in `docs/staging/r11-prereg.md` before any run): the label reproduces the rules'
-> realised pick on every fresh draw and is calibrated against the rules' picks (M1, M2); offline marks O1 to O4
-> (divergence below two floors, the trip probability within 0.03 of the rules' rate, no probe the wrong way, no
-> lock-in); in the loop the statements S0 to S3 read in order (training-seed spread swamps; the gap to the rules on
-> timing is closed; the limit is information; otherwise as it fell); "closer to wild chimpanzees" only by R7's amended
-> rule. Every result is named "rules-taught model on a rules menu".
-> **Tests**: `tests/r11.test.ts`; `training/decide_ft/test_soft_loss.py` (standard library).
-> **Status**: Built on branch `r11-honest-retrain` (11 October 2026; no model loaded, nothing trained; awaiting the
-> integrator's training and model arms). The label first registered (the offered options' jitter redrawn, the menu
-> held fixed) was found wrong before any file was made: the rules' menu is itself cut by the jittered scores, and
-> that label put 0.151 on trips where the rules take 0.230. The label as built redraws every candidate's jitter
-> through the simulation's own code and counts the redraws that offer the same menu; it reproduces the rules' pick on
-> 7,431 of 7,431 fresh draws and is calibrated on every group (trips 0.229 against 0.230). Given the state and the
-> menu the rules' pick is the label's top option at 0.84: that, not 0.98, is the most any state reader can agree.
-> Data: 3,120 labelled fresh draws for training (seeds 48 and 7, both bases, never a first day), 300 for development,
-> 1,500 held out on seed 21 with 500 kept or arrived acts apart; 36.2% of sampled records were not fresh choices.
-> Estimated tokens: P5b median 409 (about 348 real, at the target), P5a 330 (about 281). No-model floors: a
-> kind-prior baseline diverges from the rules' distribution by 1.117 nats. Control arms on seeds 4111 and 4222: the
-> smallest difference is 14.3 on 53.9 act changes and 1.72 on 7.49 trips begun; random choice is told from the rules
-> on three of the five registered timing rows; two rows leave room for "closer to wild" (time in a patch, the
-> half-hour share). A dry run against a fake worker passes (packet 5 reaches the kernel; 6 of 6 replays reproduce).
-> *Open*: four trainings (about 5 h 54 min), offline scoring (about 2 h 30 min), the loop arms (about 2 h 20 min);
-> real token counts; the trainer has never been executed.
+> **Status**: Built and reviewed on branch `r11-honest-retrain` (11 October 2026; `docs/staging/r11-prereg.md`; no
+> model loaded, nothing trained; awaiting the integrator's training and model arms). *Label.* The label first
+> registered (the offered options' jitter redrawn, the menu held fixed) was found wrong before any file was made: the
+> rules' menu is itself cut by the jittered scores, and that label put 0.151 on trips where the rules take 0.230. The
+> label as built redraws every candidate's jitter through the simulation's own code and counts the redraws that offer
+> the same menu; it reproduces the rules' pick on 7,431 of 7,431 fresh draws and is calibrated on every group (trips
+> 0.229 against 0.230), and the review re-derived it by a second route on 215 decisions. Given the state and the menu
+> the rules' pick is the label's top option at 0.84: that, not 0.98, is the most any state reader can agree. *Data.*
+> 3,120 labelled fresh draws for training (seeds 48 and 7, both bases, never a first day), 300 for development, 1,500
+> held out on seed 21 with 500 kept or arrived acts apart; 36.2% of sampled records were not fresh choices. Real
+> tokens at the median: P5b 340, P5a 295 (the target was 350). Nothing of the rules' valuation is in a training row;
+> options stand in a fixed order of acts and the `nearby` line in order of distance. *Floors and controls.* A
+> kind-prior baseline with no model agrees with the rules at 0.381, which is where the first adapter fell without the
+> rules' wording (0.386). Control arms on the fresh seeds 4111 and 4222: the smallest difference is 14.3 on 53.9 act
+> changes and 1.72 on 7.49 trips begun; random choice is told from the rules on three of the five timing rows.
+> *Amended before any model run* (§11): the top pick is the primary decode, a draw arm runs beside it and "nights in
+> a nest under a draw" is a mark (49 of 50 keeps it); the trainings run p5b 7, p5a 7, p5b 11, p5a 11, and one
+> training per arm carries no registered statement; the stage claims nothing about wild chimpanzees; W1 reads the
+> honest packet against the wording test's 0.386. The review repaired seven defects of the run script, the largest
+> that an arm whose adapter was missing would have been answered by the untuned model. *Open*: four trainings (about
+> 6 h), offline scoring (about 2 h 30 min), the loop arms (about 3 h 20 min); the trainer has never been executed;
+> P5a still carries one memory line; the like-for-like wording baseline is not built.
 
 `AGENTS.md`, Commands, after the `r10-night.ts` line:
 
 ```sh
-scripts/r11-run.sh sample | assemble | controls <seed> | dry | report | publish | check | train <p5b|p5a> <7|11> | parity <arm> | tokens | offline | loop <seed> | arms <seed> <a,b> | replay <seed> <a,b>   # stage R11 (docs/staging/r11-prereg.md): the honest retraining. sample: fresh draws of rules worlds (scripts/r11-contexts.ts; seeds 48, 7, 21; both bases; never a first day) with the label of each computed at the decision (every candidate's jitter redrawn through computeCandidates and rgMenu, the redraws that offer the same menu counted), then scripts/r11-assemble.ts (two input arms of packet 5 short: p5b whole, p5a without `lately` and `last`; manifest, calibration and reproduction checks) and the data and offline-floor tables; train: training/decide_ft/train_r11.py (train_r4.py with soft cross-entropy; adapters r11-<arm>-s<seed> under artifacts/decide-ft/r11); offline: training/decide_ft/em_score.py on the held-out packets, then scripts/r11-offline.ts (marks O1 to O4); controls, loop: scripts/r11-loop.ts on the fresh seeds 4111 and 4222 (stage R7's sixteen control arms; engine arms through scripts/r5-pilot.ts runArm with packet 5, the gate on, the decode named by R11_DECODE, each with its own stream), then scripts/r7-report.ts --engine and scripts/r11-report.ts (statements S0 to S3); dry: the model arms' path against scripts/lib/fake-worker.mjs on seed 48; model steps run one process at a time with the swap hold; tables under artifacts/r11/tables
+scripts/r11-run.sh sample | assemble | controls <seed> | dry | report | publish | check | train <p5b|p5a> <7|11> | parity <arm> | tokens | offline | loop <seed> | arms <seed> <a,b> | replay <seed> <a,b>   # stage R11 (docs/staging/r11-prereg.md): the honest retraining. sample: fresh draws of rules worlds (scripts/r11-contexts.ts; seeds 48, 7, 21; both bases; never a first day) with the label of each computed at the decision (every candidate's jitter redrawn through computeCandidates and rgMenu, the redraws that offer the same menu counted), then scripts/r11-assemble.ts (two input arms of packet 5 short: p5b whole, p5a without `lately` and `last`; manifest, calibration and reproduction checks) and the data and offline-floor tables; train: training/decide_ft/train_r11.py (train_r4.py with soft cross-entropy; adapters r11-<arm>-s<seed> under artifacts/decide-ft/r11); offline: training/decide_ft/em_score.py on the held-out packets, then scripts/r11-offline.ts (marks O1 to O4, W1); controls, loop: scripts/r11-loop.ts on the fresh seeds 4111 and 4222 (stage R7's sixteen control arms; engine arms through scripts/r5-pilot.ts runArm with packet 5, the gate on, the top pick and a draw arm beside it, each with its own stream; an arm on file is never run again), then scripts/r7-report.ts --engine and scripts/r11-report.ts (statements S0 to S3, N1); dry: the model arms' path against scripts/lib/fake-worker.mjs on seed 48; model steps check their arguments first, run one process at a time with the swap hold and log under artifacts/r11/logs; tables under artifacts/r11/tables
 ```
 
-`AGENTS.md`, Gotchas, one line:
+`AGENTS.md`, Gotchas, two lines:
 
 > - A label "with the jitter averaged out" must redraw the menu too (stage R11): each kind of act reaches the rules' menu by its best jittered target, so redrawing the offered options' jitter alone understates whatever was selected (trips: 0.15 against the rules' 0.23). `scripts/r11-contexts.ts` redraws by decision version through `computeCandidates` and `rgMenu`. A guard that looks for a model process by the interpreter's path does not see a started one on this machine (it is listed under the framework's path): look for the script names as well (`scripts/r11-run.sh` `model_procs`).
+> - The scoring worker answers with the untuned model when none of the adapters it was told to load is found (`training/decide_ft/adapters.py`): a harness must check the worker's ready line for the arm's adapter before the first ask (`scripts/r11-loop.ts`, `scripts/r10-night.ts`). The tool shell (zsh) does not split an unquoted variable into words: a loop that passes `$a` to a script hands it one argument.
 
-`HANDOFF.md`, next steps: "R11: after the R9 chain, `scripts/r11-run.sh check`, then the launch order at the end of
-`docs/staging/r11-prereg.md` (train p5b 7 and 11, offline, train p5a, loop 4111 and 4222 with `R11_DECODE` set to R9's
-decode, report, publish)."
+`HANDOFF.md`, next steps: "R11: after the population run, the launch order at the end of
+`docs/staging/r11-prereg.md` from a frozen detached checkout (night one: check, parity, train p5b 7, train p5a 7,
+offline, loop 4111, loop 4222, report; night two: the trainings with seed 11, offline, both loops again, report,
+publish). The decode is the top pick with a draw arm beside it; leave `R11_DECODE` unset."
 
 `docs/simulation.md`: **no rows.** The stage adds no parameter and no switch.
 
-**Decisions that are the user's or the integrator's.**
+**Decisions that are the user's.**
 
-1. Which decode the loop arms run with: stage R9's result is not in yet. Unset means the top pick with a draw beside it.
-2. Whether P5b's length is acceptable if its real median comes out above 350 tokens (projected 348); P5a is the
-   shorter packet and the ablation says whether the two lines earn the difference.
-3. Whether the label should keep the rules' continuation bonus and finished penalty (§2, limit 2). They are hand rules
-   about staying; the reviewer of 10 October asked for labels "with persistence bonuses stripped". Not done here: the
+1. **The fresh seeds.** This stage opened 4111 and 4222. Stage R12's second build step proposed the same pair; it
+   should take 4333 and 4444, and a new sealed pair should be named now for the test after that.
+2. **One night or two.** Night one ends with one training per arm, the offline table and the loop arms of those two
+   adapters. By §11.2 nothing registered can be claimed from it. Whether to read night one before night two runs, or
+   to wait, is yours; the arms of night two are fixed either way.
+3. **The ablation's other side.** P5a, as registered, still carries one memory line where P5b carries `last` (often
+   the latest grooming or greeting). If you want "P5b with the two lines deleted and nothing else changed", say so
+   before night one: it needs the files assembled again (three minutes, no model) and a line in §11.
+4. **Whether to spend about an hour more of model time** on two references: the first adapter under a draw on the
+   test seeds (30 minutes; the reference for N1), and the first adapter on this stage's held-out draws with neutral
+   options (30 minutes and a small build; the like-for-like baseline for W1).
+5. **The line of N1.** 49 of 50 nights keeps it, because the rules' own arms lose a night in two of eight re-draws.
+   If one lost night should already count against a draw, the mark must be made stricter before the arms run.
+6. Whether the label should keep the rules' continuation bonus and finished penalty (§2, limit 2). They are hand
+   rules about staying; the review of 10 October asked for labels "with persistence bonuses stripped". Not done: the
    brief asked for the rules' judgment, and stripping them changes the teacher.
-4. Whether the rare-menu draws (64 of 7,431, no label) matter enough to raise the cap of 20,000 redraws.
+7. Whether the 64 fresh draws with a menu too rare for a label (of 7,431) matter enough to raise the cap of 20,000
+   redraws.
