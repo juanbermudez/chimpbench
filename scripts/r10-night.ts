@@ -18,7 +18,7 @@
 // process is running, and it is launched under `caffeinate -i` (it also holds its own `caffeinate -i -w <pid>`).
 //
 // A run survives a night: every kernel answer is journalled the moment it arrives, every tick's receipts are appended
-// and flushed, a lossless checkpoint is written atomically at the end of every simulated day (the last two are kept),
+// at once (both fsynced every two seconds), a lossless checkpoint is written atomically at the end of every simulated day (the last two are kept),
 // and --resume continues from the newest whole checkpoint, reusing the answers already journalled for the day that was
 // in progress. Exit codes: 0 done, 2 refused, 3 stopped (the stop check after five days, the error limit, low disk),
 // 130 interrupted. `replay` answers from the receipts with no model, must land on every day's hash, and reads the run
@@ -221,12 +221,13 @@ async function run(a: Args): Promise<number> {
       }
       // the day is safe in this order: its files, its summary, the checkpoint, the registry
       files.close(res.rows);
+      res.summary.io = { journalBytes: files.bytes.journal, receiptsBytes: files.bytes.receipts, contextsBytes: files.bytes.contexts, syncs: files.syncs, syncSeconds: +files.syncSeconds.toFixed(1) };
       writeAtomic(resolve(out, 'summary', `${dayName(e.day)}.json`), JSON.stringify(res.summary, null, 1) + '\n');
       const ck = writeCkpt(resolve(out, 'ckpt', `${dayName(e.day)}.json.gz`), e);
       pruneCkpts(out, 2);
       reg.days.push(res.summary);
       if (e.day <= STOP.day) rows15.push(...res.rows);
-      log(`${progressLine(reg, res.summary, startedMs, reg.hours)}; checkpoint ${(ck.bytes / 1e6).toFixed(1)} MB, receipts ${(files.bytes.receipts / 1e6).toFixed(2)} MB, contexts ${(files.bytes.contexts / 1e6).toFixed(2)} MB before gzip`);
+      log(`${progressLine(reg, res.summary, startedMs, reg.hours)}; checkpoint ${(ck.bytes / 1e6).toFixed(1)} MB, receipts ${(files.bytes.receipts / 1e6).toFixed(2)} MB, contexts ${(files.bytes.contexts / 1e6).toFixed(2)} MB before gzip, ${files.syncs} fsyncs in ${files.syncSeconds.toFixed(1)} s`);
       if (e.day === STOP.day) {
         reg.stopCheck = stopCheck(rows15, reg.days);
         const v = reg.stopCheck;

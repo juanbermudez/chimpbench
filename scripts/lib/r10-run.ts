@@ -221,6 +221,8 @@ export interface DaySummary {
   /** The stop check's inputs for the day: mean daily reserve change of driven animals (% of the usual store) and their nights in a nest. */
   reservePctDriven: number | null; nights: [number, number]; kcalEatenDriven: number | null;
   started: string; finished: string;
+  /** Set by scripts/r10-night.ts for a run's own days: bytes appended and the fsync calls made and the seconds they took. */
+  io?: { journalBytes: number; receiptsBytes: number; contextsBytes: number; syncs: number; syncSeconds: number };
 }
 
 /** A run ended on purpose before the day was complete (a signal, the error limit): the last checkpoint stands. */
@@ -438,34 +440,41 @@ export function readLines<T>(file: string): T[] {
 }
 
 /**
- * The files of one day, open for appending: journal (each answer as it arrives, written and fsynced before the next
- * call: it is what a resume reads), receipts (each tick's lines, written at once; fsynced when SYNC_EVERY_MS have
- * passed since the last time and when the day closes: a process that dies loses nothing written, and after a power cut
- * the day is redone from the journal anyway), contexts (with the receipts; gzipped when the day closes). The field smoke
- * of stage R10 measured about 8 ms per fsync on the project's volume, 65 s a simulated day when every tick was fsynced.
+ * The files of one day, open for appending: journal (each answer the moment it arrives: it is what a resume reads),
+ * receipts (each tick's lines), contexts (with the receipts; gzipped when the day closes). Every line is handed to the
+ * operating system at once with a write call, so nothing is held in this process and a process that dies loses
+ * nothing. The files are fsynced when SYNC_EVERY_MS have passed since the last time and when the day closes, so a
+ * power cut can lose at most the lines of the last two seconds (they are asked again on the resume). Why not an fsync
+ * per answer: the field smoke of stage R10 measured 8 ms per fsync on the project's volume with the machine quiet and
+ * about 115 ms with other jobs writing to it (65 s and 270 s a simulated day), which a night cannot afford.
  */
 export const SYNC_EVERY_MS = 2000;
 export class DayFiles implements Sink {
   private jf: number; private rf: number; private cf: number | null; private synced = Date.now();
   bytes = { journal: 0, receipts: 0, contexts: 0 };
+  /** fsync calls made and the seconds they took (the progress line prints them). */ syncs = 0; syncSeconds = 0;
   readonly files: { journal: string; receipts: string; contexts: string; rows: string };
-  /** `sync` false skips the fsync after each write (tests of long runs; a real run keeps it). */
+  /** `sync` false: never fsync before the day closes (tests of long runs; a real run keeps it). */
   constructor(readonly root: string, readonly day: number, contexts = true, private sync = true) {
     const n = dayName(day);
     this.files = { journal: resolve(root, 'journal', `${n}.jsonl`), receipts: resolve(root, 'receipts', `${n}.jsonl`), contexts: resolve(root, 'contexts', `${n}.jsonl`), rows: resolve(root, 'rows', `${n}.jsonl`) };
     for (const f of Object.values(this.files)) mkdirSync(dirname(f), { recursive: true });
     this.jf = openSync(this.files.journal, 'a'); this.rf = openSync(this.files.receipts, 'a'); this.cf = contexts ? openSync(this.files.contexts, 'a') : null;
   }
-  arrival(a: Arrival): void { this.bytes.journal += writeSync(this.jf, JSON.stringify(a) + '\n'); if (this.sync) fsyncSync(this.jf); }
-  lines(lines: Line[]): void {
-    this.bytes.receipts += writeSync(this.rf, lines.map(l => JSON.stringify(l) + '\n').join(''));
-    if (this.sync && Date.now() - this.synced >= SYNC_EVERY_MS) { fsyncSync(this.rf); if (this.cf !== null) fsyncSync(this.cf); this.synced = Date.now(); }
+  private flush(force = false): void {
+    if (!force && (!this.sync || Date.now() - this.synced < SYNC_EVERY_MS)) return;
+    const s = performance.now();
+    fsyncSync(this.jf); fsyncSync(this.rf); if (this.cf !== null) fsyncSync(this.cf);
+    this.syncs++; this.syncSeconds += (performance.now() - s) / 1000; this.synced = Date.now();
   }
+  arrival(a: Arrival): void { this.bytes.journal += writeSync(this.jf, JSON.stringify(a) + '\n'); this.flush(); }
+  lines(lines: Line[]): void { this.bytes.receipts += writeSync(this.rf, lines.map(l => JSON.stringify(l) + '\n').join('')); this.flush(); }
   context(c: { t: number; id: number; v: number; ctx: string; context: DecisionContext }): void { if (this.cf !== null) this.bytes.contexts += writeSync(this.cf, JSON.stringify(c) + '\n'); }
   /** Closes the day: the rows, then the contexts gzipped (the plain copy is replaced by the .gz). */
   close(rows: Row[] | null): void {
-    for (const fd of [this.jf, this.rf]) { fsyncSync(fd); closeSync(fd); }
-    if (this.cf !== null) { fsyncSync(this.cf); closeSync(this.cf); }
+    this.flush(true);
+    for (const fd of [this.jf, this.rf]) closeSync(fd);
+    if (this.cf !== null) closeSync(this.cf);
     if (rows) {
       writeAtomic(this.files.rows, rows.map(r => JSON.stringify(r) + '\n').join(''));
       if (this.cf !== null) { writeAtomic(`${this.files.contexts}.gz`, gzipSync(readFileSync(this.files.contexts), { level: 6 })); unlinkSync(this.files.contexts); }
