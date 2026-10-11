@@ -77,16 +77,28 @@ export function engineArm(name: string): EngineArm | null {
   return null;
 }
 /**
- * The registered model arms for what stage R9 named (prereg §5), in order of need: P5b before P5a, training seed 7 before
- * 11, the old adapter last. `draw` or `held`: each new adapter with decode salts 1 and 2, the old adapter with salt 1.
- * No standard named (`none`) or the top pick: each new adapter with the top pick and, beside it, a draw arm (salt 1);
- * p5b-s7 also with salt 2 (one salt spread on file); the old adapter with the top pick.
+ * The registered model arms for what stage R9 named (prereg §5 as amended in §11.1 and §11.2). Stage R9 named no
+ * standard (11 October 2026), so the branch that is run is `none` (the same as `top`): each new adapter with the top
+ * pick, the primary decode, and a draw arm (salt 1) beside it; p5b-s7 also with salt 2 (one salt spread on file); the old
+ * adapter with the top pick and, last and only if time allows, under a draw (a reference for "nights in a nest under a
+ * draw" on the same worlds; no statement needs it). In order of need (§11.2): the first training seed of each arm, P5b
+ * before P5a, then the second seeds; the old adapter last. An arm's world stream is fixed by its name, not by this order.
+ * `draw` and `held` are kept as first registered (each new adapter with decode salts 1 and 2, the old adapter with salt
+ * 1); scripts/r11-run.sh no longer launches them.
  */
-export function registeredArms(decode: string): { fresh: string[]; old: string[] } {
+export function registeredArms(decode: string): { fresh: string[]; old: string[]; optional: string[] } {
   const fresh = ['p5b-s7', 'p5b-s11', 'p5a-s7', 'p5a-s11'], [b7, b11, a7, a11] = fresh;
-  if (decode === 'draw' || decode === 'held') return { fresh: [`${b7}-${decode}-1`, `${b11}-${decode}-1`, `${b7}-${decode}-2`, `${b11}-${decode}-2`, `${a7}-${decode}-1`, `${a11}-${decode}-1`, `${a7}-${decode}-2`, `${a11}-${decode}-2`], old: [`old-${decode}-1`] };
-  if (decode === 'none' || decode === 'top' || decode === '') return { fresh: [`${b7}-top`, `${b11}-top`, `${b7}-draw-1`, `${b11}-draw-1`, `${a7}-top`, `${a11}-top`, `${a7}-draw-1`, `${a11}-draw-1`, `${b7}-draw-2`], old: ['old-top'] };
+  if (decode === 'draw' || decode === 'held') return { fresh: [`${b7}-${decode}-1`, `${b11}-${decode}-1`, `${b7}-${decode}-2`, `${b11}-${decode}-2`, `${a7}-${decode}-1`, `${a11}-${decode}-1`, `${a7}-${decode}-2`, `${a11}-${decode}-2`], old: [`old-${decode}-1`], optional: [] };
+  if (decode === 'none' || decode === 'top' || decode === '') return { fresh: [`${b7}-top`, `${a7}-top`, `${b7}-draw-1`, `${a7}-draw-1`, `${b11}-top`, `${a11}-top`, `${b11}-draw-1`, `${a11}-draw-1`, `${b7}-draw-2`], old: ['old-top'], optional: ['old-draw-1'] };
   throw new Error(`the decode stage R9 named: draw | held | top | none (got "${decode}")`);
+}
+
+/** Why a list of engine arm names cannot be run, or '' (the run script asks before it holds for swap or loads a burn-in). */
+export function armsRefusal(names: string[], dry = false): string {
+  if (!names.length) return 'name the arms (--arms a,b)';
+  for (const n of names) { const a = engineArm(n); if (!a) return `unknown engine arm ${n}: <${Object.keys(ADAPTERS).join('|')}>-<${Object.keys(DECODES).join('|')}>`; if ((a.adapter === 'fake') !== dry) return `arm ${n} ${dry ? 'is not part of' : 'belongs to'} the dry run`; }
+  if (new Set(names).size !== names.length) return 'an arm is named twice';
+  return '';
 }
 
 /** The packet an arm's kernel is sent. */
@@ -191,8 +203,10 @@ if (process.argv[1]?.endsWith('r11-loop.ts')) {
   const arg = (k: string, d: string) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
   const has = (k: string) => process.argv.includes(`--${k}`);
   const cmd = process.argv[2];
-  if (cmd === 'list') { const r = registeredArms(arg('decode', 'none')); console.log(`${r.fresh.join(',')} ${r.old.join(',')}`); process.exit(0); }
-  if (cmd !== 'controls' && cmd !== 'engine' && cmd !== 'dry') throw new Error('usage: r11-loop.ts controls --seed N | engine --seed N --arms a,b [--replay] | dry | list --decode draw|held|top|none');
+  if (cmd === 'list') { const r = registeredArms(arg('decode', 'none')); console.log(`${r.fresh.join(',')} ${r.old.join(',')} ${r.optional.join(',') || '-'}`); process.exit(0); }
+  // names: no world is built; prints each arm's adapter, or the reason the list is refused (exit 2)
+  if (cmd === 'names') { const names = arg('arms', '').split(',').filter(Boolean), why = armsRefusal(names); if (why) { console.error(`R11: ${why}`); process.exit(2); } console.log(names.map(n => engineArm(n)!.adapter).join(' ')); process.exit(0); }
+  if (cmd !== 'controls' && cmd !== 'engine' && cmd !== 'dry') throw new Error('usage: r11-loop.ts controls --seed N | engine --seed N --arms a,b [--replay] | dry | list --decode top|none | names --arms a,b');
   const dry = cmd === 'dry', seed = dry ? DRY_SEED : +arg('seed', '0'), refused = seedRefusal(seed, dry);
   if (refused) throw new Error(refused);
   const root = resolve(arg('out', dry ? 'artifacts/r11/dry' : 'artifacts/r11/loop')), burnInDays = dry ? 1 : BURN_IN, days = dry ? 1 : DAYS;
@@ -205,6 +219,7 @@ if (process.argv[1]?.endsWith('r11-loop.ts')) {
     if (receipts) writeFileSync(resolve(out, `${name}.receipts.jsonl`), receipts.map(r => JSON.stringify(r)).join('\n') + (receipts.length ? '\n' : ''));
     writeFileSync(resolve(out, `${name}.json`), JSON.stringify(file) + '\n');
   };
+  if (cmd === 'engine') { const why = armsRefusal(arg('arms', '').split(',').filter(Boolean)); if (why) throw new Error(why); }
   (async () => {
     const { base, plainHash } = burnIn(seed, burnInDays, params, root, s => console.log(s));
     const focal = focalSet(base), x: Ctx = { seed, burnInDays, days, params, base, plainHash, focal, out, head, dirty };
@@ -228,6 +243,14 @@ if (process.argv[1]?.endsWith('r11-loop.ts')) {
     let workerReady: Record<string, unknown> | null = null;
     const guard = live ? new GuardedScorer(async () => { const w = new Worker(arg('device', 'mps')); await w.start(); workerReady = w.ready; console.log(`worker ready ${JSON.stringify(w.ready)}`); return w; }, +arg('timeout-s', '120') * 1000) : null;
     await guard?.start();
+    // An arm must never be answered by the untuned model: the worker loads only the adapters MGOGO_FT_ADAPTERS names and
+    // finds under MGOGO_FT_ROOT, and answers with the untuned model when it loaded none (training/decide_ft/adapters.py).
+    // Checked on the worker's ready line, before the first ask (the model itself loads at the first ask).
+    if (live) for (const a of arms) {
+      const held = ((workerReady as Record<string, unknown> | null)?.adapters ?? {}) as Record<string, string>, listed = (process.env.MGOGO_FT_ADAPTERS ?? '').split(',');
+      const why = !(a.adapter in held) ? `the worker finds no adapter ${a.adapter} under MGOGO_FT_ROOT (${process.env.MGOGO_FT_ROOT ?? 'unset'})` : !dry && !listed.includes(a.adapter) ? `MGOGO_FT_ADAPTERS must name ${a.adapter} (it is "${process.env.MGOGO_FT_ADAPTERS ?? ''}")` : '';
+      if (why) { guard?.stop(); throw new Error(`arm ${a.name}: ${why}; nothing was asked`); }
+    }
     const replay = async (a: EngineArm): Promise<boolean> => {
       const of = (JSON.parse(readFileSync(resolve(out, `${a.name}.json`), 'utf8')) as R11ArmFile).engine!.result, source = lines(resolve(out, `${a.name}.receipts.jsonl`)), stats = { missing: 0, menuDiffers: 0 };
       const r = await engineRun(x, a, replayKernel(source, stats), { replay: stats, log: s => console.log(s) });
