@@ -1071,6 +1071,107 @@ a training; offline scoring may take up to 50 minutes longer on night one.
 smoke run showed 328 examples. The warmed loop on the real model (§12.5). Whether an adapter trained this way is any
 good is the night's result, not this check's.
 
+## 13. Two amendments before any training (a third agent, 11 October 2026; logged at 15:07 EDT)
+
+When this section was written: the branch stood at head 0e0cfde with a clean tree; `scripts/r11-run.sh check` at 15:03
+printed "not trained yet" for all four adapters and "no other model process"; no adapter of this stage exists and
+none has ever been trained to its end (the smoke adapter of §12 was a scratch run on 164 rows and was deleted). Both
+amendments are the integrator's decisions of 11 October, taken before any training, and both are committed before any
+code or file of this stage changes. **No pass mark changes**: O1 to O4, S0 to S3, L1, N1, W1, the ablation's rule,
+D and the guards stand as registered in §6 and §11. No label, no record, no split and no setting of the trainer
+changes. Nothing under `src/` or `data/` changes, so the goldens and the field pin cannot move.
+
+### 13.1 P5a is strict: P5b with exactly the lines `lately` and `last` deleted (amends §1, §8 and §11.5)
+
+**What was.** §1 registered P5a as the builder's own ablation (`without: ['lately', 'last']`). With `last` left out
+the builder no longer drops the grooming and greeting memory lines that `last` replaces, so one such line comes back.
+On the files on disk today P5a carries a `memories` line in 3,120 of 3,120 training rows and P5b in 1,272; the line
+differs between the arms in 2,318 training rows and 210 of 300 development rows (the reviewer's 2,528, §11.5).
+P5b carries `lately` in 3,120 training rows and `last` in 3,008. So the ablation as first built compares "the lines
+`lately` and `last`" with "one memory line as in every earlier packet", not with their absence.
+
+**The decision.** P5a becomes strict: **the same packet as P5b with exactly the lines `lately` and `last` deleted and
+nothing given back.** Records, their order, labels, options, the instruction and every other line of the state are
+byte-identical between the arms.
+
+- **How it is built.** An arm's packet is made from the P5b packet of the same moment by deleting the two lines
+  (`scripts/lib/r11-packets.ts`); the builder is no longer asked to leave them out. Packet 5 itself
+  (`buildOwnQuestion`) is not changed and no file under `src/` is touched: stage R8's one-line ablations keep their
+  meaning. The same rule holds wherever this stage renders P5a: the packet without `doing` (P5b without `doing`, less
+  the two lines), the state probes, the loop's P5a arms and their warm-up packet.
+- **A stated consequence, not a new choice.** The memory line P5b itself carries (never a grooming or greeting line;
+  for example a food sharing) stays in both arms. Where P5b has no `last` line (the short variant writes social timing
+  only for animals an option names, and 112 training rows have none) neither arm carries a grooming or greeting
+  memory: packet 5 short drops those memory lines whether or not a `last` line is written. That is packet 5 as stage
+  R8 registered it.
+- **What is rebuilt, and what must not move.** Only what P5a needs: its training and development files, its packets
+  in the held-out file (`p5a`, `p5aNoDoing`, `p5aProbe`), its token estimates, the manifest and the data tables.
+  **P5b's bytes must not change.** P5b's training and development files are not rewritten: the assembler renders
+  them again and stops unless what it would write is what is on file (sha256 `38bddc0d…a1cd` and `42a5b00b…6019`).
+  The held-out file holds both arms' packets in one file, so its own hash changes; there the proof is per packet
+  name: P5b's 2,000 packets, its 1,340 without `doing` and its 1,080 probes must be byte-identical before and after,
+  and the manifest now carries a hash per packet name. The hashes before and after are printed in §13.3. If one P5b
+  byte differs, the reassembly stops and nothing is trained on it.
+- **Tests.** On built contexts, for every record: the P5a packet equals the P5b packet with those two lines removed,
+  line for line and in the same order of lines, with the same questions; with and without `doing`; including records
+  where P5b has no `last` line. The test also shows that the builder's own `without` would have given a memory line
+  back on some of the same records, so it can fail.
+- **How the ablation reads now.** P5b against P5a is "the lines `lately` and `last`" against their absence. The
+  ablation's rule (§6.2, "What the ablation says") is unchanged, word for word. The note "when the ablation is read,
+  say that P5a still carries one memory line" (§11.5, the launch notes) is withdrawn.
+- **Earlier numbers.** Every number of P5a in §10.5, §11.5, §11.7, §12.1, §12.4 (its parity) and §12.6 is of the P5a
+  first registered and is replaced by §13.3. P5b's numbers stand, as does its smoke run. Before any training: P5a's
+  real token counts are taken again (the tokenizer alone, CPU) and its parity is run again (CPU).
+
+### 13.2 A like-for-like wording baseline, as an optional model step (adds to §11.4; W1 is not changed)
+
+**Why.** W1 (§11.4) reads each new adapter against 0.386: the first adapter (`r4-rules-state`) scored with neutral
+option labels on stage R4's held-out draws. Those are other draws than this stage's (earlier and shorter windows),
+so §11.4 called 0.386 "a yardstick, not a pair" and §11.8 listed the like-for-like figure as not built.
+
+**The step** (`scripts/r11-run.sh baseline`; the integrator runs it, if at all). The first adapter is scored on
+**this stage's 1,500 held-out fresh draws** of seed 21, each rendered two ways from its saved context:
+
+- (a) `oldState`: the adapter's own packet, the state-only packet `r4-state-1` with the rules' wording on the
+  options (`scripts/lib/packet-state.ts`), which is what the loop's `old-…` arms send;
+- (b) `oldNeutral`: the same state lines without `urgent`, each option as its neutral label and the one-sentence
+  instruction (`neutralized` in `src/providers/packet.ts`: stage R8's wording test, `scripts/r8-rerender.ts`).
+
+The renderer (no model) stops unless, for every draw, the options and the instruction of (b) are exactly those of
+the P5b packet of the same draw, (b) carries none of the rules' wording, and the state lines of (a) and (b) differ
+only by the `urgent` line. One difference from stage R8's test, stated: R8's records were saved before the animal's
+own experience existed, so each option's facts were read back from the rules' reason sentence by a parser; this
+stage's contexts carry them, so nothing is parsed.
+
+**Guards.** Those of every model step: arguments and files first, a refusal while another model process is alive
+or the tree is not clean, the swap hold, a log, a score file written under another name until it is whole and
+never scored again once on file; the first adapter must be there with its manifest.
+
+**How it is read (fixed now, before the step exists).**
+
+1. **W1 stays as registered**, against 0.386 and the kind-prior baseline. The like-for-like figure replaces
+   neither, decides no mark and enters no statement.
+2. Printed beside W1 as description (`r11-offline.md` §12; the whole table in `r11-baseline.md`): the first
+   adapter's top-1 agreement with the rules' pick on (a) and on (b), each with a 95% interval over animals; the
+   paired difference (b) less (a); the same by kind of the rules' pick, as stage R8's table; and R8's own two
+   figures (0.609 and 0.386, on R4's draws) beside them.
+3. Per adapter of this stage: its top-1 agreement on its own arm's packets less the first adapter's on (b), paired
+   on the same draws, with an interval over animals. In words: how much more, or less, this adapter reads from the
+   state than the first adapter did without the rules' wording, on the same draws. It is a description under the
+   name "like for like"; for a recipe both trainings are printed and nothing is claimed for the recipe.
+4. Also as description, because §6.1 quotes the first adapter's numbers from other draws: its mean probability on
+   the trip to food on (a) against the label's on the same menus (the like-for-like form of "0.155 against 0.23"),
+   and its divergence from the rules' distribution on (a) and (b).
+5. If the step is never run the report says the figure is not on file, and nothing else changes.
+6. What it cannot show. The first adapter was trained with the rules' wording, on one-hot picks with kept acts
+   among its labels; (b) is an input it never saw, as in stage R8. A gap between it and a new adapter is therefore
+   not the worth of the honest packet alone: inputs and labels both changed (§4).
+
+**Order.** Optional. It needs no adapter of this stage, so it can run before, between or after the trainings,
+whenever no other model process is alive. Its plumbing is proven without a model (the fake worker's rule in the dry
+run; the run script's own line against a stand-in interpreter); its model time is estimated in §13.3 from the
+packet counts and their real token counts.
+
 ## For the integrator
 
 *(Rewritten by the reviewer on 11 October 2026 after §11; the builder's notes are kept where they still hold. The times were replaced on 11 October at 14:56 by the measurements of §12.6, after a smoke run on the real model; the frozen checkout must hold head c9f5eb0 or later.)*
