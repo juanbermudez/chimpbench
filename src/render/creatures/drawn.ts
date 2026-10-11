@@ -190,12 +190,15 @@ export interface BodyState {
 
 /**
  * True when the newest step of the position record is faster than maxMps (m per ecological second, in three
- * dimensions). Judged by speed, so the one long step across skipped states is slow unless the animal really covered
- * the ground. False while the record holds fewer than two states.
+ * dimensions) and is a step that was seen: no longer than SKIP_TICKS. The one long step across skipped states says
+ * where the animal went, not what it is doing now (after a day played in a second and a pause, an animal that had
+ * walked to its crown an hour before read "going to feed" for as long as the pause lasted). False while the record
+ * holds fewer than two states.
  */
 export function strides(tr: Track, maxMps: number): boolean {
   if (tr.n < 2) return false;
   const h = tr.hist, newer = tr.head * 4, older = ((tr.head - 1 + HIST) % HIST) * 4;
+  if (h[newer] - h[older] > SKIP_TICKS * TICK_HOURS) return false;
   const far = maxMps * (h[newer] - h[older]) * 3600;
   const dx = h[newer + 1] - h[older + 1], dy = h[newer + 2] - h[older + 2], dz = h[newer + 3] - h[older + 3];
   return far > 0 && dx * dx + dy * dy + dz * dz > far * far;

@@ -527,9 +527,14 @@ test('W6 review: the simulation striding an animal on is read from the newest st
   assert.equal(strides(path([[0, 0], [1.5, 0]]), max), false, 'a feeding creep');
   assert.equal(strides(path([[0, 0], [0, 3.3]]), max), true, 'a climb');
   assert.equal(strides(path([]), max), false, 'one state: nothing known');
-  // The one long step across skipped states is judged by speed: an animal 60 m from where it slept, hours later, did not stride.
+  // The one long step across skipped states is not a stride, however much ground it covers: it says where the animal
+  // went, not what it is doing now.
   const far = createTrack(0, 0, 0); pushSample(far, 10, 0, 0, 0); pushSample(far, 13, 60, 0, 0);
   assert.equal(strides(far, max), false);
+  const day = createTrack(0, 0, 0); pushSample(day, 10, 0, 0, 0); pushSample(day, 10 + 96 * T, 96 * 5.25, 0, 0);
+  assert.equal(strides(day, max), false, '96 ticks in one step at a walk');
+  const two = createTrack(0, 0, 0); pushSample(two, 10, 0, 0, 0); pushSample(two, 10 + 2 * T, 10.5, 0, 0);
+  assert.equal(strides(two, max), true, 'a slow frame of two ticks is still a step that was seen');
   const out = body(); sampleSmooth(far, 13); readBody(out, far, 60, 0, 0, false, false, 0.35);
   assert.equal(out.striding, false);
   pushSample(far, 13 + T, 65.25, 0, 0); readBody(out, far, 65.25, 0, 0, false, false, 0.35);
