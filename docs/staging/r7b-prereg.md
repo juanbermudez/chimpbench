@@ -349,7 +349,7 @@ here before any result: with more than two options the distinguishability test f
 than its nominal level, not more (the runner-up is the closest of the rest); the measured noise rate stays the
 reference, as registered.
 
-**Iteration 2 of part two** (11 October 2026, 03:28 EDT; logged while iteration 1 was running and before any of its
+**Iteration 2 of part two** (11 October 2026, 03:26 EDT; logged while iteration 1 was running and before any of its
 numbers was read; what is known is the smoke check above and the code). *Why.* The rules' own evaluation noise is
 not in the random stream: the candidate jitter (`src/sim/candidates.ts`, span 0.24) and the bout lengths
 (`src/sim/execution.ts` `boutHours`) are hashes of the animal's id and its decision count. A salt mixed into the
