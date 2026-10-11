@@ -211,6 +211,25 @@ test('the harness\'s epochs: an act epoch opens when the act is replaced, at an 
   a = ask(dec); rec = settle(dec, a);
   assert.equal(rec.open, 'interrupt');
 
+  // the whole-act hold (exploratory): an interrupt asks again under the same noise; only a replaced act opens an epoch
+  const whole = newDecoder({ mode: 'held', salt: 1, hold: 'whole' });
+  ix(c).intr = ''; a = ask(whole); const w0 = settle(whole, a);
+  doing(a.r.options[a.i]); c.decisionVersion++; ix(c).lastIntrAt = w.time + 0.001; w.time += 0.002;
+  a = ask(whole); rec = settle(whole, a);
+  assert.deepEqual([rec.open, rec.epoch], ['', w0.epoch], 'held through the interrupt');
+  doing(a.r.options[a.i].action === 'rest' ? { action: 'travel', targetId: -1 } : { action: 'rest', targetId: -1 }); c.decisionVersion++; ix(c).lastIntrAt = w.time + 0.001; w.time += 0.002;
+  a = ask(whole); rec = settle(whole, a);
+  assert.equal(rec.open, 'replaced');
+  // the act hold says when an interrupted ask's act had also been replaced
+  const both = newDecoder({ mode: 'top', salt: 0, hold: 'act' });
+  a = ask(both); settle(both, a);
+  doing(a.r.options[a.i]); c.decisionVersion++; ix(c).lastIntrAt = w.time + 0.001; w.time += 0.002;
+  a = ask(both); rec = settle(both, a);
+  assert.deepEqual([rec.open, rec.also], ['interrupt', undefined]);
+  doing(a.r.options[a.i].action === 'rest' ? { action: 'travel', targetId: -1 } : { action: 'rest', targetId: -1 }); c.decisionVersion++; ix(c).lastIntrAt = w.time + 0.001; w.time += 0.002;
+  a = ask(both); rec = settle(both, a);
+  assert.deepEqual([rec.open, rec.also], ['interrupt', 'replaced']);
+
   // the block hold: the half hour of the world's clock, whatever the animal does
   const blk = newDecoder({ mode: 'held', salt: 1, hold: 'block' });
   w.time = 100 * BLOCK_H + 0.01; ix(c).lastIntrAt = 0;
@@ -308,6 +327,9 @@ test('the offline replay walks saved asks under each decode and epoch rule (firs
   let heldFlips = 0, drawFlips = 0;
   for (let s = 1; s <= 200; s++) { heldFlips += walk(by.get(7)!, 'held', s, 'act', 21).flips; drawFlips += walk(by.get(7)!, 'draw', s, 'act', 21).flips; }
   assert.equal(heldFlips, 0); assert.ok(drawFlips > 100);
+  // whole: the interrupt at the last ask (its act still going) is a re-ask; one marked as also replaced opens
+  assert.deepEqual([walk(by.get(7)!, 'top', 0, 'whole', 21).opens, walk(by.get(7)!, 'top', 0, 'whole', 21).reasks], [2, 4]);
+  assert.equal(walk(asksOf(log.map((x, i) => i === 5 ? { ...x, dec: { ...x.dec!, also: 'replaced' as const } } : x)).get(7)!, 'top', 0, 'whole', 21).opens, 3);
   const r = replay(by, 'held', 'act', 21, 40);
   assert.equal(r.perSalt.length, 40); assert.equal(r.mean.asks, 6);
   assert.equal(replay(by, 'top', 'act', 21, 40).perSalt.length, 1);

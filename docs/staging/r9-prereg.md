@@ -242,3 +242,22 @@ animal-day), `scripts/r9-loop.ts` (the arms, step 0, the plumbing check), `scrip
   kernel about three times as often as the others, because a brief act that the block's noise favours (a display) is
   chosen again as soon as it ends, until the half hour is over. That is a property of a hold that does not know the
   act has ended, and it is why `block` is the crude arm; it is not changed here.
+
+- **Amendments, logged 10 October 2026, 20:20 EDT, before any model arm.** None changes a rule of §6.
+  - **A1, a readout added: "re-rolled".** For a held arm, the re-asks inside an epoch at which the applied option
+    changed to an option that was on the animal's previous menu while the model's odds had not moved its way (ln p of
+    the new option less ln p of the old one no larger than at the previous ask). By §1 this cannot happen; the count
+    is printed for every held arm and every replay, and anything but 0 is a defect.
+  - **A2, a third epoch offered as exploratory: `whole`.** The first pass of the offline replay (iteration 0, below)
+    showed that under the `act` epoch most asks open a new epoch, about half of them at an interrupt, so a held draw
+    rarely meets a re-ask. The plan's words are "held while the act lasts"; an epoch that opens at every interrupt is
+    shorter than the act. `whole` is the act through interrupts: an event the animal perceived asks again under the
+    same noise, and the epoch opens only when the act was replaced, at an arrival or after a fallback. It is an
+    option of the harness and a column of the offline replay; the receipt of an ask that an interrupt opened now also
+    says whether the act had been replaced, and step 0 is re-run to record it (the worlds cannot change). It has no
+    rule: if an arm is run with it, it is reported as exploratory. This amendment was written after seeing the first
+    offline numbers, which is why it adds a column and not a pass mark.
+  - **A3, a wiring check added** (`scripts/r9-run.sh wire`): the model arms' own code path (worker process, guarded
+    scorer, GLiNER kernel with the state-only packet, receipts, decode, replay) against a fake worker that holds no
+    model (`scripts/lib/fake-worker.mjs`), on the plumbing check's world.
+

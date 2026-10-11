@@ -15,9 +15,13 @@ import type { KernelRequest, StepResult } from '../../src/kernel/types';
 import { ix } from '../../src/sim/state';
 import type { Chimp, World } from '../../src/types';
 
-/** Which epoch a held draw lives in (prereg §2): the animal's own act, or the half-hour block of the world's clock. */
-export type Hold = 'act' | 'block';
-export const HOLDS: readonly Hold[] = ['act', 'block'];
+/**
+ * Which epoch a held draw lives in (prereg §2): the animal's own act (`act`: it opens when the act was replaced and at an
+ * interrupt), or the half-hour block of the world's clock (`block`). `whole` (prereg §10, amendment A2; exploratory): the
+ * act, through interrupts: an event the animal perceived asks again under the same noise and opens nothing.
+ */
+export type Hold = 'act' | 'block' | 'whole';
+export const HOLDS: readonly Hold[] = ['act', 'block', 'whole'];
 /** A harness's decode setting: the decode's own (mode, salt) and the epoch definition, which `held` reads and every mode counts by. */
 export interface HarnessDecode extends DecodeSpec { hold: Hold }
 /** The block arm's epoch length, hours (design assumption: the half hour the sceptic's proposal named; not a field number). */
@@ -36,6 +40,8 @@ export interface DecodeRecord {
   mode: DecodeMode; salt: number; hold: Hold;
   /** The epoch of this ask (`act`: the decision version at which it opened; `block`: the block's number) and why this ask opened it. */
   epoch: number; open: Opened;
+  /** At an ask an interrupt opened: 'replaced' when the animal's act had also been replaced (so the epoch would have opened without the interrupt). */
+  also?: 'replaced';
   /** Position on this menu of the option the decode applied last for this animal; -1 when it is missing from the menu; null when there is none (a first ask, or the last ask went to the rules). */
   prev: number | null;
   /** The kernel's own pick and the position the decode chose. */
@@ -60,14 +66,17 @@ export interface Decoder {
 export function newDecoder(spec: HarnessDecode): Decoder {
   const last = new Map<number, Last>(), open = new Map<number, { record: DecodeRecord; keys: string[] }>();
   /** The epoch of this ask and why it opened, from the animal as it is now and what the decode applied last. */
-  const epochOf = (world: World, c: Chimp, version: number, s: Last | undefined): { epoch: number; open: Opened } => {
+  const epochOf = (world: World, c: Chimp, version: number, s: Last | undefined): { epoch: number; open: Opened; also?: 'replaced' } => {
     if (spec.hold === 'block') { const b = Math.floor(world.time / BLOCK_H); return { epoch: b, open: !s ? 'first' : s.epoch !== b ? 'block' : '' }; }
-    let why: Opened = '';
+    let why: Opened = '', also: 'replaced' | undefined;
     if (!s) why = 'first';
     else if (s.key === null) why = 'rules';
-    else if (s.pending || ix(c).lastIntrAt > s.at) why = 'interrupt';
-    else if (optionKey(c) !== s.key) why = s.key === `travel:${c.targetId}` && c.action === 'forage' ? 'arrived' : 'replaced';
-    return { epoch: why ? version : s!.epoch, open: why };
+    else {
+      const replaced = optionKey(c) !== s.key;
+      if (spec.hold !== 'whole' && (s.pending || ix(c).lastIntrAt > s.at)) { why = 'interrupt'; if (replaced) also = 'replaced'; }
+      else if (replaced) why = s.key === `travel:${c.targetId}` && c.action === 'forage' ? 'arrived' : 'replaced';
+    }
+    return { epoch: why ? version : s!.epoch, open: why, ...(also ? { also } : {}) };
   };
   return {
     spec,
@@ -75,6 +84,7 @@ export function newDecoder(spec: HarnessDecode): Decoder {
       const s = last.get(c.id), keys = requestKeys(request), version = request.context.version, e = epochOf(world, c, version, s);
       const d = decode(spec, { seed: world.seed, chimpId: c.id, version, epoch: e.epoch }, keys, answer.probabilities, answer.index);
       const record: DecodeRecord = { mode: spec.mode, salt: spec.salt, hold: spec.hold, epoch: e.epoch, open: e.open, prev: s && s.key !== null ? keys.indexOf(s.key) : null, kernel: answer.index, index: d.index };
+      if (e.also) record.also = e.also;
       if (d.u !== undefined) record.u = d.u;
       if (d.g !== undefined) record.g = d.g;
       open.set(c.id, { record, keys });

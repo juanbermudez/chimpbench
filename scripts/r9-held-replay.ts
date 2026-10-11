@@ -17,14 +17,14 @@ import { BLOCK_H } from './lib/decoder';
 import type { ArmResult, Receipt } from './r5-pilot';
 
 /** One ask of a saved run that the kernel's choice settled: the menu, the probabilities, the option applied then, and (part 2) the epoch step 0 recorded. */
-export interface Ask { tick: number; t: number; id: number; v: number; keys: string[]; fam: string[]; p: number[]; top: number; open?: string; epoch?: number }
+export interface Ask { tick: number; t: number; id: number; v: number; keys: string[]; fam: string[]; p: number[]; top: number; open?: string; epoch?: number; also?: string }
 /** The asks of a receipt log by animal, in order. Passes the rules settled (a timeout, a stale answer) hold no applied probabilities and are left out, as in the sceptic's script. */
 export function asksOf(receipts: Receipt[]): Map<number, Ask[]> {
   const by = new Map<number, Ask[]>();
   for (const r of receipts) {
     if (r.by !== 'kernel' || !r.p || r.picked < 0) continue;
     const a: Ask = { tick: r.tick, t: r.t, id: r.id, v: r.v, keys: r.opts.map(([action, targetId]) => optionKey({ action: action as never, targetId })), fam: r.fam, p: r.p, top: r.picked };
-    if (r.dec) { a.open = r.dec.open; a.epoch = r.dec.epoch; }
+    if (r.dec) { a.open = r.dec.open; a.epoch = r.dec.epoch; a.also = r.dec.also; }
     if (!by.has(r.id)) by.set(r.id, []);
     by.get(r.id)!.push(a);
   }
@@ -32,8 +32,8 @@ export function asksOf(receipts: Receipt[]): Map<number, Ask[]> {
   return by;
 }
 
-/** How asks are grouped into epochs: the sceptic's rule, this stage's `act` (recorded on the saved run) or `block`. */
-export type Rule = 'sceptic' | 'act' | 'block';
+/** How asks are grouped into epochs: the sceptic's rule, this stage's `act` (recorded on the saved run), `block`, or `whole` (the act through interrupts: an ask the saved run opened at an interrupt alone is a re-ask). */
+export type Rule = 'sceptic' | 'act' | 'block' | 'whole';
 export interface Walk {
   asks: number; opens: number; reasks: number;
   /** Re-asks with the option applied last on the menu; of those, re-asks at which another option was applied; re-asks with it missing. */ there: number; flips: number; gone: number;
@@ -52,7 +52,11 @@ export function walk(asks: Ask[], mode: DecodeMode, salt: number, rule: Rule, se
     let open: boolean;
     if (rule === 'sceptic') { open = cur === null || !a.keys.includes(cur) || (a.tick - lastTick) * 0.25 > 60; if (open) epoch = a.v; }
     else if (rule === 'block') { const b = Math.floor(a.t / BLOCK_H); open = b !== epoch; epoch = b; }
-    else { if (a.open === undefined || a.epoch === undefined) throw new Error('the `act` rule needs receipts that carry the epoch (step 0 of scripts/r9-loop.ts)'); open = a.open !== ''; epoch = a.epoch; }
+    else {
+      if (a.open === undefined || a.epoch === undefined) throw new Error('the `act` rule needs receipts that carry the epoch (step 0 of scripts/r9-loop.ts)');
+      if (rule === 'act') { open = a.open !== ''; epoch = a.epoch; }
+      else { open = a.open !== '' && !(a.open === 'interrupt' && a.also !== 'replaced'); if (open) epoch = a.v; }
+    }
     const i = decode({ mode, salt }, { seed, chimpId: a.id, version: a.v, epoch }, a.keys, a.p, a.top).index, next = a.keys[i];
     into.asks++;
     if (open) into.opens++;
@@ -110,7 +114,7 @@ if (process.argv[1]?.endsWith('r9-held-replay.ts')) {
 
   // ---- part 2: this stage's epochs, from step 0's replays ----
   md.push('', '## 2. This stage\'s epochs (the predictions for the arms)', '',
-    'The `act` epoch of every ask is the one step 0 recorded while it replayed the saved run through the loop (it opens at an animal\'s first ask, when its act was replaced or it arrived, at an interrupt, or after a fallback to the rules); `block` is the half hour of the ask. A **re-ask** is an ask inside an epoch that is already open: only there can holding differ from drawing afresh.', '');
+    'The `act` epoch of every ask is the one step 0 recorded while it replayed the saved run through the loop (it opens at an animal\'s first ask, when its act was replaced or it arrived, at an interrupt, or after a fallback to the rules); `block` is the half hour of the ask. A **re-ask** is an ask inside an epoch that is already open: only there can holding differ from drawing afresh. `whole` (exploratory; prereg §10, amendment A2) is the act through interrupts: an ask the saved run opened at an interrupt alone, its act still going, is counted as a re-ask.', '');
   const have = ARMS.every(a => seeds.every(s => existsSync(resolve(dir, 'standard', `s${s}`, `${a.step0}.receipts.jsonl`))));
   if (!have) md.push(`(Step 0's receipts were not found under ${dir}; run \`scripts/r9-run.sh reference <seed>\` first.)`);
   else {
@@ -122,9 +126,9 @@ if (process.argv[1]?.endsWith('r9-held-replay.ts')) {
         const meta = JSON.parse(readFileSync(resolve(d, `${arm.step0}.json`), 'utf8')) as { days: number; focal: unknown[]; reproduces: boolean; savedFrom: { kernelSeconds: number; calls: number } };
         if (!meta.reproduces) throw new Error(`${arm.step0}, seed ${seed}: step 0 did not reproduce the saved run`);
         P.ad += meta.days * meta.focal.length; P.asksAll += receipts.length; P.kernelSeconds += meta.savedFrom.kernelSeconds; P.calls += meta.savedFrom.calls;
-        for (const r of receipts) if (r.dec?.open) P.opened[r.dec.open] = (P.opened[r.dec.open] ?? 0) + 1;
+        for (const r of receipts) if (r.dec?.open) { P.opened[r.dec.open] = (P.opened[r.dec.open] ?? 0) + 1; if (r.dec.also) P.opened.interruptAlso = (P.opened.interruptAlso ?? 0) + 1; }
         const by = asksOf(receipts);
-        for (const [cell, mode, rule] of [['top/act', 'top', 'act'], ['draw/act', 'draw', 'act'], ['held/act', 'held', 'act'], ['top/block', 'top', 'block'], ['draw/block', 'draw', 'block'], ['held/block', 'held', 'block']] as [string, DecodeMode, Rule][]) {
+        for (const [cell, mode, rule] of [['top/act', 'top', 'act'], ['draw/act', 'draw', 'act'], ['held/act', 'held', 'act'], ['top/block', 'top', 'block'], ['draw/block', 'draw', 'block'], ['held/block', 'held', 'block'], ['top/whole', 'top', 'whole'], ['draw/whole', 'draw', 'whole'], ['held/whole', 'held', 'whole']] as [string, DecodeMode, Rule][]) {
           const r = replay(by, mode, rule, seed, salts), c = P.cells[cell];
           if (!c) P.cells[cell] = r;
           else { for (const k of Object.keys(c.mean) as (keyof Walk)[]) c.mean[k] += r.mean[k]; c.perSalt.forEach((w, i) => { for (const k of Object.keys(w) as (keyof Walk)[]) w[k] += r.perSalt[i][k]; }); }
@@ -133,17 +137,17 @@ if (process.argv[1]?.endsWith('r9-held-replay.ts')) {
       pooled.set(arm.saved, P);
     }
     md.push(`Both seeds pooled (${[...pooled.values()][0].ad} animal-days an arm).`, '',
-      '| Saved arm | asks a day | epochs opened a day: first | act replaced | arrived | interrupt | after a fallback | re-asks a day | re-asks as a share of asks | at a re-ask the held option is missing |', '|---|---|---|---|---|---|---|---|---|---|');
+      '| Saved arm | asks a day | epochs opened a day: first | act replaced | arrived | interrupt | of those, the act was also replaced | after a fallback | re-asks a day | re-asks as a share of asks | at a re-ask the held option is missing |', '|---|---|---|---|---|---|---|---|---|---|---|');
     for (const arm of ARMS) { const P = pooled.get(arm.saved)!, o = P.opened, t = P.cells['top/act'].mean;
-      md.push(`| ${arm.what} | ${f1(t.asks / P.ad)} | ${f1((o.first ?? 0) / P.ad)} | ${f1((o.replaced ?? 0) / P.ad)} | ${f1((o.arrived ?? 0) / P.ad)} | ${f1((o.interrupt ?? 0) / P.ad)} | ${f1((o.rules ?? 0) / P.ad)} | ${f1(t.reasks / P.ad)} | ${pct(t.reasks, t.asks)} | ${pct(t.gone, t.reasks)} |`); }
+      md.push(`| ${arm.what} | ${f1(t.asks / P.ad)} | ${f1((o.first ?? 0) / P.ad)} | ${f1((o.replaced ?? 0) / P.ad)} | ${f1((o.arrived ?? 0) / P.ad)} | ${f1((o.interrupt ?? 0) / P.ad)} | ${f1((o.interruptAlso ?? 0) / P.ad)} | ${f1((o.rules ?? 0) / P.ad)} | ${f1(t.reasks / P.ad)} | ${pct(t.reasks, t.asks)} | ${pct(t.gone, t.reasks)} |`); }
     md.push('', 'The applied option changes at a re-ask with the option applied last still on the menu (for `held` this is "the held draw is overturned"):', '',
       '| Saved arm | epoch | re-asks a day with it on the menu | top pick | draw | held |', '|---|---|---|---|---|---|');
-    for (const arm of ARMS) for (const rule of ['act', 'block']) { const P = pooled.get(arm.saved)!, t = P.cells[`top/${rule}`].mean, d = P.cells[`draw/${rule}`].mean, h = P.cells[`held/${rule}`].mean;
+    for (const arm of ARMS) for (const rule of ['act', 'block', 'whole']) { const P = pooled.get(arm.saved)!, t = P.cells[`top/${rule}`].mean, d = P.cells[`draw/${rule}`].mean, h = P.cells[`held/${rule}`].mean;
       md.push(`| ${arm.what} | ${rule} | ${f1(t.there / P.ad)} | ${pct(t.flips, t.there)} | ${pct(d.flips, d.there)} | ${pct(h.flips, h.there)} |`); }
     md.push('', 'Changes of the applied option and trips begun, per animal and day:', '',
-      '| Saved arm | act changes: top pick | draw | held, `act` | held, `block` | trips begun: top pick | draw | held, `act` | held, `block` |', '|---|---|---|---|---|---|---|---|---|');
+      '| Saved arm | act changes: top pick | draw | held, `act` | held, `block` | held, `whole` | trips begun: top pick | draw | held, `act` | held, `block` | held, `whole` |', '|---|---|---|---|---|---|---|---|---|---|---|');
     for (const arm of ARMS) { const P = pooled.get(arm.saved)!, c = P.cells, per = (cell: string, k: 'changes' | 'trips') => `${f1(c[cell].mean[k] / P.ad)}${cell.startsWith('top') ? '' : ` (${range(c[cell].perSalt, w => w[k] / P.ad)})`}`;
-      md.push(`| ${arm.what} | ${per('top/act', 'changes')} | ${per('draw/act', 'changes')} | ${per('held/act', 'changes')} | ${per('held/block', 'changes')} | ${per('top/act', 'trips')} | ${per('draw/act', 'trips')} | ${per('held/act', 'trips')} | ${per('held/block', 'trips')} |`); }
+      md.push(`| ${arm.what} | ${per('top/act', 'changes')} | ${per('draw/act', 'changes')} | ${per('held/act', 'changes')} | ${per('held/block', 'changes')} | ${per('held/whole', 'changes')} | ${per('top/act', 'trips')} | ${per('draw/act', 'trips')} | ${per('held/act', 'trips')} | ${per('held/block', 'trips')} | ${per('held/whole', 'trips')} |`); }
     md.push('', '## 3. Model time of the saved arms (the estimate for a new arm)', '',
       'A new arm of the same adapter, seed and gate asks the model about as often as the saved one at first order, so the saved arm\'s model time is the estimate (five animals, five days, one seed; both seeds summed in the last column).', '',
       '| Saved arm | kernel calls, both seeds | model seconds, both seeds | seconds a call | minutes for one new arm on both seeds |', '|---|---|---|---|---|');
