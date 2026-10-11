@@ -51,7 +51,14 @@ export interface DecodeRecord {
   u?: number; g?: number[];
 }
 
-/** The option keys of a request. An entry of a kinds-first request (activityFirst; not used in stage R9) stands for a kind, so it is keyed apart from the option that represents it. */
+/**
+ * The option keys of a request. An entry of a kinds-first request (activityFirst; not used in stage R9) stands for a kind, so it is keyed apart from the option that represents it.
+ * LIMIT, measured by the review of this stage (prereg §10.4): a held draw does not hold under activityFirst. With
+ * activityFirst 1 the key noted for the applied entry ("kind/…") never equals the animal's act, so every ask opens a new
+ * `act` epoch; a kind's noise follows the option that represents it, which changes between asks; and with activityFirst 2
+ * the two requests of one decision share the draw of `draw` (one decision version). Use `held` and `draw` with
+ * activityFirst 0 only until a kind has a key of its own.
+ */
 export const requestKeys = (request: KernelRequest): string[] => request.options.map(o => (request.groups ? 'kind/' : '') + optionKey(o));
 
 /** What the decoder remembers of an animal: the key of the option it applied last (null: the rules settled the last ask), when, in which epoch, and whether an interrupt arrived right after. */
