@@ -16,6 +16,7 @@
 #   scripts/r9-run.sh gateoff <seed>        step 2: held for the act with the gate off, both adapters; then their replays
 #   scripts/r9-run.sh seed2 <seed>          step 3: the first recipe's second training seed (scripts/r9-seed2.sh), top pick and draw; then their replays
 #   scripts/r9-run.sh arms <seed> <a,b,…>   any arms of scripts/r9-loop.ts in one worker process; then their replays
+#   scripts/r9-run.sh replay <seed> <a,b,…> no model: replay arms already on file from their receipts (for a model step that was cut short before its replays)
 #
 # R9_SAVED: the folder of R4b's loop test (burn-in worlds, saved arms and receipts; read only). MGOGO_FT_ROOT: the folder
 # whose adapters/ holds r4-rules-state and r4c-rules-state. Both default to this checkout's artifacts/ and, failing
@@ -69,7 +70,8 @@ case "$1" in
   core) seed_ok "$2"; model_arms "$2" "$CORE" "$FT" r4-rules-state,r4c-rules-state ;;
   gateoff) seed_ok "$2"; model_arms "$2" r4-held-free,r4c-held-free "$FT" r4-rules-state,r4c-rules-state ;;
   seed2) seed_ok "$2"; model_arms "$2" r4s2-top,r4s2-draw-1 "${R9_FT_ROOT:-artifacts/decide-ft/r9}" r4-rules-state-s2 ;;
+  replay) seed_ok "$2"; [ -n "$3" ] || { echo "usage: $0 replay <seed> <a,b,…>"; exit 2; }; step $RUN --seed "$2" --arms "$3" --replay "$OUT" ;;
   arms) seed_ok "$2"; [ -n "$3" ] || { echo "usage: $0 arms <seed> <a,b,…>"; exit 2; }; model_arms "$2" "$3" "$FT" "${MGOGO_FT_ADAPTERS:-r4-rules-state,r4c-rules-state}" ;;
-  *) echo "usage: $0 dry | reference <seed> | predict | report | check | core <seed> | gateoff <seed> | seed2 <seed> | arms <seed> <a,b,…>"; exit 2 ;;
+  *) echo "usage: $0 dry | reference <seed> | predict | report | check | core <seed> | gateoff <seed> | seed2 <seed> | arms <seed> <a,b,…> | replay <seed> <a,b,…>"; exit 2 ;;
 esac
 echo "R9 done ($*): $(date '+%H:%M')"

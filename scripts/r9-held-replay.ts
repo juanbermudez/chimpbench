@@ -106,6 +106,7 @@ if (process.argv[1]?.endsWith('r9-held-replay.ts')) {
     md.push(`| ${arm.what} | ${seed} | ${f1(top.asks / ad)} | ${pct(miss.share * miss.n, miss.n)} | ${pct(held.mean.flips, held.mean.there)} | ${f1(top.changes / ad)} | ${f1(draw.mean.changes / ad)} | ${f1(held.mean.changes / ad)} | ${f1(top.trips / ad)} | ${f1(draw.mean.trips / ad)} | ${f1(held.mean.trips / ad)} |`);
     (json.files as unknown[]).push({ part: 1, arm: arm.saved, seed, animalDays: ad, missing: miss, top, draw: draw.mean, held: held.mean });
   }
+  md.push('', 'One difference from his script: there, an option that left the menu and came back inside an epoch was given new noise; here an option\'s noise is fixed by its key for the whole epoch (the decode of prereg §1), so a returning option cannot re-roll. His "missing from the next menu" was stated as one range; the column above gives it per arm, over every pair of consecutive asks of an animal.');
 
   // ---- part 2: this stage's epochs, from step 0's replays ----
   md.push('', '## 2. This stage\'s epochs (the predictions for the arms)', '',
