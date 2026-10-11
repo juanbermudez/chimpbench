@@ -4,7 +4,7 @@
 // against the field value, which timing rows tell the rules from random, the two parts of the short scorecard, and the
 // scoring rule for later stages with this run's numbers in it.
 //
-//   pnpm exec tsx scripts/r7-report.ts [--dir artifacts/r7] [--seeds 48,7] [--md docs/staging/r7-numbers.md] [--bridge <r5 pilot dir>]
+//   pnpm exec tsx scripts/r7-report.ts [--dir artifacts/r7] [--seeds 48,7] [--md docs/staging/r7-numbers.md] [--bridge <r5 pilot dir>] [--same-as <an earlier unit-F dir>]
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -109,6 +109,13 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
   p(`Deaths in the window, by arm (both seeds): unit F ${deathLine('F')}; unit P ${deathLine('P')}.`);
   const secs = (unit: Unit) => armNames.reduce((s, a) => s + U[unit].files[a].reduce((q, x) => q + x.seconds, 0), 0);
   p(`Processor time: ${secs('F')} s for the ${armNames.length * seeds.length} runs of unit F, ${secs('P')} s for those of unit P.`);
+  // --same-as <dir>: an earlier launch of unit F (prereg §12, iteration 1): the card reads only, so each arm must end on the same world
+  const sameAs = arg('same-as', '');
+  if (sameAs) {
+    let n = 0, same = 0;
+    for (const a of armNames) seeds.forEach((s, i) => { const file = resolve(sameAs, `s${s}`, `${a}.json`); if (!existsSync(file)) return; n++; if ((JSON.parse(readFileSync(file, 'utf8')) as ArmFile).endHash === U.F.files[a][i].endHash) same++; });
+    p(`Against the first launch of unit F (iteration 1, stopped before unit P finished): ${same} of ${n} runs end on the same world hash.`);
+  }
   p();
   p('**How to read a spread.** Mean, SD, lowest and highest of the eight rules re-draws. **D** is the smallest difference the unit can show for one arm run once: 2.365 × SD × √(1 + 1/8) = 2.51 SD (t for 7 degrees of freedom). A control arm is **told from the rules** when both of its realizations lie outside the mean ± D on the same side.');
 
@@ -135,7 +142,7 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
   // 2 and 3. the timing card at each unit
   // ------------------------------------------------------------------------------------------------------------------
   const OTHER = ['stableSwitchesPerWakingHour', 'boutFeedQ1', 'boutFeedQ3', 'boutRestQ1', 'boutRestQ3', 'boutTravelQ1', 'boutTravelQ3', 'boutGroomQ1', 'boutGroomQ3', 'bout3Mean', 'bout3Median', 'tripsDoneShare', 'visitMedian', 'visitQ1', 'visitQ3', 'runQ1', 'runQ3', 'sameFromTravel', 'drinks', 'awakeHours'];
-  const GUARDS = ['reservePctPerDay', 'kmFixPerDay', 'nightsInNest', 'actChanges', 'tripsDone'], ENERGY = ['kcalInPerDay', 'dmInPerDay'];
+  const GUARDS = ['reservePctPerDay', 'kmFixPerDay', 'nightsInNest', 'actChanges', 'tripsDone'], ENERGY = ['kcalEatenPerDay', 'kcalInPerDay', 'dmInPerDay'];
   const SHARES = ['shareFeed', 'shareRest', 'shareTravel', 'shareGroom', 'shareSocial', 'shareAgonistic'];
   const mark = (b: boolean | null) => (b === null ? 'no value' : b ? '**yes**' : 'no');
   const pair = (unit: Unit, g: string[], k: string, d: number) => armVals(unit, g, k).map(v => f(v, d)).join(' / ');
@@ -204,9 +211,9 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
     p();
     p('| Guard | Rules: mean ± SD | D | Random choice | 10% random | 20% random | 30% random |');
     p('| --- | --- | --- | --- | --- | --- | --- |');
-    for (const k of [...GUARDS, 'kcalInPerDay']) {
+    for (const k of [...GUARDS, 'kcalEatenPerDay']) {
       const s = U[unit].spread[k], d = digitsOf(k);
-      const cell = (g: string[]) => { const v = armVals(unit, g, k), fl = v.map(x => guardFails(k, s, x)); return `${v.map(x => f(x, d)).join(' / ')}${k === 'kcalInPerDay' ? '' : `: ${fl.every(x => x) ? 'both' : fl.some(x => x) ? 'one' : 'neither'}`}`; };
+      const cell = (g: string[]) => { const v = armVals(unit, g, k), fl = v.map(x => guardFails(k, s, x)); return `${v.map(x => f(x, d)).join(' / ')}${k === 'kcalEatenPerDay' ? '' : `: ${fl.every(x => x) ? 'both' : fl.some(x => x) ? 'one' : 'neither'}`}`; };
       p(`| ${labelOf(k)} | ${f(s.mean, d)} ± ${f(s.sd, d)} | ${f(s.D, d)} | ${GROUPS.map(([, g]) => cell(g)).join(' | ')} |`);
     }
     const all = (g: string[]) => g.map(a => GUARDS.every(k => guardFails(k, U[unit].spread[k], U[unit].vals[a][k] ?? null) === false));
@@ -302,19 +309,19 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
   p();
   p(`| Readout | ${seeds.map(s => `Seed ${s}: rules mean ± SD | Seed ${s}: random choice (two salts)`).join(' | ')} |`);
   p(`| --- | ${seeds.map(() => '--- | ---').join(' | ')} |`);
-  for (const k of [...TIMING_ROWS, 'reservePctPerDay', 'kmFixPerDay', 'nightsInNest', 'kcalInPerDay']) {
+  for (const k of [...TIMING_ROWS, 'reservePctPerDay', 'kmFixPerDay', 'nightsInNest', 'kcalEatenPerDay']) {
     const d = digitsOf(k);
     p(`| ${labelOf(k)} | ${seeds.map((_, i) => { const s = spreadOf(rulesArms.map(a => U.F.perSeed[a][i][k] ?? null)); return `${f(s.mean, d)} ± ${f(s.sd, d)} | ${['random-a', 'random-b'].map(a => f(U.F.perSeed[a][i][k], d)).join(' / ')}`; }).join(' | ')} |`);
   }
   if (bridge) {
-    interface PilotRow { id: number; day: number; alive: boolean; kcalIn: number; reservePct: number; kmFixes: number; nestShare: number | null }
+    interface PilotRow { id: number; day: number; alive: boolean; kcalIn: number; kcalFormula: number; reservePct: number; kmFixes: number; nestShare: number | null }
     const pilot = (seed: number, arm: string): Values | null => {
       const file = resolve(bridge, `s${seed}`, `${arm}.json`);
       if (!existsSync(file)) return null;
       const doc = JSON.parse(readFileSync(file, 'utf8')) as { burnInHash: string; days: number; result: { rows: PilotRow[] } }, rows = doc.result.rows.filter(r => r.alive);
       const ids = [...new Set(rows.map(r => r.id))], per = (g: (r: PilotRow) => number) => meanOf(ids.map(id => meanOf(rows.filter(r => r.id === id).map(g))));
       const nights = rows.filter(r => r.nestShare !== null);
-      return { kcalInPerDay: per(r => r.kcalIn), kmFixPerDay: per(r => r.kmFixes), reservePctPerDay: per(r => r.reservePct), nightsInNest: meanOf(ids.map(id => { const v = nights.filter(r => r.id === id); return v.length ? v.filter(r => r.nestShare! >= NIGHT_IN_NEST).length / v.length : null; })), hash: null };
+      return { kcalEatenPerDay: per(r => r.kcalFormula), kcalInPerDay: per(r => r.kcalIn), kmFixPerDay: per(r => r.kmFixes), reservePctPerDay: per(r => r.reservePct), nightsInNest: meanOf(ids.map(id => { const v = nights.filter(r => r.id === id); return v.length ? v.filter(r => r.nestShare! >= NIGHT_IN_NEST).length / v.length : null; })) };
     };
     p();
     p('### The bridge to the engine tests: random choice between ticks (the R5 pilot\'s saved `null` arm) beside random choice inside the tick (this stage)');
@@ -326,7 +333,7 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
     seeds.forEach((seed, i) => {
       const pr = ['rules', 'rules-r1', 'rules-r2', 'rules-r3'].map(a => pilot(seed, a)).filter((x): x is Values => x !== null), pn = pilot(seed, 'null');
       if (!pr.length || !pn) { p(`| ${seed} | (the pilot saved no arm for this seed) | | | | |`); return; }
-      for (const k of ['kcalInPerDay', 'kmFixPerDay', 'reservePctPerDay', 'nightsInNest']) {
+      for (const k of ['kcalEatenPerDay', 'kcalInPerDay', 'kmFixPerDay', 'reservePctPerDay', 'nightsInNest']) {
         const d = digitsOf(k), s = spreadOf(rulesArms.map(a => U.F.perSeed[a][i][k] ?? null));
         p(`| ${seed} | ${labelOf(k)} | ${f(meanOf(pr.map(x => x[k])), d)} (${pr.length} runs) | ${f(pn[k], d)} | ${f(s.mean, d)} ± ${f(s.sd, d)} | ${['random-a', 'random-b'].map(a => f(U.F.perSeed[a][i][k], d)).join(' / ')} |`);
       }

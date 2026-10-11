@@ -267,3 +267,17 @@ world's hash unchanged; the Taï collapse on a synthetic follow. Also run: `test
 ## 12. Iterations (at most 3; each logged here before its run)
 
 **Iteration 1** (10 October 2026, 19:43 EDT): the design above.
+
+*As run* (19:59 to 20:07 EDT, head 731ef3b, clean tree): the Taï aggregates; unit F on both seeds (32 runs); unit P
+was stopped by the agent after three arms of seed 48. Reason: the card recorded the ledger's usable energy in (`in`),
+while what the earlier loop tests call "energy eaten", and what §3's sentence on energy rests on, is the formula
+measure (`fin`). **Seen before it was stopped:** every unit-F value of this launch (a first reading of all rows, and a
+dry run of the report on them). Before the launch, smoke checks with a dirty tree and scratch output (seed 48: one
+day at unit F with three arms, two days at unit P with two arms), used only to debug the scripts; no number of them
+is reported.
+
+**Iteration 2** (10 October 2026, 20:08 EDT, logged before its run; written knowing unit F's values of iteration 1).
+The same design, arms, salts, units, rows, statistics and pass mark. One readout is added to the card's day rows:
+energy eaten by the field's formula measure (`fin`), printed beside usable energy in; neither is a guard. Nothing
+under `src/` changes, so every world is iteration 1's: the report compares each unit-F arm's end hash with the first
+launch's and prints the count. All 64 runs are made again at one head, so every table comes from one launch.

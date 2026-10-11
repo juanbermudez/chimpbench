@@ -46,7 +46,12 @@ export interface CardDay {
   /** C9: half-hour pairs by the first mark's activity (rest, travel, feed), and those in the same activity. */ pairs: number[]; same: number[];
   /** Guards: km by 5-min fixes and by every tick, the reserve's change in % of the reserve cap, dark ticks and those in a nest. */
   kmFix: number; km: number; reservePct: number | null; nightTicks: number; nestTicks: number;
-  /** The ledger's energy eaten and spent (kcal) and dry matter eaten (g; T-ENE-3's counter); null without the ledger. */ kcalIn: number | null; kcalOut: number | null; dmIn: number | null;
+  /**
+   * The ledger's books for the day; null without the ledger. `kcalEaten`: formula energy eaten, the field's intake measure
+   * (`fin`; what scripts/r5-report.ts calls "energy eaten"); `kcalIn`: usable energy in; `kcalOut`: energy spent; `dmIn`: dry
+   * matter eaten in g (T-ENE-3's counter).
+   */
+  kcalEaten: number | null; kcalIn: number | null; kcalOut: number | null; dmIn: number | null;
   /** State at the day's end. */ lactating: boolean;
 }
 /** Lengths in ticks → count. */
@@ -65,7 +70,7 @@ interface Track {
   vis: Open | null; visLast: number; run: Open | null; runLast: number; trees: number[];
   markTick: number; markAct: number;
   px: number; pz: number; fx: number; fz: number;
-  in0: number; out0: number; res0: number; dm0: number;
+  in0: number; out0: number; res0: number; dm0: number; fin0: number;
   d: CardDay;
 }
 export interface CardState { tracks: Track[]; res: CardResult; tick: number }
@@ -73,7 +78,7 @@ export interface CardState { tracks: Track[]; res: CardResult; tick: number }
 const famNow = (c: Chimp) => familyOf(c.action, ix(c).v, ix(c).aux);
 const feedingTree = (c: Chimp) => c.action === 'forage' && isTreeId(c.targetId) && ix(c).phase >= 2;
 const newDay = (id: number, day: number): CardDay => ({ id, day, alive: true, ticks: 0, awakeTicks: 0, actChanges: 0, switches: 0, stableSwitches: 0, cat: Array(N6).fill(0), act3: [0, 0, 0], bouts: Array(N6).fill(0), boutTicks: Array(N6).fill(0),
-  trips: 0, tripsDone: 0, drinks: 0, trees: 0, visits: 0, visitTicks: 0, pairs: [0, 0, 0], same: [0, 0, 0], kmFix: 0, km: 0, reservePct: null, nightTicks: 0, nestTicks: 0, kcalIn: null, kcalOut: null, dmIn: null, lactating: false });
+  trips: 0, tripsDone: 0, drinks: 0, trees: 0, visits: 0, visitTicks: 0, pairs: [0, 0, 0], same: [0, 0, 0], kmFix: 0, km: 0, reservePct: null, nightTicks: 0, nestTicks: 0, kcalEaten: null, kcalIn: null, kcalOut: null, dmIn: null, lactating: false });
 const classOf = (c: Chimp) => c.age >= 15 ? (c.sex === 'male' ? 'adult male' : c.lactating ? 'female, lactating' : 'female, other') : c.age >= 12 ? 'adolescent 12-15 y' : c.age >= 8 ? 'juvenile 8-12 y' : 'under 8 y';
 const bump = (h: Hist, k: number) => { h[k] = (h[k] ?? 0) + 1; };
 
@@ -89,7 +94,7 @@ export function cardStart(w: World, ids: number[]): CardState {
       b6: null, b3: null, stable: -1, fam: famNow(c), tgt: c.targetId, tripTo: -1, atW: atWater(w, c),
       vis: feedingTree(c) ? { key: c.targetId, ticks: 0, whole: false } : null, visLast: -1, run: feedingTree(c) ? { key: c.targetId, ticks: 0, whole: false } : null, runLast: -1, trees: [],
       markTick: -1, markAct: -1, px: c.position[0], pz: c.position[2], fx: c.position[0], fz: c.position[2],
-      in0: L?.in ?? 0, out0: L?.out ?? 0, res0: L?.res ?? 0, dm0: L?.dmIn ?? 0, d: newDay(id, 0) });
+      in0: L?.in ?? 0, out0: L?.out ?? 0, res0: L?.res ?? 0, dm0: L?.dmIn ?? 0, fin0: L?.fin ?? L?.in ?? 0, d: newDay(id, 0) });
   }
   return { tracks, res: { animals: tracks.map(t => t.a), days: [], ticks: 0, bout6: CATEGORIES.map(() => ({})), bout3: [{}, {}, {}], visit: {}, run: {} }, tick: 0 };
 }
@@ -160,7 +165,7 @@ export function cardStep(st: CardState, w: World): void {
       // the ledger is read on the living only (ix() would create state on a slimmed dead record): a day cut by a death has no ledger row
       if (c && c.alive) {
         const L = ix(c).en;
-        if (L) { const cap = reserveCap(c, P); d.kcalIn = L.in - t.in0; d.kcalOut = L.out - t.out0; d.reservePct = 100 * (L.res - t.res0) / cap; d.dmIn = L.dmIn === undefined ? null : L.dmIn - t.dm0; t.in0 = L.in; t.out0 = L.out; t.res0 = L.res; t.dm0 = L.dmIn ?? 0; }
+        if (L) { const cap = reserveCap(c, P); d.kcalIn = L.in - t.in0; d.kcalOut = L.out - t.out0; d.reservePct = 100 * (L.res - t.res0) / cap; d.dmIn = L.dmIn === undefined ? null : L.dmIn - t.dm0; d.kcalEaten = (L.fin ?? L.in) - t.fin0; t.in0 = L.in; t.out0 = L.out; t.res0 = L.res; t.dm0 = L.dmIn ?? 0; t.fin0 = L.fin ?? L.in; }
         d.lactating = c.lactating;
       }
       d.alive = t.alive; d.trees = t.trees.length; t.trees = [];
@@ -206,7 +211,7 @@ export const CARD_LABELS: Record<string, [string, number]> = {
   treesPerDay: ['C8 feeding trees per animal-day', 2],
   sameHalfHour: ['C9 half-hour pairs in the same activity, share', 3], sameFromRest: ['C9 the same, first mark resting', 3], sameFromTravel: ['C9 the same, first mark travelling', 3], sameFromFeed: ['C9 the same, first mark feeding', 3],
   reservePctPerDay: ['reserve change, % of the reserve cap per day', 3], kmFixPerDay: ['distance by 5-min fixes, km per day', 2], kmPerDay: ['distance by every tick, km per day', 2], nightsInNest: ['nights in a nest, share of nights', 3],
-  kcalInPerDay: ['energy eaten, kcal per day (not a guard)', 0], dmInPerDay: ['dry matter eaten, g per day', 0],
+  kcalEatenPerDay: ['energy eaten, kcal per day (the field\'s formula measure; not a guard)', 0], kcalInPerDay: ['usable energy in, kcal per day', 0], dmInPerDay: ['dry matter eaten, g per day', 0],
   shareFeed: ['awake time feeding, share', 3], shareRest: ['awake time resting, share', 3], shareTravel: ['awake time travelling, share', 3], shareGroom: ['awake time grooming, share', 3], shareSocial: ['awake time in other social acts, share', 3], shareAgonistic: ['awake time agonistic, share', 3],
   awakeHours: ['hours awake per day', 2],
 };
@@ -233,7 +238,7 @@ export function cardSummary(results: CardResult[], keep: (a: CardAnimal) => bool
     push('treesPerDay', sum(d => d.trees) / days);
     push('kmFixPerDay', sum(d => d.kmFix) / days); push('kmPerDay', sum(d => d.km) / days); push('awakeHours', awakeH / days);
     const led = rows.filter(d => d.reservePct !== null), ledDays = led.reduce((s, d) => s + d.ticks, 0) / DAY_TICKS;
-    if (ledDays > 0) { push('reservePctPerDay', led.reduce((s, d) => s + d.reservePct!, 0) / ledDays); push('kcalInPerDay', led.reduce((s, d) => s + (d.kcalIn ?? 0), 0) / ledDays); push('dmInPerDay', led.reduce((s, d) => s + (d.dmIn ?? 0), 0) / ledDays); }
+    if (ledDays > 0) { push('reservePctPerDay', led.reduce((s, d) => s + d.reservePct!, 0) / ledDays); push('kcalEatenPerDay', led.reduce((s, d) => s + (d.kcalEaten ?? 0), 0) / ledDays); push('kcalInPerDay', led.reduce((s, d) => s + (d.kcalIn ?? 0), 0) / ledDays); push('dmInPerDay', led.reduce((s, d) => s + (d.dmIn ?? 0), 0) / ledDays); }
     const nights = rows.filter(d => d.nightTicks > 0);
     if (nights.length) push('nightsInNest', nights.filter(d => d.nestTicks / d.nightTicks >= NIGHT_IN_NEST).length / nights.length);
     if (awake > 0) ['shareFeed', 'shareRest', 'shareTravel', 'shareGroom', 'shareSocial', 'shareAgonistic'].forEach((k, j) => push(k, sum(d => d.cat[j]) / awake));
