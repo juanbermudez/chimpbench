@@ -11,8 +11,10 @@
 //   wrist   wrist and head travel of both animals over 14 s of page time (50 ms steps) -> wrist.json
 //   tiles   mode=tiles at page time 8 s, Math.random on a fixed sequence -> tiles.png, tiles.json (clip per animal)
 //   cases   mother-and-infant grooming (&infant=), a mutual pair (&mutual=1), and with a lying posture forced: a receiver
-//           cradling a dead infant (&deadinfant=1) or holding a living one (&heldinfant=), a grooming chain (&chain=1)
-//           -> sheets, cases.json (ONLY=<part of a case name> runs some)
+//           cradling a dead infant (&deadinfant=1) or holding a living one (&heldinfant=), a grooming chain (&chain=1),
+//           a receiver that begs from a third animal (&begs=1) -> sheets, cases.json (ONLY=<part of a case name> runs
+//           some). Each case names the clip and role every animal must be drawn with: a mismatch prints FAIL and the
+//           script exits with status 1.
 //   change  the receiver's first change into a lying posture in the harness's own timeline, six frames 0.35 s apart
 //   scan    the app, field map, seed 48, paused: day 1 walked tick by tick; groomer-ticks by situation and the pairs that
 //           groom without a break for 16 ticks or more -> scan.json
@@ -66,7 +68,7 @@ async function sheet(bufs, file, cols, cw, ch, captions = []) {
   console.log('saved', file);
 }
 // Wrists (hand bones) and the label anchor above the head, world metres, with the drawn clip and role.
-const READ = `(()=>__world.chimps.map(c=>{const f=__creatures.debug.feet(c.id),a=__creatures.debug.anim(c.id);return f&&a?{id:c.id,act:c.action,age:c.age,clip:a.clip,role:a.role,carry:a.carry,size:f.size,l:[f.contacts[0].x,f.contacts[0].y,f.contacts[0].z],r:[f.contacts[1].x,f.contacts[1].y,f.contacts[1].z],head:[a.head.x,a.head.y,a.head.z]}:null}).filter(Boolean))()`;
+const READ = `(()=>__world.chimps.map(c=>{const f=__creatures.debug.feet(c.id),a=__creatures.debug.anim(c.id);return f&&a?{id:c.id,act:c.action,age:c.age,clip:a.clip,role:a.role,carry:a.carry,sw:a.dbg.clipSwitches,size:f.size,l:[f.contacts[0].x,f.contacts[0].y,f.contacts[0].z],r:[f.contacts[1].x,f.contacts[1].y,f.contacts[1].z],head:[a.head.x,a.head.y,a.head.z]}:null}).filter(Boolean))()`;
 const POSTURES = [['sit', 0], ['prone', 2], ['side', 3], ['present', 4]];
 const VIEWS = [['side', '0.2,1.0,3.3,0.45,0.45,0.15'], ['above', '0.45,5.5,3.6,0.45,0.3,0.15']];
 const log = {};
@@ -143,23 +145,30 @@ async function tilesdiff() {
 // Mother-and-infant cases and the two risks of the prototype, in the creature harness (options added in stage W5).
 // Each is one page on the frozen clock: three frames 3.7 s apart and the drawn clip, role and carry state per animal.
 const FRONT = '-1.5,1.2,1.9,-0.05,0.5,0.15';
-// [name, harness options, camera, picture?]: the cases without a picture keep their readout in cases.json.
+// [name, harness options, camera, picture?, expected clip/role per animal in the order the harness creates them
+// (a trailing * accepts any role), steady?]: the cases without a picture keep their readout in cases.json; a steady
+// case must also show no change of clip or role on any animal between its first and last frame.
+const WIDE = '0.6,1.3,4.6,0.9,0.45,0.3';
 const CASES = [
-  ['infant-0y3', 'infant=0.3', FRONT, false],                                    // carried: under 1.2 y
-  ['infant-0y8', 'infant=0.8', FRONT, true],                                     // carried; on her back before W5
-  ['infant-1y8-riding', 'infant=1.8&riding=1', FRONT, false],                    // the simulation's stacked position
-  ['infant-1y8-nursing', 'infant=1.8&nursing=1', FRONT, true],                   // the review's case (Kiboro and Zamiko)
-  ['infant-0y8-mutual', 'infant=0.8&mutual=1', FRONT, false],
-  ['infant-2y5-ground', 'infant=2.5', '1.9,1.2,2.9,0.2,0.45,0.1', true],         // not carried: sits in front of her
-  ['mutual', 'mutual=1', '0.2,1.0,3.3,0.45,0.45,0.15', true],                  // two adults grooming each other, face to face
-  ['risk-dead-infant-forced-prone', 'groomee=2&deadinfant=1', '0.2,1.0,3.3,0.45,0.45,0.15', true],
-  ['risk-held-infant-forced-prone', 'groomee=2&heldinfant=0.3', '0.2,1.0,3.3,0.45,0.45,0.15', true],
-  ['risk-chain-forced-prone', 'groomee=2&chain=1', '0.6,1.3,4.6,0.9,0.45,0.3', true],
+  ['infant-0y3', 'infant=0.3', FRONT, false, ['groom/2', 'carryVentral/0']],                 // carried: under 1.2 y
+  ['infant-0y8', 'infant=0.8', FRONT, true, ['groom/2', 'carryVentral/0']],                  // carried; on her back before W5
+  ['infant-1y8-riding', 'infant=1.8&riding=1', FRONT, false, ['groom/2', 'carryVentral/0']], // the simulation's stacked position
+  ['infant-1y8-nursing', 'infant=1.8&nursing=1', FRONT, true, ['groom/2', 'carryVentral/0']], // the review's case (Kiboro and Zamiko)
+  ['infant-0y8-mutual', 'infant=0.8&mutual=1', FRONT, false, ['groom/2', 'carryVentral/0']],
+  ['infant-2y5-ground', 'infant=2.5', '1.9,1.2,2.9,0.2,0.45,0.1', true, ['groom/0', 'groomee/*']], // not carried: sits in front of her
+  ['mutual', 'mutual=1', '0.2,1.0,3.3,0.45,0.45,0.15', true, ['groom/1', 'groom/1']],        // two adults grooming each other, face to face
+  // The animals of the next four are the receiver, the groomer, then the third animal.
+  ['risk-dead-infant-forced-prone', 'groomee=2&deadinfant=1', '0.2,1.0,3.3,0.45,0.45,0.15', true, ['groomee/0', 'groom/0', 'deadCarried/0']],
+  ['risk-held-infant-forced-prone', 'groomee=2&heldinfant=0.3', '0.2,1.0,3.3,0.45,0.45,0.15', true, ['groomee/4', 'groom/0', 'carryVentral/0']],
+  ['risk-chain-forced-prone', 'groomee=2&chain=1', WIDE, true, ['groom/0', 'groom/0', 'groomee/2']],
+  // A receiver that is the actor of a pairing of its own keeps the seated posture and its clip does not restart.
+  ['risk-receiver-begs-forced-prone', 'groomee=2&begs=1', WIDE, false, ['groomee/0', 'groom/0', 'share/0'], true],
 ];
+let failed = 0;
 async function cases() {
   const only = process.env.ONLY ? process.env.ONLY.split(',') : null;
   log.cases = existsSync(`${OUT}/cases.json`) ? JSON.parse(readFileSync(`${OUT}/cases.json`, 'utf8')) : { runs: {} };
-  for (const [name, opts, cam, picture] of CASES) {
+  for (const [name, opts, cam, picture, expect, steady] of CASES) {
     if (only && !only.some(o => name.includes(o))) continue;
     const query = `mode=single&action=groom&${opts}&cam=${cam}`;
     const page = await frozenHarness(query, 960, 600);
@@ -167,8 +176,11 @@ async function cases() {
     const bufs = [], caps = [], reads = [];
     for (let k = 0; k < 3; k++) { await sleep(150); bufs.push(await page.screenshot()); const r = await page.evaluate(READ); reads.push(r); caps.push(`${(6 + k * 3.7).toFixed(1)} s  ${r.map(s => `${s.clip}/${s.role}${s.carry ? ' carried' : ''}`).join('  ')}`); if (k < 2) await page.clock.runFor(3700); }
     if (picture) await sheet(bufs, `${OUT}/case-${name}.png`, 3, 640, 400, caps);
-    log.cases.runs[name] = { url: `${H}?${query}`, frames: reads.map(fr => fr.map(s => ({ id: s.id, age: s.age, act: s.act, clip: s.clip, role: s.role, carry: s.carry, wristsAboveGroundCm: [Math.round(s.l[1] * 100), Math.round(s.r[1] * 100)], headAnchorCm: Math.round(s.head[1] * 100) }))) };
-    console.log(name, JSON.stringify(log.cases.runs[name].frames[2]));
+    const drawn = reads[2].map(s => `${s.clip}/${s.role}`), restarts = reads[2].map((s, i) => s.sw - reads[0][i].sw);
+    const ok = drawn.length === expect.length && expect.every((e, i) => e.endsWith('*') ? drawn[i].startsWith(e.slice(0, -1)) : drawn[i] === e) && (!steady || restarts.every(n => n === 0));
+    if (!ok) failed++;
+    log.cases.runs[name] = { url: `${H}?${query}`, expected: expect, steady: !!steady, drawn, clipOrRoleChangesBetweenFrames: restarts, pass: ok, frames: reads.map(fr => fr.map(s => ({ id: s.id, age: s.age, act: s.act, clip: s.clip, role: s.role, carry: s.carry, wristsAboveGroundCm: [Math.round(s.l[1] * 100), Math.round(s.r[1] * 100)], headAnchorCm: Math.round(s.head[1] * 100) }))) };
+    console.log(ok ? 'PASS' : 'FAIL', name, 'drawn', JSON.stringify(drawn), 'expected', JSON.stringify(expect), steady ? `changes of clip or role in 7.4 s: ${JSON.stringify(restarts)}` : '');
     await page.context().close();
   }
   saveLog('cases');
@@ -294,4 +306,4 @@ async function app() {
 }
 const JOBS = { pose, wrist, tiles, tilesdiff, cases, change, scan, app };
 try { for (const j of jobs) { if (!JOBS[j]) { console.log('unknown job', j); continue; } await JOBS[j](); } }
-finally { await browser.close(); if (errors.length) console.log([...new Set(errors)].slice(0, 10).join('\n')); }
+finally { await browser.close(); if (errors.length) console.log([...new Set(errors)].slice(0, 10).join('\n')); if (failed) { console.log(`${failed} case(s) FAILED`); process.exitCode = 1; } }
