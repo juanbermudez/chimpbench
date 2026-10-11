@@ -599,6 +599,103 @@ bout lengths, and it should wait until the teacher question is settled.
   the golden hashes) (28), the type-check, a type-check of this stage's scripts and tests (the project's does not
   cover `scripts/` or `tests/`), and `gen-params --check`.
 
+## 7a. Review by a second pair of eyes (11 October 2026, 05:02 EDT onward)
+
+A second agent read the whole diff, the log and this document, re-ran the stage's checks and re-derived its headline
+numbers with code of its own. §0 to §6 stand as registered. What the review changed in §7 and §8 is listed in §7a.5;
+everything else there is the builder's.
+
+### 7a.1 Re-run and re-derived: holding
+
+- **Registration before the runs.** The registration (commit baa7b91, 03:01:51) is older than every file under
+  `artifacts/r7b/` (the first is the smoke check's burn-in, 03:11), and §0 to §5 have not changed since that commit.
+  The fork script was committed (2993759, 03:16:35) before iteration 1 started (03:16:40 by its log), the iteration 2
+  entry (03:25:54) while it ran, and the code of iteration 2 and of part three (f447df8, 04:22:59) before their runs.
+  Every saved file names its head and a clean tree.
+- **Part one.** The amended `scripts/r7-report.ts` on stage R7's saved arm files writes the committed `r7-numbers.md`
+  but for the dated line; against `track-e`'s file only the dated line and sections 6 and 8 differ (P1b).
+- **Part two.** A script of the review's own (plain Node on the points files, none of the stage's code) gives the
+  figures of §7.2: the winning kind repeats at 78 and 67 of 200 points, chance 0.23, a distinguishable winner at 37
+  and 20; "which food" at 86 and 75 of 130; the winner is the rules' option at 39 and 31 of 194; with the animal's own
+  noise re-drawn 32 and 42 of 120. At one of the 200 points the winner and the runner-up tie exactly (after 3 h), so
+  the rule "ties to the first on the menu" decides next to nothing.
+- **Part three.** A fit of the review's own (Newton steps solved by elimination, its own folds, log-loss and
+  bootstrap) on the stage's design matrices gives the log-losses of §7.3 to the fourth decimal and the same gains.
+  No animal is in two folds. With the labels shuffled within each seed the packet "gains" a negative amount, as a
+  pipeline without a leak should.
+- **Tests and checks**, one at a time: the stage's three test files, `tests/r7-engine.test.ts`,
+  `tests/r7-card.test.ts`, the field pin, the golden test, `tsc --noEmit`, a strict type-check of the stage's scripts
+  and tests, `gen-params --check`; `scripts/r7b-report.ts` writes the committed numbers but for the dated line.
+  Nothing under `src/`, `data/`, `server/` or `training/` is in the diff. Only seeds 48 and 7 are in `artifacts/r7b/`.
+
+### 7a.2 What the review found
+
+1. **Why a forced trip lasts a minute is not what §7.5 said.** "The act changes when the walk ends" was a guess. A
+   scratch look on one day of seed 48 says most forced trips never reach their tree: the rules' gate re-opens the
+   choice on an interrupt and the rules draw another act. That bears on how "feed here or go" is read, so it is
+   measured below (probe R1) and §7.5 is corrected from the result.
+2. **The line of 0.70 is worded two ways in the sceptic's review.** "Below about 70% repeat, labels are noise" (F1
+   here), and, as its fix-or-kill line, "go on only if the best option repeats in at least 70% of states that have a
+   distinguishable option". By the second wording taken alone the few states with a distinguishable winner pass
+   (0.90 to 1.00, in both iterations). F2 is this stage's stricter form of it (those states must be half the
+   sample), registered before the run, and it fails. Two things belong beside it. The repeat among distinguishable
+   states is read on the same eight replicates that picked them, so it is high by construction and proves nothing
+   alone. What is evidence is that such states are more frequent than shuffled scores give: 0.18 against 0.012 in
+   iteration 1, and 0.06 (7 of 120) with the animal's own noise re-drawn. So "the labels are noise" is true of about
+   nine decision points in ten; at the rest an option does stand out.
+3. **Iteration 2 is still generous.** It re-draws the forked animal's hashed noise. Its companions' evaluation
+   jitter and bout lengths are hashes of their own decision counts and stay shared by all eight replicates. A fuller
+   re-draw can only lower the repeat, so the reading (below the line) is safe; the advice in §8 is widened to say so.
+4. **"Kinds" were the fourteen families; the brief's words were "feed here, rest or go".** The families include
+   social acts a body score cannot see. Read in three classes (feed here, rest, go) the question is easier; the
+   report now prints it (section 2.3 and 2.9 of the numbers; description).
+5. **Which part of "own foraging returns" carries its gain was not looked at**, and §7.3 names it "how far the
+   animal's own feeding bout has got". Measured below (R2).
+6. **§7.5 says the held-out-animal split "let shared days through".** Whether it is the shared days or the other
+   world can be read from the same moments (R3).
+7. **Small things.** In iteration 2, 124 of the 4,908 forks made belong to options that a later salt could not apply;
+   they were run and dropped, so "no animal died in any of the 14,580 forks" is known only for the 14,456 read. Three
+   of the 200 menus hold the animal's own trip beside a joint trip to another tree (the kind `social-move`), so "no
+   menu holds two trips" is true of the animal's own trips only. The readout "repeat on one term alone" was narrowed
+   after iteration 1's numbers were seen to the points where the term varies; as registered (all points, ties to the
+   first option) it would have read higher, so the change went against the labels. The summary line "0.27, which is
+   chance" is the 3-hour figure; after 6 hours it is 0.35 (0.26 to 0.44): at or near chance, and far below the line.
+
+### 7a.3 Three readings of the review, logged before their run (11 October 2026, 05:25 EDT)
+
+None of them is a registered reading and none can change F1 to F4 or the reading of §3.3: they are description, and
+are marked "added by the review" wherever the numbers file prints them.
+
+*Seen before this entry, in scratch runs of the review whose numbers are not reported:* on the first 60 points of day
+31 of seed 48, 10 of 43 forced trips to food arrived; and on the saved moments, the count of crowns and the eating
+flag carried the gain of "own foraging returns" while the rates carried none, and a held-out day kept the packet's
+gain. The readings below repeat those looks with committed code on all the points.
+
+- **R1, how a forced option ended, and whether the saved forks are the forks this code makes**
+  (`scripts/r7b-ends.ts`; one simulation process, about five minutes of one core). For each seed the parent of
+  iteration 1 is walked again from the saved burn-in; every point of the main sample is prepared and each option
+  forked once with salt 1, exactly as the fork run made its first replicate, and run for 720 ticks (3 h) with the
+  rules' tap on the forced animal. Read: the tick at which its act first changes and what the rules' policy did in
+  that tick (an arrival; a fresh draw and the gate's reason; no decision); for a trip to a tree, whether the animal
+  fed at that tree within the three hours. **A check that can fail:** the parent ends on the saved hash, each menu is
+  the saved menu, and each re-made fork holds the forced act for the saved number of ticks and reads exactly the
+  saved five body terms after 3 h. If any of these fails the saved points are not reproducible from this code and
+  the stage's part two is not ready.
+- **R2, inside "own foraging returns and timing"** (`scripts/lib/r7b-stay-fit.ts` `partGains`; no simulation): each
+  part of the group added to model (b) alone, on held-out animals and on a held-out world: the count of crowns fed in
+  since the last nest; the flag that it has eaten in this crown for two five-minute steps; that flag with the rate
+  eaten; what its last trips delivered; the hours since its last aggression.
+- **R3, a held-out day** (`evaluate` with one fold per simulated day of a seed; no simulation): every day predicted
+  by models fitted on the other nine seed-days.
+
+### 7a.4 Results of the three readings
+
+(To be written after the run.)
+
+### 7a.5 What the review changed
+
+(To be written after the run.)
+
 ## 8. For the integrator
 
 **Decisions that are the user's.**
