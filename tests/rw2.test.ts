@@ -95,7 +95,7 @@ function foxCsv(events: FoxEvent[], o: { counts?: number; members?: (e: FoxEvent
   return { a1: a1.join('\n') + '\n', a2: a2.join('\n') + '\n' };
 }
 function budongoCsv(year: number, rows: number, cols: number, o: { order?: (i: number) => number } = {}): string {
-  const codes = Array.from({ length: cols }, (_, i) => `${'bcdfghjklm'[i % 10]}${'xyzvw'[Math.floor(i / 10)]}`), lines = [['', ...codes].map(c => `"${c}"`).join(',')];
+  const codes = Array.from({ length: cols }, (_, i) => `i${String(i + 1).padStart(2, '0')}`) /* made-up labels, not of the deposit's two-letter shape */, lines = [['', ...codes].map(c => `"${c}"`).join(',')];
   const body = Array.from({ length: rows }, (_, i) => codes.map((_c, j) => (i % 7 === 0 ? 0 : parseInt(sha(`${year}:${i}:${j}`).slice(0, 2), 16) < 50 ? (year === 2009 && i < 5 ? 2 : 1) : 0)));
   const order = Array.from({ length: rows }, (_, i) => i).sort((a, b) => (o.order ? o.order(a) - o.order(b) : a - b));
   order.forEach((i, at) => lines.push([`"${at + 1}"`, ...body[i]].join(',')));
@@ -398,7 +398,7 @@ test('scores: intervals over individuals, equal weight beside pooled, multi-part
   assert.ok(allied.run.cuts.some(c => c.cut === 'pair coalitions' && c.summary.records === 16));
   const sizes = sizeReport(records, 'own', 3);
   assert.equal(sizes.wide, 16); assert.equal(sizes.plain.calls, 24); assert.equal(sizes.fan2.calls, 8 + 16 * 3); assert.ok(sizes.fan2.tokens.max < sizes.plain.tokens.max && sizes.plain.seconds > 0);
-  const md = markdown({ seed: 3, reps: 100, history: 'all', parts: [{ dataset: 'kanyawara-coalition', part: 'train', written: 30, eligible: 24, individuals: 5, leftOut: { 'same-day-repeat': 6 }, sample: null, kernels: [nul.run, allied.run], sizes: [sizes] }] });
+  const md = markdown({ seed: 3, reps: 100, history: 'all', parts: [{ dataset: 'kanyawara-coalition', part: 'train', bar: 'stack', written: 30, eligible: 24, individuals: 5, leftOut: { 'same-day-repeat': 6 }, sample: null, kernels: [nul.run, allied.run], sizes: [sizes] }] });
   assert.match(md, /24 eligible records from 5 females/); assert.match(md, /6 same-day-repeat/); assert.match(md, /fanned out, \+fan2 \(16 menus wider than 8\)/);
   assert.ok(!/r\d+\b|a[0-4]\b/.test(md.replace(/\ba 95%|\ba bootstrap|\ba rule|\ba model|\ba difference/g, '')), 'no record key and no individual label in the report');
 });

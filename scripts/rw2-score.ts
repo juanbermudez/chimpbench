@@ -98,7 +98,7 @@ export async function scoreRw2(kernel: WildKernel, records: Rw2Record[], o: { da
   return { run: { id: kernel.id, label: kernel.label, view: o.view, shuffles: o.shuffles, summary: summarize2(runs[0], o.reps, o.seed), cuts, order: o.shuffles > 1 ? orderSensitivity(runs) : null, versusBar: null, cost }, first: runs[0] };
 }
 
-export interface PartReport { dataset: Rw2Dataset; part: Rw2Part; written: number; eligible: number; individuals: number; leftOut: Record<string, number>; sample: number | null; kernels: KernelRun2[]; sizes: ReturnType<typeof sizeReport>[] }
+export interface PartReport { dataset: Rw2Dataset; part: Rw2Part; /** The rule the model kernels are paired with: the stack of the view they were shown. */ bar: string; written: number; eligible: number; individuals: number; leftOut: Record<string, number>; sample: number | null; kernels: KernelRun2[]; sizes: ReturnType<typeof sizeReport>[] }
 const iv = (m: IndividualStat['pooled']) => m.value === null ? 'n/a' : `${m.value} (${m.ci[0] ?? 'n/a'} to ${m.ci[1] ?? 'n/a'})`;
 const minutes = (s: number) => s < 90 ? `${s} s` : `${Math.round(s / 6) / 10} min`;
 
@@ -123,7 +123,7 @@ export function markdown(R: { seed: number; reps: number; history: string; parts
     }
     const versus = P.kernels.filter(k => k.versusBar);
     if (versus.length) {
-      L.push(`Against the bar \`${BAR[P.dataset]}\` on the same records (answered option; the interval is over ${unit}; a difference is called one only if it excludes 0):`);
+      L.push(`Against the bar \`${P.bar}\` on the same records (answered option; the interval is over ${unit}; a difference is called one only if it excludes 0):`);
       t(['kernel', 'kernel', 'bar', 'difference (95%)', 'only the kernel right', 'only the bar right', 'a difference'], versus.map(k => { const v = k.versusBar!; return [`\`${k.id}\``, v.a, v.b, `${v.difference} (${v.ci[0]} to ${v.ci[1]})`, v.onlyA, v.onlyB, v.isDifference ? 'yes' : 'no']; }));
     }
     const ordered = P.kernels.filter(k => k.order);
@@ -198,11 +198,11 @@ async function main() {
       const s = run.summary;
       console.error(`${dataset} ${part} ${name}: ${s.top1Ties.pooled.value} pooled (${s.top1Ties.pooled.ci.join(' to ')}), ${s.top1Ties.equal.value} equal weight; chance ${s.chance.pooled.value}; refused ${s.refused}; ${run.cost.reduce((a, c) => a + c.kernelCalls, 0)} calls, ${run.cost.reduce((a, c) => a + c.seconds, 0).toFixed(1)} s`);
     }
-    const bar = firsts.get(BAR[dataset]);
+    const barId = dataset === 'tai-groom' && modelView === 'third' ? 'stack-third' : BAR[dataset], bar = firsts.get(barId);
     if (bar) for (const k of kernels) if (k.id !== 'null' && !(k.id in RW2_RULES[dataset])) k.versusBar = pairedDifference(firsts.get(k.id)!, bar, () => true, reps, seed);
     const leftOut: Record<string, number> = {};
     for (const r of all) if (!r.eligible) leftOut[r.why] = (leftOut[r.why] ?? 0) + 1;
-    report.parts.push({ dataset, part, written: all.length, eligible: records.length, individuals: new Set(records.map(r => r.chooser)).size, leftOut, sample: take ? records.length : null, kernels,
+    report.parts.push({ dataset, part, bar: barId, written: all.length, eligible: records.length, individuals: new Set(records.map(r => r.chooser)).size, leftOut, sample: take ? records.length : null, kernels,
       sizes: (dataset === 'tai-groom' ? ['own', 'third'] as Rw2View[] : ['own'] as Rw2View[]).map(v => sizeReport(records, v, seed)) });
   }
   for (const close of closers) close();
