@@ -913,7 +913,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       // Larger pose changes take longer: base time × (0.6 + 0.5 × largest joint change in radians), ≤ 0.7 s.
       let big = 0;
       for (let i = 3; i < PI.root; i++) big = Math.max(big, Math.abs(cv[i] - ov[i]));
-      startInertia(a.inert, ov, a.outVel, cv, Math.min(0.7, transitionTime(prevClip, clip) * Math.max(1, 0.6 + 0.5 * big)), a.skip);
+      // A receiver changing posture (same clip, another role) may be lying down or sitting up: the lying-down time.
+      startInertia(a.inert, ov, a.outVel, cv, Math.min(0.7, (clip === 'groomee' && prevClip === 'groomee' ? 0.55 : transitionTime(prevClip, clip)) * Math.max(1, 0.6 + 0.5 * big)), a.skip);
     }
     else if (pop) { a.skip.fill(0); a.holdMask = 0; startInertia(a.inert, ov, a.outVel, cv, 0.25, a.skip); a.inert.t = -dtAnim; }
     const blending = a.inert.t < a.inert.end;
