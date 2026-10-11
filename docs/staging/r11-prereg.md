@@ -1172,9 +1172,128 @@ whenever no other model process is alive. Its plumbing is proven without a model
 run; the run script's own line against a stand-in interpreter); its model time is estimated in §13.3 from the
 packet counts and their real token counts.
 
+### 13.3 As run (15:07 to 15:45 EDT, logged at 15:47; nothing trained, no model on the GPU, one process at a time)
+
+Every number below is copied from a generated table ([r11-data.md](r11-data.md), [r11-manifest.json](r11-manifest.json),
+[r11-costs.md](r11-costs.md), [r11-offline.md](r11-offline.md)) or from a step's own output. The model's weights
+were loaded once, on the CPU, by the parity check; the token counts use the tokenizer alone.
+
+| What | Head, tree | When | Result |
+| --- | --- | --- | --- |
+| the amendments of §13.1 and §13.2 | commit e238866 | 15:07 | committed before any code or file changed |
+| the code | commits b65358e, e093f88, f283408 | 15:25 | the packet module, the assembler, the baseline, the token counter, the run script, the tests |
+| `scripts/r11-run.sh assemble p5a` | f283408, clean | 15:25 to 15:29 | P5a rebuilt; P5b's files left as they were and checked; marks M1 and M2 met as before |
+| `scripts/r11-run.sh tokens` (CPU, the tokenizer alone) | f283408, clean | 15:29 to 15:31 | 21,680 packets counted, the largest 679 tokens, none over 1,280 |
+| `scripts/r11-run.sh parity p5a` (CPU) | f283408, clean | 15:31 to 15:33 | `PARITY OK` |
+| `scripts/r11-run.sh baseline` against a stand-in interpreter, on a scratch copy of the data | c37e564, clean | 15:38 | the step's own line runs end to end with no model; three wrong or repeated calls behave as they must |
+| `scripts/r11-run.sh dry` (seed 48, the fake worker) | c37e564, clean (first at f283408, 15:33) | 15:39 to 15:40 | all ten verdicts hold, 6 of 6 replays; all 22 arms end on the hashes of the four earlier dry runs |
+| `scripts/r11-run.sh report`, `publish` | c37e564 | 15:40 | the tables of commit 9dc9b76 |
+| `tests/r11.test.ts` | 9dc9b76, clean | 15:41 to 15:44 | 13 of 13 (three added or rewritten: P5a strict, the baseline, the projected time) |
+| `tests/r8-packet.test.ts`; `r7-engine`, `r5-pilot`, `r9-decode` | c37e564; 9dc9b76 | 15:39; 15:44 | 21 of 21; 18 of 18 |
+| `tsc --noEmit`; the stage's scripts and test under the same strict options; `gen-params --check`; `test_soft_loss.py` | 9dc9b76 | 15:39 to 15:44 | clean (a planted type error is caught); 1,050 entries, none added; 9 of 9 |
+
+`git diff 0e0cfde -- src data server tests/fixtures` is empty: packet 5, the goldens and the field pin did not move.
+`track-e` stands at 7f9ec5b and merges with this branch without conflict (in memory); since the branch point it
+changes nothing under `src/`, `training/` or `data/params.json`.
+
+**P5b did not move.** Its training and development files were not written (their time of writing is still 04:17
+and they are byte for byte the copies taken before); its packets inside the shared held-out file were hashed
+before and after by a script of this check that uses none of the project's code (plain `python3`), and the
+assembler's own hash per packet name agrees with it.
+
+| | Before (assembled at 1fd98ee) | After (assembled at f283408) |
+| --- | --- | --- |
+| `p5b/contexts/train.jsonl` | `38bddc0d…a1cd` | the same file, not written |
+| `p5b/contexts/dev.jsonl` | `42a5b00b…6019` | the same file, not written |
+| `p5b/contexts/manifest.json` (the trainer's `--extra`) | `6a6736dc…2a0a` | the same file, not written |
+| P5b's 2,000 held-out packets (`p5b`) | `266c1011…544e` | `266c1011…544e` |
+| P5b's 1,340 packets without `doing` | `cba8ff9d…4828` | `cba8ff9d…4828` |
+| P5b's 1,080 probe packets | `d90d17e4…a656` | `d90d17e4…a656` |
+| `eval/probes.jsonl` | `44b5b354…5ae3` | `44b5b354…5ae3` |
+| every training row but its packet and estimate (records, order, labels, options), either arm | `da5c50cd…a509` | `da5c50cd…a509` |
+| every development row likewise, either arm | `ac437dd8…0f0b` | `ac437dd8…0f0b` |
+| the held-out rows but their token estimates | `af18482b…e06c` | `af18482b…e06c` |
+| `p5a/contexts/train.jsonl` | `a96521c2…4c96` | `93e5c7f5…d85e` |
+| `p5a/contexts/dev.jsonl` | `3f20c2ca…f012` | `613faac8…0e81` |
+| `eval/all.jsonl` (both arms' packets) | `45b890fb…54fe` | `db5a5866…1771` |
+| `eval/test.jsonl` (it holds both arms' token estimates) | `738f48bd…d97a` | `ea3fa99a…6546` |
+
+P5b's real token count is also the same on each of its 2,000 held-out packets, and the six rows of P5b in the
+table of §12.1 came out again to the token.
+
+**P5a now.** On the files on disk (the same plain `python3` check): the P5a packet is the P5b packet with the two
+lines deleted, line for line and in the same order, with the same questions, in 3,120 of 3,120 training rows, 300
+of 300 development rows, 2,000 of 2,000 held-out packets, 1,340 of 1,340 without `doing` and 1,080 of 1,080 probes;
+that includes the 112 training rows and 8 development rows where P5b has no `last` line. P5a carries a `memories`
+line in 1,272 training rows, the same line as P5b in every one (before: 3,120, differing in 2,318). The assembler
+checks the same on every packet it writes and stops on the first that fails (0 found). The test builds 856 contexts
+of two worlds: P5b carries `lately` in 856, `last` in 412 and a memory line in 301, P5a is P5b less those two lines
+in all of them with and without `doing`, and the builder's own `without` would have differed on 582, so the test
+can fail.
+
+| P5a packets (real tokens, the tokenizer alone) | Count | Median | 95th percentile | Largest | Over 1,280 |
+| --- | --- | --- | --- | --- | --- |
+| training | 3,120 | 287 | 404 | 487 | 0 |
+| development | 300 | 275 | 392 | 466 | 0 |
+| held-out fresh draws | 1,500 | 283 | 400 | 483 | 0 |
+| every held-out row | 2,000 | 276 | 395 | 483 | 0 |
+| without `doing` | 1,340 | 265 | 381 | 468 | 0 |
+| probes | 1,080 | 289 | 409 | 491 | 0 |
+
+The P5a first registered had a median of 295 on the training file (§12.1); the strict one has 287. The two lines
+of the ablation cost 53 real tokens at the median of the training file (340 against 287) and about 90 of the
+project's estimate (mean 416.1 against 326.4). **Parity is met**: `scripts/r11-run.sh parity p5a` printed
+`PARITY OK` on 12 development packets of 175 to 403 tokens, the training-side token ids equal to the serving
+path's and the largest probability gap 0 (117 s on the CPU). P5b's parity of §12.4 stands: its bytes are the same.
+
+**The like-for-like baseline is built and has not been run.** The renderer wrote `eval/baseline.jsonl` (sha256
+`2b935c1b…11e1`): the 1,500 held-out fresh draws of 38 animals, two renderings each, 3,000 packets to score. Its
+checks hold on 1,500 of 1,500 draws: the options and the instruction of the neutral rendering are the P5b
+packet's; the neutral rendering carries none of the rules' wording; the state lines of the two renderings differ
+only by the `urgent` line (removed from 543). All 8,951 option texts differ between the two renderings. Real
+tokens: with the rules' wording a median of 464 (95th percentile 597, largest 679), with neutral options 351 (460,
+529).
+
+Its plumbing, without a model, two ways. (1) The dry run renders the packets into the dry folder, writes a score
+file by the fake worker's rule, makes the table and prints the line beside W1 in the dry offline table. (2) The run
+script's own `baseline` line was run on a scratch copy of the data with the model runtime's interpreter replaced by
+a stand-in that holds no model and prints what it is given: it was started in `training/decide_ft` with
+`-B em_score.py --in …/eval/baseline.jsonl --packets oldState,oldNeutral --provider r4-rules-state --out
+…/eval/baseline.r4-rules-state.jsonl.part`, with `MGOGO_FT_ROOT` set to the folder that holds the first adapter and
+the offline flags set; 3,000 rows came back, the part file was renamed, a log was written, the table and the
+offline table were made. An unassembled folder and a missing adapter are each refused at once (exit 2); a second
+call finds the score file and does not score again. The scratch copy was deleted; this stage's own folder holds no
+score file, and the fake rule refuses to write into it.
+
+**Model time** ([r11-costs.md](r11-costs.md): the costs measured in §12.4 scaled by each step's real token counts,
+between in proportion to the tokens and as their power 1.5; every figure is a projection).
+
+| Step | Packets, mean real tokens | Projected |
+| --- | --- | --- |
+| the baseline step: the first adapter on both renderings | 3,000 at 409.3 | 0.397 to 0.679 s a packet: 20 to 34 min of scoring, **24 to 39 min** with its one model load |
+| one P5a training (was 1 h 30 to 1 h 37 min, §12.6) | 3,120 rows at 294.6 | 0.454 to 0.504 s an example: 1 h 27 min to 1 h 35 min |
+| one P5b training (unchanged) | 3,120 rows at 346.7 | 0.580 to 0.593 s an example: 1 h 47 min to 1 h 49 min |
+| all four trainings | | 6 h 29 min to 6 h 48 min |
+| an adapter of P5a on its 4,420 held-out packets | 4,420 at 282.7 | 19 to 31 min (22 to 36 with a load) |
+
+So a night of §12.6 is a few minutes shorter (a P5a training by two to three) and its ranges stand as written; the
+baseline adds 24 to 39 minutes on whichever night it runs.
+
+**Not done, and what stays unverified.**
+
+- Nothing was trained and no model was loaded on the GPU. No adapter of this stage exists.
+- The baseline step has never met the real model or the real first adapter: its line was run against a stand-in.
+  `em_score.py` itself scored packets with an adapter in the smoke run (§12.4), on other packets.
+- The speed of a P5a training and of the first adapter on its own packet are projections from P5b's measurements.
+- The loop's P5a arms now send the strict packet (the dry run and the loop test show the lines sent); no engine
+  arm has run on a test seed.
+- The whole test suite and the build were not run; the merge with `track-e` was tested for conflicts in memory only.
+- `docs/staging/r8-wording-numbers.md` is not in this checkout, so the tables here print W1 and R8's two figures
+  as "not read"; a checkout that holds it (or `R11_WORDING`) prints them.
+
 ## For the integrator
 
-*(Rewritten by the reviewer on 11 October 2026 after §11; the builder's notes are kept where they still hold. The times were replaced on 11 October at 14:56 by the measurements of §12.6, after a smoke run on the real model; the frozen checkout must hold head c9f5eb0 or later.)*
+*(Rewritten by the reviewer on 11 October 2026 after §11; the builder's notes are kept where they still hold. The times were replaced on 11 October at 14:56 by the measurements of §12.6, after a smoke run on the real model. Brought up to date on 11 October at 15:47 after §13: P5a was reassembled strict, the baseline step was added, and **the frozen checkout must hold head 9dc9b76 or later** (the head that holds this text is later still). An earlier head builds the P5a first registered in the loop, which is not what the P5a adapters are now trained on.)*
 
 **Read first.** (1) Nothing here is a result about an engine: the stage delivers data, a trainer, a loop arm, the
 control arms and the reports. No adapter of this stage exists; the trainer has run only as a smoke test on the real
@@ -1184,6 +1303,9 @@ a second route (§11.5). (3) Four amendments were logged before any model run (�
 primary decode with a draw arm beside it and a mark for nights in a nest under a draw (N1); the order of the trainings
 is p5b 7, p5a 7, p5b 11, p5a 11; the stage claims nothing about wild chimpanzees; the wording test's 0.386 is the
 baseline of a new reading (W1). (4) Seeds 4111 and 4222 are open (their control arms ran); 4333 and 4444 are sealed.
+(5) Two more amendments were logged before any training (§13): **P5a is strict**, P5b with exactly the lines
+`lately` and `last` deleted and nothing given back (its files were assembled again; P5b's bytes did not change);
+and a like-for-like wording baseline exists as an optional model step, read as a description beside W1.
 
 **One defect outside this stage, seen by the builder and not repaired.** The guard of `scripts/r9-run.sh` and
 `scripts/r9-seed2.sh` looks for another model process by the interpreter's path. On this machine a started
@@ -1193,9 +1315,10 @@ for the model scripts by name (`model_procs`): at 11:42 on 11 October it listed 
 
 **Where the files are.** Data and (later) adapters: `artifacts/decide-ft/r11` of the worktree `r11-honest-retrain`.
 Control arms and burn-ins: `artifacts/r11/loop` there. Real token counts: `artifacts/decide-ft/r11/eval/tokens.jsonl`
-(taken by the review). All are git-ignored, so a frozen checkout reaches them by two variables (below). To make them
+and `token-counts.json` (taken again at 15:30 on 11 October, after P5a was reassembled). The like-for-like baseline's
+packets: `eval/baseline.jsonl` there. All are git-ignored, so a frozen checkout reaches them by two variables (below). To make them
 again instead: `scripts/r11-run.sh sample` (about 30 minutes; the manifest must come out with the hashes of
-[r11-manifest.json](r11-manifest.json): train P5b `38bddc0d…`, P5a `a96521c2…`) and `scripts/r11-run.sh controls 4111`,
+[r11-manifest.json](r11-manifest.json): train P5b `38bddc0d…`, P5a `93e5c7f5…` since §13; the P5a first registered was `a96521c2…`) and `scripts/r11-run.sh controls 4111`,
 `controls 4222` (about 2 minutes each; the same end hashes). A burn-in made with another parameter registry is
 refused: after a merge that adds a parameter, delete the two burn-in files and run the controls again.
 
@@ -1205,30 +1328,34 @@ step checks its arguments first, refuses while another model process is alive or
 swap in use is above 6 GB, and writes a log under `artifacts/r11/logs` of the checkout it runs from.
 
 ```sh
-# 0. the frozen checkout and the files on hand (a minute)
+# 0. the frozen checkout and the files on hand (a minute). The head: 9dc9b76 or later (§13: P5a strict, the baseline step)
 git -C /Volumes/Drive/chimpbench/MGOGO worktree add --detach .claude/worktrees/bench-r11 <the head>
 cd /Volumes/Drive/chimpbench/MGOGO/.claude/worktrees/bench-r11 && ln -s /Volumes/Drive/chimpbench/MGOGO/node_modules node_modules
 export R11_FT_ROOT=/Volumes/Drive/chimpbench/MGOGO/.claude/worktrees/r11-honest-retrain/artifacts/decide-ft/r11
 export R11_OUT=/Volumes/Drive/chimpbench/MGOGO/.claude/worktrees/r11-honest-retrain/artifacts/r11/loop
 
 # 1. before any load (starts nothing; a minute): must end with "no other model process" and "the tree is clean"
-scripts/r11-run.sh check
+scripts/r11-run.sh check            # also prints the P5a adapters as "not trained yet" and the baseline as "packets rendered; not scored"
 scripts/r11-run.sh dry              # no model, about a minute: the whole path on this checkout against a fake worker; must end "R11 done (dry)" with 6 of 6 replays
 
-# 2. the trainer's inputs against the serving path (CPU, a few minutes each): each must print PARITY OK
+# 2. the trainer's inputs against the serving path (CPU, two minutes each): each must print PARITY OK
+#    (P5a was reassembled on 11 October, §13: its parity was met again at 15:33 on the new file; P5b's file did not change)
 scripts/r11-run.sh parity p5b && scripts/r11-run.sh parity p5a
 
 # 3. night one: the first training seed of each arm (§11.2)
 scripts/r11-run.sh train p5b 7      # about 1 h 50 min (0.6 s an example measured). Its first lines must show "loss self-check passed" twice; its "s/example" line should read about 0.6
-scripts/r11-run.sh train p5a 7      # about 1 h 35 min (projected from P5b by the packets' length)
+scripts/r11-run.sh train p5a 7      # about 1 h 30 min (projected from P5b by the packets' length: 1 h 27 to 1 h 35 min; its "s/example" line should read about 0.5)
 scripts/r11-run.sh offline          # 1 h 30 to 2 h 30 min: the untuned model on both arms' packets (45 to 65 min), then each adapter on file (25 to 35 min P5b, 20 to 30 min P5a); decides O1 to O4 and W1 for one training
+scripts/r11-run.sh baseline         # OPTIONAL (§13.2), 24 to 39 min: the first adapter on these held-out fresh draws, its own packet with the rules' wording and with neutral options;
+                                    # a description beside W1, never a mark. It needs no adapter of this stage: it can run here, before the first training, or on night two.
+                                    # It writes r11-baseline.md and makes the offline table again with the like-for-like lines
 scripts/r11-run.sh loop 4111        # 50 to 80 min; each worker must print "worker warm" before its first day line: p5b-s7-top, p5a-s7-top, p5b-s7-draw-1, p5a-s7-draw-1, p5b-s7-draw-2, then old-top, then their replays
 scripts/r11-run.sh loop 4222        # 50 to 80 min
 scripts/r11-run.sh report           # no model, a minute: what one training of each arm shows (§11.2 says what may be said)
 
 # 4. night two: the second training seeds
 scripts/r11-run.sh train p5b 11     # about 1 h 50 min
-scripts/r11-run.sh train p5a 11     # about 1 h 35 min
+scripts/r11-run.sh train p5a 11     # about 1 h 30 min
 scripts/r11-run.sh offline          # 45 to 80 min: scores only the two new adapters; the marks O1 to O4 and W1 can now be read
 scripts/r11-run.sh loop 4111        # 30 to 45 min: only the arms not on file (the four of training seed 11)
 scripts/r11-run.sh loop 4222        # 30 to 45 min
@@ -1242,6 +1369,8 @@ scripts/r11-run.sh publish          # copies the tables to docs/staging; then co
 - **Time in all** (§12.6, from a smoke run on the real model): the four trainings 6 h 32 min to 6 h 51 min; night one
   6 h 21 min to 8 h 34 min, night two 4 h 57 min to 6 h 14 min, both 11 h 18 min to 14 h 48 min (30 minutes more with the
   optional arm), and at most 45 and 30 minutes of swap holds. The two nights can be chained into one stretch.
+  Since §13 the strict P5a is shorter (a median of 287 real tokens against 295): the four trainings project to 6 h 29 min
+  to 6 h 48 min, so those ranges stand; the optional baseline step adds 24 to 39 minutes ([r11-costs.md](r11-costs.md)).
 - **How the review's estimates were made** (arithmetic, before the measurements of §12.6; kept for the record). Training: the stage's time law (stage R4's 0.85 s an
   example at 450 real tokens, time as tokens to the power 1.5) on the real token counts of §11.7, plus four passes
   over the 300 development rows. Offline: stage R4's 0.59 s a packet at 452 real tokens, scaled the same way; an arm
@@ -1263,11 +1392,13 @@ scripts/r11-run.sh publish          # copies the tables to docs/staging; then co
   CPU step `tokens`, which is done.
 
 **How to read the result.** `r11-offline.md` §10 prints O1 to O4 and W1 per adapter; a mark holds for the recipe only
-if both P5b trainings meet it; §11 there is the near-certainty table, §12 the wording baseline. `r11-numbers.md` §4
+if both P5b trainings meet it; §11 there is the near-certainty table, §12 the wording baseline and, under it, the
+like-for-like lines when the baseline step has run (a description: W1 is read against 0.386 either way; the whole
+table is `r11-baseline.md`). `r11-numbers.md` §4
 prints S0, S1, S2, S3 in their registered order with the outcome for the top pick first, then the draw arms as a
 second line, then the ablation and L1; §4a prints N1; §5 prints the field anchors as description. S2 reads the
-offline summary (`artifacts/r11/tables/r11-offline.json`), so run `offline` before `report`. When the ablation is
-read, say that P5a still carries one memory line (§11.5).
+offline summary (`artifacts/r11/tables/r11-offline.json`), so run `offline` before `report`. The ablation reads
+P5b against P5a strict: the lines `lately` and `last` against their absence, everything else byte-identical (§13.1).
 
 **Proposed lines for the shared files.**
 
@@ -1283,7 +1414,7 @@ read, say that P5a still carries one memory line (§11.5).
 > the rules' pick is the label's top option at 0.84: that, not 0.98, is the most any state reader can agree. *Data.*
 > 3,120 labelled fresh draws for training (seeds 48 and 7, both bases, never a first day), 300 for development, 1,500
 > held out on seed 21 with 500 kept or arrived acts apart; 36.2% of sampled records were not fresh choices. Real
-> tokens at the median: P5b 340, P5a 295 (the target was 350). Nothing of the rules' valuation is in a training row;
+> tokens at the median: P5b 340, P5a 287 (the target was 350). Nothing of the rules' valuation is in a training row;
 > options stand in a fixed order of acts and the `nearby` line in order of distance. *Floors and controls.* A
 > kind-prior baseline with no model agrees with the rules at 0.381, which is where the first adapter fell without the
 > rules' wording (0.386). Control arms on the fresh seeds 4111 and 4222: the smallest difference is 14.3 on 53.9 act
@@ -1299,13 +1430,18 @@ read, say that P5a still carries one memory line (§11.5).
 > nothing. Its smoke run passed: token parity in both arms, the soft loss redone by hand from the logged logits,
 > 0.6 s an example at 6.1 GiB, the saved adapter loaded again with the same development loss, one probability per
 > option. No packet is over 562 real tokens. *Open*: four trainings (6 h 30 to 6 h 50 min), offline scoring (2 h 15
-> to 3 h 50 min), the loop arms (2 h 30 to 4 h 10 min), so 11 to 15 hours in all; P5a still carries one memory line;
-> the like-for-like wording baseline is not built.
+> to 3 h 50 min), the loop arms (2 h 30 to 4 h 10 min), so 11 to 15 hours in all. *Amended before any training*
+> (§13): P5a is strict, the P5b packet with exactly the lines `lately` and `last` deleted and nothing given back
+> (as first built it got one memory line back in every row, so the ablation would have compared the two lines with
+> a memory line); its files were assembled again, P5b's bytes did not change (the same hashes, file by file and
+> packet by packet), its parity is met and no packet is over 1,280 tokens. A like-for-like wording baseline (the
+> first adapter on this stage's own held-out draws, with and without the rules' wording) is built as an optional
+> model step of 24 to 39 minutes, proven without a model and not run; it is a description beside W1.
 
 `AGENTS.md`, Commands, after the `r10-night.ts` line:
 
 ```sh
-scripts/r11-run.sh sample | assemble | controls <seed> | dry | report | publish | check | train <p5b|p5a> <7|11> | parity <arm> | tokens | offline | loop <seed> | arms <seed> <a,b> | replay <seed> <a,b>   # stage R11 (docs/staging/r11-prereg.md): the honest retraining. sample: fresh draws of rules worlds (scripts/r11-contexts.ts; seeds 48, 7, 21; both bases; never a first day) with the label of each computed at the decision (every candidate's jitter redrawn through computeCandidates and rgMenu, the redraws that offer the same menu counted), then scripts/r11-assemble.ts (two input arms of packet 5 short: p5b whole, p5a without `lately` and `last`; manifest, calibration and reproduction checks) and the data and offline-floor tables; train: training/decide_ft/train_r11.py (train_r4.py with soft cross-entropy; adapters r11-<arm>-s<seed> under artifacts/decide-ft/r11); offline: training/decide_ft/em_score.py on the held-out packets, then scripts/r11-offline.ts (marks O1 to O4, W1); controls, loop: scripts/r11-loop.ts on the fresh seeds 4111 and 4222 (stage R7's sixteen control arms; engine arms through scripts/r5-pilot.ts runArm with packet 5, the gate on, the top pick and a draw arm beside it, each with its own stream; an arm on file is never run again), then scripts/r7-report.ts --engine and scripts/r11-report.ts (statements S0 to S3, N1); dry: the model arms' path against scripts/lib/fake-worker.mjs on seed 48; model steps check their arguments first, run one process at a time with the swap hold and log under artifacts/r11/logs; tables under artifacts/r11/tables
+scripts/r11-run.sh sample | assemble [p5a] | controls <seed> | dry | report | publish | check | train <p5b|p5a> <7|11> | parity <arm> | tokens | offline | baseline | loop <seed> | arms <seed> <a,b> | replay <seed> <a,b>   # stage R11 (docs/staging/r11-prereg.md): the honest retraining. sample: fresh draws of rules worlds (scripts/r11-contexts.ts; seeds 48, 7, 21; both bases; never a first day) with the label of each computed at the decision (every candidate's jitter redrawn through computeCandidates and rgMenu, the redraws that offer the same menu counted), then scripts/r11-assemble.ts (two input arms of packet 5 short: p5b whole, p5a strict = the p5b packet with exactly the lines `lately` and `last` deleted; `assemble p5a` rebuilds one arm and stops unless the other's bytes stay as they are; manifest, calibration and reproduction checks) and the data and offline-floor tables; tokens: real token counts of every packet by the tokenizer alone (training/decide_ft/r11_tokens.py) and the model time they project to (scripts/r11-costs.ts); baseline (optional): the first adapter on this stage's held-out fresh draws, its own packet with the rules' wording and with neutral options (scripts/r11-baseline.ts), a description beside W1; train: training/decide_ft/train_r11.py (train_r4.py with soft cross-entropy; adapters r11-<arm>-s<seed> under artifacts/decide-ft/r11); offline: training/decide_ft/em_score.py on the held-out packets, then scripts/r11-offline.ts (marks O1 to O4, W1); controls, loop: scripts/r11-loop.ts on the fresh seeds 4111 and 4222 (stage R7's sixteen control arms; engine arms through scripts/r5-pilot.ts runArm with packet 5, the gate on, the top pick and a draw arm beside it, each with its own stream; an arm on file is never run again), then scripts/r7-report.ts --engine and scripts/r11-report.ts (statements S0 to S3, N1); dry: the model arms' path against scripts/lib/fake-worker.mjs on seed 48; model steps check their arguments first, run one process at a time with the swap hold and log under artifacts/r11/logs; tables under artifacts/r11/tables
 ```
 
 `AGENTS.md`, Gotchas, two lines:
@@ -1314,10 +1450,12 @@ scripts/r11-run.sh sample | assemble | controls <seed> | dry | report | publish 
 > - The scoring worker answers with the untuned model when none of the adapters it was told to load is found (`training/decide_ft/adapters.py`): a harness must check the worker's ready line for the arm's adapter before the first ask (`scripts/r11-loop.ts`, `scripts/r10-night.ts`). The worker also loads the model on its first batch (55 to 220 s on this machine, more than the loop's 120 s an ask): a harness warms every worker with one packet no one applies, outside that limit (`warmedWorker` in `scripts/lib/r10-run.ts`). The trainers write `manifest.json` last: an adapter folder with weights and no manifest is a training cut short. The tool shell (zsh) does not split an unquoted variable into words: a loop that passes `$a` to a script hands it one argument.
 
 `HANDOFF.md`, next steps: "R11: after the population run, the launch order at the end of
-`docs/staging/r11-prereg.md` from a frozen detached checkout (night one: check, parity, train p5b 7, train p5a 7,
-offline, loop 4111, loop 4222, report; night two: the trainings with seed 11, offline, both loops again, report,
-publish). The decode is the top pick with a draw arm beside it; leave `R11_DECODE` unset. The smoke run of §12 passed
-and its times stand in the launch order: night one 6 h 20 to 8 h 35 min, night two 5 h to 6 h 15 min."
+`docs/staging/r11-prereg.md` from a frozen detached checkout at head 9dc9b76 or later (night one: check, dry, parity,
+train p5b 7, train p5a 7, offline, optionally baseline, loop 4111, loop 4222, report; night two: the trainings with
+seed 11, offline, both loops again, report, publish). P5a is strict since §13 (P5b less the lines `lately` and
+`last`, nothing given back). The decode is the top pick with a draw arm beside it; leave `R11_DECODE` unset. The
+smoke run of §12 passed and its times stand in the launch order: night one 6 h 20 to 8 h 35 min, night two 5 h to
+6 h 15 min; the optional baseline adds 24 to 39 minutes."
 
 `docs/simulation.md`: **no rows.** The stage adds no parameter and no switch.
 
@@ -1328,12 +1466,11 @@ and its times stand in the launch order: night one 6 h 20 to 8 h 35 min, night t
 2. **One night or two.** Night one ends with one training per arm, the offline table and the loop arms of those two
    adapters. By §11.2 nothing registered can be claimed from it. Whether to read night one before night two runs, or
    to wait, is yours; the arms of night two are fixed either way.
-3. **The ablation's other side.** P5a, as registered, still carries one memory line where P5b carries `last` (often
-   the latest grooming or greeting). If you want "P5b with the two lines deleted and nothing else changed", say so
-   before night one: it needs the files assembled again (three minutes, no model) and a line in §11.
+3. **The ablation's other side: decided and done (§13.1).** P5a is now P5b with the two lines deleted and nothing
+   else changed; the files were assembled again before any training.
 4. **Whether to spend about an hour more of model time** on two references: the first adapter under a draw on the
-   test seeds (30 minutes; the reference for N1), and the first adapter on this stage's held-out draws with neutral
-   options (30 minutes and a small build; the like-for-like baseline for W1).
+   test seeds (30 minutes; the reference for N1), and the like-for-like baseline for W1, which is now built
+   (`scripts/r11-run.sh baseline`, 24 to 39 minutes; §13.2) and waits only for the model time.
 5. **The line of N1.** 49 of 50 nights keeps it, because the rules' own arms lose a night in two of eight re-draws.
    If one lost night should already count against a draw, the mark must be made stricter before the arms run.
 6. Whether the label should keep the rules' continuation bonus and finished penalty (§2, limit 2). They are hand
