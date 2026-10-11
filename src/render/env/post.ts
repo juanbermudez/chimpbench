@@ -7,7 +7,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { FXAAPass } from 'three/addons/postprocessing/FXAAPass.js';
 import { CopyShader } from 'three/addons/shaders/CopyShader.js';
 import type { Quality } from '../../types';
-import type { EnvState } from './shared';
+import { BLOOM_THRESHOLD, type EnvState } from './shared';
 import { easuConstants } from './output';
 
 // Post chain: MSAA scene render (with a resolved depth texture) → GTAO
@@ -418,6 +418,23 @@ export interface Post {
   readonly sceneTarget: THREE.WebGLRenderTarget;
 }
 
+/** Ambient occlusion fades out over this range of view distance (m) in perspective views; see createPost. Design assumption. */
+const AO_FAR_START = 1200, AO_FAR_END = 2400;
+/** three's GTAO fragment shader with the far fade added, or null when three's shader no longer has the two lines the
+ * fade hangs on (tests/render-sky.test.ts checks the installed three, so an upgrade that drops it fails a test). */
+export function aoFarFade(fragmentShader: string): string | null {
+  const position = 'vec3 viewPos = getViewPosition(vUv, depth);', power = 'ao = pow(ao, scale);';
+  if (!fragmentShader.includes(position) || !fragmentShader.includes(power)) return null;
+  return fragmentShader
+    .replace(position, `${position}
+			#if PERSPECTIVE_CAMERA == 1
+				if ( - viewPos.z > ${AO_FAR_END.toFixed(1)} ) { discard; return; }
+			#endif`)
+    .replace(power, `${power}
+			#if PERSPECTIVE_CAMERA == 1
+				ao = mix( ao, 1.0, smoothstep( ${AO_FAR_START.toFixed(1)}, ${AO_FAR_END.toFixed(1)}, - viewPos.z ) );
+			#endif`);
+}
 const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
 // Grades by time of day, in display space. Kept deliberately gentle.
 const GRADES = {
@@ -439,8 +456,18 @@ export function createPost(renderer: THREE.WebGLRenderer, scene: THREE.Scene, ca
   const gtaoSetSize = gtao.setSize.bind(gtao);
   gtao.setSize = (w: number, h: number) => gtaoSetSize(Math.max(1, Math.round(w / 2)), Math.max(1, Math.round(h / 2)));
   gtao.blendIntensity = 0.75;
-  // High threshold: only true HDR highlights (sun glints on water, fireflies, lightning) bloom; the sky must not veil the scene.
-  const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.2, 0.35, 2.2);
+  // Perspective views: occlusion fades out between AO_FAR_START and AO_FAR_END metres from the camera (stage W2). The
+  // depth buffer steps by about 0.6 m at 2 km and 4 m at 5 km (near plane 0.4 m, 32-bit float), more than the 1.6 m
+  // radius the pass looks in, so on far geometry it drew dark bars and dashes (the "barcode" on the old mountain mesh,
+  // marks along the far forest's edge). Nothing within the detailed window or the canopy ring (1.3 km) changes.
+  const gtaoFar = aoFarFade(gtao.gtaoMaterial.fragmentShader);
+  if (gtaoFar) gtao.gtaoMaterial.fragmentShader = gtaoFar;
+  else console.warn('post: the ambient occlusion far fade did not apply (three\'s GTAO shader changed)');
+  // High threshold: only true HDR highlights (sun glints on water, wet leaves, lightning-lit surfaces) and the sun disc
+  // bloom. The threshold pass keeps a pixel's full value once it is over the line and the widest blur spans the frame,
+  // so anything large above it veils the whole picture: the sky dome therefore limits itself to a ceiling under this
+  // threshold and the sun disc to a fixed value (sky.ts, stage W2). Fireflies (≤ 1.3) and the moon (≤ 0.6) sit under it.
+  const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.2, 0.35, BLOOM_THRESHOLD);
   // Bloom is a soft, low-frequency glow: its chain starts at quarter resolution instead of half (plan G4 item 4).
   const bloomSetSize = bloom.setSize.bind(bloom);
   bloom.setSize = (w: number, h: number) => bloomSetSize(Math.max(1, Math.round(w / 2)), Math.max(1, Math.round(h / 2)));

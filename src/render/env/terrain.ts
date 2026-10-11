@@ -43,7 +43,6 @@ export interface Terrain {
   heightTexture: THREE.DataTexture;
   groundTexture: THREE.DataTexture;
   groundMaterial: THREE.MeshStandardMaterial;
-  mountainMaterial: THREE.MeshBasicMaterial;
   group: THREE.Group;
   /** Centre (world xz) of the grids and textures (uOrigin). */
   origin: [number, number];
@@ -52,7 +51,7 @@ export interface Terrain {
 
 /** Materials, textures and geometries shared by every window of a field view (built once per scene). */
 export interface TerrainKit {
-  groundMaterial: THREE.MeshStandardMaterial; farMaterial: THREE.MeshStandardMaterial; mountainMaterial: THREE.MeshBasicMaterial;
+  groundMaterial: THREE.MeshStandardMaterial; farMaterial: THREE.MeshStandardMaterial;
   rockGeometry: THREE.BufferGeometry; rockMaterial: THREE.MeshStandardMaterial;
   logGeometry: THREE.BufferGeometry; logMaterial: THREE.MeshStandardMaterial;
   /** Field view: the ground grid's shared index (built on first use). */
@@ -109,7 +108,7 @@ function fieldGroundIndex(kit: TerrainKit): THREE.BufferAttribute {
   return kit.groundIndex = new THREE.BufferAttribute(idx, 1);
 }
 
-/** Ground, far-canopy, mountain, rock and log materials (and the rock and log geometries). */
+/** Ground, far-canopy, rock and log materials (and the rock and log geometries). */
 export function createTerrainKit(seed: number, uniforms: SharedUniforms, owner: Owner, field = false): TerrainKit {
   const litter = createLitterTextures(seed + 5);
   owner.own(litter.albedo); owner.own(litter.normal);
@@ -237,8 +236,6 @@ export function createTerrainKit(seed: number, uniforms: SharedUniforms, owner: 
   groundMaterial.customProgramCacheKey = () => 'mgogo-ground-v4';
 
   const farMaterial = createCanopyMaterial(uniforms, owner, field);
-  // Unfogged: the sky module tints it toward the horizon haze so it reads as distant, not as fog.
-  const mountainMaterial = owner.own(new THREE.MeshBasicMaterial({ color: '#31404a', side: THREE.DoubleSide, fog: false }));
 
   // Icosahedra are non-indexed; weld vertices so displaced boulders shade smoothly instead of faceted.
   const rockBase = new THREE.IcosahedronGeometry(1, 3);
@@ -273,7 +270,7 @@ export function createTerrainKit(seed: number, uniforms: SharedUniforms, owner: 
   const logMaterial = owner.own(new THREE.MeshStandardMaterial({ color: '#b0a590', map: barkTexture, normalMap: owner.own(createBarkNormal(barkTexture)), roughness: 0.95 }));
   logMaterial.alphaToCoverage = true;
   patchMaterial(logMaterial, uniforms, { cloud: true, wet: 1, moss: 1, bark: true, forestAO: true, fade: 'wood' });
-  return { groundMaterial, farMaterial, mountainMaterial, rockGeometry, rockMaterial, logGeometry, logMaterial };
+  return { groundMaterial, farMaterial, rockGeometry, rockMaterial, logGeometry, logMaterial };
 }
 
 /** Far-canopy colour: Voronoi crowns (defines crownR, lod, farDomeN, farWall, leafy). Shared with the field overview.
@@ -746,26 +743,8 @@ export function* terrainSteps(world: World, uniforms: SharedUniforms, owner: Own
     group.add(far);
   }
 
-  // --- Rwenzori massif ~60 km west-southwest of Ngogo, as a hazy silhouette above the canopy line.
-  const mountainPositions: number[] = []; const mountainIndex: number[] = [];
-  const segments = 160;
-  for (let j = 0; j <= segments; j++) {
-    const az = THREE.MathUtils.degToRad(215 + j / segments * 95);
-    const dist = 5200;
-    const x = Math.sin(az) * dist + ox, z = -Math.cos(az) * dist + oz;
-    const u = j / segments;
-    const ridge = Math.pow(Math.sin(u * Math.PI), 0.7) * (240 + simplex2d.sample(noise, u * 9, 1.7) * 110 + Math.abs(simplex2d.sample(noise, u * 31, 4.1)) * 70);
-    mountainPositions.push(x, -40, z, x, 20 + ridge, z);
-    if (j > 0) { const k = j * 2; mountainIndex.push(k - 2, k, k - 1, k - 1, k, k + 1); }
-  }
-  const mountainGeometry = owner.own(new THREE.BufferGeometry());
-  mountainGeometry.setAttribute('position', new THREE.Float32BufferAttribute(mountainPositions, 3));
-  mountainGeometry.setIndex(mountainIndex);
-  mountainGeometry.computeVertexNormals();
-  const mountainMaterial = kit.mountainMaterial;
-  const mountains = new THREE.Mesh(mountainGeometry, mountainMaterial);
-  mountains.name = 'rwenzori';
-  group.add(mountains);
+  // The Rwenzori massif (~60 km west-southwest of Ngogo) is drawn by the sky dome (sky.ts, stage W2): as a mesh 5.2 km
+  // out it was striped by the ambient occlusion pass and brighter than the sky behind it in rain and at dawn.
   if (field) yield;
 
   // --- Rocks: boulders on slopes and in the stream, mossy on top.
@@ -934,7 +913,7 @@ export function* terrainSteps(world: World, uniforms: SharedUniforms, owner: Own
     },
     trailAt: (x, z) => detailAt(trail, x, z),
     coverAt: (x, z) => detailAt(cover, x, z),
-    river, heightTexture, groundTexture, groundMaterial, mountainMaterial, group, origin: [ox, oz],
+    river, heightTexture, groundTexture, groundMaterial, group, origin: [ox, oz],
     update() { /* static; uniforms drive animation */ },
   };
 }

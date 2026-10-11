@@ -1,5 +1,5 @@
 // Before/after screenshot comparison for visual-regression checks of performance work.
-// Usage: node scripts/shot-compare.mjs <beforeBaseUrl> <afterBaseUrl> [outDir]
+// Usage: node scripts/shot-compare.mjs <beforeBaseUrl> <afterBaseUrl> [outDir]     (BARE=1, RANDOM_MODE=constant: see below)
 // Renders the same deterministic env-harness scenes (paused world, frozen visual clock) from two servers and
 // reports the mean absolute difference and the share of pixels differing by more than 8/255, with a diff image.
 import { mkdirSync, readFileSync } from 'node:fs';
@@ -15,8 +15,23 @@ const SCENES = {
   'cinematic': `advance=2.5&hour=9&view=cinematic`,
 };
 const browser = await chromium.launch({ headless: true, executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
+// Seeded Math.random in the page (stage W2). Two things drew from it and made two runs of the same code differ: the
+// lightning flash light is re-placed from it on every frame of the frozen clock (21% of the storm scene's pixels moved
+// by more than 8/255), and the ambient-occlusion noise texture is built from it at start-up (about 1/255 mean
+// difference on close views). One sequence serves start-up; every animation frame then starts from the same seed.
+// Still to read with care: every three.js object draws its UUID from Math.random, so a build that creates one object
+// more or fewer before the post chain is built gets a different occlusion dither (that same 1/255, as speckle on
+// every surface). RANDOM_MODE=constant makes Math.random a constant instead, which removes it (the dither is then the
+// same structured pattern in both builds).
+const seededRandom = () => {
+  let s = 0x9e3779b9;
+  Math.random = () => { s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const raf = window.requestAnimationFrame.bind(window);
+  window.requestAnimationFrame = cb => raf(t => { s = 0x1234567; cb(t); });
+};
 async function shoot(base, name, query, label) {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
+  await page.addInitScript(process.env.RANDOM_MODE === 'constant' ? () => { Math.random = () => 0.37; } : seededRandom);
   await page.goto(`${base}/src/render/env/harness.html?${query}&${common}`, { waitUntil: 'load' });
   await page.waitForTimeout(7000);
   // BARE=1: hide DOM labels and party rings, whose layout depends on which frame the (frozen) harness sampled.
