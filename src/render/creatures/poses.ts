@@ -496,7 +496,16 @@ export const CLIPS: Record<string, Clip> = {
     // Receiver (v2, stylization): by role it sits hunched presenting the back, lies on its belly or side, or sits with
     // one arm raised to present the flank. Seated postures shift every 20–60 s: a slow lean and turn, eased over a second.
     if (c.role === GROOMEE.prone) { lieProne(w, c); w.a(B.head, 0.05 * sin(c.time * 0.31 + c.seed * 7), 0.1 * sin(c.time * 0.13 + c.seed * 3)); w.set('eyes', 0.85).set('brow', 0.05); return; }
-    if (c.role === GROOMEE.side) { lieSide(w, c, c.seed > 0.5 ? 1 : -1, 0.55); w.set('eyes', 0.8).set('brow', 0.05); return; }
+    if (c.role === GROOMEE.side) {
+      const sx = c.seed > 0.5 ? 1 : -1, down = sx > 0;
+      lieSide(w, c, sx, 0.55);
+      // Legs by joint angles, as in lieProne (stylization): under IK the knee of the leg underneath went 0.10 to 0.13
+      // body lengths through the ground (the leg pole rides with the rolled hips), and the body was lifted to stand on it.
+      w.ik(LIMB.legL, 0, 0, 0, 0, 0).ik(LIMB.legR, 0, 0, 0, 0, 0);
+      w.r(down ? B.thighR : B.thighL, -1, 0, sx * 0.15).r(down ? B.shinR : B.shinL, 1.5);
+      w.r(down ? B.thighL : B.thighR, -1.3, 0, -sx * 0.25).r(down ? B.shinL : B.shinR, 1.3);
+      w.set('eyes', 0.8).set('brow', 0.05); return;
+    }
     sitBase(w, c, 0.9, 0.1);
     w.a(B.head, 0.35).a(B.neck, 0.1);
     { const per = 20 + 40 * c.seed, n = Math.floor(c.pairT / per), u = smooth(((c.pairT / per) % 1) * per / 1.2);

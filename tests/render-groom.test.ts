@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { Chimp } from '../src/types';
-import { B, LIMB, PI, computeMorph, createFK, createMorph, createPose, solveFK } from '../src/render/creatures/rig';
+import { B, LIMB, PI, computeMorph, createFK, createMorph, createPose, lowestPoint, solveFK } from '../src/render/creatures/rig';
 import { CLIPS, GROOMEE, GROOM_LAP, Pw, groomeePosture, type PoseCtx } from '../src/render/creatures/poses';
 
 // Stage W5 (docs/staging/w5-grooming.md): the grooming choreography is a stylization, so these tests hold its
@@ -119,6 +119,20 @@ test('arm raised: the hand is at the head on a folded arm, at every age', () => 
     assert.ok(fold < 0.85, `${where}: the elbow is bent (${fold.toFixed(2)} of the arm's length from shoulder to wrist)`);
     // The other arm keeps the seated rest.
     assert.ok(at(right ? B.handL : B.handR)[1] < shoulder[1]);
+  }
+});
+
+test('on its side: no knee goes through the ground, so the body is not lifted onto it', () => {
+  // As brought, the legs were under IK: the knee of the leg underneath sat 0.10 to 0.13 body lengths below the ground
+  // plane and the creature layer lifted the whole body by 0.15 to 0.19 to stand on it (trunk, hands and feet in the air).
+  const m = createMorph(), fk = createFK();
+  for (const seed of [0.1, 0.45, 0.6, 0.9]) {
+    const v = run('groomee', ctx({ role: GROOMEE.side, seed, pairT: 123.4, time: 55 }));
+    solveFK(pose, m, fk);
+    for (const limb of [LIMB.legL, LIMB.legR]) assert.equal(v[PI.ik + limb * 5 + 3], 0, 'no IK on the legs');
+    for (const bone of [B.shinL, B.shinR, B.footL, B.footR]) assert.ok(fk.p[bone * 3 + 1] > 0, `seed ${seed}: knees and ankles are above the ground plane (${fk.p[bone * 3 + 1].toFixed(3)})`);
+    // What is left is the shoulder and hand underneath: the lift that rests them on the ground.
+    assert.ok(lowestPoint(fk, m) > -0.13, `seed ${seed}: lowest point ${lowestPoint(fk, m).toFixed(3)}`);
   }
 });
 
