@@ -633,7 +633,8 @@ everything else there is the builder's.
   `artifacts/r7b/` (the first is the smoke check's burn-in, 03:11), and §0 to §5 have not changed since that commit.
   The fork script was committed (2993759, 03:16:35) before iteration 1 started (03:16:40 by its log), the iteration 2
   entry (03:25:54) while it ran, and the code of iteration 2 and of part three (f447df8, 04:22:59) before their runs.
-  Every saved file names its head and a clean tree.
+  Every saved file of a reported run names its head and a clean tree (the smoke check's names a dirty one, as §6
+  says).
 - **Part one.** The amended `scripts/r7-report.ts` on stage R7's saved arm files writes the committed `r7-numbers.md`
   but for the dated line; against `track-e`'s file only the dated line and sections 6 and 8 differ (P1b).
 - **Part two.** A script of the review's own (plain Node on the points files, none of the stage's code) gives the
