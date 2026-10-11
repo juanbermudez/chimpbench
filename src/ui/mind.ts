@@ -4,7 +4,7 @@ import type { DecisionTraceView } from './contracts';
 import { icon } from './icons';
 import { actionLabel, actionVerb, cap, esc, hhmm, pct, RELATION_LABEL, relationClass, stamp } from './format';
 import { alphaBadge, bar, empty } from './parts';
-import { cardFromChimp, cardFromTrace, modelEngine, targetName, traceIsCurrent, type DecisionCard, type OptionRow } from './mind-card';
+import { belowTopNote, cardFromChimp, cardFromTrace, modelEngine, targetName, traceIsCurrent, type DecisionCard, type OptionRow } from './mind-card';
 
 // Mind tab: the decision made visible, for any animal (stage W4). First the decision: the pick over its runners-up
 // in one line, who chose, and the reason sentence in print. Then the options it weighed, each with its value as a
@@ -26,10 +26,6 @@ function pickLabel(world: World, tr: DecisionTraceView, i: number) {
 
 const rowLabel = (r: OptionRow) => `${actionLabel(r.action)}${r.target ? ` <i>→ ${esc(r.target)}</i>` : ''}`;
 const rowValue = (r: OptionRow, by: DecisionCard['by']) => by === 'probability' ? `${((r.probability ?? 0) * 100).toFixed(0)}%` : r.score.toFixed(2);
-/** Why the act under way can sit below another option on the live list: the rules' own policy (src/sim/rg.ts) keeps an
- * act while nothing salient changes and otherwise, for an animal old enough, draws among the options with odds set by
- * their scores. The interface cannot tell which of the two happened, so the note names both. */
-const BEATEN_NOTE = 'Not the best score on this list. The rules do not always take the top score: they can keep an act under way, and a fresh choice can be a draw weighted by the scores.';
 
 /** The decision in one line: the pick over its runners-up, each with the chooser's own value, then the reason in print. */
 function decisionLine(card: DecisionCard): string {
@@ -162,7 +158,7 @@ export function liveCard(ctx: Ctx, c: Chimp, control = ''): string {
   return `<article class="trace live">
     <header class="trace-head"><h3 class="eyebrow">Now</h3><b class="mono">since ${stamp(w, card.time)}</b>${whoChip(card)}${control}</header>
     ${decisionLine(card)}
-    ${card.beaten && card.kind === 'live' ? `<p class="dnote">${BEATEN_NOTE}</p>` : card.offMenu || card.waiting ? `<p class="dnote">${esc(card.engine.note)}</p>` : ''}
+    ${card.beaten ? `<p class="dnote">${esc(belowTopNote(card))}</p>` : card.offMenu || card.waiting ? `<p class="dnote">${esc(card.engine.note)}</p>` : ''}
     ${card.options.length ? `<h4 class="eyebrow opts-title by-rules">${card.waiting ? 'Options on the table' : 'Options weighed'} <span class="muted">${card.options.length} at its last decision point${card.pick ? ' · <i class="mk-model">●</i> under way' : ''}</span></h4>
     ${optionsList(card)}` : '<p class="subtle">No options on record yet: it has not reached a decision point since the simulation began.</p>'}
   </article>`;

@@ -99,6 +99,19 @@ function rows(world: World, options: Candidate[], chosen: number, rulesPick: num
   }));
 }
 
+/**
+ * Why the act under way on the live card can sit below another option by the rules' score. When the rules chose: their
+ * own policy (src/sim/rg.ts) keeps an act while nothing salient changes and otherwise, for an animal old enough, draws
+ * among the options with odds set by their scores; the interface cannot tell which of the two happened, so the note
+ * names both. When the animal's last decision came through the loop, a model picked by its own probabilities, and the
+ * rules' policy explains nothing.
+ */
+export function belowTopNote(card: DecisionCard): string {
+  return card.engine.id === 'untuned' || card.engine.id === 'general' || card.engine.id === 'other-model'
+    ? 'Not the rules’ best score: a model picked this act by its own probabilities, not by these scores.'
+    : 'Not the best score on this list. The rules do not always take the top score: they can keep an act under way, and a fresh choice can be a draw weighted by the scores.';
+}
+
 /** An option's value on the scale that ranks the card: the model's probability, or the rules' score. */
 export const rowValue = (r: OptionRow, by: 'score' | 'probability') => by === 'probability' ? r.probability ?? 0 : r.score;
 const value = rowValue;

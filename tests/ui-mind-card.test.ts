@@ -3,7 +3,7 @@ import test from 'node:test';
 import { applyDecision, createWorld, tickWorld } from '../src/simulation';
 import type { Candidate, Chimp, World } from '../src/types';
 import type { DecisionTraceView } from '../src/ui/contracts';
-import { BASE_MODEL, BASE_MODEL_ONNX, RULES_ENGINE, cardFromChimp, cardFromTrace, modelEngine, rowValue, targetName, traceIsCurrent } from '../src/ui/mind-card';
+import { BASE_MODEL, BASE_MODEL_ONNX, RULES_ENGINE, belowTopNote, cardFromChimp, cardFromTrace, modelEngine, rowValue, targetName, traceIsCurrent } from '../src/ui/mind-card';
 import { DEFAULT_PROVIDER_CONFIG } from '../src/providers/config';
 import { ACTIVITY_KIND, DECISION_LOG_MAX, createDecisionLog, timeline, watchDecisions } from '../src/ui/decision-log';
 
@@ -245,4 +245,18 @@ test('the act record names who chose: the rules, a model through the loop, or no
   // It dies: nobody's choice.
   watchDecisions(log, w, { ...viaLoop, alive: false, action: 'dead', targetId: -1, causeOfDeath: 'injury' });
   assert.equal(log.entries.at(-1)!.action, 'dead'); assert.equal(log.entries.at(-1)!.source, 'set');
+});
+
+test('a pick below the top score is explained by who chose: the rules\' own policy, or a model', () => {
+  const w = morning(48, 600), c = w.chimps.find(x => x.alive && x.candidates.length >= 2)!;
+  // The act under way is the list's last option: it scores below the best.
+  const low = c.candidates[c.candidates.length - 1], below = { ...c, action: low.action, targetId: low.targetId, awaitingDecisionSince: null };
+  const byRules = cardFromChimp(w, { ...below, decisionSource: 'rules' });
+  assert.equal(byRules.beaten, c.candidates[0].score > low.score + 1e-9);
+  assert.deepEqual(byRules.engine, RULES_ENGINE);
+  assert.match(belowTopNote(byRules), /keep an act under way/); assert.match(belowTopNote(byRules), /draw weighted by the scores/);
+  const byModel = cardFromChimp(w, { ...below, decisionSource: 'decide' });
+  assert.equal(byModel.engine.id, 'untuned');
+  assert.match(belowTopNote(byModel), /a model picked this act/);
+  assert.doesNotMatch(belowTopNote(byModel), /rules do not always/, 'the rules\' policy is not offered as the reason for a model\'s pick');
 });
