@@ -281,3 +281,240 @@ The same design, arms, salts, units, rows, statistics and pass mark. One readout
 energy eaten by the field's formula measure (`fin`), printed beside usable energy in; neither is a guard. Nothing
 under `src/` changes, so every world is iteration 1's: the report compares each unit-F arm's end hash with the first
 launch's and prints the count. All 64 runs are made again at one head, so every table comes from one launch.
+
+## 13. Results (iteration 2; 10 October 2026, 20:08 to 21:00 EDT)
+
+Every number below is copied from [r7-numbers.md](r7-numbers.md), which `scripts/r7-report.ts` generates from the runs'
+JSON. 64 runs, all from a clean tree: unit F and unit P of seed 48 at head b19bc8f, unit P of seed 7 at 7ca84d2 (the
+commit between them changes only the report script). The burn-in hashes (4b5cc61f8ad797e0 for seed 48,
+d9604068dec350b1 for seed 7) are those of the R5 pilot, so these are the worlds and the ten animals the first engine
+test used. All 32 unit-F runs end on the world hash they ended on in iteration 1's stopped launch. Processor time:
+301 s for unit F, 2,773 s for unit P. No model was loaded.
+
+### 13.1 The card passes its mark
+
+At ten animals for five days, **random choice is told from the rules on 9 of the 14 registered timing rows** (the mark
+was three); at a population for 30 days, on all 14. The card is kept as registered.
+
+| At unit F | The rules (mean ± SD of eight re-draws) | Random choice (two salts) |
+| --- | --- | --- |
+| act changes per animal-day | 46.3 ± 3.6 | 92.7 / 93.9 |
+| switches of activity per waking hour | 3.99 ± 0.21 | 6.58 / 6.65 |
+| trips to food begun per animal-day | 8.03 ± 0.69 | 12.90 / 13.06 |
+| trips to food completed per animal-day | 1.85 ± 0.17 | 0.54 / 0.58 |
+| rest bout, median minutes | 21.09 ± 1.35 | 11.00 / 11.25 |
+| grooming bout, median minutes | 15.53 ± 0.85 | 5.75 / 5.50 |
+
+Not told at unit F: the median feeding bout, mean patch residency, feeding trees per day, and the half-hour share
+overall and from resting.
+
+### 13.2 What each unit can show
+
+D is the smallest difference one arm, run once, can show against the eight re-draws.
+
+| Readout | Unit F: D (share of the rules' mean) | Unit P: D (share of the rules' mean) |
+| --- | --- | --- |
+| act changes per animal-day | 8.9 (19%) | 2.0 (5%) |
+| switches per waking hour | 0.54 (13%) | 0.12 (3%) |
+| trips to food begun | 1.72 (21%) | 0.37 (5%) |
+| trips to food completed | 0.44 (24%) | 0.14 (7%) |
+| patch residency, mean minutes | 2.57 (13%) | 0.55 (3%) |
+| half-hour pairs in the same activity | 0.037 (10%) | 0.007 (2%) |
+| distance, km per day | 0.40 (17%) | 0.13 (6%) |
+| T-ACT-1 feeding share | 0.027 (7%) | 0.017 (5%) |
+| T-RNG-4 male day range, km | 1.21 (48%) | 0.45 (22%) |
+| T-COM-1 pant-hoots per male-hour | 0.19 (35%) | 0.14 (26%) |
+
+So ten animals for five days resolve a change of about a fifth in the timing rows. The adapter failure that started
+this (54 trips begun a day against 8) is more than six times the rules' value: the card sees it many times over. A 10% or 20%
+change is below what that unit can show.
+
+### 13.3 A slightly noisy chooser hides at ten animals and not in a population
+
+- **Unit F.** The 10% mixture is told from the rules on 2 of the 14 timing rows (the median rest and travel bouts), the
+  20% mixture on 6, the 30% mixture on 7.
+- **Unit P.** The 10% mixture is told on 13 of 14, the 20% and 30% mixtures on all 14. Act changes: the rules 43.2 ±
+  0.8, 10% random 54.9 / 57.3.
+- The same 10% of random choices moves act changes by about a fifth when only the ten focal animals carry it (46.3 to
+  58.3 / 52.6) and by about three tenths when the whole population does (43.2 to 54.9 / 57.3): companions' noise
+  compounds, as the review expected. A ten-animal test understates what an engine does to a population.
+
+### 13.4 The guards, and why they are not enough alone
+
+No realization of any control arm passes all five guards, at either unit. At unit F random choice fails all five in
+both realizations; the 10% mixture fails one guard in each realization (act changes in one, distance in the other) and
+passes reserve, nights in a nest and trips completed. **Energy eaten cannot be a guard, and not because it does not
+move: every control arm eats more than the rules.** Unit F: the rules 1,646 ± 13 kcal a day, random choice 1,686 /
+1,719, the mixtures 1,700 to 1,748. Unit P: 1,624 ± 3 against 1,693 / 1,694 and 1,668 to 1,730.
+
+### 13.5 Where the noisy arms sit against the field: the reason for the rule
+
+Measured, not interpolated. At unit P the **10% mixture sits nearer the middle of the field band than the rules,
+beyond noise, on T-ACT-2, T-RNG-4, T-FOOD-2, T-ENE-3, T-RHY-5, T-COM-1 and T-SOC-14**, and farther on T-RHY-1 and
+T-RHY-4. The 20% mixture is nearer on T-ACT-2, T-FOOD-2, T-ENE-3, T-COM-1 and T-SOC-14; the 30% mixture on those and
+T-ACT-1. Random choice itself is nearer only on T-ACT-1, T-ACT-2 and T-RHY-6 and farther on ten rows. So "closer to
+the field numbers than the rules" is reached by adding a little noise to the rules, on about half the short
+scorecard. Both parts of the scorecard show it: of the rows named, T-ENE-3, T-RHY-5 and T-SOC-14 are held out.
+
+Under the registered rule (an engine must beat the best rules-plus-random arm by more than D):
+
+- **Unit F leaves room on few rows.** An engine could be shown closer on T-ENE-3 (a value between 861 and 889 g),
+  T-RHY-4 (25 to 35 min), T-RHY-6 (0.68 to 1.62), patch residency (23.17 to 50.03 min), feeding trees per day (6.03
+  to 12.97) and the half-hour share overall (0.450 to 0.502). On the four activity rows, T-RNG-4, T-FOOD-2, T-RHY-1,
+  T-RHY-5 and T-COM-1 some arm of the family is already within D of the middle of the band: ten animals for five days
+  cannot show an engine to be closer there.
+- **Unit P leaves room on more:** T-ACT-2, T-ACT-3, T-FOOD-2 (only 0.685 to 0.695), T-ENE-3, T-RHY-1, T-RHY-4,
+  T-RHY-5, T-RHY-6, T-SOC-6, patch residency, feeding trees and three of the four half-hour shares; not on T-ACT-1,
+  T-ACT-4, T-RNG-4, T-COM-1, T-SOC-14 and T-SOC-10.
+- Reading: the ten-animal unit is the place to check the guards and the timing rows (is the engine told from the
+  rules, and in which direction). "Closer to wild chimpanzees" is a population question on most rows.
+
+### 13.6 The card beside its field anchors (yardsticks only)
+
+| Readout | Field | The rules, unit F | The rules, unit P |
+| --- | --- | --- | --- |
+| patch residency, mean minutes per visit | 27.0 (Ngogo) and 46.2 (Kanyawara), potts2011 | 20.56 ± 1.02 | 20.79 ± 0.22 |
+| feeding trees per day | 4 to 15 (T-FOOD-4's band; Taï) | 5.28 ± 0.22 | 5.01 ± 0.13 |
+| half-hour pairs in the same activity | 0.476 (Taï) | 0.390 ± 0.015 | 0.413 ± 0.003 |
+| the same, first mark resting | 0.539 | 0.515 ± 0.027 | 0.542 ± 0.003 |
+| the same, first mark travelling | 0.255 | 0.093 ± 0.028 | 0.115 ± 0.008 |
+| the same, first mark feeding | 0.518 | 0.299 ± 0.018 | 0.301 ± 0.004 |
+| mean bout in the three activities, minutes | about 15, by implication only | 17.38 ± 0.94 | 18.48 ± 0.25 |
+
+The Taï value comes from 22,211 pairs of consecutive half-hour slots (29,855 slots after one record is kept per
+follow and slot; 11,798 slots held more than one record); not collapsed, on records 27 to 33 minutes apart, it is
+0.477. The two groups give 0.473 and 0.479.
+
+What the yardsticks say, as directions: the rules' animals stay in a patch for less time than either Kibale site
+reports, and an animal that is feeding at a half-hour mark is feeding at the next one 30% of the time, against 52%
+at Taï (resting persists as at Taï). **Random choice is nearer Taï on that row** (0.496 / 0.455 at unit F, 0.463 /
+0.457 at unit P), because it feeds more of the day: once more a noisier chooser looks more like the field number,
+which is what the scoring rule is for.
+
+### 13.7 The bridge to the engine tests
+
+The R5 pilot's saved between-tick `null` arm, on the same worlds, animals and days, beside this stage's in-tick
+random arm: energy eaten 1,686 against 1,723 / 1,759 (seed 48) and 1,679 against 1,648 / 1,679 (seed 7); distance
+3.50 km against 4.05 / 4.59 and 3.83 against 4.10 / 3.74; nights in a nest 0.320 against 0.600 / 0.440 and 0.640
+against 0.480 / 0.320. The rules agree across the two harnesses (seed 48: 1,620 against 1,630 ± 17 kcal; 2.24 against
+2.27 ± 0.28 km). The two ways of running random choice give the same picture; their differences are of the size of
+the two salts' own spread. An engine arm answered between ticks can be read against this stage's in-tick control
+arms.
+
+### 13.8 What was written before the run, checked
+
+| Said in §6 | Found |
+| --- | --- |
+| random choice raises act changes, switches and trips begun | yes, at both units |
+| it shortens bouts | rest, travel and grooming bouts: yes; feeding bouts: no (median 21.00 / 21.00 against 18.53 at unit F; longer and told at unit P) |
+| it shortens patch visits | not told at unit F (19.62 / 19.22 against 20.56 ± 1.02); a little shorter and told at unit P |
+| it lowers half-hour persistence | from resting: yes at unit P; overall: not told at unit F; from feeding it **raises** it |
+| it loses nights in a nest and reserve and adds distance | yes |
+| the mixtures lie between, in order | yes on act changes, switches, trips begun, distance and nights in a nest; reserve falls only from the 30% mixture on |
+| energy eaten barely moves | it rises by 2 to 7% in every control arm, and is told from the rules |
+| at unit F the 10% mixture sits inside the rules' spread on most rows | yes: on 12 of the 14 timing rows |
+
+### 13.9 Limits found
+
+- **The middle of a band is a poor "central value" where the band is a limit.** T-RHY-5's band is "up to 0.05", so
+  the rules' 0.017 counts as farther from its middle than the 10% mixture's 0.027. The registered rule is reported as
+  registered; whether such rows should be scored by distance outside the band is put to the integrator (§14).
+- **T-RNG-4 is too noisy at unit F** (D 1.21 km, 48% of the mean: it needs complete follows of adult males). The
+  card's own distance over all ten animals has D 0.40 km and is the guard to use.
+- **The unit-F observers lose more than half their follows** by the observer's own loss hazard (708 follows over the
+  16 arms, 247 complete, 391 lost; 5,177 follow hours). That is the frozen protocol; the card's every-tick shares are
+  printed beside the observer's activity rows.
+- Unit F's control arms decide inside the tick, an engine between ticks (§13.7 is the check). Unit P's control arms
+  drive everyone aged 8 and over; the engine's counterpart is stage R10's population run.
+- Two seeds, eight re-draws: D is an estimate with 7 degrees of freedom, on development seeds.
+- Random choice draws from the rules' menu: one feeding option on almost every ask.
+
+### 13.10 Not done in this half
+
+The "who decided" ledger (branch `r7-ledger`). Replays of the saved adapter arms (R4, R4c) through the card: their
+receipts live on seeds 21 and 5 in another worktree; the card's trips begun is the readout that already showed 53.9
+against 8.3 there. The review's fork-label and stay-label tests. No engine arm and no model run. The four proposed
+test seeds were not run (§9). `docs/simulation.md` §17 has no row for the two new parameters yet, so
+`tests/sim-params.test.ts` fails on this branch until the row of §14 is merged (checked: it passes with it).
+
+## 14. For the integrator
+
+**Decisions that are the user's or the integrator's.**
+
+1. Adopt the scoring rule of §8 for every later engine comparison (R9, R10): per row by value, against the best
+   rules-plus-random arm, with the five guards; no sums, no pass counts; energy eaten never a guard.
+2. Seeds (§9): 21 and 5 retired to development; test unit A = 4111 and 4222, reserve unit B = 4333 and 4444, seed 11
+   for R10's scored population run; none of them run before its registered test.
+3. Rows whose band is a limit and not an estimate (T-RHY-5; arguably T-RHY-4 and T-RHY-6, whose bands were widened
+   several-fold): score by distance outside the band, 0 inside? Not changed here.
+4. Where a result is claimed. This stage's reading: the ten-animal unit for guards and timing; "closer to wild
+   chimpanzees" only at the population unit, on the rows where §13.5 leaves room.
+
+**Merge notes.**
+
+- New parameters in `data/params.json` (`src/sim/params.gen.ts` regenerated): `kernelNullShare` (default 1) and
+  `kernelFocal` (default 0), both read in `src/sim/decide.ts` `decisionPoint` only. Likely conflict: `data/params.json`
+  and `params.gen.ts` with any branch that adds a parameter (regenerate with `scripts/gen-params.ts` after merging the
+  JSON); `src/sim/decide.ts` `decisionPoint` with `r9-draw-hold` or `r10-night` if they touch the same lines.
+- Nothing under `src/field`, `src/compare` or `data/targets.json` changed: the protocol hash is still
+  215ed6ab282a57de. The compressed goldens and the field pin did not move; the worlds of `kernelSim` 1, of `kernelSim`
+  1 with `kernelGate` 1, of `kernelSim` 2 and of the rules are hash-identical to track-e dea2643 (pinned in
+  `tests/r7-card.test.ts`).
+- `docs/research.md` gains "Addendum: R7 timing card" (Methods sentences of lemoine2023 and potts2011; no new source).
+- `artifacts/r7/` is not committed: the two burn-in worlds, 64 arm files, `tai.json` (aggregates only) and the first
+  launch (`launch1-F`, `launch1-P`). To regenerate the numbers: the three commands in the AGENTS.md line below.
+
+**Proposed line for `IMPLEMENTATION_PLAN.md`, Stage R7, Status:**
+
+> **Status**: In progress (10 October 2026). **First half (a) to (d) built and run** (branch `r7-card`, agent-reported,
+> awaiting the integrator's review; `docs/staging/r7-prereg.md` §13 and §14, `docs/staging/r7-numbers.md`; two
+> iterations, 64 no-model runs on seeds 48 and 7 at heads b19bc8f and 7ca84d2). The timing card
+> (`scripts/lib/timing-card.ts`) tells the rules from random choice on 9 of 14 registered timing rows at ten animals
+> for five days (mark: three) and on all 14 at a population for 30 days. The smallest difference ten animals for five
+> days can show is about a fifth of the rules' value on the timing rows (act changes 8.9 of 46.3; trips begun 1.72 of
+> 8.03) and 2 to 7% at the population unit. The rules with 10% of choices random are told from the rules on 2 of 14
+> timing rows at ten animals and on 13 at the population, and sit nearer the middle of the field band than the rules,
+> beyond noise, on T-ACT-2, T-RNG-4, T-FOOD-2, T-ENE-3, T-RHY-5, T-COM-1 and T-SOC-14: the scoring rule (an engine
+> counts as closer only where it beats the best rules-plus-random arm by more than the row's noise, with guards on
+> reserve trend, distance, nights in a nest, act changes and trips completed; energy eaten is not a guard, every
+> control arm eats more than the rules) is fixed in §8. Under it ten animals for five days can show an engine closer
+> on few rows (T-ENE-3, T-RHY-4, T-RHY-6, patch residency, feeding trees, the half-hour share); the rest is a
+> population question. Field yardsticks beside the card: patch residency 20.6 to 20.8 min against 27.0 and 46.2 (potts2011);
+> half-hour pairs in the same activity 0.39 to 0.41 against Taï's 0.476 (from feeding 0.30 against 0.52). New
+> parameters `kernelNullShare` (default 1) and `kernelFocal` (default 0); goldens, field pin and protocol hash unmoved.
+> Proposed to the user: seeds 21 and 5 retired to development, fresh test seeds 4111 and 4222 (reserve 4333, 4444),
+> seed 11 for R10's scored run. Part (e), the ledger: branch `r7-ledger`.
+
+**Proposed line for `AGENTS.md`, Commands:**
+
+```sh
+pnpm exec tsx scripts/r7-card.ts run --seed 48 --unit F|P [--arms rules-1,…,random-a,mix10-a,…] [--days N] | tai   # stage R7 (docs/staging/r7-prereg.md), no model: the timing card (scripts/lib/timing-card.ts: act changes, switches, bouts, trips begun and completed, patch visits, half-hour persistence, the guards) and the short scorecard's 15 rows by the existing observer code (scripts/lib/r7-readers.ts) on copies of one burned-in world of the working base: eight rules re-draws (a salt each), random choice twice and the rules with 10, 20 and 30% of choices random twice each (`kernelNullShare`), at unit F (the five focal animals of a seed for five days; `kernelFocal` 1 drives them only) and unit P (the population for 30 days; about 1 to 3.5 min an arm); refuses a dirty tree and any seed but 48 and 7 unless a registered test names its seed twice (--test-seed); `tai` writes the Taï half-hour anchor (aggregates only); then scripts/r7-report.ts [--bridge <r5 pilot dir>] writes docs/staging/r7-numbers.md (spreads, the smallest difference each row can show, the control arms against the rules and the field, the scoring rule of prereg §8)
+```
+
+**Proposed addition to `AGENTS.md`, Architecture, the row "Kernel contract (stage R1)":** append "Stage R7
+(`docs/staging/r7-prereg.md`; the defaults are today's behaviour): `kernelNullShare` (under `kernelSim` 1, the share of
+decision points the null kernel takes, the rest going to the rules' own policy; default 1) and `kernelFocal` (1: the
+in-tick kernel decides only for animals marked `controller: 'model'` with the model policy off; default 0)."
+
+**Proposed row for `docs/simulation.md` §17** (after the row "What a kernel sees and the menu it faces (R2; off by
+default)"; with it `tests/sim-params.test.ts` passes, 11 of 11):
+
+```
+| The control arms an engine must beat (R7; the defaults are today's behaviour) | `kernelNullShare` below 1 (default 1; read only under `kernelSim` 1): the rules with a share of choices random. At each decision point of a chimp the in-tick kernel drives, one coin from `world.rng`: below the share the null kernel decides, otherwise the rules' own policy; at 1 the null kernel always decides and at 0 the rules always do, with no coin drawn (bit for bit today's `kernelSim` 1 world and the rules world). After a random choice the rules' held intention is dropped. `kernelFocal` 1 (default 0): the in-tick kernel decides only for chimps whose `controller` is `'model'` while `world.modelPolicy.mode` is `'off'` (a harness marks a focal group; nobody waits), everyone else keeps the rules. Comparison layouts, never fitted (docs/staging/r7-prereg.md §2) | share (0–1); switch (0–1) | `kernelNullShare`, `kernelFocal` |
+```
+
+**Proposed bullet for `docs/simulation.md`, the list of kernel switches (after `kernelNoRulesPick`):**
+
+```
+- `kernelNullShare` below 1 (stage R7; default 1): under `kernelSim` 1 only that share of decision points goes to the
+  null kernel (one coin from `world.rng`), the rest to the rules' own policy; `kernelFocal` 1 (default 0) restricts the
+  in-tick kernel to chimps marked `controller: 'model'` with the model policy off. Control arms for engine
+  comparisons ([staging/r7-prereg.md](staging/r7-prereg.md)).
+```
+
+**Commands the integrator may want next.** After the merge: `pnpm test` and `pnpm build` (not run here by the
+tranche's rule). To put an engine arm beside the control arms, attach `cardStart` / `cardStep` / `cardFinish` and
+`focalStart` / `focalAfter` / `focalFinish` to the arm's loop after each tick (they read only), write its file in the
+shape of `ArmFile`, and add its name to the report. For a registered test on fresh seeds:
+`pnpm exec tsx scripts/r7-card.ts run --seed 4111 --test-seed 4111 --unit F` (and 4222), then the report with
+`--seeds 4111,4222 --dir <its own folder>`.
