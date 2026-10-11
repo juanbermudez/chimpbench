@@ -12,7 +12,7 @@ import {
   B, PI, PARAM_TEXEL, POSE_SIZE, ROW_TEXELS, boneWorld, computeMorph, copyPose, createFK, createMorph, createPose,
   lowestPoint, quat, solveFK, writeSkin, type FKState, type Morph, type Pose,
 } from './creatures/rig';
-import { CLIPS, GROOMEE, PROP, Pw, cradle, cradleFor, gaitFrequency, vocalOverlay, type Gait, type PoseCtx } from './creatures/poses';
+import { CLIPS, GROOMEE, GROOM_LAP, PROP, Pw, cradle, cradleFor, gaitFrequency, groomeePosture, vocalOverlay, type Gait, type PoseCtx } from './creatures/poses';
 import { clamp, damp, dampAngle, hash01, linearRGB, mixRGB, pixelSize, preToneMapped, smoothstep, vividColor } from './creatures/util';
 import { createProps } from './creatures/props';
 import { createSelection } from './creatures/selection';
@@ -438,6 +438,17 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   const pairings: Pairing[] = [];
   const receiver = new Map<number, Pairing>();
   const pairPool: Pairing[] = [];
+  /** Animals with another on their body (an infant they carry, alive or dead), from the carry state of the last frame. */
+  const carriers = new Set<number>();
+  /** True when the animal is itself grooming a third animal it can be paired with (the reach and partner tests of pairingFor). */
+  function groomsThird(b: Anim, a: Anim): boolean {
+    const bc = b.chimp;
+    if (bc.action !== 'groom' || bc.targetId == null || bc.targetId < 0 || bc.targetId === a.id) return false;
+    const t = anims.get(bc.targetId);
+    if (!t || t === b || !t.chimp.alive || !PASSIVE.has(t.chimp.action)) return false;
+    const tc = t.chimp;
+    return hyp2(tc.position[0] - bc.position[0], tc.position[2] - bc.position[2]) <= 4.5 && Math.abs((tc.position[1] ?? 0) - (bc.position[1] ?? 0)) <= 1.5;
+  }
   function pairingFor(a: Anim): void {
     const c = a.chimp;
     if (!c.alive || c.targetId == null || c.targetId < 0) return;
@@ -449,6 +460,19 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     if (d > 4.5 || Math.abs((bc.position[1] ?? 0) - (c.position[1] ?? 0)) > 1.5) return;
     let kind = '', sep = 0, bHeading = 0, clipA: string | null = null, clipB: string | null = null, roleA = 0, roleB = 0;
     const mutual = bc.targetId === c.id && bc.action === c.action;
+    if (c.action === 'groom') {
+      // Mother-and-infant grooming (stage W5; stylization, no source): an animal grooming the infant it holds works on it
+      // where it clings (carryMode keeps it on the belly, poses.ts GROOM_LAP). The infant keeps its carry clip and nobody
+      // is laid out: before this the groomer's hands chased a partner drawn on its own body.
+      if (b.carry !== 0 && b.carrierId === a.id) {
+        const p = pairPool.pop() ?? ({} as Pairing);
+        p.a = a; p.b = b; p.kind = 'lap'; p.sep = 0; p.bHeading = 0; p.clipA = null; p.clipB = null; p.roleA = GROOM_LAP; p.roleB = 0;
+        pairings.push(p);
+        return;
+      }
+      // The held infant grooming its carrier back: her lap pairing above draws the pair.
+      if (mutual && a.carry !== 0 && a.carrierId === b.id) return;
+    }
     // Mutual pairs are laid out once; a mating pair always from the male (he mounts from behind).
     if (mutual) {
       if (c.action === 'mate' && c.sex !== bc.sex) { if (c.sex !== 'male') return; }
@@ -459,13 +483,20 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         // Groomer sits behind the groomee (or face to face when mutual) with a clear gap between bodies.
         kind = 'groom'; sep = mutual ? 0.44 : 0.4;
         if (mutual) { clipB = 'groom'; roleA = roleB = 1; bHeading = Math.PI; }
+        // A receiver that is itself grooming a third animal keeps its own grooming clip and place (stage W5): no
+        // receiver clip or posture for it; this groomer works on it where it sits.
+        else if (groomsThird(b, a)) clipB = null;
         else if (PASSIVE.has(bc.action)) {
           clipB = 'groomee'; bHeading = hash01(a.id, 21) > 0.35 ? 0 : 0.6 * (hash01(b.id, 5) > 0.5 ? 1 : -1);
           // Groomee posture (grooming v2; stylization, no source): one per pair and bout of 40–70 s. Lying postures
           // only on the ground; a prone receiver lies across the groomer's front, one on its side turns its back.
           const period = 40 + 30 * hash01(b.id, 29), bout = Math.floor((animClock + hash01(a.id * 13 + b.id, 31) * period) / period);
-          const pick = hash01(b.id * 7 + bout, 37), ground = (bc.position[1] ?? 0) < 0.5 && b.carry === 0;
-          roleB = debug.groomee ?? (pick < 0.4 ? GROOMEE.sit : pick < 0.6 || !ground ? GROOMEE.present : pick < 0.82 ? GROOMEE.prone : GROOMEE.side);
+          const pick = hash01(b.id * 7 + bout, 37), ground = (bc.position[1] ?? 0) < 0.5 && b.elevated < 0.5 && b.carry === 0;
+          // Stage W5: an animal with an infant on its body never lies down under the groomer (the infant would be
+          // pressed into the ground), and one cradling a dead infant, or groomed by the infant it holds, stays seated
+          // (the cradling arm is the left one: no raised arm either). The harness override passes the same tests.
+          const dead = (bc.carryingDeadId ?? -1) >= 0;
+          roleB = groomeePosture(pick, ground, dead || carriers.has(b.id), dead || (a.carry !== 0 && a.carrierId === b.id), debug.groomee);
           if (roleB === GROOMEE.prone) bHeading = (hash01(b.id, 5) > 0.5 ? 1 : -1) * Math.PI / 2;
           else if (roleB === GROOMEE.side) bHeading = 0;
         }
@@ -696,7 +727,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     if (!carried) return 0;
     a.carrierId = m.id;
     const up = (mc.position[1] ?? 0) > 0.3 || mc.action === 'climb';
-    if (c.age < 0.45 || c.action === 'nurse' || mc.action === 'nurse' || up || (mc.action === 'nest' && c.age < 2)) return 1;
+    // Held on the belly too while its carrier grooms it (stage W5): she cannot reach an infant riding on her own back.
+    if (c.age < 0.45 || c.action === 'nurse' || mc.action === 'nurse' || up || (mc.action === 'nest' && c.age < 2) || (mc.action === 'groom' && mc.targetId === c.id)) return 1;
     return 2;
   }
 
@@ -818,7 +850,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       pctx.hasTarget = true; pctx.tx = lx / s; pctx.tz = lz / s; pctx.ty = dy / s;
       pctx.tdist = hyp2(lx, lz) / s; pctx.tsize = partner.morph.size / s;
       // Partner's posed spine chain in our unit body space (it was evaluated earlier this frame when it receives).
-      pctx.hasBones = partner.lastSkinFrame >= 0 && partner.carry === 0;
+      // A carried partner's bones are no target (it rides on someone), except the infant this animal holds and grooms:
+      // those are last frame's (infants are posed after their carriers), a frame behind a body that moves with hers.
+      pctx.hasBones = partner.lastSkinFrame >= 0 && (partner.carry === 0 || (role === GROOM_LAP && clip === 'groom' && partner.carrierId === a.id));
       if (pctx.hasBones) for (let k = 0; k < 5; k++) {
         boneWorld(partner.fk, partner.bodyQ, partner.bx, partner.by, partner.bz, partner.lift, PAIR_BONES[k], TP, TQ4);
         const bx = TP[0] - a.x, bz = TP[2] - a.z;
@@ -1336,7 +1370,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     for (const p of pairings) pairPool.push(p);
     pairings.length = 0; receiver.clear();
     interpolateAll(frame.subTick ?? 0, dt);
-    for (const a of animList) { a.paired = false; a.pairClip = null; a.partnerId = -1; a.headingTarget = null; a.tx = a.deadDrop ? a.dropX : a.track.x; a.tz = a.deadDrop ? a.dropZ : a.track.z; }
+    carriers.clear();
+    for (const a of animList) { a.paired = false; a.pairClip = null; a.partnerId = -1; a.headingTarget = null; a.tx = a.deadDrop ? a.dropX : a.track.x; a.tz = a.deadDrop ? a.dropZ : a.track.z; if (a.carry !== 0 && a.carrierId >= 0) carriers.add(a.carrierId); }
     for (const a of animList) pairingFor(a);
     // Each animal is positioned by one pairing only: its own (as actor) first, else the first that targets it.
     actorIds.clear();
@@ -1349,6 +1384,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       if (p.clipB) { b.paired = true; b.partnerId = a.id; }
       else if (b.partnerId < 0) b.partnerId = a.id;
       if (p.sep < 0.3) contactPairs.add(a.id < b.id ? a.id * 100003 + b.id : b.id * 100003 + a.id);
+      if (p.kind === 'lap') continue; // the infant is on her body: nothing to lay out
       const placeB = !!p.clipB && !actorIds.has(b.id) && !placedIds.has(b.id);
       if (placedIds.has(a.id)) continue;
       placedIds.add(a.id);
