@@ -192,7 +192,7 @@ In `/Volumes/Drive/chimpbench/shots/watch-2026-10-11/w10-calls-map/`, the same n
 | `app-card.png`, `app-card-call-sheet.png` | The range-map card, and a pant-hoot on it (four frames) |
 | `small-rts.png`, `small-close.png`, `small-app.png` | The 160 m map |
 
-The app is not repeatable between loads (its decision pump follows real time), so the app pictures of the two sets show different moments. Scripts: `cap.mjs` (captures), `scan.ts` (the calls of seed 48), `sheet.py` (contact sheets), `perf.mjs`, `perf-close.mjs`, `probe0.mjs` (call rates).
+The app is not repeatable between loads (its decision pump follows real time), so the app pictures of the two sets show different moments. The four app pictures and `call-party-sheet.png` of the after set were retaken after the review's repairs (section 9), with the same script. Scripts: `cap.mjs` (captures), `scan.ts` (the calls of seed 48), `sheet.py` (contact sheets), `perf.mjs`, `perf-close.mjs`, `probe0.mjs` (call rates).
 
 ## 6. The 160 m map
 
@@ -246,12 +246,12 @@ Pictures, scripts and readouts: `/Volumes/Drive/chimpbench/shots/watch-2026-10-1
 
 **Checked and found as claimed.** Nothing under `src/sim`, `src/types.ts`, `data/` or `tests/fixtures` differs from 7f9ec5b, and none of the shared documents; the renderer writes nothing to the World and reads no `chimp.sim`; no render pass, target or texel was added; every allocation of the stage is at creation. Read from the running page over 44 s at four zooms (frame 900 m, 420 m, 150 m, 1,500 m; 1 min/s from 09:40): every marker's size and activity equals a recount from the World (2,299 of 2,299); the heading of a travelling party is the way it then went (459 samples: median 0° off, 443 within 30°, 1 over 90°); no banner lay on the selected animal's tag and no two banners on each other (86 samples). In the close view at 4 s/s a male feeding 12 m up in a fig, 132 m from a pant-hoot that came from 119° off his body's heading, turned his look point from 109° off the call to 1° within 0.6 s of the arc and held his clip for 1.5 s; a juvenile and its mother grooming each other 355 m from another both held for the same 1.5 s (an infant rides on the mother in those pictures and is drawn as before); a walker heading for a call keeps walking. Dawn (06:50, daylight 0.37), dusk (18:29 and 19:04), a storm, a highlighted community, the app at 390 × 844 and the 160 m map (root class absent, banner "NORTH COMMUNITY SOCIAL PARTY · 12", no overview) were looked at.
 
-**Found and repaired** (five commits after 95247ce):
+**Found and repaired** (the commits after 95247ce, each headed "W10 review"):
 - *A split drew a false spur on a trail.* When a party split, the party that took a new id copied the other's trail including the place the other had just taken after the split: of 395 trail places compared with the party centres sampled in the page, 2 were 52 and 93 m off, each a spur out to the animals that had walked off and back to the party that had stayed. The copy now leaves that place out (395 of 395 equal).
-- *Listener rings were left behind walking animals.* The ring of the strategy view was placed where the animal stood when the call was given and shown when the arc arrived, up to 2.4 s later: behind a walking party three rings lay on the path, up to about 70 px back at a frame of 200 m (`blip-a-sheet.png`). The ring now follows its animal (`blip-b-sheet.png`).
+- *Listener rings were left behind walking animals.* The ring of the strategy view was placed where the animal stood when the call was given and shown when the arc arrived, up to 2.4 s later: behind a walking party three rings lay on the path, up to about 70 px back at a frame of 200 m (`blip-a-crop.png`). The ring now follows its animal (`blip-b-crop.png`).
 - *No arc reached its radius in time-lapse* (section 2, "When calls come faster than arcs can be drawn").
-- *On the card the heard ring could not be told from the gold ring.* At 1 min/s nearly every party carried a pale yellow ring, a little larger than the gold ring of a model-driven party and of nearly its colour (`../after/app-card-call-sheet.png`). The card now draws the map's own heard tick (`card-b-sheet.png`).
-- *A heard tick stayed at full strength on the dimmed markers* of the communities that are not highlighted; it now dims with its marker.
+- *On the card the heard ring could not be told from the gold ring.* At 1 min/s nearly every party carried a pale yellow ring, a little larger than the gold ring of a model-driven party and of nearly its colour (`card-a-zoom.png`, the card as built). The card now draws the map's own heard tick (`card-b-sheet.png`).
+- *A heard tick stayed at full strength on the dimmed markers* of the communities that are not highlighted; it now dims with its marker (`troop-ab-crop.png`, before and after).
 
 **Seen and left.**
 - A listener's hold is a freeze of the pose from one frame to the next (a forager in mid-reach stops at once) and ends in a 0.25 s blend; it reads as a pause, not as a body settling.
