@@ -4339,7 +4339,9 @@ from DataCite (checked 6 October 2026). Access level is stated per entry: FT = f
 - **Limits.** Party membership only: no behaviour, no partner choice, no rank, sex or age columns are described.
   A presence matrix at 15-minute scans, so "available partners" would mean "everyone seen in the party", and the
   observers' definition of a subgroup (distance, visibility) is in the full text, which is not opened. Two years only.
-  Raw coordinates are not in the deposit (no spatial column is described).
+  Raw coordinates are not in the deposit (no spatial column is described). (Written before the files were fetched.
+  The two bullets below correct it: a subgroup is everyone within 35 to 50 m of a focal animal, and a pair of rows
+  is not a 15-minute step.)
 - **Paper Methods, read 11 October 2026** from the authors' accepted manuscript (Liverpool John Moores repository,
   https://researchonline.ljmu.ac.uk/id/eprint/8830/), section 2.1, Figure 1 and Discussion; the published version and
   its supplement remain unread (publisher 403, Europe PMC 500, PMC bot check). Sonso community, Budongo, January 2008
@@ -4385,7 +4387,9 @@ from DataCite (checked 6 October 2026). Access level is stated per entry: FT = f
 - **Limits.** Females only, one community, a decade. Aggressive coalitions, not grooming or associating: the "choice" is
   who joined whom against a target. Whether "available partners" means all females present, all in the party or all
   in earshot is a paper-methods question not yet answered. The rank, relationship and kinship columns are the authors'
-  derived measures. Rates are per two-year period, so analysis 1 is not event-level.
+  derived measures. Rates are per two-year period, so analysis 1 is not event-level. (Written before the files were
+  fetched. The two bullets below answer it: the party is every individual within 50 m of any other, and the record
+  names no chooser and no joiner.)
 - **Paper Methods, read 11 October 2026** from the copy in NSF's public access repository
   (par.nsf.gov/servlets/purl/10478051, publisher's layout), Methods 2a to 2e and Results, and the authors' analysis
   script (Zenodo doi:10.5281/zenodo.7039524, MIT, read as text, never run). 122 coalitions of two or more adult
