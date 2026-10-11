@@ -24,8 +24,9 @@ import { ACT_PATROLLING, ACT_TRAVELLING, GOAL_CALL, GOAL_NONE, TRAIL_SAMPLES, cr
 // party leaves a trail of its last half simulated hour in its community's colour, a travelling party has a tick the
 // way it is heading and a dashed line to the tree (or to the call) most of its members are walking to, a party
 // holding a model-driven animal has a gold ring, and a long call draws an arc that grows to its audible radius, the
-// parties inside it flashing as it passes. What a party says is worked out by render/env/party-map.ts (the same
-// reading the 3D map uses, from this card's own tracker); the marks are map conventions, stylizations. The arc is
+// parties inside it showing a heard tick (two short arcs, upper left) as it passes. What a party says is worked out
+// by render/env/party-map.ts (the same reading the 3D map uses, from this card's own tracker); the marks are map
+// conventions, stylizations. The arc is
 // drawn on the camera overlay, the only canvas redrawn while a call is fresh (20 times a second); the trails and
 // ticks are part of the ordinary redraw (the interface tick). Nothing here allocates per draw.
 
@@ -49,6 +50,8 @@ const NO_DASH: number[] = [];
 // The call colour of the 3D view (creatures/fx.ts pant-hoot rings) at fixed opacities, as ready strings.
 const HOOT = ['rgba(255,227,163,.18)', 'rgba(255,227,163,.36)', 'rgba(255,227,163,.6)', 'rgba(255,227,163,.9)'];
 const hoot = (a: number) => HOOT[a >= 0.75 ? 3 : a >= 0.5 ? 2 : a >= 0.25 ? 1 : 0];
+// The heard tick's wedge: 60 degrees about the upper left (canvas angles run clockwise from east; 225 degrees is up and left).
+const HEARD_A0 = Math.PI * 1.25 - 0.52, HEARD_A1 = Math.PI * 1.25 + 0.52;
 // Lookups by plain loops: find() with a closure per call would allocate in the per-frame redraw.
 function troopOf(w: World, id: number): Troop | undefined { const ts = w.troops; for (let i = 0; i < ts.length; i++) if (ts[i].id === id) return ts[i]; return undefined; }
 function chimpOf(w: World, id: number): Chimp | undefined { const cs = w.chimps; for (let i = 0; i < cs.length; i++) if (cs[i].id === id) return cs[i]; return undefined; }
@@ -153,9 +156,15 @@ export function createMinimap(root: HTMLElement, ctx: Ctx) {
       }
       // A member is driven by the decision model: a gold ring (the interface's accent for it).
       if (m.model && !dim) { g.strokeStyle = 'rgba(226,191,121,.95)'; g.lineWidth = 1.2 * k; g.beginPath(); g.arc(x, z, 4.6 * k, 0, Math.PI * 2); g.stroke(); }
-      // Heard a call in the last few seconds: a ring in the call's colour, fading.
+      // Heard a call in the last few seconds: two short arcs up and to the left in the call's colour, fading: the 3D
+      // marker's own heard tick (party-marks.ts). Not a whole ring: at 1 min/s most parties have heard a call in the
+      // last four seconds, and a ring in that colour around each could not be told from the gold ring above.
       const heard = heardLevel(m.heardAt, now);
-      if (heard > 0 && !dim) { g.strokeStyle = hoot(heard); g.lineWidth = 1.6 * k; g.beginPath(); g.arc(x, z, 6.2 * k, 0, Math.PI * 2); g.stroke(); }
+      if (heard > 0 && !dim) {
+        g.strokeStyle = hoot(heard); g.lineWidth = 1.2 * k;
+        g.beginPath(); g.arc(x, z, 6.4 * k, HEARD_A0, HEARD_A1);
+        g.moveTo(x + Math.cos(HEARD_A0) * 8.8 * k, z + Math.sin(HEARD_A0) * 8.8 * k); g.arc(x, z, 8.8 * k, HEARD_A0, HEARD_A1); g.stroke();
+      }
     }
   }
 
