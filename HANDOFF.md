@@ -152,8 +152,7 @@ of the first clone macOS had evicted 14,230 of 18,704 files (the git pack among 
 6. **Disk:** `scripts/e-run.ts` and `scripts/r10-night.ts` refuse to start below 5 GB free.
 7. **Worktrees:** `git worktree add -b <name> .claude/worktrees/<name> track-e`, then link `node_modules` and
    `data/raw` from the main checkout (AGENTS.md, "Gotchas"). A frozen run checkout is the same with `--detach
-   <commit>`; `git status --short` must print nothing. The integrator's judge scripts, run drivers and prompt
-   templates are in `docs/staging/integrator-kit/` (README inside).
+   <commit>`; `git status --short` must print nothing. The integrator's kit: `docs/staging/integrator-kit/`.
 
 ## 4. Branch map and frozen checkouts
 
@@ -177,10 +176,9 @@ work to get closer to the real results"; `docs/staging/handoff-2026-10-05.md` §
 
 ## 5. Next tasks, in order
 
-1. **Read the R11 chain** when `state` says `done` (or repair it, §2.2). Its last step writes the report; then
-   `scripts/r11-run.sh publish` copies the tables to `docs/staging`. Commit them on a branch, and write the result
-   into `r11-prereg.md` and the plan by the registered marks ("How to read the result" there). Night one alone, one
-   training per arm, carries no registered statement.
+1. **Read the R11 chain** when `state` says `done` (or repair it, §2.2). Its last step writes the report;
+   `scripts/r11-run.sh publish` then copies the tables to `docs/staging`. Commit them on a branch and write the result
+   into `r11-prereg.md` and the plan by the registered marks. One training per arm carries no registered statement.
 2. **Review and merge the viewer stages** `w6` to `w10` as they finish: `pnpm test`, `pnpm build`, one look in the
    running app, before and after pictures.
 3. **Merge `docs-refresh`** and run the whole suite on the merged head. Before any push: a privacy check of the
