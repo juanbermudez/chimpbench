@@ -65,6 +65,11 @@ test('receiver postures: every one is a finite pose, and the lying ones lie', ()
     const hips = fk.p[B.hips * 3 + 1], head = fk.p[B.head * 3 + 1];
     if (role === GROOMEE.prone || role === GROOMEE.side) assert.ok(head - hips < 0.25, `${name}: the head is near the hips' height (${(head - hips).toFixed(2)})`);
     else assert.ok(head - hips > 0.3, `${name}: seated, head above the hips`);
+    if (role === GROOMEE.prone) {
+      // Prone limbs are posed by joint angles: under IK the rig's limb poles stood the elbows and knees in the air.
+      for (const limb of [LIMB.armL, LIMB.armR, LIMB.legL, LIMB.legR]) assert.equal(v[PI.ik + limb * 5 + 3], 0, 'no IK on a prone limb');
+      for (const bone of [B.farmL, B.farmR, B.handL, B.handR, B.shinL, B.shinR]) assert.ok(fk.p[bone * 3 + 1] < fk.p[B.chest * 3 + 1] + 0.06, 'elbows, wrists and knees lie no higher than the back');
+    }
     // A clip is a pure function of its context.
     assert.deepEqual(Array.from(run('groomee', ctx({ role, seed, pairT: 123.4, time: 55 }))), Array.from(v));
   }

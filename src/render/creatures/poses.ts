@@ -221,13 +221,17 @@ function groomSite(c: PoseCtx, n: number, role: number): readonly [number, numbe
 }
 /** The seated receiver's slow lean (a step of 0.12 rad, five positions by bout number and individual). */
 function groomeeLean(k: number, seed: number) { return (((k * 7919 + Math.round(seed * 1000)) % 5) - 2) * 0.12; }
-/** Lying on the belly, chin on the folded forearms, legs loosely tucked. */
+/**
+ * Lying on the belly, the forearms folded on the ground in front of the face, the legs loose behind. The limbs are
+ * posed by joint angles, not by IK targets (stage W5): with the trunk level the limb poles of the rig (rig.ts LIMBS,
+ * they ride with the chest and hips) point up, and IK stood the elbows and knees in the air.
+ */
 function lieProne(w: Pw, c: PoseCtx) {
   w.root(0, 0.115, -0.24);
-  w.r(B.hips, 1.5).r(B.spine, 0.06).r(B.chest, 0.04).r(B.neck, -0.62).r(B.head, -0.42);
-  w.ik(LIMB.armL, 0.15, 0.05, 0.36, 1, 0.3).ik(LIMB.armR, -0.13, 0.05, 0.4, 1, 0.3);
-  w.ik(LIMB.legL, 0.2, 0.06, -0.36, 1, 0.3).ik(LIMB.legR, -0.2, 0.06, -0.32, 1, 0.3);
-  w.r(B.handL, 0.3, 0, -0.5).r(B.handR, 0.3, 0, 0.5).r(B.footL, 0.9, 0.4, 0).r(B.footR, 0.9, -0.4, 0);
+  w.r(B.hips, 1.5).r(B.spine, 0.06).r(B.chest, 0.04).r(B.neck, -0.5).r(B.head, -0.25);
+  w.r(B.uarmL, -0.65, -0.87, 1.8).r(B.farmL, -2.05).r(B.uarmR, -0.65, 0.87, -1.8).r(B.farmR, -2.19);
+  w.r(B.thighL, 0.05, 0, 0.28).r(B.shinL, 0.3).r(B.thighR, 0.05, 0, -0.24).r(B.shinR, 0.2);
+  w.r(B.footL, 1.3).r(B.footR, 1.3);
   relaxHands(w);
   w.a(B.chest, sin(c.time * 1.2 + c.seed * 9) * 0.015);
 }
