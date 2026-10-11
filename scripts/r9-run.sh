@@ -7,6 +7,7 @@
 #
 #   no model:
 #   scripts/r9-run.sh dry                   the plumbing check: seed 48, one day on the rules, one day per arm, every arm replayed
+#   scripts/r9-run.sh wire                  the wiring check: the model arms' own path (worker process, guarded scorer, GLiNER kernel, receipts, replay) against a fake worker that holds no model
 #   scripts/r9-run.sh reference <seed>      step 0: the rules and three re-draws re-run, the saved top-pick arms replayed with the decode's counters; each must end on its saved hash
 #   scripts/r9-run.sh predict               the offline replay over the saved probabilities -> docs/staging/r9-offline.md (needs `reference 21` and `reference 5`)
 #   scripts/r9-run.sh report                docs/staging/r9-numbers.md from the arms on file
@@ -64,6 +65,7 @@ case "$1" in
     echo "model runtime: $MGOGO_DECIDE_PYTHON ($([ -x "$MGOGO_DECIDE_PYTHON" ] && echo found || echo MISSING))"
     before_model "pre-flight, nothing is started" nowait
     [ "$(swap_mb)" -gt 6144 ] && echo "R9 note: swap in use is above 6 GB; a model step would hold now (up to 30 minutes)" ;;
+  wire) MGOGO_DECIDE_PYTHON="$(pwd)/scripts/lib/fake-worker.mjs" step fnm exec --using=22.22.3 -- pnpm exec tsx scripts/r9-loop.ts --out artifacts/r9/wire --dry --arms rules,wire-draw-1,wire-held ;;
   reference) seed_ok "$2"; step $RUN --seed "$2" --arms "$REF" ;;
   predict) step $TSX scripts/r9-held-replay.ts --saved "$SAVED" --dir "$OUT" --md docs/staging/r9-offline.md --json artifacts/r9/offline.json ;;
   report) step $TSX scripts/r9-report.ts --dir "$OUT" --seeds 21,5 --md docs/staging/r9-numbers.md ;;
@@ -72,6 +74,6 @@ case "$1" in
   seed2) seed_ok "$2"; model_arms "$2" r4s2-top,r4s2-draw-1 "${R9_FT_ROOT:-artifacts/decide-ft/r9}" r4-rules-state-s2 ;;
   replay) seed_ok "$2"; [ -n "$3" ] || { echo "usage: $0 replay <seed> <a,b,…>"; exit 2; }; step $RUN --seed "$2" --arms "$3" --replay "$OUT" ;;
   arms) seed_ok "$2"; [ -n "$3" ] || { echo "usage: $0 arms <seed> <a,b,…>"; exit 2; }; model_arms "$2" "$3" "$FT" "${MGOGO_FT_ADAPTERS:-r4-rules-state,r4c-rules-state}" ;;
-  *) echo "usage: $0 dry | reference <seed> | predict | report | check | core <seed> | gateoff <seed> | seed2 <seed> | arms <seed> <a,b,…> | replay <seed> <a,b,…>"; exit 2 ;;
+  *) echo "usage: $0 dry | wire | reference <seed> | predict | report | check | core <seed> | gateoff <seed> | seed2 <seed> | arms <seed> <a,b,…> | replay <seed> <a,b,…>"; exit 2 ;;
 esac
 echo "R9 done ($*): $(date '+%H:%M')"

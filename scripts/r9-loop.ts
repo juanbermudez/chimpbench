@@ -11,6 +11,8 @@
 //     pnpm exec tsx scripts/r9-loop.ts --seed 21 --saved <…> --arms r4-draw-1,… --replay artifacts/r9/loop
 //   the plumbing check, no model: seed 48, one day on the rules, then one day per arm, each arm replayed
 //     pnpm exec tsx scripts/r9-loop.ts --dry
+//   the wiring check, no model: the model arms' own path against a fake worker (scripts/r9-run.sh wire)
+//     MGOGO_DECIDE_PYTHON=$PWD/scripts/lib/fake-worker.mjs pnpm exec tsx scripts/r9-loop.ts --dry --arms rules,wire-draw-1,wire-held --out artifacts/r9/wire
 // Outputs: artifacts/r9/loop/standard/s<seed>/ (or dry/s48/), read by scripts/r9-report.ts and scripts/r9-held-replay.ts.
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -66,8 +68,12 @@ export const R9_ARMS: Record<string, R9Arm> = {
   'even-block': { kernel: 'null', gate: 1, decode: D('held', 1, 'block'), step: 'dry', what: 'even odds, held for the half hour' },
   'even-draw-free': { kernel: 'null', decode: D('draw', 1), step: 'dry', what: 'even odds, draw, gate off' },
   'even-held-free': { kernel: 'null', decode: D('held', 1, 'act'), step: 'dry', what: 'even odds, held for the act, gate off' },
+  // the wiring check (no model): the model arms' own path (worker process, guarded scorer, GLiNER kernel, state-only packet)
+  // with scripts/lib/fake-worker.mjs in place of the model runtime's interpreter; refused under any other interpreter
+  'wire-draw-1': { kernel: 'gliner', adapter: 'fake', gate: 1, decode: D('draw', 1), step: 'dry', what: 'a fake worker (no model), draw' },
+  'wire-held': { kernel: 'gliner', adapter: 'fake', gate: 1, decode: D('held', 1, 'act'), step: 'dry', what: 'a fake worker (no model), held for the act' },
 };
-export const DRY_ARMS = Object.keys(R9_ARMS).filter(a => R9_ARMS[a].step === 'dry');
+export const DRY_ARMS = Object.keys(R9_ARMS).filter(a => R9_ARMS[a].step === 'dry' && !a.startsWith('wire-'));
 const RULES = ['rules', 'rules-r1', 'rules-r2', 'rules-r3'];
 export const specOf = (name: string): ArmSpec | undefined => R9_ARMS[name] ?? (RULES.includes(name) ? ARMS[name] : undefined);
 
@@ -104,6 +110,7 @@ if (process.argv[1]?.endsWith('r9-loop.ts')) {
   const arms = arg('arms', dry ? ['rules', ...DRY_ARMS].join(',') : 'rules').split(','), replayDir = arg('replay', '');
   if (days > MAX_DAYS) throw new Error(`at most ${MAX_DAYS} days per run`);
   for (const a of arms) { const s = R9_ARMS[a]; if (!specOf(a)) throw new Error(`unknown arm ${a}; known: ${[...RULES, ...Object.keys(R9_ARMS)].join(', ')}`); if (s && (s.step === 'dry') !== dry) throw new Error(`arm ${a} ${dry ? 'is not part of' : 'belongs to'} the plumbing check (--dry)`); }
+  if (arms.some(a => a.startsWith('wire-')) && !(process.env.MGOGO_DECIDE_PYTHON ?? '').endsWith('fake-worker.mjs')) throw new Error('the wire- arms run only against scripts/lib/fake-worker.mjs (scripts/r9-run.sh wire): they must never load a model');
   const out = resolve(root, window, `s${seed}`), head = git('rev-parse --short HEAD'), dirty = git('status --porcelain') !== '';
   if (dirty && !process.argv.includes('--allow-dirty')) throw new Error('the tree is not clean: commit first (docs/staging/r9-prereg.md §9)');
   const cache = `burnin-M6-W50-s${seed}-d${burnIn}.json`;

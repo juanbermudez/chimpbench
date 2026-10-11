@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import test from 'node:test';
 import { focalSet } from '../scripts/em-loop';
+import { Worker } from '../scripts/ft-society';
 import { newDecoder, newTally, tallyAsk, BLOCK_H, type DecodeRecord, type HarnessDecode } from '../scripts/lib/decoder';
 import { asksOf, missingShare, replay, walk } from '../scripts/r9-held-replay';
 import { heldBreaks, R9_ARMS, specOf } from '../scripts/r9-loop';
@@ -357,4 +359,18 @@ test('the registered rules: no harm, what a decode is for, and the four statemen
   assert.deepEqual([v.drawStandard, v.heldNeeded, v.neither], [false, false, true], 'both harm: the top pick stays');
   v = verdicts({ top, draw: top, held: top, block: null }, { top: top3, draw: top3, held: top3, block: null }, rules, noise);
   assert.deepEqual([v.drawStandard, v.heldNeeded, v.neither], [false, false, true], 'nothing moves the first adapter\'s trips: no measurable effect');
+});
+
+test('the wiring check\'s fake worker speaks the worker\'s protocol, holds no model, and repeats', async () => {
+  const was = { python: process.env.MGOGO_DECIDE_PYTHON, server: process.env.MGOGO_DECIDE_SERVER };
+  process.env.MGOGO_DECIDE_PYTHON = resolve('scripts/lib/fake-worker.mjs'); delete process.env.MGOGO_DECIDE_SERVER;
+  const w = new Worker('none');
+  try {
+    await w.start();
+    assert.equal(w.ready.ready, true); assert.match(JSON.stringify(w.ready.adapters), /no model/);
+    const packet = { state: {}, questions: { action: { criteria: { c0: 'Rest here', c1: 'Feed on ripe fruit', c2: 'Groom Tavuni' } } } };
+    const [p] = await w.score([{ adapter: 'fake', packet }]), [again] = await w.score([{ adapter: 'fake', packet }]);
+    assert.equal(p.length, 3); assert.ok(Math.abs(p.reduce((a, b) => a + b, 0) - 1) < 1e-9 && p.every(x => x > 0)); assert.deepEqual(again, p);
+  } finally { w.stop(); if (was.python === undefined) delete process.env.MGOGO_DECIDE_PYTHON; else process.env.MGOGO_DECIDE_PYTHON = was.python; if (was.server !== undefined) process.env.MGOGO_DECIDE_SERVER = was.server; }
+  assert.ok(specOf('wire-draw-1')!.kernel === 'gliner' && !['rules', ...Object.keys(R9_ARMS).filter(a => R9_ARMS[a].step === 'dry' && !a.startsWith('wire-'))].includes('wire-draw-1'), 'the wire arms are never part of the default plumbing check');
 });
