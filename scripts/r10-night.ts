@@ -204,7 +204,13 @@ async function run(a: Args): Promise<number> {
     closeDown(); process.exit(1);
   });
   try {
-    if ((model && !a.has('no-caffeinate')) || a.has('caffeinate')) { awake = spawn('caffeinate', ['-i', '-w', String(process.pid)], { stdio: 'ignore' }); awake.on('error', () => { awake = null; }); awake.unref(); }
+    if ((model && !a.has('no-caffeinate')) || a.has('caffeinate')) {
+      // the Mac stays awake while this process lives (the launch under `caffeinate -i` does the same from outside)
+      awake = spawn('caffeinate', ['-i', '-w', String(process.pid)], { stdio: 'ignore' });
+      awake.on('error', error => { log(`caffeinate could not be started (${error.message}): launch the run under caffeinate -i`); awake = null; });
+      awake.unref();
+      event(`awake: caffeinate -i -w ${process.pid} holds the Mac awake while this run lives (its pid ${awake.pid ?? 'none'})`);
+    }
     if (model) {
       let waited = 0;
       while ((swapUsedMB() ?? 0) > SWAP_HOLD_MB && waited < SWAP_HOLD_MIN && !signal) { log(`hold: swap ${swapUsedMB()} MB in use, above ${SWAP_HOLD_MB} MB (${waited} min waited)`); await sleep(60_000); waited++; }
