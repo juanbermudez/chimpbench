@@ -310,7 +310,7 @@ Field map, seed 48, rules for everyone, 49 animals, the app's own clock. "Plain 
 | 1 min/s, ticks 612 to 1092 | plain verb on the way (animal-s) | 199.2 | 22.5 | 19.9, of them 17.5 creeping ground feeders (by design) |
 | | jump frames | 16 | 21, four of 480 to 773 m | 8: seven of kinds the base has, one 5.6 m snap onto a trunk |
 | | bodies held while moving | - | 3 | 0 |
-| Watch 4x, ticks 738 to 778, after a jump of the clock | plain verb on the way (animal-s) | 284.6 | 74.3 | 72.3, of them 70.6 creeping feeders |
+| Watch 4x, ticks 738 to 778, after a jump of the clock | plain verb on the way (animal-s) | 284.6 | 74.3 | 72.0, of them 70.4 creeping feeders |
 | | bodies drawn over 400 m from their place | 0 | 14, for two ticks (21 asleep at their dawn nests in all) | 0 |
 | | jump frames | 5 | 26 | 3, all the simulation's own climb act |
 | Small map, 1 min/s, ticks 612 to 972 | jump frames, and metres jumped in all | 174, 2,179 m (120 over 10 m) | not counted this way | 273, 708 m (10 over 10 m; 162 under 2 m) |
