@@ -4,6 +4,8 @@ import { MAX_TROOPS, Owner, patchMaterial, type SharedUniforms } from './shared'
 import { CANOPY_BROAD, CANOPY_HASH, FIELD_CANOPY_COLOR, createBaseHeight, createCanopyHeight, type RiverInfo } from './terrain';
 import { approach, partyMarkerPx } from './field';
 import { hyp2 } from '../fastmath';
+import { MARK_STRIDE, FRUIT_MAX_CELLS, FRUIT_MAX_TREES, cellMarkPx, cellWeight, createFruitMarks, cropSignature, fruitColour, fruitMarks, mapLayerWeight, markColour, toHex, treeMarkPx } from './fruit';
+import { preToneMapped } from '../creatures/util';
 
 // Field-view overview (C5b; docs/realism-design.md §5.1): the whole ~8 km map at km scale. A canopy surface (the far
 // canopy's Voronoi crowns, no individual trees, so no chimp-tree mismatch) with a hole where the detailed window's
@@ -335,4 +337,130 @@ export function createOverview(world: World, river: RiverInfo, uniforms: SharedU
     get markers() { return count; },
     dispose() { labelRoot.remove(); },
   };
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Stage W7: the fruit layer (docs/staging/w7-fruit.md). A MAP OVERLAY and a STYLIZATION: one small diamond per tree in
+// fruit (per map cell when zoomed far out), sized by its crop, in the species' fruit colour, drawn above the canopy at
+// strategy and whole-map zooms so a viewer sees where the food is and why parties are where they are. One instanced
+// mesh (one draw call while it shows), its buffers rewritten only when the crops change (the simulation refreshes
+// tree.fruit daily, and when a crown is fed in); per frame it sets four uniforms and, every 30th frame, compares a
+// 250-tree signature of the crops. Diamonds, so they are never read as party markers (discs). Render-only.
+// ---------------------------------------------------------------------------------------------------------------------
+
+export interface FruitLayerFrame {
+  /** The Food layer toggle. */
+  on: boolean;
+  camera: THREE.Camera;
+  /** Strategy-camera frame height (m) and whether the view is a perspective one (the layer is a map overlay: off there). */
+  hf: number; perspective: boolean;
+  /** Viewport size, CSS px; daylight 0..1 (marks dim at night with the map). */
+  viewW: number; viewH: number; daylight: number;
+}
+export interface FruitLayer {
+  mesh: THREE.Mesh;
+  update(world: World, frame: FruitLayerFrame): void;
+  /** Probes and tests: marks drawn, rebuilds so far, the layer's and the cell marks' weights. */
+  stats(): { trees: number; cells: number; dropped: number; rebuilds: number; weight: number; cellWeight: number };
+}
+
+export function createFruitLayer(world: World, owner: Owner): FruitLayer {
+  const baseHeight = createBaseHeight(world.seed);
+  const marks = createFruitMarks(world.size);
+  const MAX = FRUIT_MAX_TREES + FRUIT_MAX_CELLS;
+  const quad = owner.own(new THREE.InstancedBufferGeometry());
+  quad.setAttribute('position', new THREE.Float32BufferAttribute([-1, -1, 0, 1, -1, 0, -1, 1, 0, 1, 1, 0], 3));
+  quad.setIndex([0, 1, 2, 2, 1, 3]);
+  const centre = new Float32Array(MAX * 3), style = new Float32Array(MAX * 2), colour = new Float32Array(MAX * 3);
+  const centreAttr = new THREE.InstancedBufferAttribute(centre, 3), styleAttr = new THREE.InstancedBufferAttribute(style, 2), colourAttr = new THREE.InstancedBufferAttribute(colour, 3);
+  quad.setAttribute('aCentre', centreAttr); quad.setAttribute('aStyle', styleAttr); quad.setAttribute('aColor', colourAttr);
+  quad.instanceCount = 0;
+  const uniforms = { uViewport: { value: new THREE.Vector2(1440, 900) }, uW: { value: 0 }, uCell: { value: 0 }, uLight: { value: 1 } };
+  const material = owner.own(new THREE.ShaderMaterial({
+    uniforms,
+    vertexShader: /* glsl */`
+      attribute vec3 aCentre; attribute vec2 aStyle; attribute vec3 aColor;
+      uniform vec2 uViewport; uniform float uW; uniform float uCell;
+      varying vec2 vQ; varying float vR; varying vec3 vColor; varying float vA;
+      void main() {
+        // aStyle = (radius px, 0 a tree's mark | 1 a cell's mark): the two sets cross-fade with the zoom.
+        float a = uW * mix( 1.0 - uCell, uCell, aStyle.y );
+        vQ = vec2( 0.0 ); vR = aStyle.x; vColor = aColor; vA = a;
+        if ( a < 0.01 ) { gl_Position = vec4( 2.0, 2.0, 2.0, 1.0 ); return; }   // the hidden set costs no fragment
+        vec4 clip = projectionMatrix * viewMatrix * vec4( aCentre, 1.0 );
+        float R = aStyle.x + 1.5;
+        clip.xy += position.xy * R * 2.0 / uViewport * clip.w;
+        gl_Position = clip;
+        vQ = position.xy * R;
+      }`,
+    fragmentShader: /* glsl */`
+      uniform float uLight;
+      varying vec2 vQ; varying float vR; varying vec3 vColor; varying float vA;
+      void main() {
+        float d = abs( vQ.x ) + abs( vQ.y );                       // a diamond
+        float fill = 1.0 - smoothstep( vR - 0.7, vR + 0.7, d );
+        float rim = smoothstep( vR - 2.0, vR - 0.8, d ) * smoothstep( 2.6, 4.2, vR );   // dark edge on the larger marks
+        float a = fill * vA * 0.94;
+        if ( a < 0.01 ) discard;
+        gl_FragColor = vec4( mix( vColor, vec3( 0.03, 0.025, 0.02 ), rim * 0.75 ) * uLight, a );
+      }`,
+    transparent: true, depthTest: false, depthWrite: false, fog: false,
+  }));
+  const mesh = new THREE.Mesh(quad, material);
+  mesh.name = 'overview-fruit';
+  mesh.frustumCulled = false;
+  mesh.renderOrder = 8;   // above the canopy, the cap and the stream; under the party markers
+  mesh.visible = false;
+
+  // Mark colours per species, compensated for the tone-mapping pass once (preToneMapped iterates).
+  const index = new Map<string, number>();
+  const palette: number[] = [];
+  const tmpRgb = [0, 0, 0], tmpCol = new THREE.Color();
+  const colourOf = (species: string): number => {
+    let k = index.get(species);
+    if (k === undefined) {
+      k = index.size; index.set(species, k);
+      preToneMapped(toHex(markColour(fruitColour(species), tmpRgb)), tmpCol);
+      palette.push(tmpCol.r, tmpCol.g, tmpCol.b);
+    }
+    return k;
+  };
+
+  let builtFor: World['trees'] | null = null, signature = NaN, rebuilds = 0, frameNo = 0, weight = 0, cellW = 0;
+  function rebuild(w: World) {
+    builtFor = w.trees; signature = cropSignature(w.trees); rebuilds++;
+    fruitMarks(w.trees, w.size, marks, colourOf);
+    let n = 0;
+    const T = marks.trees, C = marks.cells;
+    for (let i = 0; i < marks.nTrees; i++, n++) {
+      const o = i * MARK_STRIDE, x = T[o], z = T[o + 1], k = T[o + 4];
+      centre[n * 3] = x; centre[n * 3 + 1] = Math.max(1, baseHeight(x, z)) + T[o + 3]; centre[n * 3 + 2] = z;
+      style[n * 2] = treeMarkPx(T[o + 2]); style[n * 2 + 1] = 0;
+      colour[n * 3] = palette[k * 3]; colour[n * 3 + 1] = palette[k * 3 + 1]; colour[n * 3 + 2] = palette[k * 3 + 2];
+    }
+    for (let i = 0; i < marks.nCells; i++, n++) {
+      const o = i * MARK_STRIDE, x = C[o], z = C[o + 1], k = C[o + 4];
+      centre[n * 3] = x; centre[n * 3 + 1] = Math.max(1, baseHeight(x, z)) + 24; centre[n * 3 + 2] = z;
+      style[n * 2] = cellMarkPx(C[o + 2]); style[n * 2 + 1] = 1;
+      colour[n * 3] = palette[k * 3]; colour[n * 3 + 1] = palette[k * 3 + 1]; colour[n * 3 + 2] = palette[k * 3 + 2];
+    }
+    quad.instanceCount = n;
+    const up = Math.max(1, n);
+    for (const [attr, size] of [[centreAttr, 3], [styleAttr, 2], [colourAttr, 3]] as const) { attr.clearUpdateRanges(); attr.addUpdateRange(0, up * size); attr.needsUpdate = true; }
+  }
+
+  function update(w: World, f: FruitLayerFrame) {
+    frameNo++;
+    weight = f.on && !f.perspective ? mapLayerWeight(f.hf) : 0;
+    mesh.visible = weight > 0.01;
+    if (!mesh.visible) return;
+    cellW = cellWeight(f.hf / Math.max(1, f.viewH));
+    uniforms.uW.value = weight; uniforms.uCell.value = cellW;
+    uniforms.uViewport.value.set(Math.max(1, f.viewW), Math.max(1, f.viewH));
+    uniforms.uLight.value = 0.3 + 0.7 * f.daylight;
+    // Rebuild when the crops change: a new tree list at once, else a sampled signature every 30th frame.
+    if (builtFor !== w.trees || (frameNo % 30 === 0 && cropSignature(w.trees) !== signature)) rebuild(w);
+  }
+
+  return { mesh, update, stats: () => ({ trees: marks.nTrees, cells: marks.nCells, dropped: marks.dropped, rebuilds, weight, cellWeight: cellW }) };
 }
