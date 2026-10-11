@@ -25,7 +25,7 @@ import { createRemains } from './creatures/remains';
 import { createPrey } from './creatures/prey';
 import { perfEnd, perfNow } from '../perf';
 import { advancePlayback, createPlayback, createTrack, pushSample, relocationJump2, type Track } from './creatures/playback';
-import { actChanged, createActTrack, pushAct, readDrawn, type ActTrack, type DrawnAct } from './creatures/drawn';
+import { CLIMBING_MPS, actChanged, createActTrack, pushAct, readDrawn, type ActTrack, type BodyState, type DrawnAct } from './creatures/drawn';
 import { paramsOf } from '../sim/params';
 import { sampleSmooth } from './creatures/motion';
 import { GAITS, Regime, advancePhase, createLock, limbPhase, resetLock, solveGait, stepLock, type ContactLock, type GaitSolve } from './creatures/gait';
@@ -1545,16 +1545,26 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     return true;
   }
   function getScale(id: number) { return anims.get(id)?.morph.size ?? 1; }
-  // Stage W4: which act the drawn body is in (creatures/drawn.ts). One scratch record for the name tags; the
-  // interface passes its own. Nothing is allocated per call and nothing is written to the World.
+  // Stage W4: which act the drawn body is in (creatures/drawn.ts). One scratch record and one body reading for the
+  // name tags; the interface passes its own record. Nothing is allocated per call and nothing is written to the World.
   const DRAWN: DrawnAct = { action: 'rest', targetId: -1, about: false };
+  const BODY: BodyState = { moving: false, climbing: false, gap: 0, passive: false };
+  /** What the drawn body is doing: walking, going up or down, and how far its path still is from the animal's place. */
+  function bodyOf(a: Anim): BodyState {
+    const c = a.chimp, tr = a.track;
+    BODY.moving = a.moving;
+    BODY.climbing = Math.abs(tr.vy) > CLIMBING_MPS * 3600;   // track velocities are metres per ecological hour
+    BODY.gap = Math.hypot(tr.x - c.position[0], tr.y - Math.max(0, c.position[1] ?? 0), tr.z - c.position[2]);
+    BODY.passive = a.carry !== 0 || !c.alive;
+    return BODY;
+  }
   function drawnAct(id: number, out: DrawnAct): boolean {
     const a = anims.get(id);
     if (!a) return false;
-    readDrawn(a.acts, playback.renderT, a.moving, a.carry !== 0 || !a.chimp.alive, curSimRate, out);
+    readDrawn(a.acts, playback.renderT, bodyOf(a), curSimRate, out);
     return true;
   }
-  const aboutOf = (a: Anim): boolean => readDrawn(a.acts, playback.renderT, a.moving, a.carry !== 0 || !a.chimp.alive, curSimRate, DRAWN).about;
+  const aboutOf = (a: Anim): boolean => readDrawn(a.acts, playback.renderT, bodyOf(a), curSimRate, DRAWN).about;
   // --- Portrait (creatures/portrait.ts): one instance of the finest body mesh loaded so far, on its own layer and
   // outside the creature group (which hides in the field overview). A wrapper geometry shares the LOD's vertex
   // buffers (never disposed here: they belong to the LOD) and adds a one-instance slot, so the body material's

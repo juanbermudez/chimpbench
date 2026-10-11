@@ -1,17 +1,41 @@
 // Which act the drawn body is in (stage W4). The simulation changes an animal's act in whole ticks; the body is drawn
-// two ticks behind it (playback.ts), so for one to two ticks a name tag that reads the simulation names an act the
-// drawn body has not begun: "travelling" over an animal still sitting, "resting" over one still walking in. Each
-// drawn animal keeps the act and target of the last few tick states (a fixed ring, filled only when a tick has run),
-// and aboutTo() says whether the newest act is still ahead of the body. Reads only; pure; no three.js.
+// two ticks behind it (playback.ts), and after that it still has to get there: come down from a crown, walk the last
+// metres, climb to the food. So a name tag that reads the simulation names an act the drawn body has not begun:
+// "travelling" over an animal still sitting, "resting" over one still walking in, "grooming" over one walking up to
+// its partner. Each drawn animal keeps the act and target of its last few tick states (a fixed ring, written only
+// when a tick has run or a decision landed), and readDrawn() says whether the newest act is still ahead of the body.
+// Reads the World only; no three.js. The wording, the window and the thresholds are interface conventions
+// (stylizations), not observations of chimpanzees.
 import type { Action } from '../../types';
 
-export const ACT_HIST = 4;   // tick states kept: one more than the two ticks of playback lag need
+const TICK_HOURS = 15 / 3600;   // one simulation tick (playback.ts TICK_HOURS)
 
-/** The act and target of an animal's last few tick states, newest at `head`. Fixed size: nothing is allocated after creation. */
-export interface ActTrack { t: Float64Array; action: Action[]; target: Int32Array; head: number; n: number }
+/** Drawn time after the state that first showed an act within which the body may still be getting to it: 6 ticks, so
+ * with the two ticks of playback lag an act is announced for at most 2 simulated minutes (a stylization). */
+export const ABOUT_TICKS = 6;
+/** Tick states kept: the window, the two ticks of lag, the state before the act, and one to spare. */
+export const ACT_HIST = 10;
+/** A body within this distance (m) of where the simulation has the animal has arrived (a stylization: about half an
+ * adult body length; the simulation's own small shuffles stay below it). */
+export const ARRIVED_M = 0.75;
+/** Vertical speed of the drawn path (m per ecological second) above which the body is climbing or coming down (a
+ * stylization: well under the simulation's climbing speed, well over a branch's sway). */
+export const CLIMBING_MPS = 0.05;
+/** Above this playback rate (ecological seconds per real second) the gap is too short to read and is not announced (a
+ * stylization: at 10 min/s two ticks are three frames). The default 1 min/s and everything slower are below it. */
+export const ABOUT_MAX_RATE = 120;
+
+/**
+ * The act and target of an animal's last tick states, newest at `head`. Two notes keep the announcement steady:
+ * `shown`, the start time of the act the body has already been seen to begin (an act is announced once, not again
+ * each time the animal moves within it), and `told`, the start time of the act that has been announced (inside the
+ * playback lag an announcement is not withdrawn because the body happens to stand where the animal is for a moment).
+ * Fixed size: nothing is allocated after creation.
+ */
+export interface ActTrack { t: Float64Array; action: Action[]; target: Int32Array; head: number; n: number; shown: number; told: number }
 
 export function createActTrack(): ActTrack {
-  return { t: new Float64Array(ACT_HIST), action: new Array<Action>(ACT_HIST).fill('rest'), target: new Int32Array(ACT_HIST).fill(-1), head: 0, n: 0 };
+  return { t: new Float64Array(ACT_HIST), action: new Array<Action>(ACT_HIST).fill('rest'), target: new Int32Array(ACT_HIST).fill(-1), head: 0, n: 0, shown: NaN, told: NaN };
 }
 
 /**
@@ -21,7 +45,7 @@ export function createActTrack(): ActTrack {
 export function pushAct(tr: ActTrack, t: number, action: Action, targetId: number): void {
   if (tr.n > 0 && tr.t[tr.head] === t) { tr.action[tr.head] = action; tr.target[tr.head] = targetId; return; }
   // A rewound world (another simulation opened) starts the record again.
-  if (tr.n > 0 && t < tr.t[tr.head]) tr.n = 0;
+  if (tr.n > 0 && t < tr.t[tr.head]) { tr.n = 0; tr.shown = NaN; tr.told = NaN; }
   tr.head = (tr.head + 1) % ACT_HIST;
   tr.t[tr.head] = t; tr.action[tr.head] = action; tr.target[tr.head] = targetId;
   if (tr.n < ACT_HIST) tr.n++;
@@ -60,10 +84,10 @@ export function actBefore(tr: ActTrack): number {
 }
 
 /**
- * How the body shows that an act has begun. 'go': it sets off (a trip, following, a patrol). 'stay': it has arrived
- * and stopped (feeding, resting, grooming someone it walked up to). 'any': the pose changes at once whatever the
- * body is doing, or the act is short and urgent (a charge, a call), so it is never announced.
- * A reading of the renderer's own clip choice (creatures.ts chooseClip), not a claim about chimpanzees.
+ * How the body shows that an act has begun. 'go': it sets off (a trip, following, a patrol): it walks, or comes down
+ * from its perch. 'stay': it is where the simulation has the animal (feeding, resting, grooming someone it walked up
+ * to). 'any': the pose changes at once whatever the body is doing, or the act is short and urgent (a charge, a call),
+ * so it is never announced. A reading of the renderer's own clip choice (creatures.ts chooseClip).
  */
 export type BodySign = 'go' | 'stay' | 'any';
 export const BODY_SIGN: Record<Action, BodySign> = {
@@ -74,20 +98,35 @@ export const BODY_SIGN: Record<Action, BodySign> = {
   call: 'any', alarm: 'any', dead: 'any',
 };
 
-/** Above this playback rate (ecological seconds per real second) the gap lasts under a quarter of a second and is not
- * announced (a stylization: at 10 min/s it is three frames). The default 1 min/s and everything slower are below it. */
-export const ABOUT_MAX_RATE = 120;
+/** What the drawn body is doing, as the rule needs it. The caller's object, reused. */
+export interface BodyState {
+  /** Drawn in a walking or running clip (the renderer's moving state, with its hysteresis). */
+  moving: boolean;
+  /** The drawn path is going up or down faster than CLIMBING_MPS. */
+  climbing: boolean;
+  /** Distance (m) from the drawn body to where the simulation has the animal now. */
+  gap: number;
+  /** Carried (an infant on its mother) or dead: never announced, the body follows something else. */
+  passive: boolean;
+}
+
+/** True when the body shows the act: it has set off (a trip), or it is where the animal is (a stationary act). */
+export function bodyShows(action: Action, body: BodyState): boolean {
+  const sign = BODY_SIGN[action];
+  return sign === 'go' ? body.moving || body.climbing : sign === 'stay' ? body.gap <= ARRIVED_M : true;
+}
 
 /**
- * True while the simulation has begun an act that the drawn body has not: the body's drawn time (renderT) is still
- * before the state that first showed the act, and the body does not show it yet (a trip: not walking; a stationary
- * act: still walking). It ends when the body shows the act, and at the latest when the drawn time reaches that state,
- * two ticks after the simulation changed. Carried infants never announce: their bodies follow their carrier's.
+ * True while the simulation has begun an act that the drawn body has not. `since`: when the act was first seen;
+ * `renderT`: the body's drawn time; `shown`: the body has already been seen to begin this act.
+ * A trip is announced while the body neither walks nor comes down; a stationary act while the body is still away
+ * from where the animal is. It ends when the body shows the act, and at the latest ABOUT_TICKS of drawn time after
+ * the state that first showed it.
  */
-export function aboutTo(action: Action, since: number, renderT: number, moving: boolean, carried: boolean, rate: number): boolean {
-  if (carried || !(renderT < since) || rate > ABOUT_MAX_RATE) return false;
-  const sign = BODY_SIGN[action];
-  return sign === 'go' ? !moving : sign === 'stay' ? moving : false;
+export function aboutTo(action: Action, since: number, renderT: number, body: BodyState, rate: number, shown = false): boolean {
+  if (shown || body.passive || rate > ABOUT_MAX_RATE) return false;
+  if (!(renderT < since + ABOUT_TICKS * TICK_HOURS)) return false;
+  return !bodyShows(action, body);
 }
 
 /** What the renderer reports for one drawn animal (CreatureLayer.drawnAct). The object is the caller's and is reused. */
@@ -98,10 +137,24 @@ export interface DrawnAct {
   about: boolean;
 }
 
-/** Fills `out` from an animal's record (its newest state is the simulation's current act). Pure. */
-export function readDrawn(tr: ActTrack, renderT: number, moving: boolean, carried: boolean, rate: number, out: DrawnAct): DrawnAct {
+/**
+ * Fills `out` from an animal's record (its newest state is the simulation's current act) and what its drawn body is
+ * doing. Notes on the record when the body has begun the act, so it is not announced again: a trip once the body has
+ * set off, a stationary act once the body is where the animal is and its drawn time has reached the state that first
+ * showed the act (before that the simulation may not have moved the animal yet).
+ */
+export function readDrawn(tr: ActTrack, renderT: number, body: BodyState, rate: number, out: DrawnAct): DrawnAct {
   const h = tr.head;
-  const about = tr.n > 0 && aboutTo(tr.action[h], actSince(tr), renderT, moving, carried, rate);
+  let about = false;
+  if (tr.n > 0) {
+    const since = actSince(tr), action = tr.action[h];
+    if (since > -Infinity && tr.shown !== since && !body.passive && bodyShows(action, body) && (BODY_SIGN[action] !== 'stay' || renderT >= since)) tr.shown = since;
+    about = aboutTo(action, since, renderT, body, rate, tr.shown === since)
+      // Held through the playback lag once announced: there the body can stand where the animal is for a moment (the
+      // foot of the tree it is about to climb) before the simulation's next move reaches it.
+      || (tr.told === since && tr.shown !== since && renderT < since && !body.passive && rate <= ABOUT_MAX_RATE);
+    if (about) tr.told = since;
+  }
   const before = about ? actBefore(tr) : -1;
   out.about = before >= 0;
   out.action = before >= 0 ? tr.action[before] : tr.action[h];
