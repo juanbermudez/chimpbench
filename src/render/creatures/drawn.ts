@@ -183,6 +183,22 @@ export interface BodyState {
   shuffling: boolean;
   /** Carried (an infant on its mother) or dead: never announced, the body follows something else. */
   passive: boolean;
+  /** Optional (W6 review): the simulation's newest step is faster than a feeding shuffle (strides()): it is walking,
+   * running or climbing the animal somewhere right now, whatever the drawn body does. */
+  striding?: boolean;
+}
+
+/**
+ * True when the newest step of the position record is faster than maxMps (m per ecological second, in three
+ * dimensions). Judged by speed, so the one long step across skipped states is slow unless the animal really covered
+ * the ground. False while the record holds fewer than two states.
+ */
+export function strides(tr: Track, maxMps: number): boolean {
+  if (tr.n < 2) return false;
+  const h = tr.hist, newer = tr.head * 4, older = ((tr.head - 1 + HIST) % HIST) * 4;
+  const far = maxMps * (h[newer] - h[older]) * 3600;
+  const dx = h[newer + 1] - h[older + 1], dy = h[newer + 2] - h[older + 2], dz = h[newer + 3] - h[older + 3];
+  return far > 0 && dx * dx + dy * dy + dz * dz > far * far;
 }
 
 /**
@@ -219,6 +235,7 @@ export function readBody(out: BodyState, tr: Track, x: number, y: number, z: num
   // A body going up or down a trunk is never shuffling: the last, shorter step of a climb is as slow as a shuffle, and
   // read as one it turned the tag to "foraging" over an animal with metres of trunk still to climb.
   out.shuffling = !out.climbing && shuffles(tr, SHUFFLE_SHARE * walkMps);
+  out.striding = strides(tr, SHUFFLE_SHARE * walkMps);
   out.passive = passive;
   return out;
 }
@@ -246,13 +263,15 @@ export function bodyShows(action: Action, body: BodyState): boolean {
  * ten minutes (stage W6; the limit of six ticks made it read "drinking" over a walking animal).
  * `unseen`: the start of the act fell in states that were skipped (SKIP_TICKS; `since` is then the first state seen
  * after them). Nothing is announced by time, since the animal may have been in the act for an hour; only a body still
- * away from a stationary act's place and not yet stopped is, and only once its drawn time has reached that state
- * (before it the position record says nothing about the body).
+ * away from a stationary act's place and not yet stopped is, once its drawn time has reached that state. Before it the
+ * position record says nothing about the body (it is cut to where the simulation had the animal and stands there):
+ * the act is then announced when the simulation is seen striding the animal on (body.striding), so that it is not
+ * drawn drinking fifty metres from the water for those two ticks.
  */
 export function aboutTo(action: Action, since: number, renderT: number, body: BodyState, rate: number, shown = false, unseen = false): boolean {
   if (shown || body.passive || rate > ABOUT_MAX_RATE || !(since > -Infinity)) return false;
   const sign = BODY_SIGN[action];
-  if (unseen) return sign === 'stay' && renderT >= since && !bodyShows(action, body);
+  if (unseen) return sign === 'stay' && (renderT >= since ? !bodyShows(action, body) : body.striding === true);
   if (sign === 'go') return renderT < since + ABOUT_TICKS * TICK_HOURS && !bodyShows(action, body);
   return sign === 'stay' && (renderT < since || !bodyShows(action, body));
 }
@@ -293,6 +312,9 @@ export function readDrawn(tr: ActTrack, renderT: number, body: BodyState, rate: 
   if (tr.n > 0) {
     const since = tr.since, action = tr.action[h], sign = BODY_SIGN[action];
     if (since > -Infinity && tr.shown !== since && !body.passive && bodyShows(action, body) && (sign !== 'stay' || renderT >= since)) { tr.shown = since; tr.shownAt = renderT; }
+    // A carried or dead body is in the simulation's act such as it is: set down in the middle of it, it goes on with
+    // it and is not announced as about to begin (an infant put down while it rests read "about to rest").
+    if (body.passive && since > -Infinity && tr.shown !== since) { tr.shown = since; tr.shownAt = renderT; }
     const unseen = tr.unseen === since;
     about = aboutTo(action, since, renderT, body, rate, tr.shown === since, unseen);
     if (about) {

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { Action } from '../src/types';
 import { ABOUT_MAX_RATE, ABOUT_TICKS, ACT_HIST, ARRIVED_M, BODY_SIGN, PATH_MOVING_MPS, SHUFFLE_SHARE, SKIP_TICKS, WAY_WORDS, Way, aboutTo, actBefore, actChanged, actSince, actStart, bodyShows, createActTrack,
-  movingMps, pushAct, readBody, readDrawn, shuffles, startUnseen, wayVerb, type ActTrack, type BodyState, type DrawnAct } from '../src/render/creatures/drawn';
+  movingMps, pushAct, readBody, readDrawn, shuffles, startUnseen, strides, wayVerb, type ActTrack, type BodyState, type DrawnAct } from '../src/render/creatures/drawn';
 import { actionOnWay } from '../src/ui/format';
 import { TICK_HOURS, advancePlayback, createPlayback, createTrack, pushSample, relocationJump2, type Track } from '../src/render/creatures/playback';
 import { sampleSmooth } from '../src/render/creatures/motion';
@@ -427,7 +427,10 @@ test('W6 review: a body drawn in an act without an announcement (carried, or a f
     readDrawn(tr, t - 2 * T, carried, 1, out);
     assert.deepEqual(out, { action: a, targetId: g, about: false, way: Way.none }, `carried: drawn in ${a} at once`);
   }
-  // Set down by its mother, it takes a new act: its body is still in the rest it was in on her, not in the nest of the morning.
+  // Set down by its mother in the middle of that rest, it goes on resting: nothing is about to begin.
+  readDrawn(tr, t - 2 * T, body({ gap: 0 }), 1, out);
+  assert.deepEqual(out, { action: 'rest', targetId: -1, about: false, way: Way.none });
+  // Then it takes a new act: its body is still in the rest it was in on her, not in the nest of the morning.
   t += T; pushAct(tr, t, 'forage', 100200);
   readDrawn(tr, t - 2 * T, body({ gap: 0 }), 1, out);
   assert.deepEqual(out, { action: 'rest', targetId: -1, about: true, way: Way.soon });
@@ -485,7 +488,12 @@ test('W6 review: after a skip of states (a fast-forward, a jump of the clock) no
   readDrawn(w, sw - 2 * T, body({ gap: 0 }), 4, out);
   assert.equal(out.about, false); assert.equal(out.action, 'drink');
   assert.notEqual(w.shown, sw, 'standing where it was cut to is not yet having arrived');
-  pushAct(w, sw + T, 'drink', 200001); pushAct(w, sw + 2 * T, 'drink', 200001);
+  // One tick on, the simulation is seen striding it along: "going to drink", drawn standing, not in the drinking pose.
+  pushAct(w, sw + T, 'drink', 200001);
+  readDrawn(w, sw - T, body({ gap: 5, striding: true }), 4, out);
+  assert.deepEqual(out, { action: 'travel', targetId: -1, about: true, way: Way.going });
+  assert.equal(aboutTo('forage', sw, sw - T, body({ gap: 0, striding: false }), 4, false, true), false, 'one that stays put is in its act');
+  pushAct(w, sw + 2 * T, 'drink', 200001);
   readDrawn(w, sw + 0.1 * T, body({ gap: 10, moving: true }), 4, out);
   assert.deepEqual(out, { action: 'travel', targetId: -1, about: true, way: Way.walking });
   readDrawn(w, sw + 1.1 * T, body({ gap: 9 }), 4, out);
@@ -507,6 +515,22 @@ test('W6 review: after a skip of states (a fast-forward, a jump of the clock) no
   assert.equal(startUnseen(three), true);
   readDrawn(three, three.t[three.head] - 2 * T, body({ gap: 0 }), 1, out);
   assert.equal(out.action, 'groom', 'not the rest of three ticks ago');
+});
+
+test('W6 review: the simulation striding an animal on is read from the newest step of its position record', () => {
+  const max = SHUFFLE_SHARE * 0.35;
+  assert.equal(strides(path([[0, 0], [5.25, 0]]), max), true, 'a walking step');
+  assert.equal(strides(path([[5.25, 0], [0, 0]]), max), false, 'it has stopped');
+  assert.equal(strides(path([[0, 0], [1.5, 0]]), max), false, 'a feeding creep');
+  assert.equal(strides(path([[0, 0], [0, 3.3]]), max), true, 'a climb');
+  assert.equal(strides(path([]), max), false, 'one state: nothing known');
+  // The one long step across skipped states is judged by speed: an animal 60 m from where it slept, hours later, did not stride.
+  const far = createTrack(0, 0, 0); pushSample(far, 10, 0, 0, 0); pushSample(far, 13, 60, 0, 0);
+  assert.equal(strides(far, max), false);
+  const out = body(); sampleSmooth(far, 13); readBody(out, far, 60, 0, 0, false, false, 0.35);
+  assert.equal(out.striding, false);
+  pushSample(far, 13 + T, 65.25, 0, 0); readBody(out, far, 65.25, 0, 0, false, false, 0.35);
+  assert.equal(out.striding, true);
 });
 
 test('W6 review: a body still going up a trunk is not shuffling, however short the last step of its climb', () => {
