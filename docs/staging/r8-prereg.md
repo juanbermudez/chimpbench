@@ -308,6 +308,13 @@ printed by a script; the tables are in `docs/staging/r8-wording-probe.md`, `r8-t
 6. **Eating now against the start** is kept for feeding in a crown only, not for leaves and pith.
 7. **Real token counts were possible without the model** (§10.5), so they are reported beside the estimate.
 8. **`ownKeep`** is one number for the three lists, as registered. No other parameter was added.
+9. **Small departures from the tables of §3 to §5.** The record has no `up` part: the list of crowns is simply emptied
+   when the animal leaves a finished nest. A companion's act is written last on its `nearby` line (today's packet puts
+   a notable act before the distance). Three labels are not in the table of §4: "Go to the body of *name* and take it
+   up" for the animal that cared for it, "Keep going to the neighbouring community" for an emigration under way, and
+   "Feed here" when a saved context names no tree.
+10. **Two scripts beyond the list of §7:** `scripts/r8-wording-report.ts` (the wording test's readout) and
+    `training/decide_ft/r8_tokens.py` (real token counts by the tokenizer alone).
 
 ### 10.2 The switch, the record, the tests
 
