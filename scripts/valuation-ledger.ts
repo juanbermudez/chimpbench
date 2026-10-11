@@ -49,7 +49,7 @@ export type Valuation = ReturnType<typeof buildValuation>;
 
 export function valuationMarkdown(L: Valuation, level = '#'): string {
   const o: string[] = [], kv = (r: Record<string, number>) => Object.entries(r).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(', ');
-  o.push(`${level} Valuation ledger`, '', `Generated ${L.date} by \`scripts/valuation-ledger.ts\` at ${L.head} (rules: \`scripts/lib/valuation.ts\`; docs/staging/r7-ledger.md §5). A lexical count of the source text: nothing is run.`, '');
+  o.push(`${level} Valuation ledger`, '', `Generated ${L.date.slice(0, 16).replace('T', ' ')} UTC by \`scripts/valuation-ledger.ts\` at ${L.head} (rules: \`scripts/lib/valuation.ts\`; docs/staging/r7-ledger.md §5). A lexical count of the source text: nothing is run.`, '');
   o.push('| What is counted | Count |', '|---|---|');
   o.push(`| Offer sites in \`src/sim/candidates.ts\` (calls \`offer('<action>', …)\`) | ${L.offerSites.total} over ${L.offerSites.actions} actions${L.offerSites.dynamic ? `, plus ${L.offerSites.dynamic} with a computed action` : ''} |`);
   o.push(`| Inline score literals (numbers inside an offer call, or in the definition of a name that reaches one) | ${L.literals.score} on ${L.literals.scoreLines} lines: ${L.literals.scoreByRole.weight ?? 0} weights in a sum or product, ${L.literals.scoreByRole.threshold ?? 0} thresholds on a state, ${L.literals.scoreByRole.age ?? 0} thresholds on age |`);

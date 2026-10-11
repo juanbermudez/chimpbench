@@ -18,6 +18,7 @@ import { GATE } from '../src/decide/gate';
 import { findCandidate } from '../src/sim/candidates';
 import { rulesTap } from '../src/sim/decide';
 import { dayPhase } from '../src/sim/environment';
+import { fanCalls } from '../src/kernel/fanout';
 import { MAX_OPTIONS } from '../src/sim/menu';
 import { paramsOf, resolveParams, type Overrides } from '../src/sim/params';
 import { rgTap } from '../src/sim/rg';
@@ -158,6 +159,9 @@ class Agg {
     for (const fam of MENU_FAMS) this.push(`menuFam.${fam}`, c.menu.filter(m => m.fam === fam).length);
     for (const [name, s] of [['feedTrees', c.feedTrees], ['tripTrees', c.tripTrees], ['joinTrees', c.joinTrees], ['waters', c.waters], ['partners', c.partners]] as const) for (const [k, x] of Object.entries(s)) this.push(`${name}.${k}`, x as number);
     this.push('nestTrees.inReach', c.nestTrees.inReach); this.push('nestTrees.offered', c.nestTrees.offered);
+    // kernel calls one question over the trees of a trip would take with the fan-out wrapper (src/kernel/fanout.ts fanCalls), and over the whole menu by possibility
+    if (c.tripTrees.pool >= 0) for (const v of ['fan1', 'fan2'] as const) this.push(`tripCalls.${v}`, fanCalls(v, c.tripTrees.pool));
+    for (const v of ['fan1', 'fan2'] as const) this.push(`widthCalls.${v}`, fanCalls(v, c.widthPossible - c.tripTrees.listed));
     // a real choice of target on the menu: two options of one family with different targets
     const byFam = new Map<string, Set<number>>();
     for (const o of c.menu) if (o.target >= 0) (byFam.get(o.fam) ?? byFam.set(o.fam, new Set()).get(o.fam)!).add(o.target);
@@ -379,7 +383,7 @@ export function reportMarkdown(R: ReceiptsLedger | null, taps: TapResult[], V: V
     wide('the whole menu by possibility', 'widthPossible'); wide('the same without the community\'s list of trees (the animal\'s own view and memory)', 'widthOwn'); wide('trees in view (feed here or there)', 'feedTrees.inView'); wide('trees a trip could go to (pass the trip conditions)', 'tripTrees.pool');
     wide('trees remembered, out of view', 'tripTrees.remembered'); wide('animals in view', 'partners.inView'); wide('the menu today', 'menu');
     o.push('', `What today's menu holds, share of decision points: exactly one option to feed (a tree or the leaves where it stands) ${pct(pooled('adults', 'menuFam.feed', d => d.one))}, two or more ${pct(pooled('adults', 'menuFam.feed', d => d.twoPlus))}; one trip of its own to a food tree ${pct(pooled('adults', 'menuFam.food-trip', d => d.one))}, two or more ${pct(pooled('adults', 'menuFam.food-trip', d => d.twoPlus))}; a drink ${pct(1 - pooled('adults', 'menuFam.drink', d => d.zero))}; a nest ${pct(1 - pooled('adults', 'menuFam.nest', d => d.zero))}; rest ${pct(1 - pooled('adults', 'menuFam.rest', d => d.zero))}; two or more affiliative options ${pct(pooled('adults', 'menuFam.affiliative', d => d.twoPlus))}.`);
-    o.push('', `So: is a sub-menu needed to choose a tree? A kernel built for 8 options can take the trees of a trip in one question at ${pct(1 - pooled('adults', 'tripTrees.pool', d => d.over8))} of decision points and needs a wider question or rounds at ${pct(pooled('adults', 'tripTrees.pool', d => d.over8))}; for trees in view the shares are ${pct(1 - pooled('adults', 'feedTrees.inView', d => d.over8))} and ${pct(pooled('adults', 'feedTrees.inView', d => d.over8))}. The whole menu by possibility fits in 8 at ${pct(1 - pooled('adults', 'widthPossible', d => d.over8))} of decision points.`, '');
+    o.push('', `So: is a sub-menu needed to choose a tree? A kernel built for 8 options can take the trees of a trip in one question at ${pct(1 - pooled('adults', 'tripTrees.pool', d => d.over8))} of decision points and needs a wider question or rounds at ${pct(pooled('adults', 'tripTrees.pool', d => d.over8))}; for trees in view the shares are ${pct(1 - pooled('adults', 'feedTrees.inView', d => d.over8))} and ${pct(pooled('adults', 'feedTrees.inView', d => d.over8))}. The whole menu by possibility fits in 8 at ${pct(1 - pooled('adults', 'widthPossible', d => d.over8))} of decision points. With the fan-out wrapper that exists (\`src/kernel/fanout.ts\`, rounds of 8) one question over the trees a trip could go to would take ${num(pooled('adults', 'tripCalls.fan1', d => d.mean), 1)} kernel calls on average keeping the best one of each group and ${num(pooled('adults', 'tripCalls.fan2', d => d.mean), 1)} keeping the best two; over the animal's whole menu by possibility (without the community's list) ${num(pooled('adults', 'widthCalls.fan1', d => d.mean), 1)} and ${num(pooled('adults', 'widthCalls.fan2', d => d.mean), 1)}.`, '');
   }
 
   // ---- 5. the valuation ledger -------------------------------------------------------------------------------------

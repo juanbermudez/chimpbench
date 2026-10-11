@@ -72,10 +72,10 @@ export function cutsAt(world: World, c: Chimp): CutsAt {
     let e = st.get(key);
     if (!e) { e = { opt: { action: k.action, target: k.target, fam: familyOf(k.action as Candidate['action'], k.v, k.aux) }, v: k.v, aux: k.aux, in: false, slot: false, pool: false, silent: false }; st.set(key, e); }
     switch (k.fate) {
-      case 'kept': e.in = true; break;
-      case 'better': e.in = true; e.opt.fam = familyOf(k.action as Candidate['action'], k.v, k.aux); break;
+      // an offer that takes or replaces a slot sets what the option is (a trip of its own and a joined trip to one tree merge)
+      case 'kept': case 'better': e.in = true; e.opt.fam = familyOf(k.action as Candidate['action'], k.v, k.aux); break;
       case 'worse': break;
-      case 'evict': { e.in = true; const o = st.get(`${k.action}:${k.other}`); if (o) { o.in = false; o.slot = true; } break; }
+      case 'evict': { e.in = true; e.opt.fam = familyOf(k.action as Candidate['action'], k.v, k.aux); const o = st.get(`${k.action}:${k.other}`); if (o) { o.in = false; o.slot = true; } break; }
       case 'slot': e.slot = true; break;
       case 'pool': e.pool = true; break;
       case 'silent': e.silent = true; break;
@@ -90,7 +90,7 @@ export function cutsAt(world: World, c: Chimp): CutsAt {
     else removed[e.slot ? 'slot-cap' : e.pool ? 'pool' : e.silent ? 'silence' : 'threshold'].push(e.opt);
   }
   const legal = all.map(optOf), legalKeys = new Set(legal.map(keyOf));
-  const consistent = legalKeys.size === kept.size && [...kept].every(k => legalKeys.has(k));
+  const consistent = legalKeys.size === kept.size && [...kept].every(k => legalKeys.has(k)) && legal.every(o => st.get(keyOf(o))?.opt.fam === o.fam);
 
   // the cuts after the legal list: the rules' own menu construction (rg.ts rgMenu), step by step
   const list = P.choiceBelief === 1 ? byValue(all) : all;
