@@ -4732,7 +4732,10 @@ through the NCBI BioC API (PMC3812987, CC BY, full text); nothing else was fetch
 Read for stage R7, first half ([staging/r7-prereg.md](staging/r7-prereg.md) §3 and §4): how two sources already listed
 define a bout, a patch and a half-hour record. Every value is a yardstick, never an input. Both texts were read through
 the session's page-fetch tool, which returns sentences a small model extracts; the strings marked *checked* were
-confirmed character for character by a second pass over the same page, the others were not checked by eye.
+confirmed character for character by a second pass over the same page, the others were not checked by eye. The second
+review of the stage (10 October) then found every lemoine2023 string quoted below, character for character, in the
+publisher's page (journals.plos.org, read directly; the ">" signs are written as entities there). The potts2011
+strings not marked *checked* remain unchecked by eye.
 
 - **How the Taï activity file was built** [lemoine2023] (FT, journals.plos.org, open access, CC BY 4.0; *P. t. verus*)
   [M]. Extends the E.47 entry.

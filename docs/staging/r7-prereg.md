@@ -336,8 +336,14 @@ change is below what that unit can show.
 - **Unit P.** The 10% mixture is told on 13 of 14, the 20% and 30% mixtures on all 14. Act changes: the rules 43.2 ±
   0.8, 10% random 54.9 / 57.3.
 - The same 10% of random choices moves act changes by about a fifth when only the ten focal animals carry it (46.3 to
-  58.3 / 52.6) and by about three tenths when the whole population does (43.2 to 54.9 / 57.3): companions' noise
-  compounds, as the review expected. A ten-animal test understates what an engine does to a population.
+  58.3 / 52.6) and by about three tenths when the whole population does (43.2 to 54.9 / 57.3). *Corrected by the
+  second review (§13.11):* those two readings differ in who is driven, in which animals are read and in the length of
+  the window, so they cannot show by themselves that companions' noise compounds. Read on the same ten animals over
+  the same five days ([r7-numbers.md](r7-numbers.md) §11), the 10% mixture moves act changes by 20% when only they
+  carry it and by 28% when everyone does (58.3 / 52.6 against 56.4 / 62.0; the rules 46.3 ± 3.6, D 8.9), switches of
+  activity by 14% and 22%, trips begun by 19% and 32%. The direction is the same in all four control arms on those
+  three readouts and not on distance, and every single difference is inside D. So a ten-animal test probably
+  understates what an engine does to a population, by an amount this stage cannot size.
 
 ### 13.4 The guards, and why they are not enough alone
 
@@ -351,7 +357,9 @@ move: every control arm eats more than the rules.** Unit F: the rules 1,646 ± 1
 
 Measured, not interpolated. At unit P the **10% mixture sits nearer the middle of the field band than the rules,
 beyond noise, on T-ACT-2, T-RNG-4, T-FOOD-2, T-ENE-3, T-RHY-5, T-COM-1 and T-SOC-14**, and farther on T-RHY-1 and
-T-RHY-4. The 20% mixture is nearer on T-ACT-2, T-FOOD-2, T-ENE-3, T-COM-1 and T-SOC-14; the 30% mixture on those and
+T-RHY-4. *Qualified by the second review (§13.11, correction 2):* only on T-ACT-2, T-FOOD-2 and T-SOC-14 do the
+rules lie outside the band; on the other four they are already inside it, and T-COM-1 is told by a hair. The 20%
+mixture is nearer on T-ACT-2, T-FOOD-2, T-ENE-3, T-COM-1 and T-SOC-14; the 30% mixture on those and
 T-ACT-1. Random choice itself is nearer only on T-ACT-1, T-ACT-2 and T-RHY-6 and farther on ten rows. So "closer to
 the field numbers than the rules" is reached by adding a little noise to the rules, on about half the short
 scorecard. Both parts of the scorecard show it: of the rows named, T-ENE-3, T-RHY-5 and T-SOC-14 are held out.
@@ -437,6 +445,62 @@ against 8.3 there. The review's fork-label and stay-label tests. No engine arm a
 test seeds were not run (§9). `docs/simulation.md` §17 has no row for the two new parameters yet, so
 `tests/sim-params.test.ts` fails on this branch until the row of §14 is merged (checked: it passes with it).
 
+### 13.11 Corrections and additions from the second review (10 October 2026, 21:13 to 21:40 EDT)
+
+A second agent re-ran and re-read the stage on this branch. Sections 0 to 12 are left as registered; what it found is
+said here; the two passages above that it changed (in §13.3 and §13.5) are marked, and so are its changes to §14.
+
+**Re-run, and found the same.** All 32 unit-F runs at head be9a111 from a clean tree: the same start hash, end hash,
+card, rows and follows as the saved files. Both burn-ins made again (4b5cc61f8ad797e0, d9604068dec350b1). Two unit-P
+arms of seed 48 (`rules-1`, `mix10-a`): the same. `r7-numbers.md` generated again from the saved JSON: the same but
+for its first line. The four world hashes pinned in the test, and two more on the field map, computed on an export
+of track-e dea2643: the same. An independent recount of the card (act changes, switches, trips begun and completed,
+patch visits and their feeding time, feeding trees, half-hour pairs, feeding bouts) on the field base under random
+choice and under the 10% and 30% mixtures, at both units: no difference. In those windows no kernel step was refused,
+so a mixture's share of decision points is its share of random choices applied.
+
+**Corrections.**
+
+1. *Seed 11 is not unread (§9, §14).* Stage R1b ran random choice for the whole population on the confirm seeds,
+   seed 11 among them (30 + 60 days; `docs/staging/r1b-prereg.md`, the run table), and read deaths and rows there. What
+   holds: no engine (adapter), sampler or loop test has run on seed 11. It can still serve R10's scored run, but as a
+   seed on which the rules and random choice have been read, not as an unseen one.
+2. *"Seven rows" (§13.5, and the status line of §14).* By the registered rule the 10% mixture is nearer the middle of
+   the band than the rules on seven rows at unit P. On three of them the rules' mean lies outside the field band and
+   the mixture moves toward it by more than D: T-ACT-2, T-FOOD-2 and T-SOC-14 (1.08, 1.53 and 3.45 D beyond the
+   noise). On the other four the rules' mean is already inside the band, so "nearer the middle" is not "nearer the
+   field": T-RHY-5 (a limit), T-ENE-3, T-RNG-4 (0.22 D beyond the noise) and T-COM-1 (0.02 D: it would not survive
+   another draw). The table is `r7-numbers.md` §11. The point of the stage stands on the three rows; the count of
+   seven should not be quoted without this.
+3. *The middle of the band, again (§8, §13.9).* The same holds for any row on which the reference arm is already
+   inside the band, not only for bands that are limits: there a move toward the middle is not evidence of anything.
+   The question put to the integrator in §14 is widened accordingly.
+4. *The half-hour rows at unit P are read on fewer animals than registered.* §6 registers the card at unit P on
+   every animal aged 8 and over; the report prints the four half-hour rows on the animals adult by the Taï paper's
+   rule (males over 12, females over 10). The choice was committed at 20:04 (78cf315), before the first unit-P file
+   existed (20:05), and was not logged as a change. Both readings are now printed (`r7-numbers.md` §11): 0.413
+   against 0.412 for the rules, and no "told" call differs.
+5. *Medians of bouts move in steps of one tick (0.25 min).* Eight re-draws can give the same median, and then D is 0
+   (the lower quartile of the travel bout at unit P). A D below one tick for a median or a quartile is a floor, not a
+   measurement; no registered row's call depends on it here.
+6. *The command for a test on fresh seeds (§14) did not work as written.* The report reads both units and the Taï
+   file from one folder, so a test needs `--out` on every run, both units, and `tai --out`; a report of unit F alone
+   is not built. The line in §14 is corrected.
+
+**Added by the review** (small, on this branch): the runner refuses a reserved or retired seed of `AGENTS.md` even
+when it is named twice, and refuses a saved burn-in made for another seed, length, parameter registry or parameter
+set instead of continuing it silently (the file is named by seed and length only; the review's own first re-run
+continued a file that an earlier smoke run had left in a shared scratch folder; its hash was the right one); that
+check cannot see a change of code alone, so the report now refuses arms of one seed that do not share a burn-in
+hash; a test for the two refusals; `r7-numbers.md` §11. Every lemoine2023 sentence quoted in the research addendum
+was found character for character in the publisher's page.
+
+**Not repaired, said for the next stage.** A visit resumed within ten minutes of the window's start, after a pause
+that spans the start, is counted as a whole visit (at most one per animal and window; none occurred in the windows
+recounted, as far as a window can show it). The observer is seeded from the world's seed and not from its salted
+stream, so every arm of a seed shares one observer stream and D holds only part of the observer's own sampling
+noise. An engine arm cannot yet be added to the report without editing its list of arms.
+
 ## 14. For the integrator
 
 **Decisions that are the user's or the integrator's.**
@@ -444,9 +508,17 @@ test seeds were not run (§9). `docs/simulation.md` §17 has no row for the two 
 1. Adopt the scoring rule of §8 for every later engine comparison (R9, R10): per row by value, against the best
    rules-plus-random arm, with the five guards; no sums, no pass counts; energy eaten never a guard.
 2. Seeds (§9): 21 and 5 retired to development; test unit A = 4111 and 4222, reserve unit B = 4333 and 4444, seed 11
-   for R10's scored population run; none of them run before its registered test.
+   for R10's scored population run; none of them run before its registered test. *Review, §13.11:* seed 11 is not
+   unread: R1b ran the rules and random choice on it for the whole population and read them. No engine has run on
+   it. The review searched the file names of `artifacts/` in the main checkout and in every worktree, the run
+   registries there, and the documents and scripts: 4111, 4222, 4333 and 4444 appear nowhere as a seed.
 3. Rows whose band is a limit and not an estimate (T-RHY-5; arguably T-RHY-4 and T-RHY-6, whose bands were widened
-   several-fold): score by distance outside the band, 0 inside? Not changed here.
+   several-fold): score by distance outside the band, 0 inside? Not changed here. *Review, §13.11:* the same question
+   holds for every row on which the rules are already inside the band (at unit P: T-ACT-1, T-ACT-4, T-ACT-3,
+   T-RNG-4, T-ENE-3, T-RHY-1, T-RHY-4, T-RHY-5, T-RHY-6, T-COM-1, T-SOC-10): there "nearer the middle" says nothing
+   about realism. Scoring every row by its distance outside the band (0 inside) would leave four rows on which an
+   engine can be closer than the rules at all (T-ACT-2, T-FOOD-2, T-SOC-14, T-SOC-6), and on three of those the 10%
+   mixture already is.
 4. Where a result is claimed. This stage's reading: the ten-animal unit for guards and timing; "closer to wild
    chimpanzees" only at the population unit, on the rows where §13.5 leaves room.
 
@@ -461,6 +533,12 @@ test seeds were not run (§9). `docs/simulation.md` §17 has no row for the two 
   1 with `kernelGate` 1, of `kernelSim` 2 and of the rules are hash-identical to track-e dea2643 (pinned in
   `tests/r7-card.test.ts`).
 - `docs/research.md` gains "Addendum: R7 timing card" (Methods sentences of lemoine2023 and potts2011; no new source).
+- Added by the review: `scripts/r7-card.ts` now imports the reserved-seed list of `scripts/e-run.ts` (a reserved or
+  retired seed is refused even as a test seed) and refuses a saved burn-in made for another seed, length, parameter
+  registry or parameter set. After a merge that adds any parameter the registry hash changes, so the saved burn-ins
+  under `artifacts/r7/` will be refused: delete the two files and they are made again (about half a minute each;
+  their hashes must come out as above while the defaults are today's behaviour). `scripts/r7-report.ts` refuses arms
+  of one seed that do not share a burn-in hash.
 - `artifacts/r7/` is not committed: the two burn-in worlds, 64 arm files, `tai.json` (aggregates only) and the first
   launch (`launch1-F`, `launch1-P`). To regenerate the numbers: the three commands in the AGENTS.md line below.
 
@@ -474,7 +552,9 @@ test seeds were not run (§9). `docs/simulation.md` §17 has no row for the two 
 > days can show is about a fifth of the rules' value on the timing rows (act changes 8.9 of 46.3; trips begun 1.72 of
 > 8.03) and 2 to 7% at the population unit. The rules with 10% of choices random are told from the rules on 2 of 14
 > timing rows at ten animals and on 13 at the population, and sit nearer the middle of the field band than the rules,
-> beyond noise, on T-ACT-2, T-RNG-4, T-FOOD-2, T-ENE-3, T-RHY-5, T-COM-1 and T-SOC-14: the scoring rule (an engine
+> beyond noise, on T-ACT-2, T-RNG-4, T-FOOD-2, T-ENE-3, T-RHY-5, T-COM-1 and T-SOC-14 (on three of these, T-ACT-2,
+> T-FOOD-2 and T-SOC-14, the rules lie outside the band and the mixture moves toward it; on the other four the rules
+> are already inside the band, and T-COM-1 is told by a hair): the scoring rule (an engine
 > counts as closer only where it beats the best rules-plus-random arm by more than the row's noise, with guards on
 > reserve trend, distance, nights in a nest, act changes and trips completed; energy eaten is not a guard, every
 > control arm eats more than the rules) is fixed in §8. Under it ten animals for five days can show an engine closer
@@ -483,12 +563,15 @@ test seeds were not run (§9). `docs/simulation.md` §17 has no row for the two 
 > half-hour pairs in the same activity 0.39 to 0.41 against Taï's 0.476 (from feeding 0.30 against 0.52). New
 > parameters `kernelNullShare` (default 1) and `kernelFocal` (default 0); goldens, field pin and protocol hash unmoved.
 > Proposed to the user: seeds 21 and 5 retired to development, fresh test seeds 4111 and 4222 (reserve 4333, 4444),
-> seed 11 for R10's scored run. Part (e), the ledger: branch `r7-ledger`.
+> seed 11 for R10's scored run (the rules and random choice were read on it in R1b; no engine has run on it).
+> Reviewed by a second agent on the branch (§13.11): every unit-F run and two unit-P runs re-run to the same hashes,
+> the numbers document regenerated to the same text, the card recounted independently. Part (e), the ledger: branch
+> `r7-ledger`.
 
 **Proposed line for `AGENTS.md`, Commands:**
 
 ```sh
-pnpm exec tsx scripts/r7-card.ts run --seed 48 --unit F|P [--arms rules-1,…,random-a,mix10-a,…] [--days N] | tai   # stage R7 (docs/staging/r7-prereg.md), no model: the timing card (scripts/lib/timing-card.ts: act changes, switches, bouts, trips begun and completed, patch visits, half-hour persistence, the guards) and the short scorecard's 15 rows by the existing observer code (scripts/lib/r7-readers.ts) on copies of one burned-in world of the working base: eight rules re-draws (a salt each), random choice twice and the rules with 10, 20 and 30% of choices random twice each (`kernelNullShare`), at unit F (the five focal animals of a seed for five days; `kernelFocal` 1 drives them only) and unit P (the population for 30 days; about 1 to 3.5 min an arm); refuses a dirty tree and any seed but 48 and 7 unless a registered test names its seed twice (--test-seed); `tai` writes the Taï half-hour anchor (aggregates only); then scripts/r7-report.ts [--bridge <r5 pilot dir>] writes docs/staging/r7-numbers.md (spreads, the smallest difference each row can show, the control arms against the rules and the field, the scoring rule of prereg §8)
+pnpm exec tsx scripts/r7-card.ts run --seed 48 --unit F|P [--arms rules-1,…,random-a,mix10-a,…] [--days N] | tai   # stage R7 (docs/staging/r7-prereg.md), no model: the timing card (scripts/lib/timing-card.ts: act changes, switches, bouts, trips begun and completed, patch visits, half-hour persistence, the guards) and the short scorecard's 15 rows by the existing observer code (scripts/lib/r7-readers.ts) on copies of one burned-in world of the working base: eight rules re-draws (a salt each), random choice twice and the rules with 10, 20 and 30% of choices random twice each (`kernelNullShare`), at unit F (the five focal animals of a seed for five days; `kernelFocal` 1 drives them only) and unit P (the population for 30 days; about 1 to 3.5 min an arm); refuses a dirty tree, any seed but 48 and 7 unless a registered test names its seed twice (--test-seed), every reserved or retired seed, and a saved burn-in made with another parameter registry or parameter set (delete it to make it again); `tai` writes the Taï half-hour anchor (aggregates only); then scripts/r7-report.ts [--bridge <r5 pilot dir>] writes docs/staging/r7-numbers.md (spreads, the smallest difference each row can show, the control arms against the rules and the field, the scoring rule of prereg §8)
 ```
 
 **Proposed addition to `AGENTS.md`, Architecture, the row "Kernel contract (stage R1)":** append "Stage R7
@@ -515,6 +598,9 @@ default)"; with it `tests/sim-params.test.ts` passes, 11 of 11):
 **Commands the integrator may want next.** After the merge: `pnpm test` and `pnpm build` (not run here by the
 tranche's rule). To put an engine arm beside the control arms, attach `cardStart` / `cardStep` / `cardFinish` and
 `focalStart` / `focalAfter` / `focalFinish` to the arm's loop after each tick (they read only), write its file in the
-shape of `ArmFile`, and add its name to the report. For a registered test on fresh seeds:
-`pnpm exec tsx scripts/r7-card.ts run --seed 4111 --test-seed 4111 --unit F` (and 4222), then the report with
-`--seeds 4111,4222 --dir <its own folder>`.
+shape of `ArmFile`, and add its name to the report. For a registered test on fresh seeds (corrected by the review:
+the report reads both units and the Taï file from one folder, so all of these are needed):
+`pnpm exec tsx scripts/r7-card.ts tai --out <folder>`, then for each of 4111 and 4222 and for each unit
+`pnpm exec tsx scripts/r7-card.ts run --seed 4111 --test-seed 4111 --unit F --out <folder>` (and `--unit P`), then
+`pnpm exec tsx scripts/r7-report.ts --dir <folder> --seeds 4111,4222 --md <its own numbers file>`. A report of unit F
+alone needs a change to the report script; it is not built.
