@@ -3,10 +3,11 @@
 // level and age, and that the per-vertex eye mask could never have done the job.
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import * as THREE from 'three';
 import type { BufferGeometry } from 'three';
 import type { Chimp } from '../src/types';
 import { EAR, EYE, buildChimpGeometry } from '../src/render/creatures/body';
-import { EYE_FRONT, EYE_RIM } from '../src/render/creatures/material';
+import { EYE_FRONT, EYE_RIM, createChimpMaterials, createSilhouetteMaterial } from '../src/render/creatures/material';
 import { CLIPS, Pw, type PoseCtx } from '../src/render/creatures/poses';
 import { B, BIND, BONE_COUNT, OFFSET, PARENT, PI, bonePoint, computeMorph, createFK, createMorph, createPose, lowestPoint, solveFK } from '../src/render/creatures/rig';
 
@@ -154,8 +155,9 @@ test('swelling faces backward at hip height and the tail tuft sits above it, in 
   }
 });
 
+const ctx = (over: Partial<PoseCtx>): PoseCtx => ({ t: 0, time: 0, phase: 0, speedU: 0, freq: 0, seed: 0.3, stage: 'adult', male: true, age: 24, injury: 0, mood: 'calm', energy: 1, vocal: null, hasTarget: false, tx: 0, ty: 0, tz: 0, tdist: 99, tsize: 1, role: 0, inTree: false, wet: 0, stride: 0, lp: 0.6, lapse: 0, pb: new Float32Array(15), hasBones: false, pairT: 0, side: 1, ...over });
+
 test('knuckle-walking hand: the middle finger segment lies level and the wrist keeps the height it had', () => {
-  const ctx = (over: Partial<PoseCtx>): PoseCtx => ({ t: 0, time: 0, phase: 0, speedU: 0, freq: 0, seed: 0.3, stage: 'adult', male: true, age: 24, injury: 0, mood: 'calm', energy: 1, vocal: null, hasTarget: false, tx: 0, ty: 0, tz: 0, tdist: 99, tsize: 1, role: 0, inTree: false, wet: 0, stride: 0, lp: 0.6, lapse: 0, pb: new Float32Array(15), hasBones: false, pairT: 0, side: 1, ...over });
   const m = createMorph(), fk = createFK(), pose = createPose(), w = new Pw().bind(pose), T = new Float32Array(3);
   const read = (clip: string, over: Partial<PoseCtx> = {}) => {
     w.reset(); CLIPS[clip](w, ctx(over));
@@ -175,4 +177,61 @@ test('knuckle-walking hand: the middle finger segment lies level and the wrist k
   // The walk plants the same hand: a stance limb's wrist height is the standing one.
   const walk = read('walk', { phase: 0.1, speedU: 0.8, stride: 0.55, freq: 1.45 });
   assert.ok(Math.abs(walk.joint - stand.joint) < 0.02, 'walk keeps the finger joint near the ground');
+});
+
+// Added by the stage's review. The body is lifted until its lowest ground probe touches (rig.ts lowestPoint), so a
+// finger pose can move the whole animal. The reference is the same pose with the finger bones put back to the hook
+// they had before W3 (0.3 and 1.65 rad of flexion): nothing is typed in.
+test('knuckle pose: stand, walk, sneak and patrol keep the ground snap of the old hook hand over a whole stride; the gallop stays within 5 mm', () => {
+  const m = createMorph(), fk = createFK(), pose = createPose(), w = new Pw().bind(pose);
+  const snaps = (clip: string, over: Partial<PoseCtx>) => {
+    w.reset(); CLIPS[clip](w, ctx(over));
+    solveFK(pose, m, fk);
+    const now = -lowestPoint(fk, m) * pose.v[PI.ground], wrist = fk.p[B.handL * 3 + 1] + now;
+    w.r(B.fingL, 0.3).r(B.fingL2, 1.65).r(B.fingR, 0.3).r(B.fingR2, 1.65);
+    solveFK(pose, m, fk);
+    const hook = -lowestPoint(fk, m) * pose.v[PI.ground];
+    return { now, hook, wrist, wristHook: fk.p[B.handL * 3 + 1] + hook };
+  };
+  const stand = snaps('stand', {});
+  assert.ok(Math.abs(stand.hook - 0.028404) < 5e-6, `the reference is the pre-W3 stance: ${stand.hook}`);
+  const GAITS: [string, Partial<PoseCtx>][] = [['stand', {}], ['walk', { speedU: 0.8, stride: 0.55, freq: 1.45 }], ['walk', { speedU: 0.4, stride: 0.3, freq: 1.2 }], ['walk', { speedU: 1.3, stride: 0.8, freq: 1.7 }], ['walk', { speedU: 1 }],
+    ['walk', { speedU: 0.8, stride: 0.55, freq: 1.45, injury: 0.6 }], ['sneak', { speedU: 0.5, stride: 0.4, freq: 1.1 }], ['patrol', { speedU: 0.9, stride: 0.6, freq: 1.5 }]];
+  for (const [clip, over] of GAITS) for (const lp of [0.6, 0.25]) for (let i = 0; i < 32; i++) {
+    const s = snaps(clip, { ...over, lp, phase: i / 32, t: i * 0.173, time: i * 0.173 });
+    assert.ok(Math.abs(s.now - s.hook) < 1e-6 && Math.abs(s.wrist - s.wristHook) < 1e-6, `${clip} at phase ${i / 32} (limb phase ${lp}): ground snap ${s.now} against ${s.hook}`);
+  }
+  // The gallop is the one exception: around touchdown a swinging hand's fingertip, which now points back and down,
+  // reaches the ground before its knuckle does. Measured: 18 of 256 poses differ, by 4.1 mm at most (unit space).
+  let worst = 0;
+  for (let i = 0; i < 64; i++) { const s = snaps('gallop', { speedU: 4, stride: 1.4, freq: 2.8, phase: i / 64 }); worst = Math.max(worst, Math.abs(s.now - s.hook)); }
+  assert.ok(worst < 0.005, `gallop ground snap moves by ${worst.toFixed(4)} m at most`);
+});
+
+// Added by the stage's review. The fragment code cannot run here, but its text can be read: the eye gate is built from
+// EYE and no longer reads the per-vertex mask, every patch finds its place in three's shader, and the swelling and the
+// tuft are raised by the vertex code that the colour, shadow and x-ray passes share.
+test('material: the eye is gated on the eyeball sphere, not on the per-vertex mask, and the shadow and x-ray passes raise the tuft too', () => {
+  const mats = createChimpMaterials(1);
+  const patched = (mat: THREE.Material, lib: { vertexShader: string; fragmentShader: string }) => {
+    const shader = { uniforms: {}, vertexShader: lib.vertexShader, fragmentShader: lib.fragmentShader };
+    (mat.onBeforeCompile as unknown as (s: typeof shader, r: null) => void)(shader, null);
+    return shader;
+  };
+  const f5 = (x: number) => x.toFixed(5);
+  for (const [name, mat] of [['body', mats.material], ['shell', mats.shell]] as const) {
+    const { fragmentShader: fs, vertexShader: vs } = patched(mat, THREE.ShaderLib.standard);
+    assert.ok(!fs.includes('vRegA.y'), `${name}: the fragment code still reads the per-vertex eye mask`);
+    assert.ok(fs.includes(`vec3 cEyeD = vec3(abs(vBind.x) - ${f5(EYE.c[0])}, vBind.y - ${f5(EYE.c[1])}, vBind.z - ${f5(EYE.c[2])});`), `${name}: eye gate centred on EYE`);
+    assert.ok(fs.includes(`float cEyeA = ${f5(EYE.r + EYE_RIM[0])} + ${f5(EYE_FRONT[0])}`), `${name}: eye gate radius from EYE and its rim`);
+    assert.ok(fs.includes('float r = length(e) / (1.0 + vP5.y);'), `${name}: the young animal's iris term`);
+    // One marker per patched chunk: a renamed chunk in three would drop its patch without an error.
+    for (const marker of ['float cHash(vec3 p)', 'void RE_Direct_Hair(', 'float cHairMask = min(1.2,', 'roughnessFactor = mix(roughnessFactor, 0.07, cEye);', 'float dhx = dFdx(hgt)', 'float cSpecK =', 'outgoingLight *= uExposure;'])
+      assert.ok(fs.includes(marker), `${name}: fragment patch missing: ${marker}`);
+    for (const marker of ['mat4 cBone(int slot, float idx)', 'vHairT = normalize(', 'vec3 transformed = (cSkin * vec4(cPos, 1.0)).xyz;']) assert.ok(vs.includes(marker), `${name}: vertex patch missing: ${marker}`);
+  }
+  const raise = ['max(cP2.y, 0.0) * aRegA.w * 0.05', 'max(-cP2.y, 0.0) * aRegB.x * 0.016']; // swelling, tuft (material.ts SKIN_VERTEX)
+  const xray = createSilhouetteMaterial(mats.texture, false, { uOpacity: { value: 1 }, uViewport: { value: new THREE.Vector2() }, uBias: { value: 0 }, uLine: { value: new THREE.Color() }, uFillK: { value: 1 } });
+  for (const [name, vs] of [['body', patched(mats.material, THREE.ShaderLib.standard).vertexShader], ['shadow', patched(mats.depth, THREE.ShaderLib.depth).vertexShader], ['x-ray', patched(xray, THREE.ShaderLib.basic).vertexShader]] as const)
+    for (const term of raise) assert.ok(vs.includes(term), `${name} pass: vertex code lacks ${term}`);
 });
