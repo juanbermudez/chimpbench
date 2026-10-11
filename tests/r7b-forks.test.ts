@@ -8,7 +8,9 @@ import test from 'node:test';
 import { acrossHorizons, costs, readout, reads, scoresOf } from '../scripts/lib/r7b-fork-readout';
 import { bodyTerms, distance, REGISTERED, SCALE_VARIANTS, scoreOf, TERMS, type Terms } from '../scripts/lib/r7b-score';
 import { betweenShare, chanceRepeat, halves, mulberry32, noiseRate, repeats, repeatsAllSplits, standsOut, winnerOf } from '../scripts/lib/r7b-stats';
+import { endOf } from '../scripts/r7b-ends';
 import { fork, forkPoint, listEligible, OWN_NOISE_STEP, prepare, runFork, sampleHash, type ForkBase, type PointFile, type Replicate } from '../scripts/r7b-forks';
+import { rgTap } from '../src/sim/rg';
 import { thresholds } from '../src/sim/circadian';
 import { massOf, reserveCap } from '../src/sim/energy';
 import { paramsOf } from '../src/sim/params';
@@ -99,6 +101,17 @@ test('a fork: the same salt gives the same outcome and world, another salt anoth
   assert.equal(moved.decisionVersion, b.version + OWN_NOISE_STEP * 3 + 1); assert.equal(moved.action, o.action); assert.equal(moved.targetId, o.targetId);
   assert.equal(worldHash(own1), worldHash(own2)); assert.notEqual(worldHash(own1), worldHash(plainFork));
   assert.deepEqual(runFork(own1, e.id, horizons), runFork(own2, e.id, horizons));
+  // the review's probe (prereg §7a): how the forced act ended. It is the same fork as runFork's (held alike, the same terms at
+  // the horizon), it names what the rules' policy did in the tick the act changed, and it leaves the tap as it found it
+  for (const q of b.options) {
+    const wa = fork(b, parent.modelPolicy.mode, e.id, q, 2), wb = fork(b, parent.modelPolicy.mode, e.id, q, 2);
+    if (!wa || !wb) continue;
+    const ran = runFork(wa, e.id, [40]), end = endOf(wb, e.id, 40);
+    assert.equal(end.held, ran.held, `${q.action}: held as runFork counts it`); assert.deepEqual(end.z, ran.r[0]!.z); assert.equal(worldHash(wb), worldHash(wa), 'the tap reads only');
+    assert.ok(end.held === 40 ? end.why === 'held' : end.why === 'arrived' || end.why === 'kept' || end.why === 'none' || /^drawn:[a-z-]+$/.test(end.why), `${q.action} ended: ${end.why}`);
+    assert.equal(end.fed === null, !(q.action === 'travel' && q.targetId > 100000 && q.targetId < 200001), 'only a trip to a tree says whether the animal fed there');
+  }
+  assert.equal(rgTap.fn, null);
   // a point forked whole: every option or null, the given salts each; only the food options when asked
   const whole = forkPoint(b, parent.modelPolicy.mode, e.id, () => true, [1, 2], [8]);
   assert.equal(whole.forks.length, b.options.length); assert.equal(whole.n, whole.forks.filter(Boolean).length * 2);

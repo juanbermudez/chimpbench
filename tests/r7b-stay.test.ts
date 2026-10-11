@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { askedClass, bandOf, BANDS, BEGAN, design, evaluate, featuresOf, GROUPS, kindsOf, StayTracker, weightsOf, type Moment } from '../scripts/lib/r7b-stay-fit';
+import { askedClass, bandOf, BANDS, BEGAN, design, evaluate, featuresOf, foldsOf, GROUPS, kindsOf, partGains, StayTracker, weightsOf, type Moment } from '../scripts/lib/r7b-stay-fit';
 import { auc, clusterInterval, fitLogistic, foldsByCluster, logLoss, mulberry32, outOfFold, predictLogistic } from '../scripts/lib/r7b-stats';
 import { behaviourDigest, eligibleNow, listMoments, readMoments, STAY_TICKS } from '../scripts/r7b-stay';
 import { observe } from '../src/sim/observe';
@@ -65,6 +65,9 @@ test('the logistic fit recovers known weights; log-loss and AUC on hand-computed
   assert.deepEqual(c1, c2); assert.ok(c1[0] < mean && c1[1] > mean && c1[1] - c1[0] < 0.2);
 });
 
+/** The fold deal's hash of an animal (FNV-1a, as scripts/lib/r7b-stay-fit.ts). */
+function fnv(t: string): number { let h = 2166136261; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+
 /** Synthetic moments of 60 animals: the kind and the minutes always matter; `packet` says whether hunger does too. */
 function synthetic(packet: boolean): Moment[] {
   const rng = mulberry32(packet ? 21 : 22), out: Moment[] = [];
@@ -103,6 +106,19 @@ test('the designs and the comparison: the packet is said to help only where it d
   assert.equal(no.cBeatsB, false, 'nothing in the packet drives staying: forty noise features do not beat the kind and the minutes');
   assert.ok(d(no, 'b', 'c').ci[0] <= 0);
   for (const x of [yes, no]) { assert.ok(d(x, 'base', 'a').beyondNoise, 'the kind of act beats the base rate'); assert.ok(d(x, 'a', 'b').logLoss > 0, 'the minutes add to the kind'); }
+  // the review's readings (prereg §7a): folds by simulated day of a seed, and the parts of a group
+  const days = helps.map((m, i) => ({ ...m, seed: i % 2 ? 48 : 7, tick: 172800 + (i % 5) * 5760 + (i % 97) })), fd = foldsOf(days, 'day');
+  assert.equal(fd.k, 10, 'two seeds of five days'); assert.equal(new Set(fd.fold).size, 10);
+  for (let i = 0; i < days.length; i++) for (const j of [i + 1, i + 10]) if (j < days.length) assert.equal(fd.fold[i] === fd.fold[j], days[i].seed === days[j].seed && Math.floor(days[i].tick / 5760) === Math.floor(days[j].tick / 5760));
+  assert.equal(foldsOf(days, 'seed').k, 2); assert.equal(foldsOf(helps, 'animal').k, 5); assert.deepEqual(foldsOf(helps, 'animal').fold, foldsByCluster(helps.map(m => `${m.seed}:${m.id}`), [...new Set(helps.map(m => `${m.seed}:${m.id}`))].sort((p, q) => fnv(p) - fnv(q) || (p < q ? -1 : 1)), 5));
+  assert.equal(evaluate(days, 'stay', 1, 50, 5, 'day').folds, 10);
+  const parts = partGains(helps, { hunger: ['hunger'], thirst: ['thirst'], both: ['hunger', 'thirst'] }, 'animal', 'stay', 1, 300);
+  assert.deepEqual(parts.map(q => q.part), ['hunger', 'thirst', 'both']);
+  assert.ok(parts[0].logLoss > 0.02 && parts[0].ci[0] > 0, 'the one feature that drives staying carries the gain');
+  assert.ok(parts[1].logLoss < 0.005 && parts[1].ci[0] <= 0, 'a noise feature carries none');
+  assert.ok(Math.abs(parts[2].logLoss - parts[0].logLoss) < 0.005, 'and adds nothing to the one that does');
+  near(partGains(helps, { body: GROUPS.body }, 'animal', 'stay', 1, 0)[0].logLoss, d(yes, 'b', 'b+body').logLoss, 1e-12); // a whole group named feature by feature is the group
+  assert.deepEqual(design(helps, 'b', [], ['hunger']).names.slice(-1), ['hunger']); assert.throws(() => design(helps, 'b', [], ['no such feature']));
   // the weights name hunger first among the packet features where it matters
   const w = weightsOf(helps).filter(q => q.group !== 'kind' && q.group !== 'minutes');
   assert.equal(w[0].name, 'hunger'); assert.equal(w[0].group, 'body'); assert.ok(w[0].weight > 0);

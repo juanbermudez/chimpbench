@@ -1,6 +1,7 @@
 // Stage R7b (docs/staging/r7b-prereg.md §4): every table of docs/staging/r7b-numbers.md from JSON. No number is typed.
 //   1  the scoring rule as amended (r7-prereg.md §13a), from stage R7's saved arm files (read only);
-//   2  forked outcomes, from the points scripts/r7b-forks.ts wrote (scripts/lib/r7b-fork-readout.ts);
+//   2  forked outcomes, from the points scripts/r7b-forks.ts wrote (scripts/lib/r7b-fork-readout.ts), and how a forced
+//      option ended, from the review's probe scripts/r7b-ends.ts when it is on file;
 //   3  staying, from the moments scripts/r7b-stay.ts wrote (scripts/lib/r7b-stay-fit.ts: the fits are made here);
 //   4  the registered readings in one place.
 //
@@ -8,13 +9,15 @@
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { isTreeId } from '../src/sim/state';
 import { acrossHorizons, costs, optionsOf, readout, reads, winnerKey, type Question, type Readout, type Share } from './lib/r7b-fork-readout';
 import { POPULATION_ONLY, SHORT_ROWS } from './lib/r7-readers';
 import { SCALE_VARIANTS, TERM_WORDS, TERMS } from './lib/r7b-score';
-import { BANDS, bandOf, evaluate, GROUP_WORDS, kindsOf, weightsOf, type Moment, type StayFit } from './lib/r7b-stay-fit';
+import { BANDS, bandOf, evaluate, GROUP_WORDS, GROUPS, kindsOf, partGains, weightsOf, type Moment, type StayFit } from './lib/r7b-stay-fit';
 import { meanOf } from './lib/r7b-stats';
 import { ARMS, type ArmFile, type Unit } from './r7-card';
 import { familyRoom, outside, realization, spreadOf, type Band } from './r7-report';
+import type { EndsFile } from './r7b-ends';
 import type { PointFile } from './r7b-forks';
 
 if (process.argv[1]?.endsWith('r7b-report.ts')) {
@@ -132,6 +135,19 @@ if (process.argv[1]?.endsWith('r7b-report.ts')) {
     const trips2 = pts.filter(q => reads(q, 'food') && optionsOf(q, 'food').filter(i => q.options[i].family === 'food-trip').length >= 2), comp = pts.filter(q => reads(q, 'food'));
     p();
     p(`"Which food" is read on ${comp.length} points: ${comp.filter(q => optionsOf(q, 'food').some(i => q.options[i].family === 'feed')).length} hold feeding here beside at least one trip, ${trips2.length} hold two or more trips. ${trips2.length ? `On the ${trips2.length} points with two or more trips alone, repeat is ${H.map(h => `${sh(readout(trips2, 'food', h).repeat)} after ${hw[h]}`).join(' and ')}.` : 'No menu of the sample holds two trips to food, so the question read here is "feed here or go to another tree"; which of several trees cannot be read on the rules\' menu at all.'}`);
+    // added by the review: a joint trip to a companion's goal tree (kind social-move) is a trip to food too
+    const treeTrips = (q: PointFile) => new Set(q.options.filter((o, i) => q.forks[i] && o.action === 'travel' && isTreeId(o.targetId)).map(o => o.targetId)).size;
+    p(`Counting a joint trip to a companion's goal tree as a trip to food (the kind \`social-move\` holds them; added by the review), ${main.filter(q => treeTrips(q) >= 2).length} of the ${main.length} menus hold trips to two different trees: too few to read "which tree" there either.`);
+    // added by the review: the first question in three classes only, the words of the brief ("feed here, rest or go"); every other option is left out
+    const GO = new Set(['food-trip', 'social-move', 'travel-home']), three = (fam: string) => (fam === 'feed' ? 'feed' : fam === 'rest' ? 'rest' : GO.has(fam) ? 'go' : null);
+    const asThree = (v: PointFile[]): PointFile[] => v.map(q => ({ ...q, options: q.options.map(o => ({ ...o, family: three(o.family) ?? o.family })), forks: q.forks.map((x, i) => (three(q.options[i].family) === null ? null : x)) }));
+    const threeRow = (label: string, v: PointFile[], h: number) => { const r = readout(asThree(v), 'kinds', h); return `| ${label} | ${hw[h]} | ${r.points} | ${f(r.meanOptions, 1)} | ${sh(r.repeat)} | ${ci(r.repeat.ci)} | ${f(r.chance)} | ${sh(r.distinguishable)} |`; };
+    const threeHead = () => { p('| Forks | Horizon | Points | Options | Repeat | 95% interval | Chance | Distinguishable |'); p('| --- | --- | --- | --- | --- | --- | --- | --- |'); };
+    p();
+    p('**The first question in three classes only** (added by the review; description). The registered kinds are the fourteen families; the brief\'s words were "feed here, rest or go". Here only feeding here, resting and going (a trip of its own to a food tree, a move with others, the way home) are compared, and every other option is left out:');
+    p();
+    threeHead();
+    for (const h of H) p(threeRow('iteration 1 (a salt in the random stream)', pts, h));
     p();
     p('### 2.4 Three hours against six');
     p();
@@ -187,6 +203,41 @@ if (process.argv[1]?.endsWith('r7b-report.ts')) {
     const sameHeld = pts.flatMap(q => q.forks.filter((x): x is NonNullable<typeof x> => !!x).map(reps => new Set(reps.map(r => r.held)).size === 1));
     p(`In ${sameHeld.filter(Boolean).length} of ${sameHeld.length} forced options all eight replicates held the forced act for exactly the same number of ticks: the rules' bout lengths and evaluation jitter are hashes, so a salt changes nothing the animal itself does until the world around it has parted.`);
 
+    // the review's probe (prereg §7a), when it is on file: how the forced act of each option's first replicate ended
+    let endsLine = '';
+    const endFiles = seeds.map(s => resolve(dir, 'ends', `s${s}.json`));
+    if (endFiles.every(existsSync)) {
+      const ends = endFiles.map(x => JSON.parse(readFileSync(x, 'utf8')) as EndsFile), rows = ends.flatMap(e => e.points.flatMap(q => q.options));
+      const COLS: [string, (why: string) => boolean][] = [
+        ['A trip arrived and became feeding at its tree', w => w === 'arrived'],
+        ['The rules drew again: after an interrupt', w => w === 'drawn:interrupt'],
+        ['a need passed into another word', w => w === 'drawn:need-bucket'],
+        ['the act had ended or was no longer possible', w => w === 'drawn:ended'],
+        ['another reason (period, 30 minutes, a poor patch, the light, a hunt, a patrol)', w => w.startsWith('drawn:') && !['drawn:interrupt', 'drawn:need-bucket', 'drawn:ended'].includes(w)],
+        ['The act changed with no fresh draw of the policy', w => w === 'none' || w === 'kept'],
+        ['Still in the forced act after 3 h', w => w === 'held'],
+      ];
+      const other = rows.filter(r => !COLS.some(([, is]) => is(r.why)));
+      p();
+      p('### 2.8b How a forced option ended (added by the review; description)');
+      p();
+      p(`\`scripts/r7b-ends.ts\` at head ${[...new Set(ends.map(e => `${e.head}${e.dirty ? ' (dirty)' : ''}`))].join(', ')} walked each parent again, prepared every point of section 2.1 and forked each option once with the first salt, as the fork run did for its first replicate, with the rules' tap on the forced animal for three simulated hours. **The saved forks are the forks this code makes:** the parent ended on the saved hash for ${ends.filter(e => e.parentAsSaved).length} of ${ends.length} seeds, the menu was the saved one at ${ends.reduce((a, e) => a + e.menusAsSaved, 0)} of ${ends.reduce((a, e) => a + e.points.length, 0)} points, and of ${rows.length} forced options ${rows.filter(r => r.sameHeld).length} held the forced act for the saved number of ticks and ${rows.filter(r => r.sameZ).length} read exactly the saved five body terms after 3 h.`);
+      p();
+      p(`The tick at which the animal's act first changed, by what the rules' policy did with the animal in that tick (one fork per forced option; counts):`);
+      p();
+      p(`| Kind of the forced option | Forced options | ${COLS.map(([w]) => w).join(' | ')} |`);
+      p(`| --- | --- | ${COLS.map(() => '---').join(' | ')} |`);
+      const kindsE = [...new Set(rows.map(r => r.family))].sort((a, b) => rows.filter(r => r.family === b).length - rows.filter(r => r.family === a).length);
+      for (const kd of kindsE) { const v = rows.filter(r => r.family === kd); p(`| ${kd} | ${v.length} | ${COLS.map(([, is]) => v.filter(r => is(r.why)).length).join(' | ')} |`); }
+      p(`| all | ${rows.length} | ${COLS.map(([, is]) => rows.filter(r => is(r.why)).length).join(' | ')} |`);
+      if (other.length) { p(); p(`Not in the table: ${Object.entries(other.reduce((a, r) => { a[r.why] = (a[r.why] ?? 0) + 1; return a; }, {} as Record<string, number>)).map(([w, n]) => `${w} ${n}`).join(', ')}.`); }
+      const trips = rows.filter(r => r.fed !== null), own = trips.filter(r => r.family === 'food-trip'), joint = trips.filter(r => r.family !== 'food-trip');
+      const reach = (v: typeof trips) => `${v.filter(r => r.fed).length} of ${v.length}`;
+      p();
+      p(`**A forced trip mostly did not get there.** Of the ${own.length} forced trips of the animal's own to a food tree, the animal fed at that tree at any time in the next three hours in ${reach(own)} forks, and the walk ended in an arrival in ${own.filter(r => r.why === 'arrived').length}; in ${own.filter(r => r.why.startsWith('drawn:')).length} the rules' gate re-opened the choice first and the rules drew another act (${own.filter(r => r.why === 'drawn:interrupt').length} of them after an interrupt). Of the ${joint.length} joint trips to a companion's goal tree: fed there in ${reach(joint)}. So "feed here or go" was mostly read as "feed here" against "set out, then do what the rules draw next": the option is held only as the rules' gate holds it (prereg §2.2), and the rules do not hold a trip they would not have chosen.`);
+      endsLine = ` How the forcing held (the review's probe, one fork per option): of ${own.length} forced trips to a food tree the animal fed at that tree within three hours in ${own.filter(r => r.fed).length}; in ${own.filter(r => r.why.startsWith('drawn:')).length} the rules' gate re-opened the choice first and the rules drew another act.`;
+    }
+
     // iteration 2 (prereg §6), when it is on file: replicates that also re-draw the forked animal's own hashed noise
     const ownDir = resolve(dir, 'forks-own');
     let ownLine = '';
@@ -214,7 +265,14 @@ if (process.argv[1]?.endsWith('r7b-report.ts')) {
       }
       const oc = costs(own);
       p();
-      p(`${oc.forks.toLocaleString('en-US')} forks; the animal died in ${oc.died}. In ${own.flatMap(q => q.forks.filter((x): x is NonNullable<typeof x> => !!x).map(reps => new Set(reps.map(r => r.held)).size === 1)).filter(Boolean).length} of ${own.flatMap(q => q.forks.filter(Boolean)).length} forced options all eight replicates held the forced act for the same number of ticks.`);
+      // forks made include the replicates of an option that a later salt could not apply: those were run and then left out, and nothing of them is on file
+      const readOwn = own.reduce((a, q) => a + q.forks.reduce((t, x) => t + (x ? x.length : 0), 0), 0);
+      p(`${oc.forks.toLocaleString('en-US')} forks made, ${readOwn.toLocaleString('en-US')} of them read (the other ${(oc.forks - readOwn).toLocaleString('en-US')} belong to options left out; their outcomes were not kept); the animal died in ${oc.died} of the forks read. In ${own.flatMap(q => q.forks.filter((x): x is NonNullable<typeof x> => !!x).map(reps => new Set(reps.map(r => r.held)).size === 1)).filter(Boolean).length} of ${own.flatMap(q => q.forks.filter(Boolean)).length} forced options all eight replicates held the forced act for the same number of ticks.`);
+      p();
+      p('The first question in three classes only (feeding here, resting, going; added by the review; description), on these points and options:');
+      p();
+      threeHead();
+      for (const h of H) { p(threeRow('a salt in the random stream', same, h)); p(threeRow('its own noise re-drawn too', own, h)); }
       ownLine = ` With the animal's own hashed noise re-drawn in each replicate as well (iteration 2, ${own.length} of the points), repeat is: ${cells.join('; ')}.`;
     }
     // the verdict of part two
@@ -222,7 +280,7 @@ if (process.argv[1]?.endsWith('r7b-report.ts')) {
     const worth = Q.flatMap(q => H.filter(h => holds(R[`${q}:${h}`]) && holds(R2[`${q}:${h}`])).map(h => `${q === 'kinds' ? 'kinds of act' : 'which food'} after ${hw[h]}`));
     const only1 = Q.flatMap(q => H.filter(h => holds(R[`${q}:${h}`]) && !holds(R2[`${q}:${h}`])).map(h => `${q === 'kinds' ? 'kinds of act' : 'which food'} after ${hw[h]}`));
     const line = (q: Question) => H.map(h => { const r = R[`${q}:${h}`]; return `${f(r.repeat.share)} after ${hw[h]} (chance ${f(r.chance)}; distinguishable at ${f(r.distinguishable.share)} of points, repeat there ${f(r.repeatAmongDistinguishable.share)})`; }).join(', ');
-        verdicts.push(`**Forked outcomes.** With four replicates the winner repeats, for kinds of act, at ${line('kinds')}; for which food at ${line('food')}. The registered line is 0.70. ${worth.length ? `Worth a ruling by the registered reading${hasOwn ? ' (the line met in both iterations)' : ''}: ${worth.join('; ')}.` : 'By the registered reading no question at either horizon is worth a ruling: the labels are noise at this grain.'}${only1.length ? ` The line is met with the salt in the random stream alone and not once the animal's own hashed noise is re-drawn for: ${only1.join('; ')}.` : ''} Doubling or halving one scale of the score changes the winning kind at most at ${H.map(h => { const r = R[`kinds:${h}`]; return `${f(r.f3Worst?.share ?? null)} of ${r.f3On === 'distinguishable' ? `the ${r.distinguishable.yes} distinguishable points` : `all ${r.points} points (only ${r.distinguishable.yes} are distinguishable)`} after ${hw[h]}: ${r.f3 ? 'an exchange rate in disguise by the registered reading' : 'not called an exchange rate'}`; }).join('; ')} (the line is 0.10). Reading the time average instead of the end state changes it at ${H.map(h => `${f(R[`kinds:${h}`].variants.find(v => v.id === 'mean-D')!.flips.share)} of points after ${hw[h]}`).join(' and ')}. The winner is the option the rules took at ${H.map(h => `${f(R[`kinds:${h}`].rulesTook.share)} of points after ${hw[h]}`).join(' and ')} (chance ${f(R['kinds:0'].chanceRules)}). One labelled decision costs ${f((k * 4 * perFork + c.prepareMs) / 1000, 1)} s of one core with four replicates and ${f((k * 8 * perFork + c.prepareMs) / 1000, 1)} s with eight.${ownLine}`);
+        verdicts.push(`**Forked outcomes.** With four replicates the winner repeats, for kinds of act, at ${line('kinds')}; for which food at ${line('food')}. The registered line is 0.70. ${worth.length ? `Worth a ruling by the registered reading${hasOwn ? ' (the line met in both iterations)' : ''}: ${worth.join('; ')}.` : 'By the registered reading no question at either horizon is worth a ruling: the labels are noise at this grain.'}${only1.length ? ` The line is met with the salt in the random stream alone and not once the animal's own hashed noise is re-drawn for: ${only1.join('; ')}.` : ''} Doubling or halving one scale of the score changes the winning kind at most at ${H.map(h => { const r = R[`kinds:${h}`]; return `${f(r.f3Worst?.share ?? null)} of ${r.f3On === 'distinguishable' ? `the ${r.distinguishable.yes} distinguishable points` : `all ${r.points} points (only ${r.distinguishable.yes} are distinguishable)`} after ${hw[h]}: ${r.f3 ? 'an exchange rate in disguise by the registered reading' : 'not called an exchange rate'}`; }).join('; ')} (the line is 0.10). Reading the time average instead of the end state changes it at ${H.map(h => `${f(R[`kinds:${h}`].variants.find(v => v.id === 'mean-D')!.flips.share)} of points after ${hw[h]}`).join(' and ')}. The winner is the option the rules took at ${H.map(h => `${f(R[`kinds:${h}`].rulesTook.share)} of points after ${hw[h]}`).join(' and ')} (chance ${f(R['kinds:0'].chanceRules)}). One labelled decision costs ${f((k * 4 * perFork + c.prepareMs) / 1000, 1)} s of one core with four replicates and ${f((k * 8 * perFork + c.prepareMs) / 1000, 1)} s with eight.${ownLine}${endsLine}`);
   }
 
   // ------------------------------------------------------------------------------------------------------------------
@@ -299,6 +357,15 @@ if (process.argv[1]?.endsWith('r7b-report.ts')) {
     const world = evaluate(moments, 'stay', 1, 2000, 2, 'seed');
     table(world);
     p();
+    p('### 3.5c Held-out day (added by the review; description)');
+    p();
+    const byDay = evaluate(moments, 'stay', 1, 2000, 5, 'day'), dd = (to: string) => byDay.differences.find(d => d.from === 'b' && d.to === to)!;
+    p(`Is it the shared days or the other world that the packet features do not carry over? Here every simulated day of a seed is predicted by models fitted on the other ${byDay.folds - 1} seed-days (${byDay.folds} folds; the other days of its own world are among them; intervals over animals as before).`);
+    p();
+    table(byDay);
+    p();
+    p(`With a whole day held out the packet features gain ${f(dd('c').logLoss, 4)} nats over (b) (${ci(dd('c').ci, 4)}), ${dd('c').ci[0] > 0 ? 'beyond noise' : 'not beyond noise'}, against ${f(bc.logLoss, 4)} on held-out animals and ${f(world.differences.find(d => d.from === 'b' && d.to === 'c')!.logLoss, 4)} on a held-out world: ${dd('c').ci[0] > 0 && !(world.differences.find(d => d.from === 'b' && d.to === 'c')!.ci[0] > 0) ? 'what fails to carry over is the other world, not a day the model has not seen' : 'see the three tables'}. With two worlds, "another world" is one comparison in each direction.`);
+    p();
     p('### 3.6 Which packet features carry it (description)');
     p();
     p('Model (c) fitted on every moment; weights on standardised features, the twelve largest among the packet features:');
@@ -306,9 +373,31 @@ if (process.argv[1]?.endsWith('r7b-report.ts')) {
     p('| Feature | Group | Weight (per standard deviation) |');
     p('| --- | --- | --- |');
     for (const w of weightsOf(moments).filter(x => GROUP_WORDS[x.group]).slice(0, 12)) p(`| ${w.name} | ${GROUP_WORDS[w.group]} | ${f(w.weight, 3)} |`);
+    // the review's reading of the group "own foraging returns and timing": which of its features carry its gain
+    const PARTS: Record<string, string[]> = {
+      'the whole group': GROUPS.returns,
+      'crowns fed in since the last nest (a count)': ['crowns'],
+      'whether it has eaten in this crown for two five-minute steps (a flag)': ['eatingKnown'],
+      'that flag and the rate eaten there (energy per minute, relative)': ['eating', 'eatingKnown'],
+      'what its last trips delivered (mean, last, any on record)': ['tripsMean', 'tripsLast', 'tripsKnown'],
+      'hours since its last aggression (and any on record)': ['aggressionH', 'aggressionKnown'],
+    };
+    const z4 = (v: number) => f(Math.abs(v) < 5e-5 ? 0 : v, 4); // no "-0.0000"
+    const partsA = partGains(moments, PARTS, 'animal'), partsW = partGains(moments, PARTS, 'seed'), eatFlag = moments.filter(m => m.f.eatingKnown === 1);
+    p();
+    p('### 3.6b Inside the group "own foraging returns and timing" (added by the review; description)');
+    p();
+    p('Each part added to model (b) alone: the log-loss gained over (b), with a 95% interval over animals.');
+    p();
+    p('| Part of the group | Features | Held-out animals | Held-out world |');
+    p('| --- | --- | --- | --- |');
+    partsA.forEach((a, i) => p(`| ${a.part} | ${a.features.length} | ${f(a.logLoss, 4)} (${ci(a.ci, 4)}) | ${f(partsW[i].logLoss, 4)} (${ci(partsW[i].ci, 4)}) |`));
+    p();
+    p(`The flag is set at ${eatFlag.length} of the ${moments.length} moments, all of them feeding (${eatFlag.filter(m => m.kind === 'feed').length}); the median minutes in the act are ${f(med(eatFlag.map(m => m.minutes)), 0)} with the flag and ${f(med(moments.filter(m => m.kind === 'feed' && m.f.eatingKnown !== 1).map(m => m.minutes)), 0)} for feeding moments without it: the flag is a clock of the feeding bout. Beyond noise on held-out animals: ${partsA.slice(1).filter(a => a.ci[0] > 0).map(a => a.part).join('; ') || 'no part'}. On a held-out world: ${partsW.slice(1).filter(a => a.ci[0] > 0).map(a => a.part).join('; ') || 'no part'}. The rate eaten adds ${z4(partsA[3].logLoss - partsA[2].logLoss)} to the flag on held-out animals and ${z4(partsW[3].logLoss - partsW[2].logLoss)} on a held-out world.`);
     const wd = (to: string) => world.differences.find(d => d.from === 'b' && d.to === to)!;
-    const groupLines = fit.differences.filter(d => d.to.startsWith('b+')).map(d => `${GROUP_WORDS[d.to.slice(2)]} ${f(d.logLoss, 4)} (${ci(d.ci, 4)})`);
-    verdicts.push(`**Staying.** ${f(fit.staying)} of ${fit.moments} sampled moments were still in the same act 30 minutes later. On held-out animals the log-loss is ${fit.models.map(m => `${f(m.logLoss, 4)} for ${m.id === 'base' ? 'the base rate' : m.id.length === 1 ? `(${m.id})` : ''}`).filter(x => !x.endsWith('for ')).join(', ')} (AUC ${fit.models.filter(m => ['a', 'b', 'c'].includes(m.id)).map(m => `${f(m.auc, 3)} for (${m.id})`).join(', ')}). The packet features ${fit.cBeatsB ? `add ${f(bc.logLoss, 4)} nats beyond bootstrap noise (interval ${ci(bc.ci, 4)}), ${pct(fit.shareOfB)} of what the kind of act and the minutes gain over the base rate` : `do not beat the kind of act and the minutes beyond bootstrap noise (gain ${f(bc.logLoss, 4)}, interval ${ci(bc.ci, 4)})`}. By group, added to (b) alone: ${groupLines.join('; ')}. ${fit.cBeatsB ? 'By the registered reading state does predict the rules\' staying beyond a timer.' : 'By the registered reading a stay question would be a timer in weights and should not be trained.'} On a held-out world (models fitted on the other seed's world; a check added after the result) the packet features as a whole gain ${f(wd('c').logLoss, 4)} nats over (b) (${ci(wd('c').ci, 4)}), ${wd('c').ci[0] > 0 ? 'beyond noise' : 'not beyond noise'}; by group: ${Object.keys(GROUP_WORDS).map(g => `${GROUP_WORDS[g]} ${f(wd(`b+${g}`).logLoss, 4)} (${ci(wd(`b+${g}`).ci, 4)})`).join('; ')}.`);
+    const partLine = (v: typeof partsA, i: number) => `${f(v[i].logLoss, 4)} (${ci(v[i].ci, 4)})`;
+    const groupLines =fit.differences.filter(d => d.to.startsWith('b+')).map(d => `${GROUP_WORDS[d.to.slice(2)]} ${f(d.logLoss, 4)} (${ci(d.ci, 4)})`);
+    verdicts.push(`**Staying.** ${f(fit.staying)} of ${fit.moments} sampled moments were still in the same act 30 minutes later. On held-out animals the log-loss is ${fit.models.map(m => `${f(m.logLoss, 4)} for ${m.id === 'base' ? 'the base rate' : m.id.length === 1 ? `(${m.id})` : ''}`).filter(x => !x.endsWith('for ')).join(', ')} (AUC ${fit.models.filter(m => ['a', 'b', 'c'].includes(m.id)).map(m => `${f(m.auc, 3)} for (${m.id})`).join(', ')}). The packet features ${fit.cBeatsB ? `add ${f(bc.logLoss, 4)} nats beyond bootstrap noise (interval ${ci(bc.ci, 4)}), ${pct(fit.shareOfB)} of what the kind of act and the minutes gain over the base rate` : `do not beat the kind of act and the minutes beyond bootstrap noise (gain ${f(bc.logLoss, 4)}, interval ${ci(bc.ci, 4)})`}. By group, added to (b) alone: ${groupLines.join('; ')}. ${fit.cBeatsB ? 'By the registered reading state does predict the rules\' staying beyond a timer.' : 'By the registered reading a stay question would be a timer in weights and should not be trained.'} On a held-out world (models fitted on the other seed's world; a check added after the result) the packet features as a whole gain ${f(wd('c').logLoss, 4)} nats over (b) (${ci(wd('c').ci, 4)}), ${wd('c').ci[0] > 0 ? 'beyond noise' : 'not beyond noise'}; by group: ${Object.keys(GROUP_WORDS).map(g => `${GROUP_WORDS[g]} ${f(wd(`b+${g}`).logLoss, 4)} (${ci(wd(`b+${g}`).ci, 4)})`).join('; ')}. Added by the review: with a whole day held out (the other days of the same world seen) the packet features gain ${f(dd('c').logLoss, 4)} (${ci(dd('c').ci, 4)}), so it is the other world they do not carry to; and inside "own foraging returns and timing" the gain is the count of crowns fed in since the nest (${partLine(partsA, 1)} on held-out animals, ${partLine(partsW, 1)} on a held-out world) and the flag that it has eaten here for ten minutes (${partLine(partsA, 2)}, ${partLine(partsW, 2)}), while the rate eaten and what its trips delivered add nothing (trips: ${partLine(partsA, 4)}, ${partLine(partsW, 4)}).`);
   }
 
   p();

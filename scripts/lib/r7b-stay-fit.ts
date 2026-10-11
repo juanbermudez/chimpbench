@@ -2,6 +2,7 @@
 // carry, read from observe()'s context (the context packet 5 is written from), the designs of the three models, and
 // their comparison on held-out animals. Pure. Nothing here reads the scheduled end of a bout, the age of the held
 // intention, a score or rate of an option, or the rules' reason sentence.
+import { TICK_HOURS } from '../../src/sim/state';
 import type { DecisionContext } from '../../src/types';
 import { auc, clusterInterval, foldsByCluster, fitLogistic, logLoss, meanOf, mulberry32, outOfFold } from './r7b-stats';
 
@@ -93,12 +94,13 @@ export function kindsOf(moments: Moment[]): { kindOf: (m: Moment) => string; kin
 
 /**
  * The design of a model (prereg §3.2): 'a' the kind of act; 'b' adds the minutes in it (log(1 + minutes), the bands,
- * and the bands crossed with every kind of at least CROSS_FROM moments); then the packet groups named in `groups`.
+ * and the bands crossed with every kind of at least CROSS_FROM moments); then the packet groups named in `groups`, and any
+ * single packet features named in `extra` (the review's reading of the parts of a group).
  */
-export function design(moments: Moment[], model: 'a' | 'b', groups: string[] = []): { X: number[][]; names: string[] } {
+export function design(moments: Moment[], model: 'a' | 'b', groups: string[] = [], extra: string[] = []): { X: number[][]; names: string[] } {
   const { kindOf, kinds, crossed } = kindsOf(moments), names: string[] = kinds.map(k => `kind:${k}`);
   if (model === 'b') { names.push('log(1 + minutes)', ...BANDS.map(([b]) => `band:${b}`)); for (const k of crossed) for (const [b] of BANDS) names.push(`kind:${k} × band:${b}`); }
-  const feats = groups.flatMap(g => { if (!GROUPS[g]) throw new Error(`unknown group ${g}`); return GROUPS[g]; });
+  const feats = [...groups.flatMap(g => { if (!GROUPS[g]) throw new Error(`unknown group ${g}`); return GROUPS[g]; }), ...extra];
   names.push(...feats);
   const X = moments.map(m => {
     const row: number[] = kinds.map(k => (kindOf(m) === k ? 1 : 0));
@@ -121,14 +123,13 @@ export interface StayFit {
 /**
  * The comparison on held-out animals for one label: every moment predicted by a model that never saw its animal.
  * `heldOut` 'seed' (a check added after the registered result; description): one fold per seed instead, so every moment
- * is predicted by a model fitted on another world.
+ * is predicted by a model fitted on another world. 'day' (added by the review; description): one fold per simulated day
+ * of a seed, so every moment is predicted by a model that saw nothing of its day.
  */
-export function evaluate(moments: Moment[], label: 'stay' | 'stayKind' = 'stay', lambda = 1, resamples = 2000, k = 5, heldOut: 'animal' | 'seed' = 'animal'): StayFit {
+export function evaluate(moments: Moment[], label: 'stay' | 'stayKind' = 'stay', lambda = 1, resamples = 2000, k = 5, heldOut: HeldOut = 'animal'): StayFit {
   const y = moments.map(m => m[label] as number), animal = moments.map(m => `${m.seed}:${m.id}`);
-  // the animals in the order of a hash of seed and id (the sampler's own hash is by tick too; this one must not be): a fixed, label-free deal
-  const order = [...new Set(animal)].sort((a, b) => hashOf(a) - hashOf(b) || (a < b ? -1 : 1)), seedsIn = [...new Set(moments.map(m => m.seed))].sort((a, b) => a - b);
-  if (heldOut === 'seed') k = seedsIn.length;
-  const fold = heldOut === 'seed' ? moments.map(m => seedsIn.indexOf(m.seed)) : foldsByCluster(animal, order, k);
+  const { fold, k: folds, animals } = foldsOf(moments, heldOut, k);
+  k = folds;
   const preds: Record<string, number[]> = {}, models: ModelScore[] = [];
   const add = (id: string, words: string, features: number, p: number[]) => { preds[id] = p; models.push({ id, words, features, logLoss: logLoss(p, y), auc: auc(p, y) }); };
   // the base rate: the share staying among the other folds' moments
@@ -146,7 +147,28 @@ export function evaluate(moments: Moment[], label: 'stay' | 'stayKind' = 'stay',
   };
   const differences = [diff('base', 'a'), diff('a', 'b'), diff('b', 'c'), ...Object.keys(GROUPS).map(g => diff('b', `b+${g}`))];
   const bc = differences.find(d => d.from === 'b' && d.to === 'c')!, gainB = models[0].logLoss - models.find(m => m.id === 'b')!.logLoss;
-  return { label, moments: moments.length, animals: order.length, staying: meanOf(y), lambda, folds: k, models, differences, cBeatsB: bc.beyondNoise, shareOfB: gainB > 0 ? bc.logLoss / gainB : null };
+  return { label, moments: moments.length, animals, staying: meanOf(y), lambda, folds: k, models, differences, cBeatsB: bc.beyondNoise, shareOfB: gainB > 0 ? bc.logLoss / gainB : null };
+}
+export type HeldOut = 'animal' | 'seed' | 'day';
+const DAY_TICKS = Math.round(24 / TICK_HOURS);
+/** Each moment's fold: by animal (the animals in the order of a hash of seed and id, dealt in turn: a fixed, label-free deal; the sampler's own hash is by tick too, this one must not be), by seed, or by simulated day of a seed. */
+export function foldsOf(moments: Moment[], heldOut: HeldOut, k = 5): { fold: number[]; k: number; animals: number } {
+  const animal = moments.map(m => `${m.seed}:${m.id}`), order = [...new Set(animal)].sort((a, b) => hashOf(a) - hashOf(b) || (a < b ? -1 : 1));
+  if (heldOut === 'animal') return { fold: foldsByCluster(animal, order, k), k, animals: order.length };
+  const key = (m: Moment) => (heldOut === 'seed' ? `${m.seed}` : `${m.seed}:${Math.floor(m.tick / DAY_TICKS)}`), keys = [...new Set(moments.map(key))].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  return { fold: moments.map(m => keys.indexOf(key(m))), k: keys.length, animals: order.length };
+}
+
+/**
+ * The review's reading of what carries a group's gain (description): each named set of single packet features added to
+ * model (b) alone, on the folds of `heldOut`, with the log-loss gained over (b) and its 95% interval over animals.
+ */
+export function partGains(moments: Moment[], parts: Record<string, string[]>, heldOut: HeldOut = 'animal', label: 'stay' | 'stayKind' = 'stay', lambda = 1, resamples = 2000): { part: string; features: string[]; logLoss: number; ci: [number, number] }[] {
+  const y = moments.map(m => m[label] as number), animal = moments.map(m => `${m.seed}:${m.id}`), { fold } = foldsOf(moments, heldOut), pb = outOfFold(design(moments, 'b').X, y, fold, lambda);
+  return Object.entries(parts).map(([part, features]) => {
+    const p = outOfFold(design(moments, 'b', [], features).X, y, fold, lambda), gain = (idx?: number[]) => logLoss(pb, y, idx) - logLoss(p, y, idx);
+    return { part, features, logLoss: gain(), ci: clusterInterval(animal, mulberry32(20261012), gain, resamples) };
+  });
 }
 /** A small string hash (FNV-1a) for the deal of animals into folds. */
 function hashOf(s: string): number { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }

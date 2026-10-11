@@ -149,7 +149,10 @@ export function forkPoint(base: ForkBase, parentMode: World['modelPolicy']['mode
     const reps: Replicate[] = [];
     for (const salt of salts) {
       const t0 = performance.now(), w = fork(base, parentMode, id, o, salt, ownNoise), t1 = performance.now();
-      if (!w) return null; // not applicable: the same for every salt
+      // not applicable. With the salt in the random stream alone this is the same for every salt (the first fails). With
+      // --own-noise a later salt can fail after earlier ones were run (a re-drawn jitter takes the option off the legal
+      // list): the whole option is then left out and its earlier replicates are dropped, though they stay counted in `n`
+      if (!w) return null;
       reps.push(runFork(w, id, horizons));
       copyMs += t1 - t0; runMs += performance.now() - t1; n++;
     }
