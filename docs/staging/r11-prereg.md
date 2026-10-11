@@ -323,4 +323,59 @@ machine is shared with the model chain tonight).
 
 ## 10. Iteration log and results
 
-(Empty at registration.)
+Sections 1 to 9 stand as registered at 03:05 (commit 456640f). What changed afterwards is said here, each change
+logged before the run it concerns.
+
+### 10.1 Corrections to the label, logged 11 October 2026, 03:19 EDT, before any label file, sampling run or control arm
+
+Disclosed first: while the sampler was being written it was run three times on a dirty tree into a scratch folder
+(seed 48, base W50, one day of burn-in, half a day sampled; nothing kept, no number of it reported below). Its own
+check, mark M1, and one comparison printed beside it showed two errors in §2 as registered. No label file existed, no
+adapter exists, and no mark or statement of §6 changes.
+
+**C1. The rules compare published scores.** §2 says the rules take the first maximum of *v + j + b*. The code takes
+the first maximum of *published(v + j) + b*, where published(x) is the score as `candidates.ts` writes it on an
+option: clamped to 0 … 3 and rounded to a thousandth. Found because check M1 failed on every one of 1,126 fresh draws
+as first written (the value and the jitter did not sum to the option's score); with the published score it holds on
+all of them. The label uses the rules' own rule.
+
+**C2. The menu cannot be held fixed while the jitter is redrawn.** §2 registered the label as the chance that each
+offered option wins when the offered options' jitter is redrawn, "the menu held as it was offered", and listed that as
+a stated limit. It is more than a limit. The rules' menu is itself cut by the jittered scores: each kind of act is
+represented by its best-scored target (one trip out of about 51 possible trees), so an option is often on the menu
+because its own jitter was high. Redrawing that option's jitter alone then takes away what put it there, and the
+label understates it. On the scratch half-day the label so computed put 0.113 on trips to food where the rules took
+one at 0.172 of the same 279 menus: the same shortfall, in the labels, that stage R4's adapter showed (0.155 against
+0.23). Training on it would have taught the under-tripping this stage exists to remove.
+
+The label as corrected, and as built: **the probability that the rules take each option given the animal's state and
+the menu the model is shown.** The candidate jitter is a hash of the animal, its decision version, the act and the
+target, so another decision version is another draw of every candidate's jitter, on the menu or not. For each fresh
+draw the sampler sets the animal's decision version to other values (a fixed sequence), builds the candidate list and
+the rules' menu again with the simulation's own functions (`computeCandidates`, `rgMenu`), draws a belief for each
+option that carries one from a stream seeded by the record's id, and applies the rules' rule. Among the redraws that
+offer the same menu, the share of each option is its label. The decision version is put back at once; nothing else is
+written and `world.rng` is not drawn from.
+
+- **How many redraws.** At least 2,000 per fresh draw, then on in the same sequence until 500 of them offered the same
+  menu or 20,000 were made. A fresh draw whose menu came up in fewer than 100 redraws has no label, is counted and is
+  left out (its menu is too rare to estimate; leaving it out does not bias the label of any other record).
+- **So the label is a Monte Carlo estimate, not exact**: its standard error is at most 0.022 with 500 same-menu
+  redraws and 0.05 with 100. The exact arithmetic of §2 (now for published scores, `scripts/lib/soft-labels.ts`) is kept
+  for the comparison column `fixed`, the registered reading, which is saved in every row and never trained on.
+- **Mark M1, widened.** On 100% of labelled fresh draws: (a) and (b) as registered (with the published score), and
+  (c) the candidate list and the menu built again at the animal's true decision version are the ones the rules drew
+  from, option for option and score for score. So the redraws go through the code that made the realised choice.
+- **Mark M2, new: the label is calibrated.** Over every labelled fresh draw of the six worlds, for each of six groups
+  of options (feeding, travel, rest and social options; trips to food on day and dawn menus; the option that carries
+  on the act in progress): the mean label mass on the group against the share of draws at which the rules took an
+  option of the group. **Mark: every difference is within 3 standard errors** (the standard error from the labels'
+  own variance, the square root of the sum of q(1 − q), over the count). If it fails, training does not start. The
+  same table is printed for the `fixed` column, where the mark is expected to fail on trips.
+- **What the label still is not.** It conditions on the menu shown. It says nothing about options the rules would
+  have offered under another jitter (another tree, another partner): the model cannot choose those either.
+
+**One change to §3, for cost.** Every fresh draw now costs some thousands of redraws (about 50 microseconds each), so
+the held-out worlds of seed 21 are sampled at 0.09 like the training worlds, not 0.2. The held-out file still takes
+750 fresh draws and 250 kept or arrived records per world, if the world yields them; the state probes draw from every
+fresh draw of the two worlds.

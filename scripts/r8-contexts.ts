@@ -78,7 +78,13 @@ export function packetsOf(ctx: DecisionContext): R8Rec['packets'] {
 
 export interface SampleOpts { seed: number; base: string; params: Record<string, number>; burnIn: number; days: number; p: number; check?: boolean; log?: (s: string) => void;
   /** The name the sampling hash is keyed by (default 'r8'; 'r4' samples the decision points scripts/r4-contexts.ts samples at the same rate). A hook after every tick, burn-in included (read only). */
-  tag?: string; onTick?: (w: World, tick: number) => void }
+  tag?: string; onTick?: (w: World, tick: number) => void;
+  /**
+   * Stage R11 (scripts/r11-contexts.ts): a hook at every record, while the world still stands at the decision: the rules'
+   * candidate list, the menu they drew from (empty for a kept or arrived act), the option they took, and the world's random
+   * state just before the decision. It may add fields to the record; it must only read the world. Absent: the records are stage R8's, unchanged.
+   */
+  extend?: (rec: R8Rec, live: { w: World; c: Chimp; list: Candidate[]; menu: Candidate[]; chosen: Candidate; rngBefore: number }) => void }
 
 export function sampleR8(o: SampleOpts): { recs: R8Rec[]; hash: string; decisions: Record<string, number>; seconds: number; skipped: Record<string, number> } {
   if (![...TRAIN_SEEDS, ...TEST_SEEDS].includes(o.seed)) throw new Error(`seed ${o.seed}: 48 and 7 (train, dev) and 21 (test) only (docs/staging/r4-prereg.md §3)`);
@@ -90,17 +96,17 @@ export function sampleR8(o: SampleOpts): { recs: R8Rec[]; hash: string; decision
   // an option's stable key is the decode's (stage R9, src/kernel/decode.ts optionKey: the act and its target, the pair applyDecision re-checks by)
   const key = optionKey;
   const skip = (why: string) => { skipped[why] = (skipped[why] ?? 0) + 1; };
-  let pending: { c: Chimp; req: ReturnType<typeof buildRequest>; tick: number; opened: number; act: R8Rec['act'] } | null = null;
+  let pending: { c: Chimp; req: ReturnType<typeof buildRequest>; tick: number; opened: number; act: R8Rec['act']; rng: number } | null = null;
   rulesTap.fn = (c, list, policy) => {
     pending = null;
     if (!policy || !c.alive || c.age < P.rgMinAge) return;
     if (u01(`${o.tag ?? 'r8'}:${o.seed}:${w.tick}:${c.id}`) >= o.p) return;
     const rng = w.rng, before = JSON.stringify(ix(c).own ?? null);
-    pending = { c, req: buildRequest(w, c), tick: w.tick, opened: ix(c).own?.ask?.[1] ?? -1, act: { action: c.action, targetId: c.targetId, seconds: c.actionTime, finished: ix(c).finished, onMenu: list.some(k => k.action === c.action && k.targetId === c.targetId) } };
+    pending = { c, req: buildRequest(w, c), tick: w.tick, opened: ix(c).own?.ask?.[1] ?? -1, act: { action: c.action, targetId: c.targetId, seconds: c.actionTime, finished: ix(c).finished, onMenu: list.some(k => k.action === c.action && k.targetId === c.targetId) }, rng };
     if (w.rng !== rng) throw new Error('building a request drew from world.rng');
     if (JSON.stringify(ix(c).own ?? null) !== before) throw new Error('building a request wrote the animal\'s own record');
   };
-  rgTap.fn = (c, _list, _menu, _probs, chosen, why) => {
+  rgTap.fn = (c, list, menu, _probs, chosen, why) => {
     decisions[why] = (decisions[why] ?? 0) + 1;
     const p = pending; pending = null;
     if (!p || p.c !== c || p.tick !== w.tick) return;
@@ -127,6 +133,7 @@ export function sampleR8(o: SampleOpts): { recs: R8Rec[]; hash: string; decision
       why, label, draw: label === 'fresh', rgIndex, pick: rgIndex >= 0 ? `c${rgIndex}` : null, rulesIndex: p.req.rulesIndex,
       opened: p.opened, asked: ctx.own?.asked ?? null, options, context: ctx, act: p.act, packets,
       tokens: { state: tokensOf(packets.state), neutral: tokensOf(packets.neutral), own: tokensOf(packets.own), ownShort: tokensOf(packets.ownShort) } });
+    o.extend?.(recs[recs.length - 1], { w, c, list, menu, chosen, rngBefore: p.rng });
   };
   try { for (let i = 0; i < Math.round(o.days * DAY); i++) { tickWorld(w); o.onTick?.(w, w.tick); if (o.log && i > 0 && i % (DAY / 4) === 0) o.log(`sampled day ${(i / DAY).toFixed(2)}: ${recs.length} records`); } }
   finally { rulesTap.fn = null; rgTap.fn = null; }
