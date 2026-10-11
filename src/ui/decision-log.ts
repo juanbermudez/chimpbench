@@ -9,12 +9,17 @@ import type { Action, Chimp, DecisionSource, World } from '../types';
 
 export const DECISION_LOG_MAX = 48;
 
+export type ActSource = DecisionSource | 'set';
+
 export interface DecisionEntry {
   /** Ecological hours: when the act began (world time minus the simulation's own time-in-act at the look that saw it). */
   time: number;
   /** Chimp.decisionVersion at the latest look that still showed this act. */
   version: number;
-  action: Action; targetId: number; reason: string; source: DecisionSource;
+  action: Action; targetId: number; reason: string;
+  /** Who chose the act: the rules, or a model through the decision loop. 'set': nobody chose it at a decision point,
+   * the simulation set it (a rest while waiting for an answer, fighting back, death). */
+  source: ActSource;
   /** The act was already under way when the watch began. */
   before: boolean;
   /** Further decision points seen at which the animal stayed in this act (its decision count moved, its act did not). */
@@ -37,16 +42,29 @@ export function createDecisionLog(): DecisionLog { return { chimpId: -1, world: 
 
 const actStart = (world: World, c: Chimp) => world.time - (c.actionTime ?? 0) / 3600;
 
+/**
+ * Who chose the act under way. Chimp.decisionSource names the animal's last decision, which is not the act when the
+ * simulation changed it since without a decision: the animal is parked waiting for an answer, its decision count did
+ * not move while its act did (`chosen` false), or the act is not among the options it weighed (the Mind tab's "not
+ * a choice", mind-card.ts cardFromChimp). Those are 'set', never credited to the rules' or a model's last pick.
+ */
+function actSource(c: Chimp, chosen: boolean): ActSource {
+  if (!chosen || (c.awaitingDecisionSince !== null && c.awaitingDecisionSince !== undefined)) return 'set';
+  const list = c.candidates ?? [];
+  if (list.length && !list.some(o => o.action === c.action && o.targetId === c.targetId)) return 'set';
+  return c.decisionSource;
+}
+
 /** One look at the selected animal. Returns true when the record changed. Reads only. */
 export function watchDecisions(log: DecisionLog, world: World, c: Chimp): boolean {
   const last = log.entries[log.entries.length - 1];
   if (log.chimpId !== c.id || log.world !== world || world.time < log.since) {
     log.chimpId = c.id; log.world = world; log.since = world.time; log.entries.length = 0; log.missed = 0;
-    if (c.alive) log.entries.push({ time: actStart(world, c), version: c.decisionVersion, action: c.action, targetId: c.targetId, reason: c.reason ?? '', source: c.decisionSource, before: true, kept: 0 });
+    if (c.alive) log.entries.push({ time: actStart(world, c), version: c.decisionVersion, action: c.action, targetId: c.targetId, reason: c.reason ?? '', source: actSource(c, true), before: true, kept: 0 });
     return true;
   }
   if (!last || !c.alive) {
-    if (last && last.action !== 'dead') { log.entries.push({ time: world.time, version: c.decisionVersion, action: 'dead', targetId: -1, reason: c.causeOfDeath ? `Died: ${c.causeOfDeath}` : 'Died', source: c.decisionSource, before: false, kept: 0 }); return true; }
+    if (last && last.action !== 'dead') { log.entries.push({ time: world.time, version: c.decisionVersion, action: 'dead', targetId: -1, reason: c.causeOfDeath ? `Died: ${c.causeOfDeath}` : 'Died', source: 'set', before: false, kept: 0 }); return true; }
     return false;
   }
   const steps = c.decisionVersion - last.version;
@@ -59,7 +77,7 @@ export function watchDecisions(log: DecisionLog, world: World, c: Chimp): boolea
     return false;
   }
   if (steps > 1) log.missed += steps - 1;
-  log.entries.push({ time: Math.max(last.time, actStart(world, c)), version: c.decisionVersion, action: c.action, targetId: c.targetId, reason: c.reason ?? '', source: c.decisionSource, before: false, kept: 0 });
+  log.entries.push({ time: Math.max(last.time, actStart(world, c)), version: c.decisionVersion, action: c.action, targetId: c.targetId, reason: c.reason ?? '', source: actSource(c, steps > 0), before: false, kept: 0 });
   if (log.entries.length > DECISION_LOG_MAX) log.entries.splice(0, log.entries.length - DECISION_LOG_MAX);
   return true;
 }

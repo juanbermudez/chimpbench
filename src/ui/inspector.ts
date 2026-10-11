@@ -10,7 +10,7 @@ import { egoNetworkSvg, relationLegend } from './graph';
 import { CAT_ICON } from './feed';
 import { CHIMP_LOG_MAX, chimpEvents } from './chimp-log';
 import { ACTIVITY_LABEL, createDecisionLog, timeline, watchDecisions, type DecisionLog } from './decision-log';
-import { targetName } from './mind-card';
+import { modelEngine, targetName } from './mind-card';
 import { morph, setAttr, setText } from './morph';
 
 // Bottom chimp panel: the selected animal at the foot of the forest, between the left column and the right sidebar.
@@ -98,8 +98,10 @@ const DECISIONS_SHOWN = 12;
  * Log, first part (stage W4): what the interface saw this animal do since it was selected (decision-log.ts). One line
  * of activity over the last three hours, then its changes of act, newest first, each with the simulation's own reason.
  */
-function activityHtml(w: World, c: Chimp, log: DecisionLog): string {
+function activityHtml(w: World, c: Chimp, log: DecisionLog, engine: string): string {
   if (log.chimpId !== c.id || !log.entries.length) return '';
+  // Who chose each act: the rules, a model through the loop (its full name on hover), or nobody (the simulation set it).
+  const src = (s: DecisionLog['entries'][number]['source']) => s === 'decide' ? `<i class="dlog-src" title="${esc(engine)}">model` : s === 'set' ? '<i class="dlog-src" title="Not chosen at a decision point: the simulation set it (a wait for an answer, a reaction, a fight)">not a choice' : '<i class="dlog-src">rules';
   const tl = timeline(log, w.time, ACTIVITY_SPAN), span = tl.to - tl.from;
   const clock = (t: number) => hhmm(timeParts(w, t).hour);
   const kinds = [...new Set(tl.segments.map(s => s.kind))].filter(k => k !== 'none');
@@ -109,12 +111,12 @@ function activityHtml(w: World, c: Chimp, log: DecisionLog): string {
     <div class="tl-axis mono" aria-hidden="true"><span>${clock(tl.from)}</span><span>${clock(tl.from + span / 2)}</span><span>${clock(tl.to)}</span></div>
     <p class="tl-legend">${kinds.map(k => `<span class="a-${k}"><i></i>${ACTIVITY_LABEL[k]}</span>`).join('')}<span class="a-none"><i></i>before it was selected</span></p></section>
   <section><h3 class="eyebrow">Acts <span class="muted">${log.entries.length === 1 ? 'the one under way' : `${log.entries.length} seen, newest first`}${log.missed ? ` · ${log.missed} decision${log.missed === 1 ? '' : 's'} passed unseen at speed` : ''}</span></h3>
-    <ol class="clog dlog">${seen.map(e => { const tn = targetName(w, e); return `<li><span class="mono cl-when">${e.before ? 'since ' : ''}${clock(e.time)}</span><span class="cl-ic">${icon(ACTION_ICON[e.action] ?? 'leaf')}</span><span class="cl-text"><b>${esc(actionLabel(e.action))}</b>${tn ? ` → ${esc(tn)}` : ''}<i class="dlog-src">${e.source === 'decide' ? 'model' : 'rules'}${e.kept ? ` · kept at ${e.kept} more decision point${e.kept === 1 ? '' : 's'}` : ''}</i>${e.reason ? `<span class="dlog-why">${esc(e.reason)}</span>` : ''}</span><span class="mono cl-ago">${ago(w, e.time)}</span></li>`; }).join('')}</ol></section>`;
+    <ol class="clog dlog">${seen.map(e => { const tn = targetName(w, e); return `<li><span class="mono cl-when">${e.before ? 'since ' : ''}${clock(e.time)}</span><span class="cl-ic">${icon(ACTION_ICON[e.action] ?? 'leaf')}</span><span class="cl-text"><b>${esc(actionLabel(e.action))}</b>${tn ? ` → ${esc(tn)}` : ''}${src(e.source)}${e.kept ? ` · kept at ${e.kept} more decision point${e.kept === 1 ? '' : 's'}` : ''}</i>${e.reason ? `<span class="dlog-why">${esc(e.reason)}</span>` : ''}</span><span class="mono cl-ago">${ago(w, e.time)}</span></li>`; }).join('')}</ol></section>`;
 }
 
 /** Log: what the animal has been doing (the interface's own record), then the field log filtered to it. */
 function logHtml(ctx: Ctx, c: Chimp, log: DecisionLog): string {
-  const w = ctx.world(), evs = chimpEvents(w, c.id), activity = activityHtml(w, c, log);
+  const w = ctx.world(), d = ctx.deps.decider, evs = chimpEvents(w, c.id), activity = activityHtml(w, c, log, modelEngine(d.model, d.provider).label);
   if (!evs.length && !activity) return empty(`Nothing in the field log names ${esc(c.name)} yet`, 'Entries appear here as they are recorded: greetings, grooming, conflicts, hunts, births and losses.', 'history');
   return `<div class="clog-wrap">${activity}<section><h3 class="eyebrow">Field log <span class="muted">${evs.length ? `${evs.length}${evs.length === CHIMP_LOG_MAX ? '+' : ''} ${evs.length === 1 ? 'entry' : 'entries'} naming ${esc(c.name)}, newest first` : `nothing names ${esc(c.name)} yet`}</span></h3>
     ${evs.length ? `<ol class="clog">${evs.map(e => { const cat = feedCat(e.kind); return `<li class="k-${cat} sev-${Math.min(3, e.severity ?? 0)}"><span class="mono cl-when">${stamp(w, e.time)}</span><span class="cl-ic">${icon(CAT_ICON[cat])}</span><span class="cl-text">${esc(e.text)}</span><span class="mono cl-ago">${ago(w, e.time)}</span></li>`; }).join('')}</ol>` : '<p class="subtle">The field log records notable events only: greetings, grooming, conflicts, hunts, births and losses.</p>'}</section></div>`;
