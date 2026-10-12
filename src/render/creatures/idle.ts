@@ -36,6 +36,31 @@ export function lieOf(v: Float32Array): number {
   return Math.abs(roll) > 1 ? Lie.side : pitch < -1.1 ? Lie.supine : Lie.prone;
 }
 
+/**
+ * Whether a body in this posture scratches (a drawing rule; stylization). Seated: yes. Lying on a side or on the back
+ * on the ground: yes (`lie`: lieOf, 0 for a body that does not lie). Lying along a bough in a crown: no (merge of
+ * stages W8 and W9: of the two lying postures of poses.ts perchRest one has a hand on the bough and the other arm
+ * folded behind the head, the other has the chin on a forearm; neither has a hand to spare). On all fours and upright:
+ * no (the arm's elbow pole stands the elbow over the back).
+ */
+export function mayScratch(posture: number, lie: number, inCrown: boolean): boolean {
+  return posture === Posture.seated || (!inCrown && (lie === Lie.side || lie === Lie.supine));
+}
+/** Finger curl (second joint, radians) from which a hand placed by IK counts as closed round a support: poses.ts grip
+ * writes 1.3 at a full grip and 1.17 at the lightest hold of the crown postures; a relaxed hand is at 0.55. */
+export const GRIP_HELD = 1.0;
+/**
+ * True when that arm (0 left, 1 right) holds on in the clip's pose `v`: its hand is placed by IK and is either
+ * overhead (above 0.9 body lengths) or closed round a support. Merge of stages W8 and W9: the resting postures in a
+ * crown keep one hand on the limb or the bough at hip height (poses.ts perchRest), which the height test alone did not
+ * see, and a scratch would have taken that hand off its hold. Read from the pose, not from the clip's name, like the
+ * rest of this file. Call it on the pose as the clip wrote it, before idleOverlay (a raking hand curls its fingers too).
+ */
+export function handHolds(v: Float32Array, side: number): boolean {
+  const o = PI.ik + (side ? LIMB.armR : LIMB.armL) * 5;
+  return v[o + 3] > 0.5 && (v[o + 1] > 0.9 || v[(side ? B.fingR2 : B.fingL2) * 3] > GRIP_HELD);
+}
+
 /** Reach of a scratch 0..1: in over SCRATCH_IN seconds, out over SCRATCH_OUT at the end. */
 const SCRATCH_IN = 0.45, SCRATCH_OUT = 0.5;
 export function scratchReach(t: number, dur: number): number { return smooth(t / SCRATCH_IN) * (1 - smooth((t - (dur - SCRATCH_OUT)) / SCRATCH_OUT)); }

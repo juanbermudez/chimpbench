@@ -3,7 +3,8 @@ import test from 'node:test';
 import { CLIPS, Pw, type PoseCtx } from '../src/render/creatures/poses';
 import { B, LIMB, PI, createFK, createMorph, createPose, solveFK } from '../src/render/creatures/rig';
 import { Posture, postureOf } from '../src/render/creatures/intention';
-import { HEAD_HAND, Lie, SCRATCH_BELLY, SCRATCH_HZ, SCRATCH_POINT, createIdleCtx, idleFace, idleOverlay, lieOf, nodAt, nodLids, scratchReach, scratchWrist, yawnAt, type IdleCtx } from '../src/render/creatures/idle';
+import { GRIP_HELD, HEAD_HAND, Lie, SCRATCH_BELLY, SCRATCH_HZ, SCRATCH_POINT, createIdleCtx, handHolds, idleFace, idleOverlay, lieOf, mayScratch, nodAt, nodLids, scratchReach, scratchWrist, yawnAt, type IdleCtx } from '../src/render/creatures/idle';
+import { PERCH, perchLies } from '../src/render/creatures/perch';
 import {
   BLINK_SLOW, IDLE, IDLE_GAP, IDLE_SETTLE, IDLE_SHARE, SCRATCH, blinkAt, createBlink, createIdle, idleBit, idleCancel, idleGap, idleLean, idleRate, idleStep,
 } from '../src/render/creatures/secondary';
@@ -277,5 +278,49 @@ test('the seated rest no longer scratches by itself: its arms rest on the knees 
     const w = pose('rest', { role: 0, seed: 0.2, time });
     assert.equal(postureOf(w.v), Posture.seated);
     assert.ok(Math.abs(w.v[PI.ik + LIMB.armL * 5 + 1] - 0.3) < 1e-6 && Math.abs(w.v[PI.ik + LIMB.armR * 5 + 1] - 0.3) < 1e-6, `at ${time} s`);
+  }
+});
+
+// --- Where stages W8 and W9 meet (the merge of 12 October 2026): idle life over the postures of a crown -----------------
+test('in a crown the hand that holds on is not free to scratch, and a body lying along a bough does not scratch', () => {
+  // The three seated resting postures keep one hand on a support: the left when the individual's seed is 0.5 or
+  // less, else the right (poses.ts perchRest). That hand holds, in every one of them and at every moment; the other
+  // is free, so a scratch drawn for the holding side goes to the other hand (creatures.ts stepIdle).
+  for (const seed of [0.1, 0.37, 0.5, 0.51, 0.8]) for (const role of [PERCH.hold, PERCH.overhead, PERCH.foot]) for (const time of [0, 3.3, 41, 97.5]) {
+    const w = pose('perch', { role, seed, time, inTree: true }), hold = seed > 0.5 ? 1 : 0;
+    assert.equal(postureOf(w.v), Posture.seated, `posture ${role} is seated`);
+    assert.ok(handHolds(w.v, hold), `posture ${role}, seed ${seed}: the hand on the support holds`);
+    assert.ok(!handHolds(w.v, 1 - hold), `posture ${role}, seed ${seed}: the other hand is free`);
+    assert.ok(mayScratch(Posture.seated, 0, true));
+  }
+  // The hand on a limb at hip height is the case the height test alone missed (0.05 body lengths up, far under 0.9).
+  { const w = pose('perch', { role: PERCH.hold, seed: 0.2, inTree: true }); assert.ok(w.v[PI.ik + LIMB.armL * 5 + 1] < 0.9 && w.v[B.fingL2 * 3] > GRIP_HELD); }
+  // The two lying postures read as lying, and neither scratches: on the back along the bough one hand is on it (it
+  // holds) and the other arm is folded behind the head; prone, the chin is on a forearm.
+  for (const seed of [0.2, 0.8]) for (const role of [PERCH.recline, PERCH.prone]) {
+    const w = pose('perch', { role, seed, inTree: true });
+    assert.ok(perchLies(role));
+    assert.equal(postureOf(w.v), Posture.lying, `posture ${role} reads as lying`);
+    assert.ok(!mayScratch(Posture.lying, lieOf(w.v), true), `posture ${role} does not scratch in a crown`);
+  }
+  assert.equal(lieOf(pose('perch', { role: PERCH.recline, inTree: true }).v), Lie.supine);
+  assert.ok(handHolds(pose('perch', { role: PERCH.recline, seed: 0.2, inTree: true }).v, 0), 'reclining, the hand on the bough holds');
+  // On the ground nothing changes: a lying body scratches on its side or its back, never prone; a seated one does; no
+  // seated or lying ground clip that permits a scratch has a holding hand.
+  assert.ok(mayScratch(Posture.lying, Lie.side, false) && mayScratch(Posture.lying, Lie.supine, false) && !mayScratch(Posture.lying, Lie.prone, false));
+  assert.ok(mayScratch(Posture.seated, 0, false) && !mayScratch(Posture.quad, 0, false) && !mayScratch(Posture.other, 0, false));
+  for (const clip of ['sitIdle', 'guard']) for (const side of [0, 1]) assert.ok(!handHolds(pose(clip).v, side), `${clip}: both hands free`);
+  for (let role = 0; role < 3; role++) for (const seed of [0.05, 0.4, 0.6, 0.95]) for (const side of [0, 1]) assert.ok(!handHolds(pose('rest', { role, seed }).v, side), 'rest: both hands free');
+});
+
+test('crown feeding: the idle layer never takes a hand (it permits no scratch) and a weight shift leaves the hands on the cluster', () => {
+  // Feeding permits a weight shift and a glance only (creatures.ts IDLE_ALLOW): neither writes a limb target, so the
+  // hand that holds the cluster and the hand that picks from it are where the clip put them, through a whole cycle.
+  for (let time = 0; time < 14; time += 0.35) for (const lean of [-1, 1]) {
+    const base = pose('forage', { inTree: true, seed: 0.37, time }), w = pose('forage', { inTree: true, seed: 0.37, time });
+    idleOverlay(w, postureOf(w.v), idle({ breath: 1, kind: IDLE.shift, t: 0.7, dur: 1.4, lean }));
+    for (let i = PI.ik; i < PI.ik + 20; i++) assert.equal(w.v[i], base.v[i], `at ${time} s: limb targets untouched`);
+    for (const bone of [B.uarmL, B.uarmR, B.farmL, B.farmR, B.handL, B.handR, B.fingL, B.fingR, B.fingL2, B.fingR2]) for (let k = 0; k < 3; k++) assert.equal(w.v[bone * 3 + k], base.v[bone * 3 + k], 'arm and hand joints untouched');
+    assert.equal(w.pose.propL, base.pose.propL); assert.equal(w.pose.propR, base.pose.propR);
   }
 });

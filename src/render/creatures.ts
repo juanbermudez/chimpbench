@@ -32,7 +32,7 @@ import {
   realSeconds, restedBefore, runnerUp, startTime, stepLate, type Beat,
 } from './creatures/beat';
 import { Posture, intention, postureOf } from './creatures/intention';
-import { Lie, SCRATCH_BELLY, createIdleCtx, idleFace, idleOverlay, lieOf, scratchReach, scratchWrist } from './creatures/idle';
+import { Lie, SCRATCH_BELLY, createIdleCtx, handHolds, idleFace, idleOverlay, lieOf, mayScratch, scratchReach, scratchWrist } from './creatures/idle';
 import { LID_MAX, bellyUnder, bodyChannels, coatUnder, coatValue, createChannels, type BodyChannels } from './creatures/bodystate';
 import { bodyStateOf } from '../simulation';
 import { paramsOf } from '../sim/params';
@@ -207,8 +207,10 @@ export interface Anim {
    * ownFrame: the frame its own place in the crown was found (ownX/Y/Z), with the bearing of that place from the trunk
    * (ownYaw), whether it is on a limb the environment draws (ownLimb) and the height nothing in the crown is drawn above.
    * ownSrc: what the environment gave for that place (0 nothing, 1 the crown anchor, 2 a limb) and ownCut, the frame
-   * that last changed: the forest is drawn in a window round the camera, so a tree's limbs come and go with it. */
-  up: boolean; seatHost: number; seatX: number; seatY: number; seatZ: number; seatFace: number; sx: number; sy: number; sz: number; seated: boolean;
+   * that last changed: the forest is drawn in a window round the camera, so a tree's limbs come and go with it.
+   * glide (merge of W8 and W9): how far the drawn seat still is from its place this frame, in metres (0 at rest, on
+   * the ground and when the seat is drawn at once): no idle event starts on a body that is sliding to its seat. */
+  up: boolean; seatHost: number; seatX: number; seatY: number; seatZ: number; seatFace: number; sx: number; sy: number; sz: number; seated: boolean; glide: number;
   perchRole: number; lies: boolean; gFrame: number; gx: number; gy: number; gz: number; gyaw: number; gt0: number; gt1: number; gOn: boolean; wasHost: boolean; g0: number; g1: number; gm: number; gr: number;
   nursed: boolean; holdsBack: boolean;
   ownFrame: number; ownX: number; ownY: number; ownZ: number; ownYaw: number; ownLimb: boolean; ownTop: number; ownSrc: number; ownCut: number;
@@ -455,7 +457,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       bristle: 0, dim: 0, fade: 0, blinkAt: hash01(chimp.id, 9) * 4, mouth: 0, grin: 0, appearanceAt: -1, deadAt: null,
       px: 0, visible: true, lod: 2, lodFrom: 2, lodT: 99, poseAccum: 99, lastSkinFrame: -1, head: new THREE.Vector3(), top: 1, troopColor: '#cccccc',
       pick, partnerId: -1, look: new Float32Array(3), hasLook: false, paired: false, pairClip: null, onBranch: false,
-      up: false, seatHost: -1, seatX: 0, seatY: 0, seatZ: 0, seatFace: NaN, sx: 0, sy: 0, sz: 0, seated: false, perchRole: 0, lies: false,
+      up: false, seatHost: -1, seatX: 0, seatY: 0, seatZ: 0, seatFace: NaN, sx: 0, sy: 0, sz: 0, seated: false, glide: 0, perchRole: 0, lies: false,
       gFrame: -1, gx: 0, gy: 0, gz: 0, gyaw: 0, gt0: 0, gt1: 0, gOn: false, wasHost: false, g0: 0, g1: 0, gm: 0, gr: 0.1, nursed: false, holdsBack: false,
       ownFrame: -1, ownX: 0, ownY: 0, ownZ: 0, ownYaw: 0, ownLimb: false, ownTop: Infinity, ownSrc: -1, ownCut: -1,
       deadCarried: false, deadDrop: false, dropX: 0, dropZ: 0, climbTree: -1, drumTree: -1,
@@ -1906,11 +1908,15 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
    * body, not at all over 140 px), so that an aroused male still has another outline from the strategy camera: a
    * readability gain on the same footing as rig.ts RENDER_SCALE. A stylization. */
   const COAT_FAR_GAIN = 1;
-  /** An arm that holds on overhead, or holds something, does not scratch. */
+  /** An arm that holds on (overhead, or with its hand closed round a limb or a bough: idle.ts handHolds; the second
+   * from the merge of W8 and W9, for the resting postures in a crown), or holds something, does not scratch. Read on
+   * the pose as the clip wrote it. */
   function armBusy(pose: Pose, side: number): boolean {
-    const o = PI.ik + (side ? LIMB.armR : LIMB.armL) * 5, v = pose.v;
-    return (v[o + 3] > 0.5 && v[o + 1] > 0.9) || (side ? pose.propR : pose.propL) !== 0;
+    return handHolds(pose.v, side) || (side ? pose.propR : pose.propL) !== 0;
   }
+  /** A body further than this from its seat in a crown is still sliding there (m; placeGrounded eases it: 5 cm is the
+   * last half second of a slide, under 13 cm a second). Merge of W8 and W9; a drawing rule. */
+  const SEAT_SETTLED_M = 0.05;
   /** A neighbour to glance at: the nearest drawn animal within 9 m, sometimes the second nearest. Runs when a glance starts, not per frame. */
   function neighbourOf(a: Anim, n: number): number {
     let b0 = -1, b1 = -1, d0 = 81, d1 = 81;
@@ -1963,8 +1969,16 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         // A scratch needs a seated body or one lying on its side or back: on all fours and upright the arm's elbow
         // pole (rig.ts LIMBS; it rides with the chest) stands the elbow over the back. And a free hand with nothing in
         // the way: not holding an infant, a body or meat, not in a pair.
-        if (!(a.posture === Posture.seated || lie === Lie.side || lie === Lie.supine) || a.holds || a.paired || (c.carryingDeadId ?? -1) >= 0 || c.carryingMeat > 0.05) allow &= ~idleBit(IDLE.scratch);
+        // (Merge of W8 and W9. Not a body lying along a bough in a crown: it has no hand to spare, idle.ts mayScratch.
+        // And a scratch under way lets go when the clip's pose takes that arm for a hold: armBusy, which is also asked
+        // when a scratch starts, below, and now sees the hand a perched animal keeps on its limb.)
+        if (!mayScratch(a.posture, lie, a.elevated > 0.5) || a.holds || a.paired || (c.carryingDeadId ?? -1) >= 0 || c.carryingMeat > 0.05) allow &= ~idleBit(IDLE.scratch);
+        else if (idle.kind === IDLE.scratch && armBusy(a.cur, idle.side)) allow &= ~idleBit(IDLE.scratch);
       }
+      // (Merge of W8 and W9.) Nothing starts on a body that is still sliding to its seat in a crown (joining a partner's
+      // bough, going back to its own limb, lying down along one): the slide is not in a.moving, which reads the
+      // simulated path. An event under way goes on, and a held lean stays (`shifts` above).
+      if (a.glide > SEAT_SETTLED_M && idle.kind === IDLE.none) allow = 0;
     }
     const forced = debug.idleForce;
     let started = false;
@@ -2050,6 +2064,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     const h = a.y;
     let x = a.x, z = a.z;
     a.climbTree = -1;
+    a.glide = 0;   // (merge of W8 and W9: set below while the drawn seat eases to its place)
     const wasUp = a.elevated > 0.5;
     a.elevated = damp(a.elevated, h > 0.3 ? 1 : 0, 4, 1 / 30);
     a.onBranch = false;
@@ -2123,6 +2138,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
           if (!a.seated || a.track.jumped || a.ownCut === frameNo || curSimRate > ABOUT_MAX_RATE || hyp2(hyp2(x - a.sx, z - a.sz), y - a.sy) > SEAT_GLIDE_M) { a.sx = x; a.sy = y; a.sz = z; }
           else if (a.sx !== x || a.sy !== y || a.sz !== z) {
             const ex = x - a.sx, ey = y - a.sy, ez = z - a.sz, el = hyp2(hyp2(ex, ez), ey);
+            a.glide = el;
             const k = Math.min(1 - Math.exp(-2.5 * curDt), el > 1e-6 ? SEAT_MPS * curDt / el : 1);
             if (el < 2e-3) { a.sx = x; a.sy = y; a.sz = z; } else { a.sx += ex * k; a.sy += ey * k; a.sz += ez * k; }
           }
