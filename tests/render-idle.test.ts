@@ -3,7 +3,7 @@ import test from 'node:test';
 import { CLIPS, Pw, type PoseCtx } from '../src/render/creatures/poses';
 import { B, LIMB, PI, createFK, createMorph, createPose, solveFK } from '../src/render/creatures/rig';
 import { Posture, postureOf } from '../src/render/creatures/intention';
-import { GRIP_HELD, HEAD_HAND, Lie, SCRATCH_BELLY, SCRATCH_HZ, SCRATCH_POINT, createIdleCtx, handHolds, idleFace, idleOverlay, lieOf, mayScratch, nodAt, nodLids, scratchReach, scratchWrist, seatIdles, yawnAt, type IdleCtx } from '../src/render/creatures/idle';
+import { GRIP_HELD, HEAD_HAND, Lie, SCRATCH_BELLY, SCRATCH_CUT_MOVING_S, SCRATCH_CUT_S, SCRATCH_HZ, SCRATCH_POINT, createIdleCtx, handHolds, idleFace, idleOverlay, lieOf, mayScratch, nodAt, nodLids, scratchReach, scratchRelease, scratchWrist, seatIdles, yawnAt, type IdleCtx } from '../src/render/creatures/idle';
 import { PERCH, perchLies } from '../src/render/creatures/perch';
 import {
   BLINK_SLOW, IDLE, IDLE_GAP, IDLE_SETTLE, IDLE_SHARE, SCRATCH, blinkAt, createBlink, createIdle, idleBit, idleCancel, idleGap, idleLean, idleRate, idleSpend, idleStep,
@@ -361,4 +361,36 @@ test('an animal alone has the same events at the same moments as one in company,
   const cancelled = (() => { const s = createIdle(12), dt = 1 / 30; let n = 0; for (let t = 0; t < 1800; t += dt) if (idleStep(s, 12, dt, 1, FEED)) { if (s.kind === IDLE.glance) idleCancel(s); else n++; } return n; })();
   const now = play(12, 1800, FEED, 1, true).length;
   assert.ok(cancelled > 1.6 * now, `cancelled turns: ${cancelled} weight shifts in half an hour against ${now}`);
+});
+
+// Stage W11, item 3. A scratch cut short (a call arrives, a new act is announced) used to lose its reach at a fixed
+// rate of 14 a second: a fifth of it in the first frame, which pulled the wrist back 55 cm in a fifth of a second.
+test('a scratch cut short lets go like one that ends: no speed at the cut, never rising, gone in half a second', () => {
+  for (const from of [1, 0.6, 0.2]) for (const fps of [20, 30, 60, 120]) {
+    const dt = 1 / fps; let prev = from, worst = 0;
+    assert.equal(scratchRelease(from, 0), from, 'it starts from the reach the scratch had');
+    for (let t = dt; t < 1; t += dt) { const k = scratchRelease(from, t); assert.ok(k <= prev + 1e-12 && k >= 0, 'it never rises'); worst = Math.max(worst, (prev - k) / dt); prev = k; }
+    assert.equal(scratchRelease(from, SCRATCH_CUT_S), 0); assert.equal(scratchRelease(from, 2), 0);
+    // The fastest it ever falls: one and a half times the reach over the time (the smooth step's steepest point).
+    assert.ok(worst <= 1.5 * from / SCRATCH_CUT_S + 1e-9, `fastest fall ${worst.toFixed(2)} a second`);
+  }
+  // The first sixtieth of a second moves next to nothing (the old rule took 21% of the reach in it); the largest
+  // step of any sixtieth is a twentieth of the reach, a quarter of what the old rule's first frame took.
+  const dt = 1 / 60, first = 1 - scratchRelease(1, dt), old = 1 - Math.exp(-14 * dt);
+  assert.ok(first < 0.004, `first frame ${first.toFixed(4)} of the reach`);
+  assert.ok(old > 0.2 && 1.5 / SCRATCH_CUT_S * dt < old / 4);
+  // A body that has started to move lets go sooner.
+  assert.ok(SCRATCH_CUT_MOVING_S < SCRATCH_CUT_S); assert.equal(scratchRelease(1, SCRATCH_CUT_MOVING_S, SCRATCH_CUT_MOVING_S), 0);
+  // The body's part follows the same reach: with the event gone from the schedule, the head and the fingers are
+  // where a scratch at that reach has them, and at no reach the pose is the clip's own.
+  for (const site of [SCRATCH.flank, SCRATCH.head]) for (const side of [0, 1] as const) {
+    const base = pose('sitIdle'), live = pose('sitIdle'), half = pose('sitIdle'), gone = pose('sitIdle');
+    idleOverlay(live, Posture.seated, idle({ kind: IDLE.scratch, t: 1.5, dur: 3, site, side }));
+    idleOverlay(half, Posture.seated, idle({ kind: IDLE.none, site, side, letGo: 0.5, letT: 1.5 }));
+    idleOverlay(gone, Posture.seated, idle({ kind: IDLE.none, site, side, letGo: 0, letT: 1.5 }));
+    const h = B.head * 3, f = (side ? B.fingR2 : B.fingL2) * 3;
+    for (let i = 0; i < PI.root; i++) assert.ok(Math.abs(gone.v[i] - base.v[i]) < 1e-9, 'nothing is left when the reach is 0');
+    for (const o of [h, h + 1, h + 2]) assert.ok(Math.abs((half.v[o] - base.v[o]) - 0.5 * (live.v[o] - base.v[o])) < 1e-6, 'the head is half way back');
+    assert.ok(Math.abs(half.v[f] - base.v[f]) > 0.05 && Math.abs(half.v[f] - base.v[f]) < Math.abs(live.v[f] - base.v[f]), 'the fingers are part way back');
+  }
 });

@@ -32,7 +32,7 @@ import {
   realSeconds, restedBefore, runnerUp, startTime, stepLate, type Beat,
 } from './creatures/beat';
 import { Posture, intention, postureOf } from './creatures/intention';
-import { Lie, SCRATCH_BELLY, createIdleCtx, handHolds, idleFace, idleOverlay, lieOf, mayScratch, scratchReach, scratchWrist, seatIdles } from './creatures/idle';
+import { Lie, SCRATCH_BELLY, SCRATCH_CUT_MOVING_S, SCRATCH_CUT_S, createIdleCtx, handHolds, idleFace, idleOverlay, lieOf, mayScratch, scratchReach, scratchRelease, scratchWrist, seatIdles } from './creatures/idle';
 import { LID_MAX, bellyUnder, bodyChannels, coatUnder, coatValue, createChannels, type BodyChannels } from './creatures/bodystate';
 import { bodyStateOf } from '../simulation';
 import { paramsOf } from '../sim/params';
@@ -230,6 +230,10 @@ export interface Anim {
   /** Stage W8, idle life (secondary.ts, creatures/idle.ts): the breathing phase 0..1 and its eased depth, the idle
    * schedule, the reach of a scratch under way and its eased weight shift, and the neighbour a glance is at (−1 none). */
   breathPh: number; breathAmp: number; idle: Idle; scratchK: number; leanK: number; glanceId: number;
+  /** Stage W11: the scratch the arm is in or is letting go of: its place, side and the seconds since it began (kept
+   * when the schedule drops the event, so the arm comes away from where it was), and for one cut short the reach it had
+   * and the seconds since the cut (scrCut < 0: not letting go). idle.ts scratchRelease. */
+  scrSite: number; scrSide: 0 | 1; scrT: number; scrFrom: number; scrCut: number;
   /** Stage W8: what rides on this animal this frame, as bits: 1 an infant (or a dead infant) on the belly, 2 one on the back (the carry modes). */
   bears: number;
 }
@@ -465,6 +469,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       pCode: 0, pSince: 0, pPub: 0, pPubAt: 0, pIndex: 0, pCount: 0, pAhead: -1, pBehind: -1, pVariant: Listen.wait, pSide: 1, patrolAt: -1e9, relBristle: 0,
       tg: createChannels(), ch: { belly: 0, flank: 0, lid: 0, arousal: 0, fear: 0, breath: 0 }, stateAt: -1,
       breathPh: hash01(chimp.id, 53), breathAmp: 1, idle: createIdle(chimp.id), scratchK: 0, leanK: 0, glanceId: -1, bears: 0,
+      scrSite: 0, scrSide: 0, scrT: 0, scrFrom: 0, scrCut: -1,
     };
     anims.set(chimp.id, a);
     animList.push(a);
@@ -1558,11 +1563,13 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     // (idle.ts scratchWrist). Only the solved skeleton carries the reach: the pose buffer gets its own values back,
     // so a clip change during a scratch blends from the clip's pose as it always did. Only while a scratch runs.
     if (a.scratchK > 0.01) {
-      const idle = a.idle, o = PI.ik + (idle.side ? LIMB.armR : LIMB.armL) * 5, k = a.scratchK, w0 = ov[o + 3];
+      // (Stage W11: the place, side and time are the arm's own record of the scratch, a.scr*: the schedule's are gone
+      // the moment an event is cut short, and the arm then comes away from where it was.)
+      const o = PI.ik + (a.scrSide ? LIMB.armR : LIMB.armL) * 5, k = a.scratchK, w0 = ov[o + 3];
       for (let j = 0; j < 5; j++) IKSAVE[j] = ov[o + j];
-      scratchWrist(a.fk, a.morph, idle.site, idle.side, idle.t, SW);
+      scratchWrist(a.fk, a.morph, a.scrSite, a.scrSide, a.scrT, SW);
       // (Over the crown the hand is held in a body-space orientation, the rig's end lock: idle.ts HEAD_HAND.)
-      const lock = idle.site === SCRATCH.head ? k : 0;
+      const lock = a.scrSite === SCRATCH.head ? k : 0;
       if (w0 > 0.01) { ov[o] += (SW[0] - ov[o]) * k; ov[o + 1] += (SW[1] - ov[o + 1]) * k; ov[o + 2] += (SW[2] - ov[o + 2]) * k; ov[o + 3] = Math.max(w0, k); ov[o + 4] = ov[o + 4] * (1 - k) + lock; }
       else { ov[o] = SW[0]; ov[o + 1] = SW[1]; ov[o + 2] = SW[2]; ov[o + 3] = k; ov[o + 4] = lock; }
       solveFK(a.out, a.morph, a.fk, look);
@@ -1937,7 +1944,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     ch.arousal = damp(ch.arousal, tg.arousal, 1.5, dt); ch.fear = damp(ch.fear, tg.fear, 2.5, dt);
     const idle = a.idle, was = idle.kind, face = idleFace(was, idle.t, idle.dur);
     if (debug.idle && debug.w8 && a.chimp.alive) stepIdle(a, clip, dt);
-    else { ch.breath = 0; a.scratchK = 0; a.leanK = 0; a.glanceId = -1; if (idle.kind !== IDLE.none) idleCancel(idle); }
+    else { ch.breath = 0; a.scratchK = 0; a.scrCut = -1; a.leanK = 0; a.glanceId = -1; if (idle.kind !== IDLE.none) idleCancel(idle); }
     idleCut = face > 0.05 && idle.kind !== was;
   }
   /** Breathing, the idle schedule and the idle layer over the clip just written to a.cur (bound to pw). */
@@ -2006,11 +2013,23 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       else if (lie === Lie.side && idle.site === SCRATCH.head) idle.site = SCRATCH.flank;
     }
     if (idle.kind !== IDLE.glance) a.glanceId = -1;
-    // The reach and the lean are eased both ways, so an event cut short (the animal moves off, a call arrives) lets go smoothly.
-    a.scratchK = damp(a.scratchK, idle.kind === IDLE.scratch ? scratchReach(idle.t, idle.dur) : 0, 14, dt);
+    // The reach follows the scratch's own curve while it runs. Stage W11: when the schedule drops it (the animal moves
+    // off, a call arrives, a new act is announced) the reach it had lets go along the curve a finished scratch ends on
+    // (idle.ts scratchRelease), quicker on a body that has started to move. A scratch that ended by itself has next to
+    // nothing left to let go. (Before, the reach was pulled to 0 at 14 a second: 55 cm of wrist in a fifth of a second.)
+    if (idle.kind === IDLE.scratch) { a.scrSite = idle.site; a.scrSide = idle.side; a.scrT = idle.t; a.scrCut = -1; a.scratchK = damp(a.scratchK, scratchReach(idle.t, idle.dur), 14, dt); }
+    else if (a.scratchK > 0) {
+      if (a.scrCut < 0) { a.scrCut = 0; a.scrFrom = a.scratchK; }
+      a.scrCut += dt; a.scrT += dt;
+      a.scratchK = scratchRelease(a.scrFrom, a.scrCut, a.moving ? SCRATCH_CUT_MOVING_S : SCRATCH_CUT_S);
+      if (a.scratchK < 1e-3) { a.scratchK = 0; a.scrCut = -1; }
+    }
     a.leanK = damp(a.leanK, shifts || idle.kind === IDLE.shift ? idleLean(idle) : 0, 6, dt);
     if (Math.abs(a.leanK) < 1e-4) a.leanK = 0;
-    ICTX.kind = idle.kind; ICTX.t = idle.t; ICTX.dur = idle.dur; ICTX.site = idle.site; ICTX.side = idle.side; ICTX.lean = a.leanK;
+    ICTX.kind = idle.kind; ICTX.t = idle.t; ICTX.dur = idle.dur; ICTX.lean = a.leanK;
+    // (The body's part of a scratch that is letting go: its own place and side, not those of whatever the schedule holds now.)
+    const letting = idle.kind !== IDLE.scratch && a.scratchK > 0;
+    ICTX.site = letting ? a.scrSite : idle.site; ICTX.side = letting ? a.scrSide : idle.side; ICTX.letGo = letting ? a.scratchK : 0; ICTX.letT = a.scrT;
     idleOverlay(pw, a.posture, ICTX);
   }
 
