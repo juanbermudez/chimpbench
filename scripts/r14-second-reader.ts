@@ -325,7 +325,7 @@ const rowsOk: { h: H; qj: number[] }[] = [];
     // from the published score less the recomputed jitter (what the run's saved contexts allow), not from the record's own `raw`
     rowsOk.push({ h, qj: jitterOdds(rec.options.map(o => o.score - jitterOf(rec.chimpId, rec.context.version, o.action, o.targetId, span)), span) });
   }
-  P(`The candidate jitter is a hash of the animal, its decision version, the act and the target, times the span (${span}; \`src/sim/candidates.ts\` offer). Recomputed for ${n0(jitChecked)} options of the held-out records it differs from the sampler's own figure by at most ${jitMax.toExponential(1)}. So an option's value without its jitter is its saved score less that hash, here and in the run's saved contexts. Held-out draws without a sampler's record: ${n0(missing)}.`);
+  P(`The candidate jitter is a hash of the animal, its decision version, the act and the target, times the span (${span}; \`src/sim/candidates.ts\` offer). Recomputed for ${n0(jitChecked)} options of the held-out records it differs from the sampler's own figure by at most ${jitMax.toFixed(5)}. So an option's value without its jitter is its saved score less that hash, here and in the run's saved contexts. Held-out draws without a sampler's record: ${n0(missing)}.`);
   P();
   P('"The approximation": each option of the menu shown gets an independent uniform jitter of the span on its value, and the largest wins. Left out: the belief draw of a trip to a crown out of sight, and the redraw of the menu (each kind reaches the menu by its best jittered target). Against the true label (both redrawn) and against the label on the fixed menu:');
   P();
