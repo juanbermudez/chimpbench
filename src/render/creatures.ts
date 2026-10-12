@@ -844,7 +844,16 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         // It sits along the bough, turned the way that is nearer to how it faced on its own limb.
         const along = h.gyaw + Math.PI / 2, own = a.ownYaw + (hash01(a.id, 45) - 0.5) * 1.2;
         a.seatFace = Math.cos(own - along) >= 0 ? along : along + Math.PI; a.headingTarget = a.seatFace;
-      } else taken[nTaken++] = a;
+      } else {
+        taken[nTaken++] = a;
+        // On its own limb it faces roughly outward along it, as before this stage, but by ONE damped turn: the heading
+        // target of the motion step is that facing too. Before, the motion step pulled the heading to the simulated
+        // heading at a rate that follows the frame time and the placement pulled it back to the limb at a fixed rate,
+        // so the balance between the two moved with every change of frame time and a perched animal rocked on its seat
+        // (wrists 1 to 2.4 m of path in 12 s on a busy machine). Not while its decision beat turns it to what it chose
+        // (placeGrounded, stage W6): then it keeps the heading it has.
+        if (!(a.way === Way.soon && a.beat.phase >= Phase.look)) { a.seatFace = a.ownYaw + (hash01(a.id, 45) - 0.5) * 1.2; a.headingTarget = a.seatFace; }
+      }
     }
     // The drawn boughs ease out to their members and back in when they leave.
     for (const a of animList) if (a.gOn || a.gm > 0) {
