@@ -266,3 +266,12 @@ Statements, read on the repaired build:
 - Q4 (R4). `lapse-10x-field-1300` and `lapse-10x-small-700`: no clamber episode (builder's head: 133 and 329). At 1 min/s the clamber still plays: `steps-1x-field-1575` has its three episodes.
 - Q5 (nothing else moved). `steps-rt-field-1585`: largest step of the placement alone under 0.1 m, none over 25 cm, three clamber episodes, as on the builder's head. `part-rt-853`: no second with a plain "grooming" tag and no grooming pose. The nest builder's four turns are still 1.9 rad within 0.1.
 - Q6. `tsc --noEmit`, the whole suite once and `pnpm build` on the final head.
+
+### 8.0b Second run, registered at 08:50 EDT before its code was served
+
+The first run of the repaired build (commits 96672fd to 7f0df75) read Q1, Q2 and Q4 as registered. Q3 did not hold: 14 reversals of the heading in 216 frames of the clamber clip, where fewer than 10 were registered (builder's head: 55). During the decision beat there were none left (38 before the repair). All but one of the 14 fell in the 39 frames in which the animal clambered to its trunk. Read frame by frame, the body's own steps there point one way within 0.08 rad (2.03 rad west of north) while its heading settles a whole radian from that and trembles by 0.03 rad with the frame time. Cause: a third pull that the first repair did not see. The motion step turns any body whose simulated path moves over the ground along that path, and a path on its way up a trunk also drifts sideways. So a body clambering to the bark was never turned along its own way at all: it stood between the two.
+
+**R3b.** While a body clambers, the motion step does not turn it along its simulated path (`creatures.ts` `updateMotion`). One line.
+
+- Q3b. `nest-14-2812`, animal 14, the same uneven frames: fewer than 10 reversals of the heading while the clamber clip plays, and over its way to the trunk the heading ends within 0.3 rad of the direction its steps take (first repair: a radian off).
+- Q5b. `steps-rt-field-1585`: none of the placement's steps over 25 cm, three clamber episodes, and no step faster than the clamber's 2.5 m a second. (Q5 as first written asked for "under 0.1 m" a frame and read 0.125 m: one frame of the film lasted 50 ms, and the body covered it at exactly 2.5 m a second. The statement should have named the speed; it is put right here, and the first reading stands as reported.) `join-watch-1187`: Q2 again.
