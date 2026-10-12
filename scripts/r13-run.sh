@@ -24,7 +24,7 @@
 cd "$(dirname "$0")/.." || exit 1
 ROOT="$(pwd)"; SELF="$ROOT/scripts/r13-run.sh"; WT=/Volumes/Drive/chimpbench/MGOGO/.claude/worktrees
 FT="${R13_FT_ROOT:-$WT/r11-honest-retrain/artifacts/decide-ft/r11}"; OUT="${R13_OUT:-artifacts/r13}"; TABLES="$OUT/tables"; DOCS="${R13_DOCS:-docs/staging}"
-SEED=3613; ADAPTER=r11-p5b-s7; DAYS=20; HOURS="${R13_HOURS:-9}"
+SEED=3613; ADAPTER=r11-p5b-s7; SHA=582e409abd2e91a8016b41bcc5ffbbf59616080313e3ebb67b8c92a2aa04c74c; DAYS=20; HOURS="${R13_HOURS:-9}"
 MODEL="$OUT/model-s$SEED"; RULES="$OUT/rules-s$SEED"; CARD="$OUT/card"; C="$OUT/chain"
 export MGOGO_GHN_ROOT="${MGOGO_GHN_ROOT:-/Volumes/Drive/chimpbench/GHN}" MGOGO_DECIDE_PYTHON="${MGOGO_DECIDE_PYTHON:-/Volumes/Drive/chimpbench/decide-env/bin/python}"
 export HF_HOME="${HF_HOME:-/Volumes/Drive/chimpbench/hf-cache}" HF_HUB_CACHE="${HF_HUB_CACHE:-/Volumes/Drive/chimpbench/hf-cache/hub}" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
@@ -70,9 +70,15 @@ case "$1" in
     rule ;;
   check)
     rc=0
-    echo "adapter root: $FT"; if have; then shasum -a 256 "$FT/adapters/$ADAPTER/adapter_model.safetensors"; echo "registered:   582e409abd2e91a8016b41bcc5ffbbf59616080313e3ebb67b8c92a2aa04c74c"; else echo "MISSING or cut short: $FT/adapters/$ADAPTER (weights and manifest.json)"; rc=3; fi
-    if [ -n "${R13_R11_NUMBERS:-}" ] && [ -f "$R13_R11_NUMBERS" ]; then echo "the decode rule: $(rule | tr '\n' ' ')"; else echo "the decode rule: R13_R11_NUMBERS is not set to stage R11's final table; '$0 model' refuses without it"; rc=3; fi
-    echo "R13_ARM: ${R13_ARM:-not set}"
+    echo "adapter root: $FT"
+    if have; then
+      sha="$(shasum -a 256 "$FT/adapters/$ADAPTER/adapter_model.safetensors" | cut -d' ' -f1)"; echo "$ADAPTER: $sha"
+      [ "$sha" = "$SHA" ] && echo "it is the registered adapter" || { echo "NOT the registered adapter ($SHA): the model arm would refuse"; rc=3; }
+    else echo "MISSING or cut short: $FT/adapters/$ADAPTER (weights and manifest.json)"; rc=3; fi
+    if [ -n "${R13_R11_NUMBERS:-}" ] && [ -f "$R13_R11_NUMBERS" ]; then
+      echo "the decode rule: $(rule | tr '\n' ' ')"; ARM="$(arm_named)"
+      [ "${R13_ARM:-}" = "$ARM" ] && echo "R13_ARM: $R13_ARM, the arm the rule names" || { echo "R13_ARM is '${R13_ARM:-not set}'; the rule names $ARM ('$0 decode' prints the line it read): the model arm would refuse"; rc=3; }
+    else echo "the decode rule: R13_R11_NUMBERS is not set to stage R11's final table; '$0 model' refuses without it"; rc=3; fi
     for f in "$WT/bench-r11/artifacts/r11-chain/state"; do [ -f "$f" ] && echo "stage R11's chain: $(cat "$f")"; done
     echo "model runtime: $MGOGO_DECIDE_PYTHON ($([ -x "$MGOGO_DECIDE_PYTHON" ] && echo found || echo MISSING))"
     echo "machine: $(date '+%d %b %H:%M') | $(uptime | sed 's/.*load averages: /load /') | swap $(swap_mb) MB in use | $(df -g "$ROOT" | tail -1 | awk '{print $4}') GB free here"

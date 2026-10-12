@@ -195,9 +195,12 @@ if (process.argv[1]?.endsWith('r13-report.ts')) {
   const words: [string, FieldWord][] = [];
   for (const id of SHORT_ROWS) { const t = T(id), w = (t.accept.hi ?? 1) - (t.accept.lo ?? 0), d = w >= 100 ? 0 : w >= 10 ? 1 : w >= 1 ? 2 : 3; words.push([id, fieldLine(`${id} ${t.metric} (${t.role})`, id, { lo: t.accept.lo, hi: t.accept.hi }, d, `${t.accept.lo ?? ''} to ${t.accept.hi ?? ''} ${t.accept.units}`)]); }
   words.push(['patch residency', fieldLine(label('visitMean'), 'visitMean', { lo: 27.0, hi: 46.2 }, 2, '27.0 to 46.2 min (the two Kibale site means, potts2011)')]);
+  // the half-hour share beside the Taï value (scripts/r7-card.ts tai: aggregates only; another subspecies, an anchor without a band: a direction only)
+  const taiFile = resolve(dir, 'tai.json'), tai = existsSync(taiFile) ? (JSON.parse(readFileSync(taiFile, 'utf8')) as { tai: { same: number } }).tai.same : null;
+  if (tai !== null) words.push(['the half-hour share', fieldLine(`${label('sameHalfHour')} (animals adult by the Taï paper's rule)`, 'sameHalfHour', { lo: tai, hi: tai }, 3, `${f(tai, 3)} (the Taï value, lemoine2023; western subspecies: a direction, not a rate)`)]);
   p();
   const list = (w: FieldWord) => words.filter(x => x[1] === w).map(x => x[0]).join(', ') || 'none';
-  p(`Left the band the rules are inside: ${list('left the band')}. Further out than the rules where both are outside: ${list('further out')}. Nearer on this run (description only): ${list('nearer on this run (description)')}. The half-hour share (an anchor of another subspecies, a direction only) and the whole card are in stage R7's report on the same files (\`scripts/r7-report.ts --units P --engine\`); party size, the grooming share and the greeting direction by value are in the run's own replay report.`);
+  p(`Left the band the rules are inside: ${list('left the band')}. Further out than the rules where both are outside: ${list('further out')}. Nearer on this run (description only): ${list('nearer on this run (description)')}. The whole card is in stage R7's report on the same files (\`scripts/r7-report.ts --units P --engine\`); party size, the grooming share and the greeting direction by value are in the run's own replay report.`);
 
   // 8.4 beside
   if (reg) {
