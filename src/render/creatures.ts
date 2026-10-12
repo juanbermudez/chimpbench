@@ -898,7 +898,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   const NEUTRAL: [string, number, Gait | null] = ['stand', 0, null];
   /** Simulated seconds the building clip plays from the drawn body's arrival at its nest place (stage W6's four
    * minutes; the simulation builds for 3 to 5 [H, nestBuildMinS and nestBuildSpanS]). Stage W9: the nest grows over
-   * them, and the builder turns NEST_TURNS times as it pulls branches in from all round (stylization). */
+   * them, and the builder faces NEST_TURNS ways in turn as it pulls branches in from all round (stylization). */
   const NEST_BUILD_S = 240, NEST_TURNS = 5, NEST_TURN_RAD = 1.9;
   function chooseClip(a: Anim, moving: boolean, fast: number): [string, number, Gait | null] {
     const c = a.chimp;

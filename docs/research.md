@@ -4968,7 +4968,7 @@ new source was opened for it. This addendum says which statement rests on a sour
   sheltering and alarm;
 - that a partner carrying an infant is groomed where the infant is not (from the front when it rides on the back, on
   the shoulders and head when it clings to the belly and the two face each other);
-- the nest's size while it is built (from 0.3 of the finished nest) and that the builder turns five times.
+- the nest's size while it is built (from 0.3 of the finished nest) and that the builder turns four times.
 
 **Not found in this file, and not searched for on the web for this stage:** how wild chimpanzees space themselves on
 a branch when they groom, the frequencies and durations of resting postures in crowns (Hunt 1992 reports positional
