@@ -244,7 +244,9 @@ addresssed and we move faster parelalizing more work to get closer to the real r
    write the result into the registration and the plan in the registered words. For RW3 a statement counts only if
    both seeds meet it; R13 is a level of one training on one world seed.
 2. **Stage W11** is merged (cafc203); the whole suite, the build and frame time on the graphics card are done on the
-   merged head (§3). Still owed: one look in the running app, and `node scripts/verify-browser.mjs`.
+   merged head (§3), and so are `node scripts/verify-browser.mjs --no-model` (17 steps pass, 12 October, about 15:40 EDT: start-up,
+   panels, speeds, night, storm, views, save and exact resume across a reload, the 160 m map, no page or console error)
+   and one look in the running app. Not done: anything in the app with a live model.
 3. **`docs-12oct` is merged** (documents only; the whole suite on its code is on record, §3). Before any push: the
    user's ask, a privacy check of the range (no personal data, no raw rows), and only the two branches by name (§4).
 4. **Put §6 to the user**, the ten rulings first. Nothing of stage R12 is built before them.
