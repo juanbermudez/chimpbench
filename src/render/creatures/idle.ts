@@ -85,6 +85,16 @@ const NOD_DOWN = 2.6;
 export function nodAt(t: number): number { return t < NOD_DOWN ? smooth(t / NOD_DOWN) : 1 - smooth((t - NOD_DOWN) / 0.45); }
 
 /**
+ * How much of an event's face and head movement is in the pose now, 0..1: the yawn's and the nod's own envelopes; 0
+ * for the kinds whose release is eased elsewhere (the scratching arm and the lean by the layer, the glance by the look
+ * spring). An event that ends by itself ends at 0. One cut short while this is above 0 would drop an open jaw, closed
+ * eyes and up to 0.3 rad of head in a single frame: the layer blends out of it instead (creatures.ts stepIdle).
+ */
+export function idleFace(kind: number, t: number, dur: number): number {
+  return kind === IDLE.yawn ? yawnAt(t, dur) : kind === IDLE.nod ? nodAt(t) : 0;
+}
+
+/**
  * Adds idle life to the pose a stationary clip has just written. `posture` is intention.ts postureOf of that pose.
  * Additive on joints and on the root; it never writes a limb target (the layer sets the scratching arm's afterwards)
  * and only lets go of the ground contact of a scratching hand.

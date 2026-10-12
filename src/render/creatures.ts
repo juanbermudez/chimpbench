@@ -32,7 +32,7 @@ import {
   realSeconds, restedBefore, runnerUp, startTime, stepLate, type Beat,
 } from './creatures/beat';
 import { Posture, intention, postureOf } from './creatures/intention';
-import { Lie, SCRATCH_BELLY, createIdleCtx, idleOverlay, lieOf, scratchReach, scratchWrist } from './creatures/idle';
+import { Lie, SCRATCH_BELLY, createIdleCtx, idleFace, idleOverlay, lieOf, scratchReach, scratchWrist } from './creatures/idle';
 import { LID_MAX, bodyChannels, coatValue, createChannels, type BodyChannels } from './creatures/bodystate';
 import { bodyStateOf } from '../simulation';
 import { paramsOf } from '../sim/params';
@@ -1183,7 +1183,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     }
     // ---- Stage W10 (calls you can see; creatures/heard.ts): a stationary listener holds its clip for a moment once a
     // long call's arc has reached it, and is released through the pop guard's blend below. A stylization. ----
-    const heardRelease = heardHold(a, clip, start);
+    // (W8: not on the frame an idle yawn or nod is cut short. The hold copies last frame's pose, the open jaw with it;
+    // the blend below closes it first and the hold starts a frame later, on the clip's own pose.)
+    const heardRelease = heardHold(a, clip, start || idleCut);
     // Inertialized transition (secondary.ts): the new clip plays at once; the old output's offset and velocity
     // decay over the transition instead of a frozen pose crossfading out.
     const cv = a.cur.v, ov = a.out.v;
@@ -1195,7 +1197,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       const pc = a.prevCur;
       for (let i = 3; i < PI.root; i++) jump = Math.max(jump, Math.abs(cv[i] - pc[i]));
       for (let l = 0; l < 4; l++) { const o = PI.ik + l * 5; if (cv[o + 3] > 0.01 && pc[o + 3] > 0.01) jump = Math.max(jump, 3 * Math.abs(cv[o] - pc[o]), 3 * Math.abs(cv[o + 1] - pc[o + 1]), 3 * Math.abs(cv[o + 2] - pc[o + 2])); }
-      pop = jump > Math.max(0.45, 6 * dtAnim) || heardRelease;   // W10: a held clip resumes through the same blend
+      // W10: a held clip resumes through the same blend. W8: so does a pose whose idle yawn or nod was cut short (a
+      // decision beat began, a call arrived): the jaw, the lids and the head would otherwise jump in one frame, under
+      // the threshold above (seen: 0.3 rad of jaw, the mouth and the eyes from open to shut in 16 ms).
+      pop = jump > Math.max(0.45, 6 * dtAnim) || heardRelease || idleCut;
     }
     a.prevCur.set(cv);
     if (start) {
@@ -1611,6 +1616,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   const SEATED_NAME = /^(rest|sit|perch)/;
   function idleAllow(clip: string): number { const k = IDLE_ALLOW.get(clip); return k !== undefined ? k : SEATED_NAME.test(clip) ? I_ALL : I_FACE; }
   const ICTX = createIdleCtx();
+  /** Set by stepState for the animal being posed: an idle yawn or nod was cut short on this evaluation (evaluatePose blends out of it). */
+  let idleCut = false;
   /** A raised coat is drawn up to this much higher again on an animal that is small on screen (fully under 40 px of
    * body, not at all over 140 px), so that an aroused male still has another outline from the strategy camera: a
    * readability gain on the same footing as rig.ts RENDER_SCALE. A stylization. */
@@ -1635,8 +1642,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     const ch = a.ch, tg = a.tg;
     ch.belly = damp(ch.belly, tg.belly, 0.6, dt); ch.flank = damp(ch.flank, tg.flank, 0.6, dt); ch.lid = damp(ch.lid, tg.lid, 0.8, dt);
     ch.arousal = damp(ch.arousal, tg.arousal, 1.5, dt); ch.fear = damp(ch.fear, tg.fear, 2.5, dt);
+    const idle = a.idle, was = idle.kind, face = idleFace(was, idle.t, idle.dur);
     if (debug.idle && debug.w8 && a.chimp.alive) stepIdle(a, clip, dt);
-    else { ch.breath = 0; a.scratchK = 0; a.leanK = 0; a.glanceId = -1; if (a.idle.kind !== IDLE.none) idleCancel(a.idle); }
+    else { ch.breath = 0; a.scratchK = 0; a.leanK = 0; a.glanceId = -1; if (idle.kind !== IDLE.none) idleCancel(idle); }
+    idleCut = face > 0.05 && idle.kind !== was;
   }
   /** Breathing, the idle schedule and the idle layer over the clip just written to a.cur (bound to pw). */
   function stepIdle(a: Anim, clip: string, dtIn: number) {
