@@ -40,7 +40,7 @@ import { sampleSmooth } from './creatures/motion';
 import { GAITS, Regime, advancePhase, createLock, limbPhase, resetLock, solveClimb, solveGait, stepLock, type ContactLock, type GaitSolve } from './creatures/gait';
 import { referenceRate, smallMapPace } from './creatures/pace';
 import {
-  BLINK_SLOW, IDLE, SCRATCH, applyInertia, blinkAt, createAttention, createBlink, createIdle, createInertia, idleBit, idleCancel, idleLean, idleRate, idleStep,
+  BLINK_SLOW, IDLE, SCRATCH, applyInertia, blinkAt, createAttention, createBlink, createIdle, createInertia, idleBit, idleCancel, idleLean, idleRate, idleSpend, idleStep,
   scanAngles, selectAttention, springStep, startInertia, type AttnCand, type Attention, type Blink, type Idle, type Inertia,
 } from './creatures/secondary';
 import type { KeepCandidate } from './env/occluders';
@@ -1991,7 +1991,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       if (forced.kind === IDLE.shift) { idle.leanFrom = idle.lean; idle.lean = idle.lean > 0 ? -1 : 1; }
       started = true;
     } else started = idleStep(idle, a.id, dt, idleRate(curSimRate), allow, tg.scratch, tg.yawn, tg.lid > 0.2 ? 1 : 0);
-    if (started && idle.kind === IDLE.glance) { a.glanceId = neighbourOf(a, idle.n); if (a.glanceId < 0) idleCancel(idle); }
+    // (Stage W11: a glance with nobody within reach uses up its turn, secondary.ts idleSpend. Cancelled, the turn was
+    // drawn again 2 s later, and an animal alone was busier than one in a party.)
+    if (started && idle.kind === IDLE.glance) { a.glanceId = neighbourOf(a, idle.n); if (a.glanceId < 0) idleSpend(idle, a.id, idleRate(curSimRate), tg.scratch, tg.yawn, tg.lid > 0.2 ? 1 : 0); }
     if (started && idle.kind === IDLE.scratch) {
       // The hand: the arm on top for an animal on its side, the one that rests on the belly for one on its back
       // (poses.ts lieBack), else the side drawn by hash unless that arm holds on overhead or holds something.

@@ -6,7 +6,7 @@ import { Posture, postureOf } from '../src/render/creatures/intention';
 import { GRIP_HELD, HEAD_HAND, Lie, SCRATCH_BELLY, SCRATCH_HZ, SCRATCH_POINT, createIdleCtx, handHolds, idleFace, idleOverlay, lieOf, mayScratch, nodAt, nodLids, scratchReach, scratchWrist, seatIdles, yawnAt, type IdleCtx } from '../src/render/creatures/idle';
 import { PERCH, perchLies } from '../src/render/creatures/perch';
 import {
-  BLINK_SLOW, IDLE, IDLE_GAP, IDLE_SETTLE, IDLE_SHARE, SCRATCH, blinkAt, createBlink, createIdle, idleBit, idleCancel, idleGap, idleLean, idleRate, idleStep,
+  BLINK_SLOW, IDLE, IDLE_GAP, IDLE_SETTLE, IDLE_SHARE, SCRATCH, blinkAt, createBlink, createIdle, idleBit, idleCancel, idleGap, idleLean, idleRate, idleSpend, idleStep,
 } from '../src/render/creatures/secondary';
 
 // Stage W8 (docs/staging/w8b-state-on-body.md): idle life. The schedule of one-shot events (src/render/creatures/
@@ -330,4 +330,35 @@ test('the resting seat of a crown has idle life only in a quiet act: not in a di
   // their clips permit no idle event.
   for (const act of ['display', 'charge', 'attack', 'submit', 'pant-grunt', 'flee', 'hunt', 'patrol', 'mate', 'reconcile', 'console', 'call', 'alarm', 'dead']) assert.ok(!seatIdles(act), `${act}: nothing but the breath`);
   for (const act of ['rest', 'follow', 'travel', 'guard', 'groom', 'nest']) assert.ok(seatIdles(act), `${act}: idle life`);
+});
+
+// Stage W11 (docs/staging/w11-polish.md), item 4. A glance needs a neighbour within reach. With nobody there the turn
+// used to be cancelled and drawn again 2 s later, so an animal alone went through its turns several times as fast as
+// one in a party and every other event came that much sooner. Now the turn is used up.
+test('an animal alone has the same events at the same moments as one in company, less the glances', () => {
+  const FEED = idleBit(IDLE.shift) | idleBit(IDLE.glance);
+  /** One animal's schedule for `seconds`; `lone`: no neighbour, so a glance uses up its turn (what the creature layer does). */
+  const play = (id: number, seconds: number, allow: number, rate: number, lone: boolean) => {
+    const s = createIdle(id), dt = 1 / 30, events: [number, number][] = [];
+    for (let t = 0; t < seconds; t += dt) {
+      if (!idleStep(s, id, dt, rate, allow)) continue;
+      if (lone && s.kind === IDLE.glance) { idleSpend(s, id, rate); continue; }
+      events.push([t, s.kind]);
+    }
+    return events;
+  };
+  for (const [allow, rate] of [[FEED, 1], [ALL, 1], [FEED, 3]] as const) for (const id of [3, 12, 27, 44]) {
+    const company = play(id, 1800, allow, rate, false), alone = play(id, 1800, allow, rate, true);
+    const others = company.filter(e => e[1] !== IDLE.glance);
+    assert.ok(company.length > others.length + 5, 'in company there are glances');
+    // (As many: a used-up turn ends up to a frame sooner than a glance that ran, so the last event of the half hour may fall on either side of its end.)
+    assert.ok(Math.abs(alone.length - others.length) <= 1, `animal ${id}: alone it has as many other events (${alone.length} against ${others.length})`);
+    assert.ok(alone.every(e => e[1] !== IDLE.glance));
+    for (let i = 0; i < Math.min(alone.length, others.length); i++) { assert.equal(alone[i][1], others[i][1]); assert.ok(Math.abs(alone[i][0] - others[i][0]) < 0.25 + 0.05 * i, `event ${i} starts at the same moment (${alone[i][0].toFixed(2)} against ${others[i][0].toFixed(2)})`); }
+  }
+  // The fault this replaces, for the record: with the turn cancelled an animal feeding alone shifts its weight about
+  // twice as often (a cancelled turn is drawn again after 2 idle seconds).
+  const cancelled = (() => { const s = createIdle(12), dt = 1 / 30; let n = 0; for (let t = 0; t < 1800; t += dt) if (idleStep(s, 12, dt, 1, FEED)) { if (s.kind === IDLE.glance) idleCancel(s); else n++; } return n; })();
+  const now = play(12, 1800, FEED, 1, true).length;
+  assert.ok(cancelled > 1.6 * now, `cancelled turns: ${cancelled} weight shifts in half an hour against ${now}`);
 });
