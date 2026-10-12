@@ -140,7 +140,7 @@ test('a transform at a run\'s ask takes the run\'s own uniform draw; the plain d
 test('nothing that runs imports the transforms, and the loop\'s decode still has no setting but the mode and the salt', () => {
   const files = (dir: string): string[] => readdirSync(dir).flatMap(f => { const p = join(dir, f); return statSync(p).isDirectory() ? files(p) : /\.(ts|py|mjs|js)$/.test(f) ? [p] : []; });
   for (const dir of ['src', 'server', 'training']) for (const f of files(dir)) assert.equal(/r14-decode/.test(readFileSync(f, 'utf8')), false, `${f} must not use the reading's transforms`);
-  const users = files('scripts').filter(f => /r14-decode/.test(readFileSync(f, 'utf8'))).map(f => f.replace(/\\/g, '/')).sort();
+  const users = files('scripts').filter(f => /from '\.\/lib\/r14-decode'/.test(readFileSync(f, 'utf8'))).map(f => f.replace(/\\/g, '/')).sort();   // an import of the library, not a mention of its name (the second reader's script names the first reading's tables)
   assert.deepEqual(users, ['scripts/r14-decode-offline.ts', 'scripts/r14-decode-run.ts']);   // the two readers; the library names no file of its own
   // stage R9's registered property (tests/r9-decode.test.ts): the decode and the harness's decoder carry no fitted knob
   for (const f of ['src/kernel/decode.ts', 'scripts/lib/decoder.ts']) assert.equal(/temperature|threshold|nucleus|softmax/i.test(readFileSync(f, 'utf8')), false, f);
