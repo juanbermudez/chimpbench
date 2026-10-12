@@ -8,6 +8,7 @@ import type { CallKind, LifeStage, Mood } from '../../types';
 import { B, PI, LIMB, bodyMass, type Pose } from './rig';
 import { hyp2 } from '../fastmath';
 import { Listen, PatrolRole } from './patrol';
+import { PERCH } from './perch';
 
 export const PROP = { none: 0, fruit: 1, meat: 2, branch: 3, sponge: 4, leaves: 5 } as const;
 
@@ -209,6 +210,20 @@ const mouthPoint = [0, 0.78, 0.36] as const; // approximate seated mouth positio
 export const GROOMEE = { sit: 0, prone: 2, side: 3, present: 4 } as const;
 /** Role of the 'groom' clip for an animal grooming the infant it holds on its belly (0 = behind the partner, 1 = mutual). */
 export const GROOM_LAP = 2;
+/** Roles of the 'groom' clip added by stage W9 (stylization, no source): 3 = one-way, facing the partner and working on
+ * its front (it has an infant on its back); 4 = facing the partner and working only on its shoulders and head (it has
+ * an infant on its belly, between the two). */
+export const GROOM_FRONT = 3, GROOM_HIGH = 4;
+/**
+ * The groomer's role given where its partner carries an infant: a partner is groomed where the infant is not (stage W9;
+ * a drawing rule, not a source). One-way grooming is done from behind (role 0) unless an infant rides on the partner's
+ * back: then the partner turns to the groomer, who works on its front. Face to face (mutual grooming, role 1), an infant
+ * on the partner's belly sits between the two: the hands keep to the shoulders and head.
+ */
+export function groomerRole(mutual: boolean, infantOnBack: boolean, infantOnBelly: boolean): number {
+  if (mutual) return infantOnBelly ? GROOM_HIGH : 1;
+  return infantOnBack ? GROOM_FRONT : 0;
+}
 /**
  * The receiver's posture for one bout (stylization, no source; the shares are design choices): seated 40%, an arm raised
  * 20%, prone 22%, on its side 18%; off the ground, or with an infant on its body, seated 40% and an arm raised 60%.
@@ -230,11 +245,13 @@ const GROOM_SITE_S = 9, GROOM_MOVE_S = 1.4;
 const GROOM_PICK_TO_MOUTH = false;
 // Work sites on the partner as (height fraction along its spine chain, lateral offset in partner sizes): lower back,
 // mid back, left and right shoulder, nape, left and right flank. Mutual grooming (face to face) uses the next three,
-// an infant held on the belly the last three (its lower back, mid back and nape).
-const GROOM_SITES: readonly (readonly [number, number])[] = [[0.2, 0], [0.33, 0.03], [0.43, 0.11], [0.43, -0.11], [0.5, 0], [0.27, 0.1], [0.27, -0.1], [0.4, 0.12], [0.4, -0.12], [0.5, 0.05], [0.26, 0.03], [0.36, -0.03], [0.47, 0]];
+// an infant held on the belly the three after (its lower back, mid back and nape). Stage W9: the last three are the
+// two shoulders and the crown of the head, for a partner faced with an infant on its belly (GROOM_HIGH); a partner
+// faced one-way (GROOM_FRONT) is worked on like a mutual one.
+const GROOM_SITES: readonly (readonly [number, number])[] = [[0.2, 0], [0.33, 0.03], [0.43, 0.11], [0.43, -0.11], [0.5, 0], [0.27, 0.1], [0.27, -0.1], [0.4, 0.12], [0.4, -0.12], [0.5, 0.05], [0.26, 0.03], [0.36, -0.03], [0.47, 0], [0.5, 0.14], [0.5, -0.14], [0.66, 0]];
 function groomSite(c: PoseCtx, n: number, role: number): readonly [number, number] {
   const k = Math.abs((n * 7919 + Math.round(c.seed * 977)) % (role === 0 ? 7 : 3));
-  return GROOM_SITES[role === 1 ? 7 + k : role === GROOM_LAP ? 10 + k : k];
+  return GROOM_SITES[role === 0 ? k : role === GROOM_LAP ? 10 + k : role === GROOM_HIGH ? 13 + k : 7 + k];
 }
 /** Head size for the body as rig.ts computeMorph sets it: 1 in adults, up to 1.75 in infants. */
 function headScale(age: number, male: boolean) { return Math.min(1.75, Math.pow(Math.cbrt(bodyMass(Math.max(0, age), male ? 'male' : 'female') / 45), -0.5)); }
@@ -254,6 +271,159 @@ function lieProne(w: Pw, c: PoseCtx) {
   w.r(B.footL, 1.3).r(B.footR, 1.3);
   relaxHands(w);
   w.a(B.chest, sin(c.time * 1.2 + c.seed * 9) * 0.015);
+}
+
+// ---------------------------------------------------------------------------
+// In a crown (stage W9, docs/staging/w9b-tree-pairs.md)
+// ---------------------------------------------------------------------------
+const mix = (a0: number, b0: number, k: number) => a0 + (b0 - a0) * k;
+/** 0..1 hash of a cycle number, an individual's seed and a salt (pure: the same moment always gives the same pose). */
+function cyc01(n: number, seed: number, k: number) { const x = sin(n * 12.9898 + seed * 78.233 + k * 37.719) * 43758.5453; return x - Math.floor(x); }
+/** Toes curled round the support (both feet, or one side: 0 left, 1 right). */
+function toeGrip(w: Pw, side: -1 | 0 | 1 = -1, g = 1) { if (side !== 1) w.r(B.toeL, 0.55 * g); if (side !== 0) w.r(B.toeR, 0.55 * g); }
+/**
+ * Arm joint angles with the hand at the mouth, right arm: upper arm (x, y, z), forearm x, hand (x, z); the left arm
+ * mirrors y and z. Set directly (forward kinematics) instead of an IK target: with the rig's elbow pole the folded
+ * arm lifts its elbow over the head (the fault that keeps grooming's picks to the mouth off; the rig change is
+ * deferred). Solved against rig.ts's own forward kinematics for the seated feeding trunk below with the head tipped
+ * to the hand: the finger joint lies within 0.05 body lengths of the lower lip's joint and the elbow 0.27 to 0.29
+ * below the shoulder, at every age (tests/render-perch.test.ts holds both).
+ */
+export const MOUTH_ARM = [-1.459, 1.6, 1.2, -2.3, -0.897, 0.181] as const;
+/** Head tip toward the hand at the mouth the angles above were solved with (0.4 of it on the neck, 0.6 on the head). */
+export const MOUTH_HEAD = 0.5;
+// Crown feeding (stylization, no source for the timings or shares): one cycle is 11 to 14 s by individual. The free
+// hand reaches into the leaves, takes a cluster and pulls it in front of the chest (FEED_PULL_S); the other hand
+// plucks from it one to three times (FEED_PICK_S each: reach, pluck, to the mouth, back to the knee); the rest of the
+// cycle is chewing, so 3 to 10 s. The holding hand changes every cycle, the cluster comes from another place each
+// time, and every 40 to 75 s the animal shifts a hand's width or two along its limb.
+const FEED_PULL_S = 1.6, FEED_PICK_S = 2.1;
+/** Seconds one crown-feeding cycle lasts for an individual (seed 0..1), and how many picks cycle n has (1 to 3). */
+export function feedCycle(seed: number): number { return 11 + 3 * seed; }
+export function feedPicks(n: number, seed: number): number { return 1 + Math.floor(cyc01(n, seed, 1) * 3); }
+/** The hand that holds the cluster in cycle n (0 left, 1 right): it alternates from cycle to cycle. */
+export function feedHold(n: number, seed: number): 0 | 1 { return (n + (seed > 0.5 ? 1 : 0)) % 2 === 0 ? 0 : 1; }
+function crownFeed(w: Pw, c: PoseCtx) {
+  sitBase(w, c, 0.15, 0.2);
+  toeGrip(w);
+  const L = feedCycle(c.seed), T = c.time, n = Math.floor(T / L), u = T - n * L;
+  const hold = feedHold(n, c.seed), pick: 0 | 1 = hold ? 0 : 1;
+  const hx = hold ? -1 : 1, px = -hx; // x sign of the holding and of the picking side (the left is +x)
+  const picks = feedPicks(n, c.seed);
+  const tPick = u - FEED_PULL_S, j = Math.floor(tPick / FEED_PICK_S), v = tPick / FEED_PICK_S - j;
+  const picking = tPick >= 0 && j < picks, tChew = tPick - picks * FEED_PICK_S;
+  // Where the cluster is taken (in the leaves, up and out to the holding side) and held (in front of the chest).
+  const fx = hx * (0.3 + 0.1 * cyc01(n, c.seed, 2)), fy = 0.9 + 0.16 * cyc01(n, c.seed, 3), fz = 0.24 + 0.1 * cyc01(n, c.seed, 4);
+  const cx = hx * 0.11, cy = 0.4, cz = 0.33;
+  // The holding hand: knee → leaves (0.6 s) → chest (by 1.5 s); it lets the stripped cluster go a second into the chewing.
+  const out = smooth(u / 0.6), back = smooth((u - 0.75) / 0.75), drop = smooth(tChew / 1.0);
+  const reachK = out * (1 - back);
+  {
+    const kx = mix(mix(mix(hx * 0.15, fx, out), cx, back), hx * 0.15, drop), ky = mix(mix(mix(0.3, fy, out), cy, back), 0.3, drop), kz = mix(mix(mix(0.33, fz, out), cz, back), 0.33, drop);
+    reach(w, hold, kx, ky + (picking ? 0.006 * sin(T * 2.1) : 0), kz, mix(mix(mix(0.4, -2.5, out), -0.9, back), 0.4, drop), 0, hx * mix(mix(mix(-0.2, 0.3, out), 0.5, back), -0.2, drop), 0.5 * (1 - drop) * Math.max(out, 0.01));
+    grip(w, hold, mix(0.45, 1, smooth((u - 0.45) / 0.2) * (1 - drop)));
+    if (u > 0.58 && tChew < 0.75) { if (hold) w.pose.propR = PROP.leaves; else w.pose.propL = PROP.leaves; }
+  }
+  // The picking hand: from its knee to the cluster by IK, then to the mouth with the IK weight eased out, so the arm
+  // ends in the joint angles of MOUTH_ARM (elbow down), and back to the knee.
+  let mouthK = 0, bite = 0;
+  {
+    const jx = px * (0.02 + 0.05 * cyc01(n * 3 + Math.max(0, j), c.seed, 5)), jy = 0.03 * cyc01(n * 3 + Math.max(0, j), c.seed, 6);
+    const pkx = cx + jx, pky = cy + 0.03 + jy, pkz = cz + 0.03;       // the pick point, on the cluster
+    let x = px * 0.15, y = 0.3, z = 0.33, ikW = 1, g = 0.45, hxr = 0.4, hzr = px * -0.2;
+    if (picking) {
+      const to = smooth(v / 0.22), pluck = v > 0.22 && v < 0.34 ? sin(Math.PI * (v - 0.22) / 0.12) : 0;
+      const up = smooth((v - 0.34) / 0.24), down = smooth((v - 0.74) / 0.26);
+      mouthK = up * (1 - down);
+      x = mix(x, pkx, to); y = mix(y, pky, to) - 0.02 * pluck; z = mix(z, pkz, to) - 0.015 * pluck;
+      ikW = 1 - mouthK;
+      g = mix(0.45, 1, smooth((v - 0.18) / 0.08) * (1 - down));
+      hxr = mix(mix(0.4, -1.1, to), 0.4, down); hzr = px * mix(mix(-0.2, 0.35, to), -0.2, down);
+      if (down > 0) { x = mix(pkx, px * 0.15, down); y = mix(pky, 0.3, down); z = mix(pkz, 0.33, down); }
+      if (v > 0.3 && v < 0.66) { if (pick) w.pose.propR = PROP.fruit; else w.pose.propL = PROP.fruit; }
+      bite = v > 0.54 && v < 0.7 ? sin(Math.PI * (v - 0.54) / 0.16) : 0;
+    }
+    reach(w, pick, x, y, z, 0, 0, 0, 0, ikW);
+    // The bone angles under the IK: MOUTH_ARM while the hand goes to the mouth, the relaxed hand otherwise.
+    const m = MOUTH_ARM, ms = pick ? 1 : -1;
+    w.r(pick ? B.uarmR : B.uarmL, m[0], m[1] * ms, m[2] * ms).r(pick ? B.farmR : B.farmL, m[3]);
+    w.r(pick ? B.handR : B.handL, mix(hxr, m[4], mouthK), 0, mix(hzr, m[5] * ms, mouthK));
+    grip(w, pick, g);
+  }
+  // Chewing from the first fruit to the end of the cycle (fading out); the jaw opens for each bite.
+  const chewing = tChew >= 0 || (picking && (j > 0 || v > 0.66));
+  const fade = clamp((L - u) / 1.5, 0, 1);
+  w.face(Math.max(0.5 * bite, chewing ? (0.07 + 0.16 * (0.5 + 0.5 * sin(T * 13.5))) * fade : 0.04), 0.1 * (1 - bite));
+  // Trunk and head: toward the leaves while reaching, down to the cluster while plucking, tipped to the hand at the
+  // mouth (the angles MOUTH_ARM was solved for: nothing else turns the trunk then), level while chewing.
+  const free = 1 - mouthK, look = picking ? smooth(v / 0.2) * (1 - smooth((v - 0.3) / 0.15)) : 0;
+  w.a(B.spine, 0, hx * 0.1 * reachK * free, 0).a(B.chest, -0.08 * reachK * free, hx * 0.22 * reachK * free, -hx * 0.07 * reachK * free);
+  w.a(B.neck, MOUTH_HEAD * 0.4 * mouthK - 0.12 * reachK * free + 0.1 * look * free, hx * 0.2 * reachK * free, 0);
+  w.a(B.head, MOUTH_HEAD * 0.6 * mouthK - 0.3 * reachK * free + 0.28 * look * free, hx * (0.35 * reachK + 0.12 * look) * free, 0);
+  // Now and then a shift along the limb (the animal faces along it): the whole body moves 0.1 body lengths at most,
+  // with a small lift, over 1.6 s.
+  {
+    const S = 40 + 35 * c.seed, ts = T + 17 * c.seed, mI = Math.floor(ts / S), k = smooth((ts - mI * S) / 1.6);
+    const d = mix((cyc01(mI - 1, c.seed, 7) - 0.5) * 0.2, (cyc01(mI, c.seed, 7) - 0.5) * 0.2, k);
+    w.v[PI.root + 2] += d; w.v[PI.root + 1] += 0.02 * sin(Math.PI * k);
+    for (let l = 0; l < 4; l++) w.v[PI.ik + l * 5 + 2] += d;
+  }
+}
+/**
+ * Resting in a crown: five postures (stylization: no source for the postures or for how often each is taken;
+ * creatures/perch.ts picks one per individual and bout, creatures.ts lays the bough the two lying ones need). In every
+ * one a hand or a foot holds a support. The support runs along +Z: the limb for the seated ones (the animal faces
+ * along it), the bough for the lying ones.
+ */
+function perchRest(w: Pw, c: PoseCtx) {
+  const side: 0 | 1 = c.seed > 0.5 ? 1 : 0, sx = side ? -1 : 1;
+  w.set('ground', 0);
+  if (c.role === PERCH.recline) {
+    // On the back along the bough: one knee up with the foot on the bough, the other leg hanging beside it, one arm
+    // folded behind the head, the other hand on the bough at the hip.
+    w.root(0, 0.13, 0.12);
+    w.r(B.hips, -1.45).r(B.spine, 0.1).r(B.chest, 0.1).r(B.neck, 0.3).r(B.head, 0.12, 0, -sx * 0.12);
+    w.ik(side ? LIMB.legL : LIMB.legR, -sx * 0.035, 0.07, 0.44, 1, 0.8);
+    w.r(side ? B.thighR : B.thighL, 1.2, 0, -sx * 0.5).r(side ? B.shinR : B.shinL, 0.55).r(side ? B.footR : B.footL, 0.5);
+    w.r(side ? B.uarmL : B.uarmR, -2.75, 0, -sx * 0.55).r(side ? B.farmL : B.farmR, -1.9);
+    reach(w, side, sx * 0.09, 0.03, 0.16, 0.3, 0, 0, 0.3); grip(w, side, 0.9);
+    w.r(side ? B.fingL : B.fingR, 0.35).r(side ? B.fingL2 : B.fingR2, 0.55);
+    w.contact(0, 0, 0, 0);
+    w.a(B.chest, sin(c.time * 1.3 + c.seed * 9) * 0.02);
+    w.set('eyes', 0.45);
+    return;
+  }
+  if (c.role === PERCH.prone) {
+    // On the belly along a large bough, as a leopard lies: the chin on one folded forearm, the other arm and both
+    // legs hanging down the sides (joint angles, as lieProne: the limb poles point up when the trunk is level).
+    lieProne(w, c);
+    w.r(B.neck, -0.42).r(B.head, -0.12, sx * 0.25, 0);
+    w.r(side ? B.uarmR : B.uarmL, -1.45, 0, sx * 0.4).r(side ? B.farmR : B.farmL, -0.25);
+    w.r(B.thighL, -1.15, 0, 0.5).r(B.shinL, 0.75).r(B.thighR, -1.2, 0, -0.5).r(B.shinR, 0.6);
+    w.r(B.footL, 0.3).r(B.footR, 0.3);
+    w.set('ground', 0).set('eyes', 0.7).set('brow', 0.05);
+    return;
+  }
+  sitBase(w, c, c.role === PERCH.overhead ? 0.1 : 0.2);
+  w.set('ground', 0);
+  toeGrip(w);
+  if (c.role === PERCH.overhead) {
+    // One hand holds a branch overhead (arm-hanging occurs; brachiation is rare) [M, Hunt 1992], the trunk hanging a little from it.
+    reach(w, side, sx * 0.21, 1.02, 0.1, -2.9, 0, sx * 0.3, 0.4); grip(w, side, 1);
+    w.a(B.chest, 0, 0, sx * 0.07).a(B.spine, -0.05, 0, sx * 0.03);
+  } else if (c.role === PERCH.foot) {
+    // One leg down the side with the foot gripping a branch below, the hand of that side on the limb at the hip.
+    w.ik(side ? LIMB.legR : LIMB.legL, sx * 0.2, -0.2, 0.17, 1, 0.6);
+    w.v[PI.contact + (side ? LIMB.legR : LIMB.legL)] = 0;
+    w.r(side ? B.footR : B.footL, 0.35, sx * 0.3, 0).r(side ? B.toeR : B.toeL, 0.9);
+    reach(w, side, sx * 0.1, 0.05, -0.08, 0.15, 0, sx * 0.2, 0.5); grip(w, side, 1);
+    w.a(B.spine, 0, 0, sx * 0.05).a(B.chest, 0, sx * 0.08, sx * 0.04);
+  } else {
+    // Seated with a hand on the limb in front, between the feet.
+    reach(w, side, sx * 0.05, 0.05, 0.25, 0.2, 0, 0, 0.5); grip(w, side, 1);
+    w.a(B.chest, 0.04, -sx * 0.06, 0);
+  }
+  idleHead(w, c);
 }
 
 // ---------------------------------------------------------------------------
@@ -417,6 +587,8 @@ export const CLIPS: Record<string, Clip> = {
   },
   sitIdle(w, c) { sitBase(w, c, 0.1); idleHead(w, c); earFlick(w, c); },
   forage(w, c) {
+    // In a crown: a cluster held in one hand, picks from it with the other, then chewing (stage W9, crownFeed above).
+    if (c.inTree) { crownFeed(w, c); return; }
     // Reach and pluck, bring to the mouth, chew: a ~3.4 s loop.
     const cyc = (c.t * 0.3 + c.seed) % 1;
     sitBase(w, c, 0.15, 0.2);
@@ -469,7 +641,8 @@ export const CLIPS: Record<string, Clip> = {
     // Mother-and-infant variant (role GROOM_LAP; stage W5, stylization, no source): the infant she holds clings to her
     // belly with its back outward; she sits more upright with her knees apart, one hand under its rump, and combs
     // shorter strokes over its back, looking down at it.
-    const mutual = c.role === 1, lap = c.role === GROOM_LAP, T = c.pairT;
+    // Stage W9: a partner faced one-way (GROOM_FRONT) or with an infant between the two (GROOM_HIGH) is worked on face to face.
+    const mutual = c.role === 1 || c.role === GROOM_FRONT || c.role === GROOM_HIGH, lap = c.role === GROOM_LAP, T = c.pairT;
     sitBase(w, c, lap ? 0.1 : 0.5, lap ? 0.9 : 0.25);
     let lean = 0.5, yaw = 0, toMouth = 0;
     if (c.hasTarget && c.tdist < 2.4) {
@@ -695,6 +868,8 @@ export const CLIPS: Record<string, Clip> = {
     reach(w, 1, -0.12, 0.52, 0.26, -1.0, 0, -1.1, 0.3);
     grip(w, 0, 0.5); grip(w, 1, 0.4);
     w.a(B.neck, 0.35).a(B.head, 0.45, 0.2, 0);
+    // In a crown (stage W9, stylization): the same cradle, seated on the branch with both feet gripping it.
+    if (c.inTree) { w.set('ground', 0); toeGrip(w); w.r(B.footL, 0.15, 0.35).r(B.footR, 0.15, -0.35); }
   },
   share(w, c) {
     // Meat possessor: seated, chewing, meat in hand; tolerates or passes pieces toward the beggar.
@@ -733,6 +908,8 @@ export const CLIPS: Record<string, Clip> = {
     grip(w, 0, 0.8); grip(w, 1, 0.8);
     w.set('bristle', 0.25).set('eyes', 0.4);
     w.a(B.chest, sin(c.time * 7) * 0.006); // shivering
+    // In a crown (stage W9, stylization): the same huddle on the branch, feet gripping it.
+    if (c.inTree) { w.set('ground', 0); toeGrip(w); }
   },
   pantHoot(w, c) {
     // Introduction (soft hoos) → build-up (faster in-out pants, rocking) → climax (standing, arms up, screams) → let-down.
@@ -771,6 +948,15 @@ export const CLIPS: Record<string, Clip> = {
   alarm(w, c) {
     // Stand tall, stare at the threat, alarm "hoo" / waa-bark, hair on end.
     standBiped(w, c, 1);
+    if (c.inTree) {
+      // In a crown (stage W9, stylization): upright on the branch with the knees bent, one hand holding a branch
+      // overhead the whole time, staring down at the threat.
+      w.set('ground', 0); toeGrip(w);
+      w.root(0, 0.5, -0.02); w.a(B.hips, 0.12).a(B.neck, 0.12).a(B.head, 0.1);
+      reach(w, 0, 0.2, 1.36, 0.08, -2.9, 0, 0.3, 0.4); grip(w, 0, 1);
+      w.set('bristle', 0.85).face(0.15, 0.9).set('look', 1);
+      return;
+    }
     const raise = pulse(c.t * 0.9 + c.seed * 6) > 0.8;
     if (raise) w.r(B.uarmR, -2.3, 0, -0.4).r(B.farmR, -0.6);
     w.set('bristle', 0.85).face(0.15, 0.9).set('look', 1);
@@ -884,7 +1070,8 @@ export const CLIPS: Record<string, Clip> = {
     w.r(B.uarmL, -1.2, 0, 0.45).r(B.farmL, -0.9).r(B.uarmR, -1.2, 0, -0.45).r(B.farmR, -0.9);
     grip(w, 0); grip(w, 1);
   },
-  perch(w, c) { sitBase(w, c, 0.2); w.set('ground', 0); idleHead(w, c); },
+  // Resting in a crown (stage W9): five postures by role (creatures/perch.ts PERCH); role 0 is the plain seat.
+  perch(w, c) { perchRest(w, c); },
 };
 
 /**

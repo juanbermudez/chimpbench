@@ -12,7 +12,7 @@ import {
   B, PI, PARAM_TEXEL, POSE_SIZE, ROW_TEXELS, boneWorld, computeMorph, copyPose, createFK, createMorph, createPose,
   lowestPoint, quat, solveFK, writeSkin, type FKState, type Morph, type Pose,
 } from './creatures/rig';
-import { CLIPS, GROOMEE, GROOM_LAP, PROP, Pw, cradle, cradleFor, gaitFrequency, groomeePosture, vocalOverlay, type Gait, type PoseCtx } from './creatures/poses';
+import { CLIPS, GROOMEE, GROOM_FRONT, GROOM_LAP, PROP, Pw, cradle, cradleFor, gaitFrequency, groomeePosture, groomerRole, vocalOverlay, type Gait, type PoseCtx } from './creatures/poses';
 import { clamp, damp, dampAngle, hash01, linearRGB, mixRGB, pixelSize, preToneMapped, smoothstep, vividColor } from './creatures/util';
 import { createProps } from './creatures/props';
 import { createSelection } from './creatures/selection';
@@ -39,6 +39,7 @@ import { referenceRate, smallMapPace } from './creatures/pace';
 import { applyInertia, blinkAt, createAttention, createBlink, createInertia, scanAngles, selectAttention, springStep, startInertia, type AttnCand, type Attention, type Blink, type Inertia } from './creatures/secondary';
 import type { KeepCandidate } from './env/occluders';
 import { createTreeIndex, type TreeIndex } from './creatures/tree-index';
+import { PERCH, perchBout, perchLies, perchPosture, seatAllowed, seatGroups, type SeatPairs } from './creatures/perch';
 import { endHeard, heardTakesHead, holding, listening } from './creatures/heard';
 import {
   Listen, PatrolCode, RELEASE_BRISTLE_TAU, RELEASE_DRUM_REACH, RELEASE_WINDOW_H, backSide, createFileCue, createPatrolLook, fileCue, listenVariant,
@@ -160,8 +161,9 @@ export interface Anim {
   beat: Beat; late: number; intent: number; posture: number;
   /** Stage W6: going up or down its tree's trunk whatever its act (onTrunk), eased 0..1 between its branch and the bark. */
   trunkK: number; onTrunk: boolean;
-  /** Stage W6: where its body lies in its nest, kept while the drawn body is still in the nest act. */
-  nestOk: boolean; nestX: number; nestY: number; nestZ: number;
+  /** Stage W6: where its body lies in its nest, kept while the drawn body is still in the nest act. Stage W9: nestK, how
+   * far the drawn body has come with building it, 0..1 (1: not building). */
+  nestOk: boolean; nestX: number; nestY: number; nestZ: number; nestK: number;
   ox: number; oz: number;          // eased layout offset (pairing, separation) added to the interpolated point
   // Gait and contacts (gait.ts), transitions (secondary.ts).
   moving: boolean; stillT: number; fastGait: boolean; turnRate: number; climbDy: number; dist: number; strides: number; poseDt: number;
@@ -188,6 +190,22 @@ export interface Anim {
   pick: THREE.Mesh; partnerId: number; look: Float32Array; hasLook: boolean;
   paired: boolean; pairClip: string | null;
   onBranch: boolean;               // sitting on an environment-provided crown limb (no prop branch needed)
+  /** Stage W9 (creatures/perch.ts; layoutCrowns): its seat off the ground. up: it sits in a crown this frame (not on
+   * the trunk, not in a nest); seatHost: id of the animal whose bough it sits on (−1: its own branch) with seatX/Y/Z its
+   * place there and seatFace the heading it has there (NaN: none); sx/sy/sz: the drawn seat, eased toward its place
+   * (seated: it had one in the frame before); perchRole: its resting posture of the bout; lies: it is drawn lying along
+   * a bough. As a host (gFrame: the frame its bough was laid): the bough's origin gx/gy/gz, axis gyaw, the extent of
+   * its members along it gt0..gt1 and whether it is drawn (gOn; wasHost: in the frame before); g0, g1, gm: the drawn
+   * extent and end margin, eased; gr: the largest radius its tree lets it be drawn with. nursed: an infant on it is
+   * suckling; holdsBack: an infant rides on its back (both by the carry state of the last frame, like `holds`).
+   * ownFrame: the frame its own place in the crown was found (ownX/Y/Z), with the bearing of that place from the trunk
+   * (ownYaw), whether it is on a limb the environment draws (ownLimb) and the height nothing in the crown is drawn above.
+   * ownSrc: what the environment gave for that place (0 nothing, 1 the crown anchor, 2 a limb) and ownCut, the frame
+   * that last changed: the forest is drawn in a window round the camera, so a tree's limbs come and go with it. */
+  up: boolean; seatHost: number; seatX: number; seatY: number; seatZ: number; seatFace: number; sx: number; sy: number; sz: number; seated: boolean;
+  perchRole: number; lies: boolean; gFrame: number; gx: number; gy: number; gz: number; gyaw: number; gt0: number; gt1: number; gOn: boolean; wasHost: boolean; g0: number; g1: number; gm: number; gr: number;
+  nursed: boolean; holdsBack: boolean;
+  ownFrame: number; ownX: number; ownY: number; ownZ: number; ownYaw: number; ownLimb: boolean; ownTop: number; ownSrc: number; ownCut: number;
   deadCarried: boolean; deadDrop: boolean; dropX: number; dropZ: number; // a dead infant on its mother, then put down
   climbTree: number;               // tree whose trunk the animal is on this frame (−1 none)
   drumTree: number;                // tree a drummer faces and slaps (−1 none)
@@ -359,7 +377,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   // lodFade false: a mesh-level change is drawn at once. The harness tile sheets update the layer once per tile with
   // dt 0, so a cross-fade never advanced and each tile showed the level chosen for the tile before it (W3).
   // blink false: eyes stay open (the face sheet is a check of the eyes; a blink lasts 0.13 s and hides them).
-  const debug: { clip: string | null; attention: boolean; lodFade: boolean; blink: boolean; /** Harness: forces the groomee posture (GROOMEE). */ groomee?: number; anim?: (id: number) => Anim | undefined; feet?: (id: number) => unknown; lodSwitches: number; lodBlends: number } = { clip: null, attention: true, lodFade: true, blink: true, anim: id => anims.get(id), lodSwitches: 0, lodBlends: 0 };
+  const debug: { clip: string | null; attention: boolean; lodFade: boolean; blink: boolean; /** Harness: forces the groomee posture (GROOMEE). */ groomee?: number; /** Harness: forces the resting posture in a crown (PERCH). */ perch?: number; anim?: (id: number) => Anim | undefined; feet?: (id: number) => unknown; /** Probe (stage W9): an animal's seat in its crown and how far its drawn body is from the bark. */ crown?: (id: number) => unknown; lodSwitches: number; lodBlends: number } = { clip: null, attention: true, lodFade: true, blink: true, anim: id => anims.get(id), lodSwitches: 0, lodBlends: 0 };
   // Harness probe (?debug=feet): ankle and wrist world points, stance flags, lock states and counters.
   const FEET = [B.handL, B.handR, B.footL, B.footR];
   debug.feet = (id: number) => {
@@ -398,7 +416,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       clip: '', clipT: 0, role: 0, gait: null, phase: hash01(chimp.id, 3),
       x: chimp.position[0], y: 0, z: chimp.position[2], heading: chimp.heading ?? 0, speed: 0, vel: 0, inited: false,
       track: createTrack(chimp.position[0], Math.max(0, chimp.position[1] ?? 0), chimp.position[2]), acts: createActTrack(), ox: 0, oz: 0,
-      act: chimp.action, actTarget: chimp.targetId, way: Way.none, beat: createBeat(), late: 0, intent: 0, posture: Posture.other, trunkK: 0, onTrunk: false, nestOk: false, nestX: 0, nestY: 0, nestZ: 0,
+      act: chimp.action, actTarget: chimp.targetId, way: Way.none, beat: createBeat(), late: 0, intent: 0, posture: Posture.other, trunkK: 0, onTrunk: false, nestOk: false, nestX: 0, nestY: 0, nestZ: 0, nestK: 1,
       refSpeed: 0, moveSpeed: 0, settle: 0, moving: false, stillT: 0, fastGait: false, turnRate: 0, climbDy: 0, dist: 0, strides: 0, poseDt: 0,
       gs: { f: 0, stride: 0, regime: Regime.natural }, lapse: 0, locks: [createLock(), createLock(), createLock(), createLock()], drop: 0, planted: false, bank: 0,
       inert: createInertia(POSE_SIZE), prevOut: new Float32Array(POSE_SIZE), prevCur: new Float32Array(POSE_SIZE), outVel: new Float32Array(POSE_SIZE), skip: new Uint8Array(POSE_SIZE), hold: new Float32Array(12), holdMask: 0,
@@ -411,6 +429,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       bristle: 0, dim: 0, fade: 0, blinkAt: hash01(chimp.id, 9) * 4, mouth: 0, grin: 0, appearanceAt: -1, deadAt: null,
       px: 0, visible: true, lod: 2, lodFrom: 2, lodT: 99, poseAccum: 99, lastSkinFrame: -1, head: new THREE.Vector3(), top: 1, troopColor: '#cccccc',
       pick, partnerId: -1, look: new Float32Array(3), hasLook: false, paired: false, pairClip: null, onBranch: false,
+      up: false, seatHost: -1, seatX: 0, seatY: 0, seatZ: 0, seatFace: NaN, sx: 0, sy: 0, sz: 0, seated: false, perchRole: 0, lies: false,
+      gFrame: -1, gx: 0, gy: 0, gz: 0, gyaw: 0, gt0: 0, gt1: 0, gOn: false, wasHost: false, g0: 0, g1: 0, gm: 0, gr: 0.1, nursed: false, holdsBack: false,
+      ownFrame: -1, ownX: 0, ownY: 0, ownZ: 0, ownYaw: 0, ownLimb: false, ownTop: Infinity, ownSrc: -1, ownCut: -1,
       deadCarried: false, deadDrop: false, dropX: 0, dropZ: 0, climbTree: -1, drumTree: -1,
       drinkSimX: NaN, drinkSimZ: NaN, drinkOk: false, drinkX: 0, drinkZ: 0,
       pCode: 0, pSince: 0, pPub: 0, pPubAt: 0, pIndex: 0, pCount: 0, pAhead: -1, pBehind: -1, pVariant: Listen.wait, pSide: 1, patrolAt: -1e9, relBristle: 0,
@@ -480,7 +501,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   }
 
   // --- Pairing: legible two-body interactions (groom, play, fight, mate, embrace, beg).
-  interface Pairing { a: Anim; b: Anim; kind: string; sep: number; bHeading: number; clipA: string | null; clipB: string | null; roleA: number; roleB: number; }
+  interface Pairing { a: Anim; b: Anim; kind: string; sep: number; bHeading: number; clipA: string | null; clipB: string | null; roleA: number; roleB: number; /** Stage W9: laid out on one bough off the ground this frame, and whether this pairing also turns b. */ tree: boolean; placeB: boolean; }
   const pairings: Pairing[] = [];
   const receiver = new Map<number, Pairing>();
   const pairPool: Pairing[] = [];
@@ -512,7 +533,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       // is laid out: before this the groomer's hands chased a partner drawn on its own body.
       if (b.carry !== 0 && b.carrierId === a.id) {
         const p = pairPool.pop() ?? ({} as Pairing);
-        p.a = a; p.b = b; p.kind = 'lap'; p.sep = 0; p.bHeading = 0; p.clipA = null; p.clipB = null; p.roleA = GROOM_LAP; p.roleB = 0;
+        p.a = a; p.b = b; p.kind = 'lap'; p.sep = 0; p.bHeading = 0; p.clipA = null; p.clipB = null; p.roleA = GROOM_LAP; p.roleB = 0; p.tree = false; p.placeB = false;
         pairings.push(p);
         return;
       }
@@ -528,7 +549,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       case 'groom':
         // Groomer sits behind the groomee (or face to face when mutual) with a clear gap between bodies.
         kind = 'groom'; sep = mutual ? 0.44 : 0.4;
-        if (mutual) { clipB = 'groom'; roleA = roleB = 1; bHeading = Math.PI; }
+        // Stage W9 (stylization; poses.ts groomerRole): a partner with an infant on its body is groomed where the infant
+        // is not. Face to face the hands stay on the shoulders and head of one holding an infant on the belly.
+        if (mutual) { clipB = 'groom'; roleA = groomerRole(true, b.holdsBack, b.holds && !b.holdsBack); roleB = groomerRole(true, a.holdsBack, a.holds && !a.holdsBack); bHeading = Math.PI; }
         // A receiver that is itself grooming a third animal keeps its own grooming clip and place (stage W5; a drawing
         // rule, not a source): no receiver clip or posture for it; this groomer works on it where it sits.
         else if (groomsThird(b, a)) clipB = null;
@@ -545,6 +568,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
           roleB = groomeePosture(pick, ground, dead || b.holds, dead || (a.carry !== 0 && a.carrierId === b.id), debug.groomee);
           if (roleB === GROOMEE.prone) bHeading = (hash01(b.id, 5) > 0.5 ? 1 : -1) * Math.PI / 2;
           else if (roleB === GROOMEE.side) bHeading = 0;
+          // Stage W9: with an infant riding on its back the receiver turns to the groomer, who works on its front
+          // (before this the hands combed through the infant). Not one cradling a dead infant: it keeps its seat.
+          roleA = groomerRole(false, b.holdsBack && !dead, false);
+          if (roleA === GROOM_FRONT) bHeading = Math.PI;
         }
         else return;
         break;
@@ -581,7 +608,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       default: return;
     }
     const p = pairPool.pop() ?? ({} as Pairing);
-    p.a = a; p.b = b; p.kind = kind; p.sep = sep; p.bHeading = bHeading; p.clipA = clipA; p.clipB = clipB; p.roleA = roleA; p.roleB = roleB;
+    p.a = a; p.b = b; p.kind = kind; p.sep = sep; p.bHeading = bHeading; p.clipA = clipA; p.clipB = clipB; p.roleA = roleA; p.roleB = roleB; p.tree = false; p.placeB = false;
     pairings.push(p);
     if (clipB) receiver.set(b.id, p);
   }
@@ -639,6 +666,221 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     return t;
   }
 
+  // --- Seats in crowns (stage W9; creatures/perch.ts, docs/staging/w9b-tree-pairs.md). Render-only: simulated positions
+  // are never changed. Everything below is a stylization (no source for how chimpanzees arrange themselves on a branch).
+  /**
+   * The animal's own place in a crown, into its own* fields (once a frame): a point on a limb the environment draws
+   * (ownLimb), else out along a stable direction from the crown anchor so it sits on a branch, never in the trunk.
+   * ownYaw: the bearing of that place from the trunk; ownTop: the height nothing in this crown is drawn above.
+   * (px, pz): the animal's drawn ground point; y0: its simulated height above sea level. (The placement stage W6 had
+   * inline in placeGrounded, moved here unchanged so that the pair layout can ask for a partner's place.)
+   */
+  function ownSeat(a: Anim, tree: World['trees'][number], px: number, pz: number, y0: number) {
+    const r0 = trunkRadius(tree);
+    let dx = px - tree.position[0], dz = pz - tree.position[2];
+    let dl = hyp2(dx, dz);
+    if (dl < 0.05) { const ang = hash01(a.id, 41) * Math.PI * 2; dx = Math.sin(ang); dz = Math.cos(ang); dl = 1; }
+    let crownTop = Infinity, x: number, y = y0, z: number;
+    if (ctx.treeAnchor(tree.id, anchor)) crownTop = anchor.y + 1.5;
+    if (ctx.branchAnchor && ctx.branchAnchor(tree.id, a.id, anchor)) {
+      // On a real crown branch provided by the environment.
+      a.ownLimb = true; x = anchor.x; z = anchor.z; y = anchor.y;
+    } else {
+      // Out along a stable direction from the crown anchor so the animal sits on a branch, never in the trunk.
+      a.ownLimb = false;
+      const hasAnchor = crownTop < Infinity;
+      const ox = hasAnchor ? anchor.x : tree.position[0], oz = hasAnchor ? anchor.z : tree.position[2];
+      const out = 1.0 + hash01(a.id, 43) * 1.6;
+      const jit = (hash01(a.id, 46) - 0.5) * 1.8; // animals in one tree spread onto different branches
+      const ux = dx / dl * Math.cos(jit) + dz / dl * Math.sin(jit), uz = -dx / dl * Math.sin(jit) + dz / dl * Math.cos(jit);
+      x = ox + ux * out; z = oz + uz * out;
+      // Keep clear of the trunk axis.
+      const tx0 = x - tree.position[0], tz0 = z - tree.position[2], td = hyp2(tx0, tz0);
+      if (td < r0 + 0.8) { x = tree.position[0] + tx0 / (td || 1) * (r0 + 0.8); z = tree.position[2] + tz0 / (td || 1) * (r0 + 0.8); }
+      if (hasAnchor) y = clamp(y, anchor.y - 2.5, anchor.y + 0.4) + (hash01(a.id, 44) - 0.5) * 0.6;
+    }
+    a.ownX = x; a.ownY = Math.min(y, crownTop); a.ownZ = z; a.ownYaw = Math.atan2(x - tree.position[0], z - tree.position[2]); a.ownTop = crownTop; a.ownFrame = frameNo;
+    // What the environment answered. The field map draws its forest in a window round the camera: when the camera
+    // arrives at a far tree the limbs appear (and a place found without them is 3 to 17 m from the limb), and they go
+    // when it leaves. placeGrounded draws that change at once.
+    const src = a.ownLimb ? 2 : crownTop < Infinity ? 1 : 0;
+    if (src !== a.ownSrc) { a.ownSrc = src; a.ownCut = frameNo; }
+  }
+  /** The animal's own place in its crown as it stands before this frame's motion (the pair layout runs first). False
+   * when it is in no tree. */
+  function ownOf(a: Anim): boolean {
+    if (a.ownFrame === frameNo) return true;
+    const tree = treeFor(a);
+    if (!tree) return false;
+    ownSeat(a, tree, a.track.x + a.ox, a.track.z + a.oz, ctx.groundHeight(tree.position[0], tree.position[2]) + a.track.y);
+    return true;
+  }
+  // A level bough: the support a pair, a chain or a lying animal is drawn on. The environment's crown limbs are few,
+  // steep (they kink upward toward the leaves) and a metre or two long, so two animals at grooming distance do not fit
+  // on one at one height, and a body cannot lie along one. The bough is a prop (the stick the harness has always drawn
+  // under perched animals): it crosses the host's own limb at the host's seat, set a little toward the trunk so that
+  // bodies on it clear the rising limb, and runs across the limb's direction, where there is room both ways.
+  // Sizes in body lengths of the host (design assumptions): inset 0.22, end margin 0.45, radius 0.065 (0.095 under a
+  // lying body, about 28 cm thick for an adult), half the length under a lying body 0.62.
+  // A bough is never drawn thicker than half the trunk beside it (BOUGH_TRUNK), and its line keeps BOUGH_CLEAR body
+  // lengths from the bark, so that nobody on it sits in the trunk (in small trees the limbs start at the bole).
+  const BOUGH_INSET = 0.22, BOUGH_MARGIN = 0.45, BOUGH_R = 0.065, BOUGH_R_LIE = 0.095, LIE_HALF = 0.62, BOUGH_TRUNK = 0.5, BOUGH_CLEAR = 0.45;
+  /** What a tree offers to lie on, by its height in metres (design assumptions; perch.ts perchPosture): from 18 m a limb
+   * a body can lie prone on (the environment draws limbs about a fifth as thick as the trunk, which thickens with
+   * height: about 25 cm at 18 m); from 10 m a bough to recline along; under that, seated postures only. */
+  const LARGE_LIMB_TREE_M = 18, RECLINE_TREE_M = 10;
+  /** Two seats nearer than this share of the two body sizes are in each other's bodies, and the gap a neighbour joining
+   * a bough is given (design assumptions; the ground's separation uses 0.36). */
+  const CROWD = 0.42, NEIGHBOUR_GAP = 0.44;
+  /** Furthest a seat's place may jump and still be moved to; beyond it the animal is drawn there at once (m). And the
+   * fastest a body moves to its seat, in real metres a second (design assumptions: a hurried clamber). */
+  const SEAT_GLIDE_M = 6, SEAT_MPS = 2.5;
+  /** Lays host h's bough for this frame (once): origin, axis and an empty extent. False when it is in no tree. */
+  function boughOf(h: Anim): boolean {
+    if (h.gFrame === frameNo) return true;
+    if (!ownOf(h)) return false;
+    const k = h.ownLimb ? BOUGH_INSET * h.morph.size : 0, tree = treeFor(h)!;
+    h.gx = h.ownX - Math.sin(h.ownYaw) * k; h.gy = h.ownY; h.gz = h.ownZ - Math.cos(h.ownYaw) * k;
+    // Clear of the bark, and across the direction out from the trunk as it stands at this height (it leans).
+    trunkPoint(tree, h.gy + 0.4 * h.morph.size, T4b);
+    let rx = h.gx - T4b.x, rz = h.gz - T4b.z, rd = hyp2(rx, rz);
+    if (rd < 1e-3) { rx = Math.sin(h.ownYaw); rz = Math.cos(h.ownYaw); rd = 1; }
+    const need = T4b.w + BOUGH_CLEAR * h.morph.size;
+    if (rd < need) { h.gx = T4b.x + rx / rd * need; h.gz = T4b.z + rz / rd * need; }
+    h.gr = Math.max(0.03 * h.morph.size, Math.min(BOUGH_R_LIE * h.morph.size, BOUGH_TRUNK * T4b.w));
+    // The axis: place s along the bough is the point (gx + cos(gyaw) s, gz − sin(gyaw) s); one of the two ways by individual.
+    h.gyaw = Math.atan2(rx, rz) + (hash01(h.id, 71) > 0.5 ? 0 : Math.PI);
+    h.gt0 = 0; h.gt1 = 0; h.gFrame = frameNo;
+    return true;
+  }
+  /** Seats animal a at place `at` of host h's bough (h's bough is laid). */
+  function seatOn(a: Anim, h: Anim, at: number) {
+    a.seatHost = h.id; a.seatX = h.gx + Math.cos(h.gyaw) * at; a.seatY = h.gy; a.seatZ = h.gz - Math.sin(h.gyaw) * at;
+    if (at < h.gt0) h.gt0 = at;
+    if (at > h.gt1) h.gt1 = at;
+  }
+  // Probe (capture scripts): where an animal sits in its crown and how far its drawn body is from its tree's trunk.
+  debug.crown = (id: number) => {
+    const a = anims.get(id);
+    if (!a) return null;
+    const tree = treeFor(a), c = a.chimp;
+    let clear = NaN, tx = NaN, tz = NaN;
+    if (tree) { trunkPoint(tree, a.by + 0.4 * a.morph.size, T4b); clear = hyp2(a.bx - T4b.x, a.bz - T4b.z) - T4b.w; tx = T4b.x; tz = T4b.z; }
+    return { up: a.up, trunk: [tx, tz], nestK: a.nestK, tree: tree?.id ?? -1, treeHeight: tree?.height ?? 0, seatHost: a.seatHost, lies: a.lies, perchRole: a.perchRole, onLimb: a.ownLimb, own: [a.ownX, a.ownY, a.ownZ], seat: [a.sx, a.sy, a.sz],
+      offsetM: hyp2(a.bx - c.position[0], a.bz - c.position[2]), ownOffsetM: hyp2(a.ownX - c.position[0], a.ownZ - c.position[2]), trunkClearM: clear, bough: a.gm > 0.02 ? [a.g0 - a.gm, a.g1 + a.gm] : null };
+  };
+  const SP: SeatPairs = { a: new Int32Array(64), b: new Int32Array(64), sep: new Float32Array(64), n: 0 };
+  const seatHostOf = new Int32Array(CAPACITY), seatAt = new Float32Array(CAPACITY), seatDone = new Uint8Array(CAPACITY), seatId = new Int32Array(CAPACITY), seatRank = new Float64Array(CAPACITY);
+  const slotAnim: (Anim | undefined)[] = new Array<Anim | undefined>(CAPACITY).fill(undefined);
+  // Seats taken in crowns this frame: the animals that host a bough or sit alone at their own place.
+  const taken: (Anim | undefined)[] = new Array<Anim | undefined>(CAPACITY).fill(undefined);
+  /**
+   * Who sits where off the ground this frame (perch.ts holds the rules): everyone joined by pairings shares one bough
+   * at the ground layout's distances, each actor at its partner; an animal resting alone takes its posture of the
+   * bout, and a bough when that posture lies down; and an animal whose own place is inside another's body, or on an
+   * occupied bough, sits beside it on that bough (the environment has a handful of limbs per crown and a limb is chosen
+   * by the animal's id: two animals often drew the same spot, and the ground's separation does not reach a crown).
+   * Sets seat places and headings; placeGrounded draws them. Runs once a frame, before motion. Nothing here allocates.
+   */
+  function layoutCrowns(dt: number) {
+    for (const a of animList) { a.wasHost = a.gOn; a.seatHost = -1; a.seatFace = NaN; a.gOn = false; }
+    if (SP.n) {
+      for (let i = 0; i < SP.n; i++) for (let k = 0; k < 2; k++) {
+        // The bough stays with the animal that hosted it in the frame before, else it is that of an animal that is only
+        // worked on (the others come to it), else the lowest id's.
+        const x = slotAnim[k ? SP.b[i] : SP.a[i]]!;
+        seatHostOf[x.slot] = -1; seatId[x.slot] = x.id; seatRank[x.slot] = (x.wasHost ? 0 : actorIds.has(x.id) ? 2 : 1) * 1e6 + x.id;
+      }
+      seatGroups(SP, seatId, seatRank, seatHostOf, seatAt, seatDone);
+      for (let i = 0; i < SP.n; i++) for (let k = 0; k < 2; k++) { const h = slotAnim[k ? SP.b[i] : SP.a[i]]!; if (seatHostOf[h.slot] === h.slot && h.seatHost < 0 && boughOf(h)) seatOn(h, h, 0); }
+      for (let i = 0; i < SP.n; i++) for (let k = 0; k < 2; k++) {
+        const a = slotAnim[k ? SP.b[i] : SP.a[i]]!, h = slotAnim[seatHostOf[a.slot]];
+        if (!h || h === a || a.seatHost >= 0 || h.seatHost !== h.id) continue;
+        // No further from its own simulated position than it could already be drawn (perch.ts seatAllowed); one that
+        // would be stays on its own branch, as before this stage.
+        const at = seatAt[a.slot], own = ownOf(a) ? hyp2(a.ownX - a.track.x, a.ownZ - a.track.z) : 0;
+        if (!seatAllowed(hyp2(h.gx + Math.cos(h.gyaw) * at - a.track.x, h.gz - Math.sin(h.gyaw) * at - a.track.z), own)) continue;
+        seatOn(a, h, at); h.gOn = true;
+      }
+      // A host nobody could join keeps its own place.
+      for (let i = 0; i < SP.n; i++) for (let k = 0; k < 2; k++) { const h = slotAnim[k ? SP.b[i] : SP.a[i]]!; if (h.seatHost === h.id && !h.gOn) h.seatHost = -1; }
+      // Each actor faces its partner along the bough; a receiver this pairing places is turned as on the ground.
+      for (const p of pairings) {
+        if (!p.tree) continue;
+        const a = p.a, b = p.b;
+        if (a.seatHost < 0 || a.seatHost !== b.seatHost) continue;
+        const face = Math.atan2(b.seatX - a.seatX, b.seatZ - a.seatZ);
+        a.seatFace = face; a.headingTarget = face;
+        if (p.placeB) { b.seatFace = face + p.bHeading; b.headingTarget = b.seatFace; }
+      }
+    }
+    let nTaken = 0;
+    for (const a of animList) if (a.gOn) taken[nTaken++] = a;
+    for (const a of animList) {
+      if (!a.up) { a.lies = false; continue; }
+      // Its resting posture of this bout (perch.ts), from those its tree offers.
+      const tree = treeFor(a), th = tree ? tree.height ?? 0 : 0;
+      // (Never prone for an infant, nor for an animal with an infant on its body: it would lie on it.)
+      a.perchRole = perchPosture(a.id, perchBout(a.id, animClock), th >= LARGE_LIMB_TREE_M && a.chimp.age >= 4 && !a.holds ? 2 : th >= RECLINE_TREE_M ? 1 : 0, debug.perch);
+      if (a.seatHost >= 0) { a.lies = false; continue; }
+      if (!ownOf(a)) { a.lies = false; continue; }
+      // Its own place, unless that is inside a body already seated: then beside it, on that animal's bough. An animal
+      // that lies, or would in this bout, needs room for its length as well (`near`): with a neighbour inside that it
+      // stays seated. (Looked for before the lying seat is given: a body lying down was laid through its neighbour;
+      // filmed, a three-year-old reclining inside a feeding adult 0.27 m away.)
+      const long = perchLies(a.perchRole) || (a.clip === 'perch' && perchLies(a.role)) ? LIE_HALF * a.morph.size : 0;
+      let h: Anim | undefined, near = false;
+      for (let i = 0; i < nTaken && !h; i++) {
+        const o = taken[i]!, reach = CROWD * (a.morph.size + o.morph.size), laid = o.gFrame === frameNo;
+        if (Math.abs(a.ownY - (laid ? o.gy : o.ownY)) > reach * 2) continue;
+        let d: number;
+        if (laid) {
+          // A bough: the distance from the place to the stretch its members sit on.
+          const ex = a.ownX - o.gx, ez = a.ownZ - o.gz, cx = Math.cos(o.gyaw), cz = -Math.sin(o.gyaw);
+          const tc = clamp(ex * cx + ez * cz, o.gt0, o.gt1);
+          d = hyp2(ex - cx * tc, ez - cz * tc);
+        } else d = hyp2(a.ownX - o.ownX, a.ownZ - o.ownZ);
+        if (d < reach) h = o;
+        else if (d < reach + long) near = true;
+      }
+      if (h || near) { if (perchLies(a.perchRole)) a.perchRole = PERCH.hold; a.lies = false; }
+      // A lying posture (as drawn: the clip and role of the last pose) takes a bough through its own seat and lies along it.
+      // (Never the actor of a pairing: its role is its pairing's this frame, not the posture it was drawn in.)
+      else a.lies = !a.paired && a.clip === 'perch' && perchLies(a.role);
+      if (a.lies && boughOf(a)) {
+        const half = LIE_HALF * a.morph.size;
+        a.seatHost = a.id; a.seatX = a.gx; a.seatY = a.gy; a.seatZ = a.gz; a.gt0 = -half; a.gt1 = half; a.gOn = true;
+        a.seatFace = a.gyaw + Math.PI / 2; a.headingTarget = a.seatFace;
+        taken[nTaken++] = a;
+        continue;
+      }
+      if (h && boughOf(h)) {
+        if (h.seatHost < 0) seatOn(h, h, 0);
+        const t = (a.ownX - h.gx) * Math.cos(h.gyaw) - (a.ownZ - h.gz) * Math.sin(h.gyaw), gap = NEIGHBOUR_GAP * (a.morph.size + h.morph.size);
+        const at = t < (h.gt0 + h.gt1) * 0.5 ? h.gt0 - gap : h.gt1 + gap;
+        seatOn(a, h, at); h.gOn = true;
+        // It sits along the bough, turned the way that is nearer to how it faced on its own limb.
+        const along = h.gyaw + Math.PI / 2, own = a.ownYaw + (hash01(a.id, 45) - 0.5) * 1.2;
+        a.seatFace = Math.cos(own - along) >= 0 ? along : along + Math.PI; a.headingTarget = a.seatFace;
+      } else {
+        taken[nTaken++] = a;
+        // On its own limb it faces roughly outward along it, as before this stage, but by ONE damped turn: the heading
+        // target of the motion step is that facing too. Before, the motion step pulled the heading to the simulated
+        // heading at a rate that follows the frame time and the placement pulled it back to the limb at a fixed rate,
+        // so the balance between the two moved with every change of frame time and a perched animal rocked on its seat
+        // (wrists 1 to 2.4 m of path in 12 s on a busy machine). Not while its decision beat turns it to what it chose
+        // (placeGrounded, stage W6): then it keeps the heading it has.
+        if (!(a.way === Way.soon && a.beat.phase >= Phase.look)) { a.seatFace = a.ownYaw + (hash01(a.id, 45) - 0.5) * 1.2; a.headingTarget = a.seatFace; }
+      }
+    }
+    // The drawn boughs ease out to their members and back in when they leave.
+    for (const a of animList) if (a.gOn || a.gm > 0) {
+      a.g0 = damp(a.g0, a.gOn ? a.gt0 : 0, 6, dt); a.g1 = damp(a.g1, a.gOn ? a.gt1 : 0, 6, dt);
+      a.gm = damp(a.gm, a.gOn ? BOUGH_MARGIN * a.morph.size : 0, 6, dt);
+      if (!a.gOn && a.gm < 0.01) { a.gm = 0; a.g0 = 0; a.g1 = 0; }
+    }
+  }
+
   // --- Border patrols (creatures/patrol.ts): each animal's leg and file position, from parties with a published
   // Party.patrolPhase. Animals whose party has none keep today's patrol clips.
   const patrolParties = new Map<number, World['parties'][number]>();
@@ -670,6 +912,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   // creatures/beat.ts), walks or climbs when its path does, and stands neutral when it pauses on the way; the pose of
   // the new act comes at the moment the tag turns plain. The timings and substitutions are stylizations.
   const NEUTRAL: [string, number, Gait | null] = ['stand', 0, null];
+  /** Simulated seconds the building clip plays from the drawn body's arrival at its nest place (stage W6's four
+   * minutes; the simulation builds for 3 to 5 [H, nestBuildMinS and nestBuildSpanS]). Stage W9: the nest grows over
+   * them, and the builder faces NEST_TURNS ways in turn as it pulls branches in from all round (stylization). */
+  const NEST_BUILD_S = 240, NEST_TURNS = 5, NEST_TURN_RAD = 1.9;
   function chooseClip(a: Anim, moving: boolean, fast: number): [string, number, Gait | null] {
     const c = a.chimp;
     if (debug.clip) return [debug.clip, 0, null];
@@ -700,7 +946,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       // (Not after skipped states: the moment the body was first seen in the nest is then not its arrival, and every
       // sleeper would build for four minutes after a fast-forward.)
       const seen = a.acts.shown === a.acts.since && Number.isFinite(a.acts.shownAt) && !startUnseen(a.acts);
-      const building = !about && (seen ? (playback.renderT - a.late - a.acts.shownAt) * 3600 < 240 : (c.actionTime ?? 9999) < 240);
+      const built = seen ? (playback.renderT - a.late - a.acts.shownAt) * 3600 : c.actionTime ?? 9999, building = !about && built < NEST_BUILD_S;
+      // Stage W9: how far the building has come, for the nest that grows under it and the builder's turns (placeGrounded).
+      a.nestK = building ? clamp(built / NEST_BUILD_S, 0, 1) : 1;
       if (about && still && (a.beat.up || a.beat.phase !== Phase.none)) { a.beat.up = true; return ['perch', 0, null]; }
       return [building ? 'nestBuild' : 'sleep', 0, null];
     }
@@ -740,13 +988,36 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       }
     }
     if (high) {
+      // Stage W9: resting in a crown takes the individual's posture of the bout (creatures/perch.ts); sheltering and
+      // alarm keep their own clips (their crown variants, poses.ts), and a mother whose infant is suckling on her sits
+      // in the nursing posture. All of them used to be the one seated 'perch'. An animal lying along a bough sits up
+      // as its decision beat begins and stays up, as one lying on the ground does (the glance and the look of the beat
+      // do not show on a lying body; stage W6's rule).
+      const rest = about && (a.beat.up || (a.beat.phase !== Phase.none && a.posture === Posture.lying)) ? (a.beat.up = true, PERCH.hold) : a.perchRole;
       switch (act) {
         case 'forage': return ['forage', 0, null];
-        case 'groom': return pairA ? ['groom', a.role, null] : ['perch', 0, null];
+        case 'groom': if (pairA) return ['groom', a.role, null]; break;
         case 'call': return ['pantHoot', 0, null];
         case 'play': return ['play', 0, null];
-        default: return ['perch', 0, null];
+        case 'shelter': return ['shelter', 0, null];
+        case 'alarm': return ['alarm', 0, null];
+        // The actor of a pair laid out in the crown plays its part of the pair, as on the ground (its partner already did).
+        case 'mate': if (pairA) return ['mate', a.role, null]; break;
+        case 'reconcile': if (pairA) return ['embrace', 0, null]; break;
+        case 'console': if (pairA) return ['embrace', 1, null]; break;
+        case 'beg': if (pairA) return ['beg', 0, null]; break;
+        case 'share': if (pairA) return ['share', 0, null]; break;
+        default: break;
       }
+      if (a.nursed) return ['nurse', 0, null];
+      // The actor of a pairing with no clip of its own at height (a pant-grunt, a submission, an attack) keeps the seat
+      // its pairing names: update() rewrites a paired actor's role every frame, so any other posture was dropped and
+      // started again about three times a second (the fault stage W5 found on receivers; measured here before the fix:
+      // 11 clip changes in 4 s). The pairing's role is 0 in all three, the plain seat.
+      if (pairA) return ['perch', perchLies(a.role) ? PERCH.hold : a.role, null];
+      // Only an animal that rests, or keeps a resting companion company (follow), lies down along a bough; in any other
+      // act (guarding a mate, a pause in a trip, a partner out of reach) it keeps to the seated postures.
+      return ['perch', act !== 'rest' && act !== 'follow' && perchLies(rest) ? PERCH.hold : rest, null];
     }
     switch (act) {
       // While the body waits for its next act the resting posture it is in stays (the decision that ends the rest also
@@ -1095,8 +1366,12 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     pctx.role = role; pctx.inTree = a.elevated > 0.5; pctx.wet = 0; pctx.side = a.pSide;
     const partner = a.partnerId >= 0 ? anims.get(a.partnerId) : undefined;
     if (partner) {
-      // Partner root in this animal's body space (unit scale).
-      const dx = partner.x - a.x, dz = partner.z - a.z, dy = (partner.by - a.by);
+      // Partner root in this animal's body space (unit scale). Stage W9: an animal on a branch is drawn at its seat, not
+      // at its simulated ground point (a.x, a.z), so its origin and its partner's are the drawn ones there: before, a
+      // groomer in a crown aimed at the partner as if both sat at their simulated points. On the ground the two are
+      // the same point.
+      const ax = a.seated ? a.bx : a.x, az = a.seated ? a.bz : a.z;
+      const dx = (partner.seated ? partner.bx : partner.x) - ax, dz = (partner.seated ? partner.bz : partner.z) - az, dy = (partner.by - a.by);
       const ch = Math.cos(-a.heading), sh = Math.sin(-a.heading);
       const lx = dx * ch + dz * sh, lz = -dx * sh + dz * ch;
       pctx.hasTarget = true; pctx.tx = lx / s; pctx.tz = lz / s; pctx.ty = dy / s;
@@ -1107,7 +1382,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       pctx.hasBones = partner.lastSkinFrame >= 0 && (partner.carry === 0 || (role === GROOM_LAP && clip === 'groom' && partner.carrierId === a.id));
       if (pctx.hasBones) for (let k = 0; k < 5; k++) {
         boneWorld(partner.fk, partner.bodyQ, partner.bx, partner.by, partner.bz, partner.lift, PAIR_BONES[k], TP, TQ4);
-        const bx = TP[0] - a.x, bz = TP[2] - a.z;
+        const bx = TP[0] - ax, bz = TP[2] - az;
         pctx.pb[k * 3] = (bx * ch + bz * sh) / s; pctx.pb[k * 3 + 1] = (TP[1] - a.by) / s; pctx.pb[k * 3 + 2] = (-bx * sh + bz * ch) / s;
       }
       pctx.pairT = animClock + hash01(Math.min(a.id, partner.id) * 7 + Math.max(a.id, partner.id), 5) * 40;
@@ -1184,7 +1459,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       let big = 0;
       for (let i = 3; i < PI.root; i++) big = Math.max(big, Math.abs(cv[i] - ov[i]));
       // A receiver changing posture (same clip, another role) may be lying down or sitting up: the lying-down time.
-      startInertia(a.inert, ov, a.outVel, cv, Math.min(0.7, (clip === 'groomee' && prevClip === 'groomee' ? 0.55 : transitionTime(prevClip, clip)) * Math.max(1, 0.6 + 0.5 * big)), a.skip);
+      // Stage W9: a change of resting posture in a crown (same clip, another role) is slow: sitting up, lying down along
+      // the bough or taking another hold, eased over up to 1.1 s (design assumption).
+      const perchShift = clip === 'perch' && prevClip === 'perch';
+      startInertia(a.inert, ov, a.outVel, cv, Math.min(perchShift ? 1.1 : 0.7, (perchShift ? 0.8 : clip === 'groomee' && prevClip === 'groomee' ? 0.55 : transitionTime(prevClip, clip)) * Math.max(1, 0.6 + 0.5 * big)), a.skip);
     }
     else if (pop) { a.skip.fill(0); a.holdMask = 0; startInertia(a.inert, ov, a.outVel, cv, 0.25, a.skip); a.inert.t = -dtAnim; }
     const blending = a.inert.t < a.inert.end;
@@ -1579,14 +1857,33 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       const climbAct = c.action === 'climb', vy = Math.abs(a.track.vy) / 3600;
       a.onTrunk = !!tree && !climbAct && a.carry === 0 && vy > (a.onTrunk ? 0.4 : 1) * PATH_MOVING_MPS;
       a.trunkK = a.onTrunk && !wasUp && a.trunkK < 0.5 ? 1 : damp(a.trunkK, a.onTrunk ? 1 : 0, 5, curDt);
+      // (W6: in the nest once the drawn body is in the nest act, not while it is still on its way to the nest tree.)
+      // The place is remembered: the simulation clears Chimp.nest the moment the animal decides to leave, two ticks
+      // before its drawn body does, and it would be lifted out of its nest onto a branch for that long.
+      let inNest = false;
+      if (a.act === 'nest') {
+        if (c.action === 'nest') {
+          // Stage W9: the simulation publishes Chimp.nest when the nest is finished; while the animal builds, the nest
+          // is where it is (it does not move until it is done), in the tree its act names. So the builder sits at its
+          // nest place from the start (it used to build on its branch and jump into the finished nest), and the nest
+          // grows under it (nests.ts build). Only once the drawn body is in the nest act: on its way there the act is
+          // 'travel' (stage W6) and this is not reached.
+          const site = c.nest ? c.nest.treeId : a.nestK < 1 && treeById.has(c.targetId) ? c.targetId : -1;
+          const spot = site >= 0 ? nests.spotFor(site, c.nest ? c.nest.position : c.position, a.id, V2) : false;
+          a.nestOk = spot; if (spot) { a.nestX = V2.x; a.nestY = V2.y + 0.12 * a.morph.size; a.nestZ = V2.z; }
+          if (spot && (a.nestK < 1 || a.clip === 'sleep')) nests.build(a.id, site, c.nest ? c.nest.position : c.position, a.nestK, world.time);
+        }
+        // (The remembered place only while the drawn body is at it: REMEMBERED_TREE_M.)
+        inNest = a.nestOk && (c.action === 'nest' || hyp2(a.nestX - a.x, a.nestZ - a.z) < REMEMBERED_TREE_M);
+      } else { a.nestOk = false; a.nestK = 1; } // (nestK: a build given up is not carried into the next nest)
       if (tree) {
         const r0 = trunkRadius(tree);
         let dx = x - tree.position[0], dz = z - tree.position[2];
         let dl = hyp2(dx, dz);
         if (dl < 0.05) { const ang = hash01(a.id, 41) * Math.PI * 2; dx = Math.sin(ang); dz = Math.cos(ang); dl = 1; }
         let crownTop = Infinity;
-        if (tree && ctx.treeAnchor(tree.id, anchor)) crownTop = anchor.y + 1.5;
         if (climbAct) {
+          if (ctx.treeAnchor(tree.id, anchor)) crownTop = anchor.y + 1.5;
           // Hug the trunk, facing it; the rig climbs toward +Z. The rendered trunk (vegetation.trunkAt) gives the
           // axis and bark radius at the chest, so the hands sit on the bark instead of beside it.
           const hasTrunk = trunkPoint(tree, y + 0.8 * a.morph.size, T4);
@@ -1595,25 +1892,35 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
           x = ax + dx / dl * r; z = az + dz / dl * r;
           a.heading = Math.atan2(-dx, -dz);
           a.climbTree = tree.id;
-        } else if (ctx.branchAnchor && ctx.branchAnchor(tree.id, a.id, anchor) && (a.onBranch = true)) {
-          // On a real crown branch provided by the environment.
-          x = anchor.x; z = anchor.z; y = anchor.y;
-          perchYaw = Math.atan2(x - tree.position[0], z - tree.position[2]);
+          y = Math.min(y, crownTop);
+          a.seated = false;
+          if (inNest) { x = a.nestX; y = a.nestY; z = a.nestZ; }
         } else {
-          // Out along a stable direction from the crown anchor so the animal sits on a branch, never in the trunk.
-          const hasAnchor = crownTop < Infinity;
-          const ox = hasAnchor ? anchor.x : tree.position[0], oz = hasAnchor ? anchor.z : tree.position[2];
-          const out = 1.0 + hash01(a.id, 43) * 1.6;
-          const jit = (hash01(a.id, 46) - 0.5) * 1.8; // animals in one tree spread onto different branches
-          const ux = dx / dl * Math.cos(jit) + dz / dl * Math.sin(jit), uz = -dx / dl * Math.sin(jit) + dz / dl * Math.cos(jit);
-          x = ox + ux * out; z = oz + uz * out;
-          // Keep clear of the trunk axis.
-          const tx0 = x - tree.position[0], tz0 = z - tree.position[2], td = hyp2(tx0, tz0);
-          if (td < r0 + 0.8) { x = tree.position[0] + tx0 / (td || 1) * (r0 + 0.8); z = tree.position[2] + tz0 / (td || 1) * (r0 + 0.8); }
-          if (hasAnchor) y = clamp(y, anchor.y - 2.5, anchor.y + 0.4) + (hash01(a.id, 44) - 0.5) * 0.6;
-          perchYaw = Math.atan2(x - tree.position[0], z - tree.position[2]);
+          // Its own place in the crown (ownSeat: a limb the environment draws, else out from the crown anchor), or,
+          // stage W9, its place on a bough laid by layoutCrowns (a pair or chain, or lying along it; no stick of its own).
+          if (a.ownFrame !== frameNo) ownSeat(a, tree, x, z, y);
+          x = a.ownX; y = a.ownY; z = a.ownZ; a.onBranch = a.ownLimb; crownTop = a.ownTop; perchYaw = a.ownYaw;
+          if (a.seatHost >= 0) { x = a.seatX; y = a.seatY; z = a.seatZ; a.onBranch = true; }
+          // Its nest place is a seat like any other (W9: the body eases into it and off the trunk; it used to be put
+          // there in one frame once the clamber from the trunk was half done).
+          if (inNest) { x = a.nestX; y = a.nestY; z = a.nestZ; }
+          // Stage W9: the drawn seat eases to its place (as partners slide into place on the ground, a little slower and
+          // never faster than SEAT_MPS), so an animal joining a partner's bough or lying down along one moves there
+          // instead of jumping. A relocation, a first frame in the crown, or a place more than SEAT_GLIDE_M away (in
+          // any direction: limbs of one crown are metres apart in height) is drawn at once. A seat that does not move
+          // (every animal resting or feeding alone on a limb) is exactly where it was before this stage.
+          // Drawn at once too, as before this stage: when the forest window gave or took this tree's limbs this frame
+          // (ownCut; eased, every animal of a crown rose 3 to 5 m through it for three seconds after the camera
+          // arrived), and in time-lapse (above ABOUT_MAX_RATE, stage W6's limit: at 10 min/s pairs form and part
+          // several times a second, and eased bodies were away from their seats 41% of the time, 80% at 1 h/s).
+          if (!a.seated || a.track.jumped || a.ownCut === frameNo || curSimRate > ABOUT_MAX_RATE || hyp2(hyp2(x - a.sx, z - a.sz), y - a.sy) > SEAT_GLIDE_M) { a.sx = x; a.sy = y; a.sz = z; }
+          else if (a.sx !== x || a.sy !== y || a.sz !== z) {
+            const ex = x - a.sx, ey = y - a.sy, ez = z - a.sz, el = hyp2(hyp2(ex, ez), ey);
+            const k = Math.min(1 - Math.exp(-2.5 * curDt), el > 1e-6 ? SEAT_MPS * curDt / el : 1);
+            if (el < 2e-3) { a.sx = x; a.sy = y; a.sz = z; } else { a.sx += ex * k; a.sy += ey * k; a.sz += ez * k; }
+          }
+          a.seated = true; x = a.sx; y = a.sy; z = a.sz;
         }
-        y = Math.min(y, crownTop);
         if (a.trunkK > 1e-3 && !climbAct) {
           // The point on the bark at the height the simulation has the animal (the same placement as the climb act),
           // meeting the ground point over the last metre so the landing is not a jump.
@@ -1627,24 +1934,19 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         }
         // Perched animals face roughly outward along their branch.
         // (W6: in the decision beat it turns on its branch toward what it chose, so the head can reach it.)
+        // (W9: paired or lying on a bough it faces its partner, or along the bough: seatFace, set by layoutCrowns.)
         else if (!climbAct && a.speed < 0.3 * a.morph.size) {
           const turned = a.way === Way.soon && a.beat.phase >= Phase.look && beatGoal(a, Gaze.goal);
-          a.heading = dampAngle(a.heading, turned ? Math.atan2(GOAL[0] - x, GOAL[2] - z) : perchYaw + (hash01(a.id, 45) - 0.5) * 1.2, 3, 1 / 30);
+          // (W9: building a nest it turns a step at a time, pulling branches in from all round; it settles as it lies down.)
+          const turn = a.act === 'nest' && a.nestK < 1 ? Math.floor(a.nestK * NEST_TURNS) * NEST_TURN_RAD : 0;
+          a.heading = dampAngle(a.heading, turned ? Math.atan2(GOAL[0] - x, GOAL[2] - z) : Number.isFinite(a.seatFace) ? a.seatFace : perchYaw + (hash01(a.id, 45) - 0.5) * 1.2 + turn, 3, 1 / 30);
         }
-      }
+      } else { a.seated = false; if (inNest) { x = a.nestX; y = a.nestY; z = a.nestZ; } }
       // Branch placement is render-only: a.x/a.z keep tracking the sim so speed estimates stay clean.
-      // (W6: in the nest once the drawn body is in the nest act, not while it is still on its way to the nest tree.)
-      // The place is remembered: the simulation clears Chimp.nest the moment the animal decides to leave, two ticks
-      // before its drawn body does, and it would be lifted out of its nest onto a branch for that long.
-      if (a.act === 'nest' && a.trunkK < 0.5) {
-        if (c.action === 'nest') { const spot = c.nest ? nests.spotFor(c.nest.treeId, c.nest.position, a.id, V2) : null; a.nestOk = !!spot; if (spot) { a.nestX = V2.x; a.nestY = V2.y + 0.12 * a.morph.size; a.nestZ = V2.z; } }
-        // (The remembered place only while the drawn body is at it: REMEMBERED_TREE_M.)
-        if (a.nestOk && (c.action === 'nest' || hyp2(a.nestX - a.x, a.nestZ - a.z) < REMEMBERED_TREE_M)) { x = a.nestX; y = a.nestY; z = a.nestZ; }
-      } else if (a.act !== 'nest') a.nestOk = false;
       bodyFrame(a, x, z, y, 0);
       return;
     }
-    a.onTrunk = false;
+    a.onTrunk = false; a.seated = false;
     if (a.trunkK > 0) a.trunkK = a.trunkK < 1e-3 ? 0 : damp(a.trunkK, 0, 8, curDt);
     const g = ctx.groundHeight(x, z);
     const clip = a.clip;
@@ -1727,6 +2029,11 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       const cx = a.bx - Math.sin(yaw) * 0.5 * s, cz = a.bz - Math.cos(yaw) * 0.5 * s;
       props.perch(cx, a.by - 0.03 * s, cz, yaw - Math.PI / 2, 2.2 * s, 0.06 * s);
     }
+    // Stage W9: the bough this animal hosts (a pair, a chain, or its own lying body), along its eased extent.
+    if (a.gm > 0.02) {
+      const r = Math.min(a.gr, (a.lies ? BOUGH_R_LIE : BOUGH_R) * s), mid = (a.g0 + a.g1) * 0.5;
+      props.perch(a.gx + Math.cos(a.gyaw) * mid, a.gy - 0.8 * r, a.gz - Math.sin(a.gyaw) * mid, a.gyaw, a.g1 - a.g0 + 2 * a.gm, r);
+    }
   }
 
   const actorIds = new Set<number>(), placedIds = new Set<number>();
@@ -1784,8 +2091,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       // "Walking to" is said of a body drawn in a walk; one that runs up to its partner is "going to".
       a.way = DRAWN.way === Way.walking && a.fastGait ? Way.going : DRAWN.way;
     }
-    for (const a of animList) { a.paired = false; a.pairClip = null; a.partnerId = -1; a.headingTarget = null; a.holds = false; a.tx = a.deadDrop ? a.dropX : a.track.x; a.tz = a.deadDrop ? a.dropZ : a.track.z; }
-    for (const a of animList) if (a.carry !== 0 && a.carrierId >= 0) { const m = anims.get(a.carrierId); if (m) m.holds = true; }
+    for (const a of animList) { a.paired = false; a.pairClip = null; a.partnerId = -1; a.headingTarget = null; a.holds = false; a.holdsBack = false; a.nursed = false; a.tx = a.deadDrop ? a.dropX : a.track.x; a.tz = a.deadDrop ? a.dropZ : a.track.z; }
+    // (W9: where the infant is on its carrier, and whether it is suckling by the act its drawn body is in.)
+    for (const a of animList) if (a.carry !== 0 && a.carrierId >= 0) { const m = anims.get(a.carrierId); if (m) { m.holds = true; if (a.carry === 2) m.holdsBack = true; if (a.chimp.alive && a.act === 'nurse') m.nursed = true; } }
     for (const a of animList) pairingFor(a);
     // Each animal is positioned by one pairing only: its own (as actor) first, else the first that targets it.
     actorIds.clear();
@@ -1796,6 +2104,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     for (const p of pairings) if (p.clipB === 'groomee' && p.roleB !== GROOMEE.sit && actorIds.has(p.b.id)) p.roleB = GROOMEE.sit;
     placedIds.clear();
     contactPairs.clear();
+    // Stage W9: who sits in a crown this frame (not on its trunk, not in a nest, not carried): by the drawn height.
+    SP.n = 0;
+    for (const a of animList) { const c = a.chimp; a.up = a.carry === 0 && c.alive && a.track.y > 0.3 && a.act !== 'climb' && a.act !== 'nest' && c.action !== 'climb' && c.action !== 'dead' && !a.onTrunk; }
     for (const p of pairings) {
       const a = p.a, b = p.b;
       a.paired = true; a.partnerId = b.id; a.role = p.roleA; a.pairClip = p.clipA;
@@ -1807,6 +2118,15 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       if (placedIds.has(a.id)) continue;
       placedIds.add(a.id);
       if (placeB) placedIds.add(b.id);
+      // Stage W9: both in the crown of one tree: the pair is seated on one bough by layoutCrowns (the ground layout
+      // below moves target points on the ground, where an animal in a crown is not drawn).
+      const crown = a.up && b.up && SP.n < SP.a.length ? treeFor(a) : null;
+      if (crown && crown === treeFor(b)) {
+        p.tree = true; p.placeB = placeB;
+        SP.a[SP.n] = a.slot; SP.b[SP.n] = b.slot; SP.sep[SP.n] = p.sep * (a.morph.size + b.morph.size); SP.n++;
+        slotAnim[a.slot] = a; slotAnim[b.slot] = b;
+        continue;
+      }
       const ax = a.track.x, az = a.track.z, bx = b.track.x, bz = b.track.z;
       let dx = bx - ax, dz = bz - az;
       let d = hyp2(dx, dz);
@@ -1823,6 +2143,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         if (placeB) b.headingTarget = face + p.bHeading;
       }
     }
+    layoutCrowns(dt);
     separate();
     // Border patrols: leg and file position per animal (creatures/patrol.ts).
     phasedParties(world.parties, patrolParties);

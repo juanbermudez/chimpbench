@@ -11,7 +11,11 @@ import { hyp2 } from '../fastmath';
 const MAX_NESTS = 240;
 const NEST_LIFE_HOURS = 24 * 45; // fades over ~45 ecological days
 
-interface Nest { key: string; treeId: number; x: number; y: number; z: number; built: number; lastUsed: number; seed: number; }
+/** grow: how far the nest has been built while its builder was drawn at it, 0..1 (stage W9); absent for a nest first
+ * seen finished, which grows in by the clock as before. */
+interface Nest { key: string; treeId: number; x: number; y: number; z: number; built: number; lastUsed: number; seed: number; grow?: number; /** Its place as build() was given it, in half metres. */ kx?: number; kz?: number; }
+/** Scale of a nest that has just been begun: a few bent branches (a share of the finished nest; stylization). */
+const NEST_BEGUN = 0.3;
 
 function nestGeometry(): THREE.BufferGeometry {
   // Radial and circumferential twigs forming a shallow bowl, plus leaf clumps on the rim.
@@ -85,6 +89,9 @@ export function createNests(parent: THREE.Object3D, ctx: CreatureContext) {
   mesh.name = 'nests';
   parent.add(mesh);
   const nests = new Map<string, Nest>();
+  // Stage W9: nests being built, by their builder's id (a number key: nothing is allocated per frame to find one).
+  const building = new Map<number, Nest>();
+  const keyOf = (treeId: number, pos: Vec3) => `${treeId}:${Math.round(pos[0] * 2)}:${Math.round(pos[2] * 2)}:${Math.round(pos[1])}`;
   const anchor = new THREE.Vector3();
   const M = new THREE.Matrix4(), P = new THREE.Vector3(), Q = new THREE.Quaternion(), S = new THREE.Vector3(), E = new THREE.Euler();
   const fresh = new THREE.Color('#ffffff'), old = new THREE.Color('#9a7f63'), tint = new THREE.Color();
@@ -112,17 +119,19 @@ export function createNests(parent: THREE.Object3D, ctx: CreatureContext) {
     return true;
   }
 
+  /** Keeps the list within the mesh: the nest unused for longest goes. */
+  function trim() { if (nests.size > MAX_NESTS) { let oldest: Nest | null = null; for (const v of nests.values()) if (!oldest || v.lastUsed < oldest.lastUsed) oldest = v; if (oldest) nests.delete(oldest.key); } }
   function update(world: World, frame: CreatureFrame, dt: number) {
     // Register nests in use (key by tree + rounded position so rebuilt nests on later nights are new).
     for (const c of world.chimps) {
       if (!c.nest) continue;
-      const key = `${c.nest.treeId}:${Math.round(c.nest.position[0] * 2)}:${Math.round(c.nest.position[2] * 2)}:${Math.round(c.nest.position[1])}`;
+      const key = keyOf(c.nest.treeId, c.nest.position);
       let n = nests.get(key);
       if (!n) {
         spotFor(c.nest.treeId, c.nest.position, c.id, P);
         n = { key, treeId: c.nest.treeId, x: P.x, y: P.y, z: P.z, built: world.time, lastUsed: world.time, seed: hash01(c.id, Math.round(world.time)) };
         nests.set(key, n);
-        if (nests.size > MAX_NESTS) { let oldest: Nest | null = null; for (const v of nests.values()) if (!oldest || v.lastUsed < oldest.lastUsed) oldest = v; if (oldest) nests.delete(oldest.key); }
+        trim();
       }
       if (c.action === 'nest') n.lastUsed = world.time;
     }
@@ -133,8 +142,9 @@ export function createNests(parent: THREE.Object3D, ctx: CreatureContext) {
       const age = world.time - n.lastUsed;
       if (age > NEST_LIFE_HOURS) { nests.delete(n.key); continue; }
       const decay = smoothstep(0, NEST_LIFE_HOURS, age);
-      // Being built: grows in over the first few ecological minutes.
-      const grow = clamp((world.time - n.built) / 0.1, 0.25, 1);
+      // Being built: grows in over the first few ecological minutes. Stage W9: a nest whose builder was drawn at work
+      // grows with the building (build() below), from a few bent branches to the finished bowl.
+      const grow = n.grow !== undefined ? NEST_BEGUN + (1 - NEST_BEGUN) * smoothstep(0, 1, n.grow) : clamp((world.time - n.built) / 0.1, 0.25, 1);
       P.set(n.x, n.y - decay * 0.25, n.z);
       E.set((n.seed - 0.5) * 0.25 + decay * 0.25, n.seed * 6.28, (hash01(i, 3) - 0.5) * 0.2);
       Q.setFromEuler(E);
@@ -151,8 +161,41 @@ export function createNests(parent: THREE.Object3D, ctx: CreatureContext) {
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     void dt;
   }
+  /**
+   * Stage W9 (the nest grows as it is built; a stylization of the few minutes a nest takes [H, the simulation's
+   * nestBuildMinS]): the creature layer reports how far the builder drawn at a nest place has come, k in 0..1. The
+   * simulation publishes Chimp.nest only when the nest is finished, so the place is the builder's own (it does not
+   * move while it builds): the nest registered here is the one update() later finds under the same key. Progress never
+   * goes back; a builder that leaves early leaves a part-built nest. Allocates once per nest, nothing per call.
+   */
+  function build(builderId: number, treeId: number, pos: Vec3, k: number, time: number) {
+    let n = building.get(builderId);
+    // Another tree or another place in it is another nest (compared as numbers: no key is built to find that out);
+    // so is one that has since been dropped from the list.
+    if (n && (n.treeId !== treeId || n.kx !== Math.round(pos[0] * 2) || n.kz !== Math.round(pos[2] * 2) || nests.get(n.key) !== n)) n = undefined;
+    if (!n) {
+      // A sleeper whose building was not followed has nothing to finish here (update() lists its nest and keeps it in
+      // use): no key is built for it. (Before, a sleeper not in the map below built a key string to be put in it, and
+      // the map held 64: with more animals asleep than that, each of them would have built one every frame.)
+      if (k >= 1) return;
+      const key = keyOf(treeId, pos);
+      n = nests.get(key);
+      if (!n) {
+        spotFor(treeId, pos, builderId, P);
+        n = { key, treeId, x: P.x, y: P.y, z: P.z, built: time, lastUsed: time, seed: hash01(builderId, Math.round(time)), grow: 0 };
+        nests.set(key, n);
+        trim();
+      }
+      // (Found already listed: a nest nobody was seen building has no `grow` and keeps growing in by the clock.)
+      n.kx = Math.round(pos[0] * 2); n.kz = Math.round(pos[2] * 2);
+      building.set(builderId, n);
+      if (building.size > MAX_NESTS) { const first = building.keys().next(); if (!first.done) building.delete(first.value); }
+    }
+    if (n.grow !== undefined && k > n.grow) n.grow = Math.min(1, k);
+    n.lastUsed = time;
+  }
   return {
-    update, spotFor,
+    update, spotFor, build,
     dispose() { parent.remove(mesh); mesh.dispose(); geo.dispose(); mat.dispose(); },
   };
 }
