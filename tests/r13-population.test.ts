@@ -243,7 +243,7 @@ test('the script: the model path against the fake worker runs, replays and passe
   refused(cli({ ...model, R13_R11_NUMBERS: dryTable }, 'run', '--seed', '3613', '--arm', 'p5b-s7-draw-1', ...registered, '--out', resolve(tmp, 'x20')), /the decode rule names arm p5b-s7-top \(the file is the table of a dry run/, 'x20');
   // the registered world and length: each of these would be a run nobody registered, on the fresh seed
   for (const [i, extra, why] of [[21, ['--days', '30'], /this call differs: --days 30/], [22, ['--hours', '12'], /this call differs: --hours 12/], [23, ['--profile', 'compressed'], /this call differs: --profile compressed/], [24, ['--burn-in', '5'], /this call differs: --burn-in 5/],
-    [25, ['--no-stop-check'], /this call differs: --no-stop-check/], [26, ['--params-file', 'docs/staging/integrator-kit/params/M6-S39.json'], /this call differs: --params-file/]] as [number, string[], RegExp][]) {
+    [25, ['--no-stop-check'], /this call differs: --no-stop-check/], [34, ['--timeout-s', '600'], /this call differs: --timeout-s 600/], [35, ['--no-contexts'], /this call differs: --no-contexts/], [26, ['--params-file', 'docs/staging/integrator-kit/params/M6-S39.json'], /this call differs: --params-file/]] as [number, string[], RegExp][]) {
     const args = [...registered]; for (let k = 0; k + 1 < extra.length; k += 2) { const at = args.indexOf(extra[k]); if (at >= 0) args.splice(at, 2); }
     refused(cli(model, 'run', '--seed', '3613', '--arm', 'p5b-s7-top', ...args, ...extra, '--out', resolve(tmp, `x${i}`)), why, `x${i}`);
   }
@@ -290,11 +290,11 @@ test('what the registration fixes: the seed, the adapter, the arms, the decode r
   for (const other of ['old-top', 'old-draw-1', 'p5a-s7-top', 'p5a-s7-draw-1', 'p5b-s11-top', 'p5b-s11-draw-1', 'p5b-s7-draw-2', 'p5b-s7-held-1']) for (const s of [3613, 48]) assert.match(populationSeedRefusal(s, engineArm(other)), /is not registered for a population run/, `${other} on seed ${s}`);
   // the registered run starts only as registered: the rule on hand and naming the arm, the registered world and length
   const asked = { arm: R13.arms.top, profile: 'field', burnInDays: 30, paramsFile: 'docs/staging/integrator-kit/params/M6-W50.json', days: 20, hours: 9, stopCheck: true };
-  assert.deepEqual([R13.profile, R13.burnIn, R13.paramsFile], ['field', 30, asked.paramsFile]);
+  assert.deepEqual([R13.profile, R13.burnIn, R13.paramsFile, R13.timeoutS], ['field', 30, asked.paramsFile, 120]); assert.equal(registeredRunRefusal({ ...asked, timeoutS: 120, contexts: true }, decodeRule('')), '');
   assert.equal(registeredRunRefusal(asked, decodeRule('- **N1 for the recipe P5b: NOT MET: x.**')), ''); assert.equal(registeredRunRefusal({ ...asked, hours: 4.5 }, decodeRule('')), '', 'fewer hours are allowed: a resume has what is left');
   assert.equal(registeredRunRefusal({ ...asked, arm: R13.arms.draw }, decodeRule('- **N1 for the recipe P5b: MET: x.**')), '');
   assert.match(registeredRunRefusal(asked, null), /never chosen/); assert.match(registeredRunRefusal(asked, decodeRule('- **N1 for the recipe P5b: MET: x.**')), /names arm p5b-s7-draw-1/); assert.match(registeredRunRefusal({ ...asked, arm: R13.arms.draw }, decodeRule('')), /names arm p5b-s7-top/);
-  for (const [bad, why] of [[{ days: 19 }, /--days 19/], [{ days: 21 }, /--days 21/], [{ hours: null }, /no --hours/], [{ hours: 9.5 }, /--hours 9\.5/], [{ profile: 'compressed' }, /--profile compressed/], [{ burnInDays: 0 }, /--burn-in 0/], [{ paramsFile: 'x.json' }, /--params-file x\.json/], [{ stopCheck: false }, /--no-stop-check/]] as [Record<string, unknown>, RegExp][])
+  for (const [bad, why] of [[{ days: 19 }, /--days 19/], [{ days: 21 }, /--days 21/], [{ hours: null }, /no --hours/], [{ hours: 9.5 }, /--hours 9\.5/], [{ profile: 'compressed' }, /--profile compressed/], [{ burnInDays: 0 }, /--burn-in 0/], [{ paramsFile: 'x.json' }, /--params-file x\.json/], [{ stopCheck: false }, /--no-stop-check/], [{ timeoutS: 30 }, /--timeout-s 30/], [{ contexts: false }, /--no-contexts/], [{ days: 21, hours: null }, /--days 21, no --hours/]] as [Record<string, unknown>, RegExp][])
     assert.match(registeredRunRefusal({ ...asked, ...bad } as Parameters<typeof registeredRunRefusal>[0], decodeRule('')), why);
   // the nine hours are the run's, not each segment's
   const d = (n: number, sec: number) => Array.from({ length: n }, () => ({ wallSeconds: sec }));

@@ -10,6 +10,8 @@ export const R13 = {
   days: 20, hours: 9, minDays: 9,
   /** The world of the run (prereg §2): the field map, the working base, this many days of burn-in on the rules. */
   profile: 'field', paramsFile: 'docs/staging/integrator-kit/params/M6-W50.json', burnIn: 30,
+  /** The step (prereg §2): one call at a time, this many seconds at most, then the rules and a new worker. */
+  timeoutS: 120,
   /** The adapter (prereg §2) and the sha256 of its weights file as read on 12 October 2026; the run refuses other bytes under that name. */
   adapter: 'r11-p5b-s7', sha256: '582e409abd2e91a8016b41bcc5ffbbf59616080313e3ebb67b8c92a2aa04c74c',
   /** The arm of stage R11's loop for each decode the rule of prereg §3 can name. */
@@ -72,12 +74,13 @@ export function decodeRule(r11Numbers: string | null): DecodeRule {
  * are the registered ones (prereg §2, §5, §6), so that neither can be chosen at the launch. `rule` null: R13_R11_NUMBERS
  * is not set or names no file.
  */
-export function registeredRunRefusal(x: { arm: string; profile: string; burnInDays: number; paramsFile: string; days: number; hours: number | null; stopCheck: boolean }, rule: DecodeRule | null): string {
+export function registeredRunRefusal(x: { arm: string; profile: string; burnInDays: number; paramsFile: string; days: number; hours: number | null; stopCheck: boolean; timeoutS?: number; contexts?: boolean }, rule: DecodeRule | null): string {
   if (!rule) return `arm ${x.arm}: the decode is read from stage R11's table, never chosen. Set R13_R11_NUMBERS to its generated r11-numbers.md, written after its second night (docs/staging/r13-prereg.md §3; scripts/r13-run.sh decode prints what it says)`;
   if (rule.arm !== x.arm) return `the decode rule names arm ${rule.arm} (${rule.why}); arm ${x.arm} is not the registered run (docs/staging/r13-prereg.md §3)`;
   const off = [x.profile !== R13.profile ? `--profile ${x.profile}` : '', x.burnInDays !== R13.burnIn ? `--burn-in ${x.burnInDays}` : '', x.paramsFile !== R13.paramsFile ? `--params-file ${x.paramsFile}` : '', x.days !== R13.days ? `--days ${x.days}` : '',
-    x.hours === null ? 'no --hours' : x.hours > R13.hours ? `--hours ${x.hours}` : '', x.stopCheck ? '' : '--no-stop-check'].filter(Boolean);
-  return off.length ? `the registered run is the ${R13.profile} map after ${R13.burnIn} days of burn-in on the working base (${R13.paramsFile}), --days ${R13.days}, --hours ${R13.hours} or less, the stop check on (docs/staging/r13-prereg.md §2, §5, §6); this call differs: ${off.join(', ')}` : '';
+    x.hours === null ? 'no --hours' : x.hours > R13.hours ? `--hours ${x.hours}` : '', x.stopCheck ? '' : '--no-stop-check',
+    (x.timeoutS ?? R13.timeoutS) !== R13.timeoutS ? `--timeout-s ${x.timeoutS}` : '', x.contexts === false ? '--no-contexts' : ''].filter(Boolean);
+  return off.length ? `the registered run is the ${R13.profile} map after ${R13.burnIn} days of burn-in on the working base (${R13.paramsFile}), --days ${R13.days}, --hours ${R13.hours} or less, the stop check on, ${R13.timeoutS} s an ask at most, its contexts saved (docs/staging/r13-prereg.md §2, §5, §6); this call differs: ${off.join(', ')}` : '';
 }
 
 /**

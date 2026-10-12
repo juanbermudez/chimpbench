@@ -50,7 +50,7 @@
 // short); registered weights with another hash; an arm of stage R11 on any seed but 3613 (its dry arms: 48). Added by the
 // stage's review (docs/staging/r13-prereg.md §13): with a real adapter only the two registered arms run on a population,
 // and only the one the decode rule names, read from the table R13_R11_NUMBERS points at; the registered world and length
-// (the field map, 30 days of burn-in on M6-W50, --days 20, --hours 9 or less, the stop check on); --packet p5b or p5a with
+// (the field map, 30 days of burn-in on M6-W50, --days 20, --hours 9 or less, the stop check on, 120 s an ask, contexts saved); --packet p5b or p5a with
 // a model arm that is not stage R11's; and at a resume of the registered run: not past a stop check that ended it, and
 // with no more hours than are left of the nine.
 import { spawn, type ChildProcess } from 'node:child_process';
@@ -233,7 +233,7 @@ async function run(a: Args): Promise<number> {
     let ruleRead: Registry['decodeRule'];
     if (eng && eng.adapter !== 'fake') {
       const file = process.env.R13_R11_NUMBERS ? resolve(process.env.R13_R11_NUMBERS) : '', table = file && existsSync(file) ? readFileSync(file, 'utf8') : null, rule = table === null ? null : decodeRule(table);
-      const why = registeredRunRefusal({ arm, profile, burnInDays, paramsFile, days, hours, stopCheck: !a.has('no-stop-check') }, rule);
+      const why = registeredRunRefusal({ arm, profile, burnInDays, paramsFile, days, hours, stopCheck: !a.has('no-stop-check'), timeoutS: +a.flag('timeout-s', '120'), contexts: !a.has('no-contexts') }, rule);
       if (why) throw new Refused(why);
       ruleRead = { arm: rule!.arm, n1: rule!.n1, s0: rule!.s0, why: rule!.why, file, sha256: createHash('sha256').update(table!).digest('hex') };
     }
