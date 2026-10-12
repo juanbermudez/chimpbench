@@ -46,8 +46,8 @@ export interface RulesDecision {
   tick: number; t: number; id: number; why: string; intr: string; fin: boolean;
   /** The act before the decision; the act chosen with its kind; the rules' best-valued option of the whole list. */
   cur: [string, number]; pick: [string, number, number, number]; fam: string; top: [string, number]; topFam: string;
-  /** The menu a fresh draw was made from (empty when an act was kept): kinds, the chosen position, and the rules' own probabilities where the policy has them. */
-  menu: string[]; pi: number; probs: number[];
+  /** The menu a fresh draw was made from (empty when an act was kept): kinds, the options themselves ([action, target, variant, aux], as a receipt's `opts`), the chosen position, and the rules' own probabilities where the policy has them. */
+  menu: string[]; opts: [string, number, number, number][]; pi: number; probs: number[];
 }
 
 const classOf = (c: Chimp): string => c.age >= 15 ? (c.sex === 'male' ? 'adult male' : c.lactating ? 'female, lactating' : 'female, other') : c.age >= 12 ? 'adolescent 12-15 y' : 'juvenile 8-12 y';
@@ -96,7 +96,7 @@ export function traceTap(out: string, rules: boolean): Tap {
         if (!slot.has(c.id)) return;
         const m = metaOf(chosen), top = list[0] ?? chosen, pt = points.get(c.id);
         const d: RulesDecision = { tick: world.tick, t: +world.time.toFixed(6), id: c.id, why, intr: pt?.intr ?? '', fin: pt?.fin ?? false, cur: [c.action, c.targetId], pick: [chosen.action, chosen.targetId, m.v, m.aux], fam: famOf(chosen),
-          top: [top.action, top.targetId], topFam: famOf(top), menu: menu.map(famOf), pi: menu.findIndex(o => o.action === chosen.action && o.targetId === chosen.targetId), probs: probs.map(p => +p.toFixed(4)) };
+          top: [top.action, top.targetId], topFam: famOf(top), menu: menu.map(famOf), opts: menu.map(o => { const mm = metaOf(o); return [o.action, o.targetId, mm.v, mm.aux] as [string, number, number, number]; }), pi: menu.findIndex(o => o.action === chosen.action && o.targetId === chosen.targetId), probs: probs.map(p => +p.toFixed(4)) };
         writeSync(df, JSON.stringify(d) + '\n'); decisions++;
       };
     },
