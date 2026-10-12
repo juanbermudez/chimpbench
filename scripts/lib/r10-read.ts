@@ -19,7 +19,8 @@ import { newDecoder } from './decoder';
 import { energyAfter, energyBefore, energyFinish, energyStart, energyTapsOff, energyTapsOn, newEnergyAcc, type EnergyAcc, type EnergySeedState } from './energy-probe';
 import type { CardReadout } from './r10-card-tap';
 import { decodeWords } from './r10-decode';
-import { comparable, dayName, DAY, meterStart, MIN_AGE, readCkpt, readLines, readReceipts, readRegistry, receiptKernel, RECEIPT_SCHEMA, runDay, UNDER_AGE, type AskLine, type DaySummary, type Engine, type Line, type Registry, type Row, type Tap } from './r10-run';
+import { comparable, dayName, DAY, meterStart, MIN_AGE, readCkpt, readLines, readReceipts, readRegistry, receiptKernel, RECEIPT_SCHEMA, RECEIPT_SCHEMA_PACKET, RECEIPT_SCHEMAS, runDay, UNDER_AGE, type AskLine, type DaySummary, type Engine, type Line, type Registry, type Row, type RunPacket, type Tap } from './r10-run';
+import { PACKET_VERSION, packetOf } from './r11-packets';
 import { rhythmFinish, rhythmStart, rhythmStep, type RhythmState } from './rhythm-probe';
 import { CARD_LABELS, GUARD_ROWS, TIMING_ROWS } from './timing-card';
 import { truthHooksOff, truthHooksOn, truthStart, truthStep, truthValues, type TruthState } from './truth-rows';
@@ -109,9 +110,22 @@ export interface ReplayResult {
  * differs, and the regenerated receipts (with each context's hash and, in a run with a decode step, the decode's record
  * of every ask) and rows equal the run's. A run with a decode step is replayed with a new decoder of the run's setting.
  */
+/**
+ * The packet a run's kernel was sent, from its registry: absent for the state-only packet of stage R4 (r10-receipt-2), the
+ * named packet's builder for a run of stage R13 (r10-receipt-3). A registry whose schema and packet do not go together is
+ * refused: its lines could not be regenerated.
+ */
+export function runPacket(reg: Pick<Registry, 'receiptSchema' | 'packet' | 'packetName'>): RunPacket | undefined {
+  const name = reg.packetName ?? 'state';
+  if (!(name in PACKET_VERSION) || reg.packet !== PACKET_VERSION[name]) throw new Error(`the registry names packet "${reg.packet}" (${name}); this checkout knows ${Object.entries(PACKET_VERSION).map(([k, v]) => `${k} = ${v}`).join(', ')}`);
+  if ((reg.receiptSchema === RECEIPT_SCHEMA_PACKET) !== (name !== 'state')) throw new Error(`receipts "${reg.receiptSchema}" do not go with packet "${reg.packet}": ${RECEIPT_SCHEMA_PACKET} is a named packet's schema, ${RECEIPT_SCHEMA} the state-only packet's`);
+  return name === 'state' ? undefined : { version: reg.packet, of: ctx => packetOf(name, ctx) };
+}
+
 export async function replayRun(root: string, o: { taps?: Tap[]; field?: boolean; log?: (s: string) => void } = {}): Promise<ReplayResult> {
   const reg = readRegistry(root), t0 = Date.now(), days = reg.days.length;
-  if (reg.receiptSchema !== RECEIPT_SCHEMA) throw new Error(`the run's receipts are "${reg.receiptSchema}" and this checkout reads and writes "${RECEIPT_SCHEMA}": replay it from a checkout of the commit it ran on (${reg.commit.slice(0, 10)})`);
+  if (!RECEIPT_SCHEMAS.includes(reg.receiptSchema)) throw new Error(`the run's receipts are "${reg.receiptSchema}" and this checkout reads and writes ${RECEIPT_SCHEMAS.map(x => `"${x}"`).join(' and ')}: replay it from a checkout of the commit it ran on (${reg.commit.slice(0, 10)})`);
+  const packet = runPacket(reg);
   const start = readCkpt(resolve(root, 'ckpt', 'start.json.gz'));
   if (start.header.hash !== reg.startHash) throw new Error(`the start world hashes to ${start.header.hash}, the registry says ${reg.startHash}`);
   const e: Engine = { world: start.world, day: 0, meter: meterStart(start.world) };
@@ -125,7 +139,7 @@ export async function replayRun(root: string, o: { taps?: Tap[]; field?: boolean
   const again: Line[] = [];
   for (let d = 1; d <= days; d++) {
     // no error limit: a replay that has lost its receipts must run to the end and report it, not stop
-    const { summary, rows } = await runDay(e, kernel, { taps, minAge: reg.minAge, maxErrorsInRow: Infinity, decoder, sink: { lines: l => { again.push(...l); } } });
+    const { summary, rows } = await runDay(e, kernel, { taps, minAge: reg.minAge, maxErrorsInRow: Infinity, decoder, packet, sink: { lines: l => { again.push(...l); } } });
     out.hashes.push({ day: d, run: reg.days[d - 1].hash, replay: summary.hash });
     out.summaries.push(summary); out.rows.push(...rows);
     const saved = readLines<Row>(resolve(root, 'rows', `${dayName(d)}.jsonl`));
@@ -162,11 +176,12 @@ export function replayReport(reg: Registry, r: ReplayResult): string {
   const nights = rows.filter(x => x.driven && x.alive && x.nestShare !== null), inNest = nights.filter(x => x.nestShare! >= 0.9).length;
   const deaths = r.summaries.flatMap(d => d.deaths), causes: Record<string, number> = {};
   for (const d of deaths) causes[d.cause ?? 'unknown'] = (causes[d.cause ?? 'unknown'] ?? 0) + 1;
-  o.push(`# Stage R10 replay: ${reg.label}`, '');
+  o.push(`# Stage ${reg.stage ?? 'R10'} replay: ${reg.label}`, '');
   o.push(`\`scripts/r10-night.ts replay\`, ${new Date().toISOString()}. **${reg.name}.** Arm \`${reg.arm}\`${reg.adapter ? ` (adapter \`${reg.adapter}\`)` : ''}, decode: ${decodeWords(reg.decodeSpec)}, gate ${reg.switches.kernelGate ? 'on' : 'off'}, the rules' pick ${reg.switches.kernelNoRulesPick ? 'removed from' : 'kept on'} the menu, packet \`${reg.packet}\`.`);
   o.push(`Seed ${reg.seed} (${reg.seedRole}), ${reg.profile} map, ${reg.burnInDays} days of burn-in on the rules, then **${r.days} simulated days**. Every animal aged ${reg.minAge} and over in every community is on the kernel; **${UNDER_AGE}**. Run at commit ${reg.commit.slice(0, 10)}${reg.dirty ? ' (tree not clean)' : ''}.`, '');
   o.push(`**Replay check: ${r.ok ? 'the receipts reproduce the run' : 'THE RECEIPTS DO NOT REPRODUCE THE RUN'}.** ${r.hashes.filter(h => h.run === h.replay).length} of ${r.hashes.length} day hashes equal (end ${r.hashes[r.hashes.length - 1]?.replay ?? 'none'}); ${r.missing} asks without a receipt; ${r.menuDiffers} menus differ; ${r.linesDiffer} of ${r.lines} receipt lines differ when regenerated (each carries its context's hash); ${r.rowsDiffer} row files differ. No model; ${r.seconds} s.`, '');
-  o.push('This is a **level measurement on one seed**. No comparison is counted as a result until a fresh unseen seed has been run.', '');
+  o.push(reg.stage === 'R13' ? 'This is a **level measurement on one world seed and one training of the recipe**. The registered reading is `scripts/r13-report.ts` (docs/staging/r13-prereg.md §8): the rules on the same world, animals and days are the yardstick, and nothing here is a claim about wild chimpanzees.'
+    : 'This is a **level measurement on one seed**. No comparison is counted as a result until a fresh unseen seed has been run.', '');
   o.push('## Is the population viable, and how often is it asked', '', '| Measure | Value | Over |', '| --- | --- | --- |');
   o.push(`| deaths since the burn-in, by cause | ${deaths.length ? Object.entries(causes).map(([k, v]) => `${k} ${v}`).join(', ') : 'none'} | ${r.days} days, every animal |`);
   for (const [label, of, d] of [['reserves, % of the usual store a day', (x: Row) => x.reservePct, 3], ['energy eaten, kcal a day (the field\'s intake measure)', (x: Row) => x.kcalFormula, 0], ['energy out, kcal a day', (x: Row) => x.kcalOut, 0],

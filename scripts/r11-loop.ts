@@ -31,16 +31,15 @@ import { rgTap } from '../src/sim/rg';
 import { index, ix } from '../src/sim/state';
 import { createWorld, tickWorld } from '../src/simulation';
 import type { Kernel, KernelRequest } from '../src/kernel/types';
-import type { DecisionContext, World } from '../src/types';
+import type { World } from '../src/types';
 import { worldHash } from '../tests/fixtures/golden';
 import { RESERVED_SEEDS } from './e-run';
 import { focalSet } from './em-loop';
 import { Worker, type Scorer } from './ft-society';
 import type { HarnessDecode } from './lib/decoder';
 import { glinerKernel } from './lib/kernels';
-import { buildStateOnlyQuestion } from './lib/packet-state';
 import { warmedWorker } from './lib/r10-run';
-import { ARM_BANNED, armPacket, isArm, type Arm } from './lib/r11-packets';
+import { ARM_BANNED, packetOf, type Arm, type PacketName } from './lib/r11-packets';
 import { DAY_TICKS } from './lib/timing-card';
 import { DAY, decodeDiffers, GuardedScorer, replayKernel, runArm, type ArmResult, type ArmSpec, type Receipt } from './r5-pilot';
 import { ARMS as CONTROL_ARMS, armReaders, runArm as runControl, salted, type ArmFile } from './r7-card';
@@ -52,7 +51,7 @@ export const PARAMS_FILE = 'docs/staging/integrator-kit/params/M6-W50.json';
 /** The switches of every world of this stage's loop test: the packet's fields, the rules' menu for every kernel, the animal's own experience. */
 export const LOOP_SWITCHES = { observeV4: 1, menuParity: 1, observeV5: 1 };
 
-export type PacketName = Arm | 'state';
+export { packetOf, type PacketName };
 /** The adapters of the loop test and the packet each is sent: this stage's four on their own arm's packet, the first adapter on the packet it was trained on, and the dry run's fake worker. */
 export const ADAPTERS: Record<string, { adapter: string; packet: PacketName; what: string }> = {
   'p5b-s7': { adapter: 'r11-p5b-s7', packet: 'p5b', what: 'P5b (the whole packet 5), training seed 7' },
@@ -103,8 +102,19 @@ export function armsRefusal(names: string[], dry = false): string {
   return '';
 }
 
-/** The packet an arm's kernel is sent. */
-export function packetOf(name: PacketName, ctx: DecisionContext): LocalPacket { return name === 'state' ? buildStateOnlyQuestion(ctx) : armPacket(ctx, name); }
+/** An engine arm's loop settings (scripts/r5-pilot.ts ArmSpec): its adapter, the loop's gate on, the rules' pick kept on the menu, its decode. Stage R13's population script builds its arm from the same function. */
+export const engineSpec = (arm: Pick<EngineArm, 'adapter' | 'decode'>): ArmSpec => ({ kernel: 'gliner', adapter: arm.adapter, gate: 1, decode: arm.decode });
+/** An engine arm's kernel on a scorer: the arm's adapter, sent the arm's packet of each request (lib/r11-packets.ts packetOf). The one place the loop of this stage and the population script (scripts/r10-night.ts) make it. */
+export const engineKernel = (scorer: Scorer, arm: Pick<EngineArm, 'adapter' | 'packet'>): Kernel => glinerKernel(scorer, arm.adapter, { packet: r => packetOf(arm.packet, r.context) });
+/**
+ * Why a worker may not answer for an arm, from its ready line, or ''. The worker loads only the adapters
+ * MGOGO_FT_ADAPTERS names and finds under MGOGO_FT_ROOT, and answers every name with the untuned model when it loaded
+ * none (training/decide_ft/adapters.py): an arm must never be answered that way.
+ */
+export function workerRefusal(ready: Record<string, unknown>, adapter: string, dry: boolean, env: Record<string, string | undefined> = process.env): string {
+  const held = (ready.adapters ?? {}) as Record<string, string>, listed = (env.MGOGO_FT_ADAPTERS ?? '').split(',');
+  return !(adapter in held) ? `the worker finds no adapter ${adapter} under MGOGO_FT_ROOT (${env.MGOGO_FT_ROOT ?? 'unset'})` : !dry && !listed.includes(adapter) ? `MGOGO_FT_ADAPTERS must name ${adapter} (it is "${env.MGOGO_FT_ADAPTERS ?? ''}")` : '';
+}
 
 /**
  * A packet to warm a worker up with (scripts/lib/r10-run.ts warmedWorker): the packet of this name for the first living
@@ -201,7 +211,7 @@ export function controlArm(x: Ctx, name: string): R11ArmFile {
 /** One engine arm: a kernel on the focal animals between ticks (scripts/r5-pilot.ts runArm), read by stage R7's card and readers; `from`: answer from these receipts instead of a kernel (a replay). */
 export async function engineRun(x: Ctx, arm: EngineArm, kernel: Kernel, opts: { replay?: { missing: number; menuDiffers: number }; guard?: GuardedScorer; sent?: Sent | null; worker?: Record<string, unknown> | null; log?: (s: string) => void } = {}): Promise<{ file: R11ArmFile; receipts: Receipt[] }> {
   const start = structuredClone(x.base); start.rng = salted(start.rng, arm.worldSalt);   // the arm's own stream
-  const spec: ArmSpec = { kernel: 'gliner', adapter: arm.adapter, gate: 1, decode: arm.decode }, ids = x.focal.map(f => f.id), receipts: Receipt[] = [];
+  const spec = engineSpec(arm), ids = x.focal.map(f => f.id), receipts: Receipt[] = [];
   let readers: ReturnType<typeof armReaders> | null = null, world: World | null = null, living0 = 0;
   const result = await runArm(start, arm.name, spec, x.days, x.focal, kernel, { receipts: r => receipts.push(r), replay: opts.replay, guard: opts.guard, log: opts.log, carryOn: true,
     packet: (r: KernelRequest) => packetOf(arm.packet, r.context),
@@ -266,9 +276,8 @@ if (process.argv[1]?.endsWith('r11-loop.ts')) {
     // anything is asked and before the model loads.
     const startWorker = async () => {
       const w = new Worker(arg('device', 'mps')); await w.start(); workerReady = w.ready; console.log(`worker ready ${JSON.stringify(w.ready)}`);
-      const held = (w.ready.adapters ?? {}) as Record<string, string>, listed = (process.env.MGOGO_FT_ADAPTERS ?? '').split(',');
       for (const a of arms) {
-        const why = !(a.adapter in held) ? `the worker finds no adapter ${a.adapter} under MGOGO_FT_ROOT (${process.env.MGOGO_FT_ROOT ?? 'unset'})` : !dry && !listed.includes(a.adapter) ? `MGOGO_FT_ADAPTERS must name ${a.adapter} (it is "${process.env.MGOGO_FT_ADAPTERS ?? ''}")` : '';
+        const why = workerRefusal(w.ready, a.adapter, dry);
         if (why) { w.stop(); throw new Error(`arm ${a.name}: ${why}; nothing was asked`); }
       }
       return w;
@@ -291,7 +300,7 @@ if (process.argv[1]?.endsWith('r11-loop.ts')) {
     for (const a of arms) {
       if (!replayOnly) {
         const s = spy(guard!, a.packet === 'state' ? [] : ARM_BANNED[a.packet as Arm]);
-        const kernel = glinerKernel(s.scorer, a.adapter, { packet: r => packetOf(a.packet, r.context) });
+        const kernel = engineKernel(s.scorer, a);
         const r = await engineRun(x, a, kernel, { guard: guard!, sent: s.sent, worker: workerReady, log: t => console.log(t) });
         write(a.name, r.file, r.receipts);
         console.log(`wrote ${a.name}: end hash ${r.file.endHash}, ${r.file.engine!.result.calls} calls, ${r.file.seconds} s; sent ${s.sent.packets} packets with lines ${Object.keys(s.sent.stateKeys).join(', ')}`);

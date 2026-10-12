@@ -10,6 +10,7 @@
 // `nodoing`: the arm's packet without the `doing` line, scored offline to measure what that line pulls (never trained on).
 import { buildOwnQuestion, estimateInputTokens, type LocalPacket, type OwnOpts } from '../../src/providers/packet';
 import type { DecisionContext } from '../../src/types';
+import { buildStateOnlyQuestion, STATE_PACKET_VERSION } from './packet-state';
 
 export type Arm = 'p5a' | 'p5b';
 export const ARMS: readonly Arm[] = ['p5b', 'p5a'];
@@ -40,6 +41,14 @@ export function armPacket(ctx: DecisionContext, arm: Arm, noDoing = false): Loca
   return p;
 }
 export const isArm = (s: string): s is Arm => (ARMS as readonly string[]).includes(s);
+
+/** A packet a kernel of the loop is sent, by name: an arm's packet 5, or the state-only packet of stage R4 (the first adapter's own). */
+export type PacketName = Arm | 'state';
+export const PACKET_NAMES: readonly PacketName[] = ['state', 'p5b', 'p5a'];
+/** The version a receipt or a registry carries for a packet (stage R13): the state-only packet's own, and stage R11's arms. */
+export const PACKET_VERSION: Record<PacketName, string> = { state: STATE_PACKET_VERSION, p5b: 'r11-p5b', p5a: 'r11-p5a' };
+/** The packet of a name for one decision context: the one builder of stage R11's loop and of the population script (scripts/r10-night.ts), so both send the same bytes for the same decision point. */
+export function packetOf(name: PacketName, ctx: DecisionContext): LocalPacket { return name === 'state' ? buildStateOnlyQuestion(ctx) : armPacket(ctx, name); }
 /** The project's estimate of a packet's input tokens (no tokenizer is loaded). */
 export const estimate = (p: LocalPacket): number => estimateInputTokens(p.state, p.questions);
 
