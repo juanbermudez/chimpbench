@@ -25,6 +25,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Kernel } from '../src/kernel/types';
 import { candidateMeta, computeCandidates, V } from '../src/sim/candidates';
+import { unlocatedShare } from '../src/sim/calls';
 import { energyTap, type EnergyTerm } from '../src/sim/energy';
 import { paramsOf } from '../src/sim/params';
 import { fruitAt } from '../src/sim/phenology';
@@ -87,7 +88,7 @@ async function main(): Promise<number> {
   const keys = ['eaten', 'eatenEarly', 'eatenMid', 'eatenCrown', 'eatenGround', 'o_all', 'o_other', ...OUT_TERMS.filter(t => t !== 'wild' && t !== 'pregnancy' && t !== 'growth').map(t => `o_${t}`),
     'nestAll', 'nestDay', 'nestDark', 'nestLate', 'minCrown', 'minCrownDay', 'minGround', 'minRest', 'm_all', ...KINDS.map(k => `m_${k}`), ...BOUTS.map(k => `b_${k}`),
     'phGiven', 'phByCall', 'phByDisplay', 'phOther', 'heard', 'heardDistSum', 'minHeard', 'minHeardUp', 'visSum', 'visTicks',
-    'tripsBegun', 'tripsDone', 'tripsNot', 'm_tripDone', 'm_tripNot', 'runs', 'cropInSum', 'cropLowIn', 'feedersInSum', 'cropOutSum', 'runsEnded', 'eatenCrownDay', 'eatenCrownDim', 'upAt'];
+    'tripsBegun', 'tripsDone', 'tripsNot', 'm_tripDone', 'm_tripNot', 'runs', 'cropInSum', 'cropLowIn', 'feedersInSum', 'cropOutSum', 'runsEnded', 'eatenCrownDay', 'eatenCrownDim', 'upAt', 'needSum', 'unlocSum', 'gainSum', 'runsCalled'];
   const perDay: Record<string, number[][]> = Object.fromEntries(keys.map(k => [k, ids.map(() => new Array<number>(days).fill(0))]));
   const add = (k: string, a: number, d: number, v: number) => { perDay[k][a][d] += v; };
   const calls = { byKind: {} as Record<string, number>, pantHootBy: {} as Record<string, number> };
@@ -98,6 +99,7 @@ async function main(): Promise<number> {
   const books = (c: Chimp) => { const L = ix(c).en; return [L?.fin ?? L?.in ?? 0, L?.out ?? 0] as const; };
   driven.forEach((c, a) => { const [f, o] = books(c); fin[a] = f; outB[a] = o; px[a] = c.position[0]; pz[a] = c.position[2]; heardCall[a] = ix(c).joinCall; prevKind[a] = kindOf(w, c); prevAct[a] = c.action; if (prevKind[a] === 'trip to food') tripTree[a] = c.targetId; });
   let lastCall = 0, tickOfDay = 0, day = 0;
+  const called = new Set<number>();
   for (const k of w.calls) lastCall = Math.max(lastCall, k.id);
   /** Hours since midnight of the day the window's day began on, 06:30 to 30:30, at the end of the tick in progress. */
   const hl = () => 6.5 + (tickOfDay + 1) / (DAY / 24);
@@ -162,6 +164,7 @@ async function main(): Promise<number> {
     before() { /* the energy tap fills the day's sums as the tick runs */ },
     tick(world) {
       const P = paramsOf(world), idx = index(world), light = world.environment.daylight, cap = P.runMps * TICK_SECONDS * 2, h = hl(), d = day;
+      called.clear();
       // calls made in this tick (and by the answers applied after it)
       let top = lastCall;
       for (const k of world.calls) {
@@ -174,6 +177,7 @@ async function main(): Promise<number> {
           : now === 'forage' || was === 'forage' ? 'feeding at a tree or on the ground (the arrival call)' : `other (${was} then ${now})`;
         calls.pantHootBy[by] = (calls.pantHootBy[by] ?? 0) + 1;
         add('phGiven', a, d, 1); add(by === 'the act "call"' ? 'phByCall' : by === 'a display or charge' ? 'phByDisplay' : 'phOther', a, d, 1);
+        called.add(a);
       }
       lastCall = top;
       for (let a = 0; a < n; a++) {
@@ -198,7 +202,7 @@ async function main(): Promise<number> {
         if (tree) {
           const crop = fruitAt(world, tree);
           if (runTree[a] < 0) { let others = 0; for (const m of idx.alive) if (m !== c && m.action === 'forage' && m.targetId === crown && ix(m).phase >= 2) others++;
-            runTree[a] = crown; add('runs', a, d, 1); add('cropInSum', a, d, crop); add('feedersInSum', a, d, others + 1); if (crop < P.fruitIntakePerH) add('cropLowIn', a, d, 1); }
+            runTree[a] = crown; add('runs', a, d, 1); if (called.has(a)) add('runsCalled', a, d, 1); add('cropInSum', a, d, crop); add('feedersInSum', a, d, others + 1); if (crop < P.fruitIntakePerH) add('cropLowIn', a, d, 1); }
           runCrop[a] = crop;
         }
         if (kind !== prevKind[a] && BOUTS.includes(kind)) add(`b_${kind}`, a, d, 1);
@@ -208,7 +212,8 @@ async function main(): Promise<number> {
         else if (c.action === 'rest' || c.action === 'shelter') add('minRest', a, d, 0.25);
         if (x.joinCall !== heardCall[a]) { heardCall[a] = x.joinCall; if (x.joinCall > 0) { add('heard', a, d, 1); add('heardDistSum', a, d, Math.hypot(x.joinX - c.position[0], x.joinZ - c.position[2])); } }
         if (x.joinCall > 0 && world.time - x.joinAt < 0.3) { add('minHeard', a, d, 0.25); if (!nest && light >= 0.5) add('minHeardUp', a, d, 0.25); }
-        if (!nest && light >= 0.5) { add('visSum', a, d, x.visibleOwn); add('visTicks', a, d, 1); }
+        // what the simulation's pant-hoot value turns on (src/sim/calls.ts pantHootValue): the social need and the share of the allies' bond weight not seen or heard for callFixH
+        if (!nest && light >= 0.5) { const need = 1 - c.social, un = unlocatedShare(world, c, x, P); add('visSum', a, d, x.visibleOwn); add('visTicks', a, d, 1); add('needSum', a, d, need); add('unlocSum', a, d, un); add('gainSum', a, d, need * un); }
         prevKind[a] = kind; prevAct[a] = c.action;
       }
       tickOfDay++;
