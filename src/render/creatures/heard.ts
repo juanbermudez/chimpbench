@@ -46,6 +46,17 @@ export function noteHeard(t: HeardTable, slot: number, id: number, at: number, x
 export function listening(t: HeardTable, slot: number, id: number, now: number): boolean {
   return t.id[slot] === id && t.over[slot] === 0 && now >= t.at[slot] && now < t.at[slot] + HEARD_LOOK_S;
 }
+/**
+ * Whether a long call just heard takes the head (who takes the head, in order: creatures.ts updateAttention; merge of
+ * stages W6 and W10). Not in the last part of a decision beat, and not from an animal engaged with a partner
+ * (grooming, play, nursing and the other acts done with another animal: its hold still shows that it heard). An
+ * animal that only follows another is not engaged: it turns to the call as a lone walker does. A walker holds no
+ * clip, so without this a party on the move showed nothing at all when a call reached it (seen at the check of the
+ * merge: a follower 425 m from a pant-hoot kept its look point 177 degrees off the call). A stylization.
+ */
+export function heardTakesHead(committing: boolean, hasPartner: boolean, following: boolean): boolean {
+  return !committing && (!hasPartner || following);
+}
 /** True while a stationary listener's clip is held. */
 export function holding(t: HeardTable, slot: number, id: number, now: number): boolean {
   return t.id[slot] === id && t.over[slot] === 0 && now >= t.at[slot] && now < t.at[slot] + HEARD_HOLD_S;

@@ -39,7 +39,7 @@ import { referenceRate, smallMapPace } from './creatures/pace';
 import { applyInertia, blinkAt, createAttention, createBlink, createInertia, scanAngles, selectAttention, springStep, startInertia, type AttnCand, type Attention, type Blink, type Inertia } from './creatures/secondary';
 import type { KeepCandidate } from './env/occluders';
 import { createTreeIndex, type TreeIndex } from './creatures/tree-index';
-import { endHeard, holding, listening } from './creatures/heard';
+import { endHeard, heardTakesHead, holding, listening } from './creatures/heard';
 import {
   Listen, PatrolCode, RELEASE_BRISTLE_TAU, RELEASE_DRUM_REACH, RELEASE_WINDOW_H, backSide, createFileCue, createPatrolLook, fileCue, listenVariant,
   patrolClip, patrolLook, patrolTension, phasedParties, stepLeg, type PatrolClip,
@@ -1356,6 +1356,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     //      a waiting initiator and from the looks back; the beat's countdown runs on meanwhile, so the call never
     //      delays the body. It does NOT take the head from a partner (grooming, play, nursing): the candidate list
     //      below already ranks a partner (4) above a heard call (3), and W10's hold still shows that the pair heard.
+    //      It DOES take it from an animal that only follows another (heard.ts heardTakesHead; set at the check of the
+    //      merge): a walker holds no clip, so a follower that kept its eyes on its leader showed nothing at all.
     //   4. The rest of the beat: the runner-up, then what was chosen; the first mover's look back. A deliberate turn
     //      (a slower spring than the idle glances).
     //   5. The ordinary candidates and the idle scans.
@@ -1367,7 +1369,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       if (!alarmed) {
         const commit = heardNow && committing(a);
         if (commit) endHeard(fx.heard, a.slot, a.id);
-        if (heardNow && !commit && !partner) { const hw = heardAttention(a, dt); if (hw > 0) return hw; }
+        if (heardNow && heardTakesHead(commit, !!partner, a.act === 'follow')) { const hw = heardAttention(a, dt); if (hw > 0) return hw; }
         if (beatGaze && beatGoal(a, a.beat.gaze)) {
           if (a.lastSkinFrame < 0 || !Number.isFinite(a.lk[0].x) || Math.abs(a.lk[0].x - GOAL[0]) > 40) for (let k = 0; k < 3; k++) { a.lk[k].x = GOAL[k]; a.lk[k].v = 0; }
           for (let k = 0; k < 3; k++) springStep(a.lk[k], GOAL[k], 0.14, dt);

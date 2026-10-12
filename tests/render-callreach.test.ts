@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { Call, CallKind } from '../src/types';
 import { ARC_BUSY, ARC_FADE_S, ARC_GAP_S, ARC_GROW_S, ARC_HOLD_S, ARC_LIFE_S, ARC_MAX, FRESH_CALL_H, arcAlpha, arcRadius, arrivalDelay, createCallLog, drawsReach, inEarshot, liveArcs, logFind, logSlot, noteCalls } from '../src/render/callreach';
-import { HEARD_HOLD_S, HEARD_LOOK_S, HEARD_REFRACTORY_S, createHeard, endHeard, holding, listening, noteHeard } from '../src/render/creatures/heard';
+import { HEARD_HOLD_S, HEARD_LOOK_S, HEARD_REFRACTORY_S, createHeard, endHeard, heardTakesHead, holding, listening, noteHeard } from '../src/render/creatures/heard';
 import { createWorld, tickWorld } from '../src/simulation';
 
 // Stage W10: the reach of a call as it is drawn (src/render/callreach.ts) and who has just heard one
@@ -159,4 +159,11 @@ test('a look ended early does not come back for that call, and the next call lis
   assert.ok(noteHeard(t, 2, 9, 20 + HEARD_REFRACTORY_S + 0.1, 7, 8));
   assert.ok(listening(t, 2, 9, 20 + HEARD_REFRACTORY_S + 0.2) && holding(t, 2, 9, 20 + HEARD_REFRACTORY_S + 0.2), 'the next call is listened to');
   endHeard(t, -1, 9); endHeard(t, 99, 9);   // out of range: nothing happens
+});
+
+test('a call heard takes the head of a lone animal and of a follower, not of a pair, and never in the last part of a beat', () => {
+  assert.ok(heardTakesHead(false, false, false), 'nobody to look at: it turns to the call');
+  assert.ok(heardTakesHead(false, true, true), 'a follower turns too: a walker holds no clip, so nothing else would show that it heard');
+  assert.ok(!heardTakesHead(false, true, false), 'a groomer, a player, a nursing mother keep their eyes on the partner');
+  assert.ok(!heardTakesHead(true, false, false) && !heardTakesHead(true, true, true) && !heardTakesHead(true, true, false), 'the last part of a decision beat keeps the head on the goal');
 });
