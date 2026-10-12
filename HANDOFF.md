@@ -112,10 +112,13 @@ task 1.**
   half-made folder under `adapters/` first (an adapter counts only with its `manifest.json`). `offline` and
   `loop <seed>` can be run again as they are: they skip what is on file. Details: the end of `r11-prereg.md`.
 
-**Five viewer stages are being built by agents** on branches cut from 7f9ec5b: `w6-decision-beat` (the decision shown
-on the body), `w7-fruit` (fruit you can see), `w8-state-on-body`, `w9-tree-pairs` and `w10-calls-map` (calls you can
-see, and a map of what the community is doing). At 16:45, `w6`, `w7` and `w10` held commits and a stage document, and
-`w8` and `w9` held none. None is merged. Pictures: `/Volumes/Drive/chimpbench/shots/watch-2026-10-11/`.
+**Three viewer stages are merged on an integration branch and two are being rebuilt** (true at 22:00 EDT on 11
+October 2026). `w6-decision-beat` (the decision shown on the body), `w7-fruit` (fruit you can see) and `w10-calls-map`
+(calls you can see, and a map of what the community is doing), each built and reviewed on a branch cut from 7f9ec5b,
+were merged into `integrate-t2` (cut from `track-e` at d6a8e0e) on 11 October 2026; `integrate-t2` is not merged into
+`track-e` and not pushed. `w8-state-on-body` and `w9-tree-pairs` were cut off mid-build and are being rebuilt: each
+branch holds its unreviewed partial work as one commit (5ee2096 and 30b8251). Pictures:
+`/Volumes/Drive/chimpbench/shots/watch-2026-10-11/` (the merge's own look at the three together in `integrate-t2/`).
 
 ## 3. Set-up on this computer
 
