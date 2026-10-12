@@ -711,7 +711,7 @@ by `asks` to `artifacts/r14/nights/short-night-asks.md`.
 | 20 | Dembiri (8) | 05:46 | the bout ended; the gate opened on need-bucket | forage 0.088, drink 0.341, travel 0.170, nest 0.401 | drink | nest | drink | 0.000 |
 | 20 | Tindiro (16) | 05:28 | the bout ended; the gate opened on need-bucket | forage 0.068, drink 0.214, travel 0.274, nest 0.444 | drink | nest | drink | 0.004 |
 
-## 13. The second reader's review (12 October 2026, 16:27 to 16:58 EDT; no model process)
+## 13. The second reader's review (12 October 2026, 16:27 to 17:00 EDT; no model process)
 
 A second reading of the same finished runs, made to refute the reading above. It is a description too: it registers
 nothing, ran no model and changed nothing under `src`, `server`, `training`, `data` or `tests/fixtures`. Every number
@@ -943,6 +943,9 @@ is the animal with nobody in sight, and the training file is thin exactly there.
 ### 13.6 Limits, and how to run it again
 
 - The same single run as §10: one world seed, one training, one decode salt.
+- Stage R11's label was computed again for a sample (667 asks), not for all 3,771. The 26 asks the first reader's
+  file leaves without a label are not in the rows this section rests on (by §4 and §5: 20 are waking asks, 5 are in
+  a nest at dusk, 1 is out of one early in dusk).
 - "Nobody in sight" is the packet's list at the ask (model arm) and the simulation's `seen` list at the tick before
   (both arms); they agree at 1,011 of 1,020 late-dusk asks.
 - The accounting of §13.3 and §13.5 (stretches cut, minutes not counted) is sequence, not a forecast: after another
