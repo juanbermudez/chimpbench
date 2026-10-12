@@ -1372,7 +1372,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     if (a.way === Way.soon && a.headingTarget == null && !(a.beat.phase === Phase.intent || a.beat.waiting)) target = a.heading;
     // An initiator standing and waiting for company faces where it means to go (the simulation turns it only with its first step).
     else if (a.beat.waiting && a.headingTarget == null && a.elevated < 0.5 && beatGoal(a, Gaze.goal)) target = Math.atan2(GOAL[0] - a.x, GOAL[2] - a.z);
-    if (turnSpeed > 0.25 * a.morph.size && pathSpeed > 0.05 * a.morph.size) target = Math.atan2(tr.vx, tr.vz);
+    // (Second reading of stage W11: not a body that clambers. It moves by the placement, and the way it goes is its
+    // heading target (layoutCrowns). Turned along its simulated path as well, which drifts sideways on its way up or
+    // down a trunk, a body clambering to the bark stood a radian off its own way and trembled between the two.)
+    if (!a.clamber && turnSpeed > 0.25 * a.morph.size && pathSpeed > 0.05 * a.morph.size) target = Math.atan2(tr.vx, tr.vz);
     const before = a.heading;
     // The path is C1, so a moving animal can follow its direction closely (less body-vs-path lag in curves).
     a.heading = cut ? target : dampAngle(a.heading, target, a.moving ? 10 : 4.5, dt);
