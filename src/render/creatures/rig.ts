@@ -474,7 +474,14 @@ export function bonePoint(fk: FKState, m: Morph, bone: number, x: number, y: num
 // ---------------------------------------------------------------------------
 // Skin matrices: world = body transform ∘ FK, packed as 4 RGBA texels per bone
 // ---------------------------------------------------------------------------
-export const PARAM_TEXEL = BONE_COUNT * 4; // first per-chimp parameter texel (P0..P5)
+export const PARAM_TEXEL = BONE_COUNT * 4; // first per-chimp parameter texel (P0..P6)
+/**
+ * Texels per animal: 124 of bone matrices, then the parameter texels the creature layer writes (creatures.ts
+ * writeParams) and material.ts reads. P0 fur colour and graying; P1 skin colour, mottle and grin; P2 coat (−1 sleek ..
+ * 1 on end, stage W8), swelling or tail tuft, beard, bald; P3 dim, mouth, eyes closed, fade; P4 iris yaw and pitch,
+ * brow, lip press; P5 hand and foot pigment, the young iris, the upper lid's droop (W8), one float free; P6 (texel
+ * 130, W8) belly, flank, breath, one float free. Texel 131 is free. Unchanged at 132: stage W8 fills free floats.
+ */
 export const ROW_TEXELS = 132;
 
 /**

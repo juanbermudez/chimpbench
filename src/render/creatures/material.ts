@@ -3,7 +3,8 @@
 // strand noise, a dual-lobe anisotropic hair highlight (Kajiya–Kay with
 // Scheuermann's shifted tangents) on every direct light, rim fuzz lit by the
 // actual irradiance (so it never glows at night), wet clumping and gloss,
-// piloerection, swelling, graying, balding, the infant tail tuft and a mouth
+// piloerection (stage W8: a signed coat value, on end or sleek, that moves the surface by centimetres), the belly,
+// flanks and breath of the body's state (W8), swelling, graying, balding, the infant tail tuft and a mouth
 // seam that darkens when the jaw opens. Eyes are dark and glossy with no
 // emissive term: chimpanzees have no tapetum lucidum. Optional halo shells
 // (LOD0, 'high') add silhouette fuzz.
@@ -40,17 +41,60 @@ mat4 cBone(int slot, float idx) {
   int x = int(idx + 0.5) * 4;
   return mat4(texelFetch(uBones, ivec2(x, slot), 0), texelFetch(uBones, ivec2(x + 1, slot), 0), texelFetch(uBones, ivec2(x + 2, slot), 0), texelFetch(uBones, ivec2(x + 3, slot), 0));
 }
+// Value noise of the bind position for the raised coat's locks (W8): two octaves with cells of about 4 and 2 cm across
+// and more than twice that along the hair (stylization). The fragment code repeats it.
+float cVHash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+float cVNoise(vec3 x) {
+  vec3 i = floor(x); vec3 f = fract(x); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(cVHash(i), cVHash(i + vec3(1,0,0)), f.x), mix(cVHash(i + vec3(0,1,0)), cVHash(i + vec3(1,1,0)), f.x), f.y),
+             mix(mix(cVHash(i + vec3(0,0,1)), cVHash(i + vec3(1,0,1)), f.x), mix(cVHash(i + vec3(0,1,1)), cVHash(i + vec3(1,1,1)), f.x), f.y), f.z);
+}
+float cTuft(vec3 p) { return smoothstep(0.25, 0.75, 0.65 * cVNoise(p * vec3(24.0, 10.0, 24.0)) + 0.35 * cVNoise(p * vec3(50.0, 22.0, 50.0) + 7.3)); }
 `;
-// Shared by colour and depth passes: skin the vertex, then inflate swelling and bristle fur.
+/**
+ * Stage W8, the body's state in the shared vertex code (all amounts in bind metres; an adult is drawn 1.5 times that).
+ * STYLIZATION: how far the coat stands, the belly rounds, the flanks hollow and the ribcage moves is a look chosen to
+ * read at 3 to 8 m, not a measurement (docs/staging/w8b-state-on-body.md). That hair stands on end in a display is
+ * sourced [M, mullerWrangham2004b]; how far it stands is not.
+ * COAT_RAISE: the most a coat on end lifts the surface, at the top of a tuft (it was 6 to 24 mm and could not be seen);
+ * COAT_SLEEK: how far a sleeked coat is drawn in; BELLY_FULL and BELLY_EMPTY: the belly at channel +1 and −1 (a
+ * pregnancy at term on a full gut reaches +2); FLANK: the flanks at ±1; BREATH_CHEST and BREATH_BELLY: half the travel of a resting breath.
+ */
+export const BODY_STATE = { COAT_RAISE: 0.05, COAT_SLEEK: 0.006, BELLY_FULL: 0.05, BELLY_EMPTY: 0.028, FLANK: 0.022, BREATH_CHEST: 0.0045, BREATH_BELLY: 0.0055 } as const;
+// Shared by the colour, depth and silhouette passes: skin the vertex, then inflate the swelling, raise or sleek the
+// coat, round or tuck the belly and flanks and move the ribcage with the breath, so shadows and outlines follow.
 const SKIN_VERTEX = /* glsl */`
   int cSlot = int(aSlot + 0.5);
   vec4 cP2 = texelFetch(uBones, ivec2(${PARAM_TEXEL + 2}, cSlot), 0);
   vec4 cP3 = texelFetch(uBones, ivec2(${PARAM_TEXEL + 3}, cSlot), 0);
+  vec4 cP6 = texelFetch(uBones, ivec2(${PARAM_TEXEL + 6}, cSlot), 0); // W8: belly, flank, breath (w free)
   mat4 cSkin = cBone(cSlot, aSkinIndex.x) * aSkinWeight.x + cBone(cSlot, aSkinIndex.y) * aSkinWeight.y
              + cBone(cSlot, aSkinIndex.z) * aSkinWeight.z + cBone(cSlot, aSkinIndex.w) * aSkinWeight.w;
   float cFurM = 1.0 - clamp(aRegA.x, 0.0, 1.0);
+  float cAx = abs(position.x);
+  // Coat (W8; P2.x is signed: -1 sleek .. 1 on end, more for an animal that is small on screen). Where it stands: the
+  // back and shoulders (the back mask), the lower back at six tenths, the upper arms, tapering down the forearm to
+  // nothing at the wrist, and, at half, the crown where it is not bald; nothing on bare skin (face, ears, hands, feet)
+  // nor on the belly, which none of the masks reaches.
+  // Most of the lift is even, so the animal reads as bigger and rounder in the shoulders; three tenths of it follow a
+  // value noise of the bind position, so the outline is shaggy rather than a smooth shell (with more, the mesh, whose
+  // vertices are 1 to 3 cm apart, drew lumps). Skipped for the calm majority.
+  float cArmM = smoothstep(0.125, 0.165, cAx) * smoothstep(0.5, 0.82, position.y) * (1.0 - smoothstep(1.03, 1.08, position.y));
+  float cLowM = (1.0 - smoothstep(-0.07, -0.01, position.z)) * smoothstep(0.55, 0.66, position.y) * (1.0 - smoothstep(0.72, 0.84, position.y)) * (1.0 - smoothstep(0.1, 0.15, cAx));
+  float cCrownM = smoothstep(1.15, 1.205, position.y) * (1.0 - smoothstep(0.015, 0.075, position.z)) * (1.0 - clamp(cP2.w * aRegB.z, 0.0, 1.0));
+  float cCoatM = cFurM * max(max(aRegC.y, cLowM * 0.6), max(cArmM * 0.9, cCrownM * 0.5));
+  float cCoat = 0.0;
+  if (cP2.x > 0.004) cCoat = cP2.x * cCoatM * (0.7 + 0.3 * cTuft(position)) * ${g(BODY_STATE.COAT_RAISE)};
+  else if (cP2.x < -0.004) cCoat = max(cP2.x, -1.0) * cCoatM * ${g(BODY_STATE.COAT_SLEEK)};
+  // Belly and flanks (W8; P6.x belly -1 tucked .. 1 full, to 2 with a pregnancy; P6.y flank -1 hollow .. 1), and the
+  // breath (P6.z, signed): the front of the abdomen, its sides below the ribs, and the ribcage, all clear of the arms.
+  float cBellyM = 1.0 - smoothstep(0.55, 1.2, length(vec3(position.x / 0.135, (position.y - 0.715) / 0.135, (position.z - 0.075) / 0.105)));
+  float cFlankM = smoothstep(0.055, 0.105, cAx) * (1.0 - smoothstep(0.135, 0.15, cAx)) * (1.0 - smoothstep(0.6, 1.15, length(vec2((position.y - 0.705) / 0.12, (position.z + 0.005) / 0.115))));
+  float cChestM = (1.0 - smoothstep(0.6, 1.2, length(vec3(position.x / 0.15, (position.y - 0.88) / 0.14, (position.z - 0.01) / 0.14)))) * (1.0 - smoothstep(0.135, 0.155, cAx));
+  float cBody = cBellyM * (max(cP6.x, 0.0) * ${g(BODY_STATE.BELLY_FULL)} + min(cP6.x, 0.0) * ${g(BODY_STATE.BELLY_EMPTY)}) + cFlankM * cP6.y * ${g(BODY_STATE.FLANK)}
+              + cP6.z * (cChestM * ${g(BODY_STATE.BREATH_CHEST)} + cBellyM * ${g(BODY_STATE.BREATH_BELLY)});
   // The infant's tail tuft (cP2.y < 0) stands 16 mm proud in bind metres so it shows from the side too (stylization).
-  vec3 cPos = position + normal * (cP2.x * cFurM * (0.006 + 0.018 * aRegC.y) + max(cP2.y, 0.0) * aRegA.w * 0.05 * (0.6 + 0.4 * aRegA.w) + max(-cP2.y, 0.0) * aRegB.x * 0.016);
+  vec3 cPos = position + normal * (cCoat + cBody + max(cP2.y, 0.0) * aRegA.w * 0.05 * (0.6 + 0.4 * aRegA.w) + max(-cP2.y, 0.0) * aRegB.x * 0.016);
 `;
 
 /**
@@ -96,7 +140,7 @@ uniform float uOpacity; uniform vec3 uLine; uniform float uFillK; varying vec3 v
         ? 'gl_FragColor = vec4(uLine, uOpacity * 0.9 * mix(smoothstep(0.6, 0.92, vRim), 1.0, step(0.99, uFillK)));'
         : `gl_FragColor = vec4(vTint * (0.85 + 0.35 * vRim), uOpacity * uFillK * (1.0 - 0.86 * vLens));`);
   };
-  m.customProgramCacheKey = () => `mgogo-chimp-xray-v7-${outline ? 1 : 0}`;
+  m.customProgramCacheKey = () => `mgogo-chimp-xray-v8-${outline ? 1 : 0}`;
   return m;
 }
 
@@ -123,6 +167,7 @@ export function createChimpMaterials(capacity: number): ChimpMaterials {
 ${PARS_VERTEX}
 varying vec4 vRegA; varying vec4 vRegB; varying vec4 vRegC; varying vec3 vBind;
 varying vec4 vP0; varying vec4 vP1; varying vec4 vP2; varying vec4 vP3; varying vec4 vP4; varying vec4 vP5; varying vec3 vHairT;
+varying float vCoat;
 attribute float aLodFade; varying float vLodFade;
 #ifdef MGOGO_SHELL
 attribute float aShell;
@@ -137,13 +182,15 @@ varying float vShellK;
   vP2 = cP2; vP3 = cP3;
   vP4 = texelFetch(uBones, ivec2(${PARAM_TEXEL + 4}, cSlot), 0);
   vP5 = texelFetch(uBones, ivec2(${PARAM_TEXEL + 5}, cSlot), 0);
+  vCoat = cP2.x * cCoatM; // W8: how far the coat stands (or lies sleek) here, for its shading
   // Hair lies down the bind pose (limbs hang, torso upright): the strand tangent is bind −Y, skinned.
   vHairT = normalize(mat3(viewMatrix) * (mat3(cSkin) * vec3(0.0, -1.0, 0.0)));`)
       .replace('#include <begin_vertex>', `vec3 transformed = (cSkin * vec4(cPos, 1.0)).xyz;
   #ifdef MGOGO_SHELL
     // Halo shell: the skinned surface pushed out along its normal, shorter when wet or on bare skin.
     vShellK = aShell;
-    transformed += objectNormal * aShell * (0.004 + 0.007 * (1.0 - clamp(aRegA.x, 0.0, 1.0))) * mix(1.0, 0.4, uWet) * (1.0 + cP2.x * 1.5) * length(cSkin[1].xyz);
+    // W8: the strand tips stand further out over a raised coat (up to 2.2 times) and lie in on a sleeked one (stylization).
+    transformed += objectNormal * aShell * (0.004 + 0.007 * (1.0 - clamp(aRegA.x, 0.0, 1.0))) * mix(1.0, 0.4, uWet) * (1.0 + clamp(cP2.x, 0.0, 1.0) * 1.2 * cCoatM + clamp(cP2.x, -1.0, 0.0) * 0.7) * length(cSkin[1].xyz);
   #endif`);
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
@@ -157,7 +204,7 @@ float cNoise(vec3 x) {
              mix(mix(cHash(i + vec3(0,0,1)), cHash(i + vec3(1,0,1)), f.x), mix(cHash(i + vec3(0,1,1)), cHash(i + vec3(1,1,1)), f.x), f.y), f.z);
 }
 float cBayer(vec2 p) { vec2 q = mod(floor(p), 4.0); float b = mod(q.x * 2.0 + q.y * 7.0 + q.x * q.y * 3.0, 16.0); return (b + 0.5) / 16.0; }
-varying vec3 vHairT; varying float vLodFade;
+varying vec3 vHairT; varying float vLodFade; varying float vCoat;
 #ifdef MGOGO_SHELL
 varying float vShellK;
 #endif
@@ -270,6 +317,13 @@ void RE_Direct_Hair( const in IncidentLight directLight, const in vec3 geometryP
   vec3 cEyeD = vec3(abs(vBind.x) - ${g(EYE.c[0])}, vBind.y - ${g(EYE.c[1])}, vBind.z - ${g(EYE.c[2])});
   float cEyeA = ${g(EYE.r + EYE_RIM[0])} + ${g(EYE_FRONT[0])} * (1.0 - smoothstep(${g(EYE_FRONT[1])}, ${g(EYE_FRONT[2])}, length(cEyeD.xy)));
   float cEye = (1.0 - smoothstep(cEyeA, cEyeA + ${g(EYE_RIM[1] - EYE_RIM[0])}, length(cEyeD))) * (1.0 - vP3.z);
+  // W8, P5.z: the upper lid of a sleepy animal, lowered over the eye from above (0 open .. 1 shut): the face's own skin
+  // drawn down to a line across the eyeball, darker along its edge. A stylization (the eye has no lid geometry; a blink
+  // and a clip's closed eyes still fade the whole eye, P3.z).
+  float cLidY = ${g(EYE.r + EYE_RIM[0])} * (1.0 - 2.0 * vP5.z);
+  float cLid = vP5.z > 0.004 ? smoothstep(cLidY - 0.0011, cLidY + 0.0011, cEyeD.y) : 0.0;
+  cCol *= 1.0 - 0.45 * cEye * cLid * (1.0 - smoothstep(0.0, 0.0034, cEyeD.y - cLidY));
+  cEye *= 1.0 - cLid;
   {
     // Iris and pupil painted in bind space around each eye's forward axis (eyes turn with the head).
     // P4.xy: gaze yaw/pitch in the head frame; the iris slides toward it (mirrored for the right eye).
@@ -318,7 +372,11 @@ void RE_Direct_Hair( const in IncidentLight directLight, const in vec3 geometryP
   // the product is held under 1.2: a soft band broken by strands. Its mean is about what it was, so the sheen on a
   // distant back (where the strand terms have faded to 1) is unchanged. Amounts are a look (stylization).
   float cHairMask = min(1.2, mix(0.55, 1.1, smoothstep(0.35, 0.7, cClump)) * mix(1.0, 0.45 + 1.0 * cStrand, cStrandK) * mix(1.0, 0.5 + 1.0 * cFine, cFineK));
-  gHairK = cFur * (1.0 - cVent * 0.7) * (1.0 - cGray * 0.5) * (1.0 - vP3.x * 0.6) * cHairMask;
+  // W8: hair on end scatters light instead of throwing a sheen, and shows darker between its locks; a sleeked coat
+  // lies flat and shines a little more. Amounts are a look (stylization).
+  float cUp = clamp(vCoat, 0.0, 1.0), cSleek = clamp(-vCoat, 0.0, 1.0);
+  if (cUp > 0.01) diffuseColor.rgb *= 1.0 - 0.35 * cUp * cFur * (1.0 - smoothstep(0.25, 0.75, 0.65 * cNoise(vBind * vec3(24.0, 10.0, 24.0)) + 0.35 * cNoise(vBind * vec3(50.0, 22.0, 50.0) + 7.3)));
+  gHairK = cFur * (1.0 - cVent * 0.7) * (1.0 - cGray * 0.5) * (1.0 - vP3.x * 0.6) * cHairMask * (1.0 - 0.8 * cUp) * (1.0 + 0.5 * cSleek);
   gHairShift = (cStrandV - 0.5) * 0.3 + (cClump - 0.5) * 0.2;
   gHairTint = normalize(vP0.rgb + 1e-4) * 0.9 + 0.1;
   gHairWet = cWet;
@@ -357,7 +415,7 @@ void RE_Direct_Hair( const in IncidentLight directLight, const in vec3 geometryP
     vec3 r1 = cross(dpy, normal), r2 = cross(normal, dpx);
     float det = dot(dpx, r1);
     vec3 grad = (sign(det) * (dhx * r1 + dhy * r2));
-    normal = normalize(abs(det) * normal - grad * 0.0045 * (1.0 - cWet * 0.6));
+    normal = normalize(abs(det) * normal - grad * 0.0045 * (1.0 - cWet * 0.6) * (1.0 - 0.6 * cSleek)); // W8: a sleeked coat lies flat
   }`)
       .replace('#include <aomap_fragment>', `
   float ambientOcclusion = mix(vRegB.w, 1.0, cEye * 0.7);
@@ -379,7 +437,7 @@ void RE_Direct_Hair( const in IncidentLight directLight, const in vec3 geometryP
     float fres = pow(1.0 - clamp(abs(dot(normal, V)), 0.0, 1.0), 2.4);
     vec3 irr = (reflectedLight.directDiffuse + reflectedLight.indirectDiffuse) / max(diffuseColor.rgb, vec3(0.02));
     vec3 tip = mix(vP0.rgb * 1.6 + vec3(0.014, 0.013, 0.012), vec3(0.2, 0.19, 0.17), cGray);
-    outgoingLight += fres * cFur * (1.0 - cVent * 0.8) * irr * tip * (0.55 + 0.35 * cStrandV) * mix(1.0, 0.45, cWet) * (1.0 - vP3.x * 0.6);
+    outgoingLight += fres * cFur * (1.0 - cVent * 0.8) * irr * tip * (0.55 + 0.35 * cStrandV) * mix(1.0, 0.45, cWet) * (1.0 - vP3.x * 0.6) * (1.0 + 0.5 * cUp - 0.4 * cSleek);
     float ndv = clamp(dot(normal, V), 0.0, 1.0);
     float dimK = 1.0 - vP3.x * 0.6;
     // Camera-riding fill from above-right of the view: reveals form and faces in canopy shade.
@@ -411,11 +469,11 @@ void RE_Direct_Hair( const in IncidentLight directLight, const in vec3 geometryP
   #include <opaque_fragment>`);
   };
   material.onBeforeCompile = patch;
-  material.customProgramCacheKey = () => 'mgogo-chimp-v6';
+  material.customProgramCacheKey = () => 'mgogo-chimp-v7';
   const shell = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.8, metalness: 0, alphaToCoverage: true });
   shell.defines = { MGOGO_CREATURE: '', MGOGO_SHELL: '' };
   shell.onBeforeCompile = patch;
-  shell.customProgramCacheKey = () => 'mgogo-chimp-shell-v3';
+  shell.customProgramCacheKey = () => 'mgogo-chimp-shell-v4';
   const depth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
   depth.colorWrite = false;   // shadow maps sample the depth texture; the packed colour is never read
   depth.onBeforeCompile = shader => {
@@ -433,6 +491,6 @@ varying float vFade;`)
       .replace('void main() {', `void main() {
   if (vFade > 0.5) discard;`);
   };
-  depth.customProgramCacheKey = () => 'mgogo-chimp-depth-v2';
+  depth.customProgramCacheKey = () => 'mgogo-chimp-depth-v3';
   return { material, shell, depth, texture, data, uniforms };
 }
