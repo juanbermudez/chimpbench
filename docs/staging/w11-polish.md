@@ -354,3 +354,48 @@ In `review/after/`: `pic-bough-35-30-full*.png`, `pic-chain-10-7-13-full*.png`, 
 - **The leaf spray.** Against the sky or from two metres it reads as a twig with four or five leaves, which is right. In the app, against foliage of the same green, it is easy to miss, as the builder says. With an infant on the belly the spray is held out beside the infant and does not cover it.
 - **The hand at the mouth.** From below and from the side the picking hand comes to the muzzle, not the cheek.
 - **The clamber.** In stills it is an animal on all fours among the limbs. What stills cannot show is how it reads in motion at 2.5 m a second; that is the user's first decision in section 7.
+
+### 8.7 Checks at the head
+
+Run on the final code (f9b5cbf; the commits after it change documents only), 12 October 2026, 09:30 to 09:37 EDT:
+
+- `pnpm exec tsc --noEmit`: clean. The changed test file type-checks under the strict options.
+- `pnpm exec tsx scripts/gen-params.ts --check`: valid, 1,050 entries, up to date, lint clean.
+- `pnpm test`, once: 1,412 tests, 1,411 pass, none fail, one skipped (the same one, for want of a validation file under `artifacts/`), 5 min 37 s. One test is new (`trunkBound`) and one is extended (`clambering` above 2 min/s).
+- `pnpm build`: passes.
+- `scripts/groom-shots.mjs cases`: 11 of 11.
+- Not run: `scripts/verify-browser.mjs`, the graphics probe, anything with a model. No model process was started; the frozen checkout `bench-r11` and its screen session were not touched. The server on port 5198 is stopped and no browser of this reading is left.
+
+### 8.8 For the integrator
+
+Commits of the second reading, on `w11-polish` after 50c6d00:
+
+| Commit | What |
+| --- | --- |
+| 2992048 | The registration of the repairs (8.0), before repaired code was served |
+| 96672fd | R4: no clamber above 2 min/s, none on a carried body (`perch.ts` `clambering`, a test) |
+| 1489caa | R1: one rule for "on its trunk", asked by the layout and the placement of the same frame (`perch.ts` `trunkBound`, a test) |
+| a0a5e64 | R2: a paired animal that clambers keeps its pairing's role |
+| 7f0df75 | R3: a clambering body is not turned to its goal or to its trunk as well |
+| 584d828 | The registration of the second run (8.0b) |
+| f9b5cbf | R3b: nor along its simulated path |
+| 9a856dd, e5209ac and the one after | Sections 8.1 to 8.8, the plan block, two lines of `AGENTS.md` |
+
+R2, R3 and R3b have no unit test: each is a line inside the creature layer, which cannot be built without a renderer. The films of Q1 to Q3b hold them.
+
+To repeat a reading: `review/serve.sh after start` (port 5198, no model; wait for it to answer), then `S=http://127.0.0.1:5198 OUT=<folder> node review/rv.mjs '<json spec>'` (the specs are in `review/batch*.sh`), `python3 -I review/q.py <folder>` for Q1 to Q3, `review/sum.py` and `review/idle.py` for the censuses, and `review/serve.sh after stop`. `serve.sh before` serves the export of 9be7d44.
+
+Still open after this reading, besides section 6:
+
+- Everything under "left as it is" in 8.3.
+- Calls, fruit and the state on the body were read, not filmed again (8.4).
+- The bough reads as a pole from below and close (8.6).
+- Frame time on the graphics card; a look with a model; a second day and another seed.
+- A body whose tree changes while it is off the ground now clambers up to 14 m between the two crowns where it was drawn at once beyond 6 m. No such move happened in the field films at Real time or Watch 4x; it was not looked for further.
+- The dev server of this reading logs a failed load of the store's WebAssembly file on every page, on both builds (the private dependency cache); the films run on unsaved worlds, so nothing depends on it.
+
+For the user, besides section 7:
+
+1. **The clamber above Watch 4x.** At 1 min/s it is a dash of under half a second. Keep it, or draw the clip only up to Watch 4x and let faster speeds slide as before? Recommended: look at the 160 m map at 1 min/s before deciding; by the counts it is no worse than the jumps it replaces.
+2. **Going back to its own limb.** An animal whose pairing ends clambers to its own limb even when it leaves a few seconds later. Recommended: a later stage lets an animal that is about to leave stay where it sits.
+3. **The tag over an animal clambering to its own limb** reads plain ("foraging"). Recommended: leave it; foraging in a crown is moving about in it.
