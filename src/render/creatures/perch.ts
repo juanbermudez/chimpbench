@@ -180,6 +180,15 @@ export const CLAMBER_MAX_RATE = 120;
  * tenth of a second.)
  */
 export function clambering(was: boolean, left: number, simRate = 0): boolean { return simRate <= CLAMBER_MAX_RATE && left > (was ? CLAMBER_OFF_M : CLAMBER_ON_M); }
+/**
+ * Whether a drawn path that goes up or down at `vy` metres a simulated second is on its trunk: faster than a shuffle
+ * (`moving`: drawn.ts PATH_MOVING_MPS), and once on the trunk until it is slower than 0.4 of that. (Second reading of
+ * stage W11.) The placement and the crown layout must ask this of the same frame's path. The layout used to read the
+ * placement's answer of the frame before: for one frame a partner that had set off down its trunk was still a body
+ * seated at its own place, that place crowded the animal it left onto its bough a metre away, and the one that stayed
+ * was drawn dropping onto all fours for a third of a second.
+ */
+export function trunkBound(vy: number, was: boolean, moving: number): boolean { return vy > (was ? 0.4 : 1) * moving; }
 
 // ---- The bough as a limb of its tree (stage W11) ----
 /** A stem is drawn to a limb the environment draws when one is within this distance of the fork (m); else to the bark. */

@@ -45,7 +45,7 @@ import {
 } from './creatures/secondary';
 import type { KeepCandidate } from './env/occluders';
 import { createTreeIndex, type TreeIndex } from './creatures/tree-index';
-import { CROWN_JUMP_M, PERCH, boughStem, clamberSpeed, clambering, crownStep, nestTurn, pairReach, perchBout, perchLies, perchPosture, seatAllowed, seatGroups, type SeatPairs } from './creatures/perch';
+import { CROWN_JUMP_M, PERCH, boughStem, clamberSpeed, clambering, crownStep, nestTurn, pairReach, perchBout, perchLies, perchPosture, seatAllowed, seatGroups, trunkBound, type SeatPairs } from './creatures/perch';
 import { endHeard, heardTakesHead, holding, listening } from './creatures/heard';
 import {
   Listen, PatrolCode, RELEASE_BRISTLE_TAU, RELEASE_DRUM_REACH, RELEASE_WINDOW_H, backSide, createFileCue, createPatrolLook, fileCue, listenVariant,
@@ -2148,7 +2148,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       // until it drops to the ground. trunkK eases the body between its branch and the bark (a short clamber; the
       // rate is a stylization); an animal coming up from the ground is on the bark at once.
       const climbAct = c.action === 'climb', vy = Math.abs(a.track.vy) / 3600;
-      a.onTrunk = !!tree && !climbAct && a.carry === 0 && vy > (a.onTrunk ? 0.4 : 1) * PATH_MOVING_MPS;
+      a.onTrunk = !!tree && !climbAct && a.carry === 0 && trunkBound(vy, a.onTrunk, PATH_MOVING_MPS);
       a.trunkK = a.onTrunk && !wasUp && a.trunkK < 0.5 ? 1 : damp(a.trunkK, a.onTrunk ? 1 : 0, 5, curDt);
       // (W6: in the nest once the drawn body is in the nest act, not while it is still on its way to the nest tree.)
       // The place is remembered: the simulation clears Chimp.nest the moment the animal decides to leave, two ticks
@@ -2478,7 +2478,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     contactPairs.clear();
     // Stage W9: who sits in a crown this frame (not on its trunk, not in a nest, not carried): by the drawn height.
     SP.n = 0;
-    for (const a of animList) { const c = a.chimp; a.up = a.carry === 0 && c.alive && a.track.y > 0.3 && a.act !== 'climb' && a.act !== 'nest' && c.action !== 'climb' && c.action !== 'dead' && !a.onTrunk; }
+    // (Second reading of stage W11: nor one whose drawn path has begun to go up or down in this frame, perch.ts
+    // trunkBound: placeGrounded puts it on its trunk later in the frame, and for that one frame it was still seated.)
+    for (const a of animList) { const c = a.chimp; a.up = a.carry === 0 && c.alive && a.track.y > 0.3 && a.act !== 'climb' && a.act !== 'nest' && c.action !== 'climb' && c.action !== 'dead' && !a.onTrunk && !trunkBound(Math.abs(a.track.vy) / 3600, false, PATH_MOVING_MPS); }
     for (const p of pairings) {
       const a = p.a, b = p.b;
       a.paired = true; a.partnerId = b.id; a.role = p.roleA; a.pairClip = p.clipA;

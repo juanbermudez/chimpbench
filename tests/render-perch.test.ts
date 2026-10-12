@@ -5,8 +5,8 @@ import { B, PI, computeMorph, createFK, createMorph, createPose, solveFK } from 
 import { CLIPS, FEED_HOLD_INFANT, GROOM_FRONT, GROOM_HIGH, PROP, Pw, feedCycle, feedHold, feedPicks, groomerRole, type PoseCtx } from '../src/render/creatures/poses';
 import { LIMB_TIP, leafSprayGeometry } from '../src/render/creatures/props';
 import { headLook } from '../src/render/creatures/secondary';
-import { CLAMBER_MAX_RATE, CLAMBER_MPS, CLAMBER_OFF_M, CLAMBER_ON_M, CROWN_JUMP_M, NEST_TURNS, NEST_TURN_RAD, PAIR_HEIGHT_M, PAIR_REACH_M, PERCH, SEAT_REACH_M, STEM_REACH_M, boughStem, clamberSpeed, clambering, crownStep, nestTurn, pairReach, perchBout, perchLies, perchPeriod, perchPosture, seatAllowed, seatGroups, type SeatPairs } from '../src/render/creatures/perch';
-import { ABOUT_MAX_RATE } from '../src/render/creatures/drawn';
+import { CLAMBER_MAX_RATE, CLAMBER_MPS, CLAMBER_OFF_M, CLAMBER_ON_M, CROWN_JUMP_M, NEST_TURNS, NEST_TURN_RAD, PAIR_HEIGHT_M, PAIR_REACH_M, PERCH, SEAT_REACH_M, STEM_REACH_M, boughStem, clamberSpeed, clambering, crownStep, nestTurn, pairReach, perchBout, perchLies, perchPeriod, perchPosture, seatAllowed, seatGroups, trunkBound, type SeatPairs } from '../src/render/creatures/perch';
+import { ABOUT_MAX_RATE, PATH_MOVING_MPS } from '../src/render/creatures/drawn';
 import { dampAngle } from '../src/render/creatures/util';
 
 // Stage W9 (docs/staging/w9b-tree-pairs.md): pairs and postures in trees. Everything drawn here is a stylization, so
@@ -353,6 +353,19 @@ test('a body in a tree goes to its place no faster than a clamber, plus what its
   assert.equal(CLAMBER_MAX_RATE, ABOUT_MAX_RATE);
   assert.ok(clambering(false, 5, 60)); assert.ok(clambering(true, 0.5, CLAMBER_MAX_RATE));
   assert.ok(!clambering(false, 5, CLAMBER_MAX_RATE + 1)); assert.ok(!clambering(true, 5, 600));
+});
+
+// Second reading of stage W11. Whether a drawn path is on its trunk is asked twice a frame: by the crown layout (who
+// sits in a crown) and by the placement (where the body is drawn). Asked of the same frame's path, the two agree. The
+// layout used to read the placement's answer of the frame before, and a partner that had just set off down its trunk
+// was a seated body for one more frame: the animal it left was sent to its bough and drawn clambering.
+test('a path is on its trunk by one rule: faster than a shuffle up or down, and until it is much slower', () => {
+  const M = PATH_MOVING_MPS;
+  assert.ok(!trunkBound(0, false, M)); assert.ok(!trunkBound(M, false, M)); assert.ok(trunkBound(M * 1.01, false, M));
+  // Once on the trunk it stays on it down to 0.4 of that speed: a climb that slows does not flicker off the bark.
+  assert.ok(trunkBound(M * 0.5, true, M)); assert.ok(!trunkBound(M * 0.4, true, M)); assert.ok(!trunkBound(M * 0.5, false, M));
+  // The filmed case: a partner that sets off down its trunk at 0.2 m a simulated second is on it from that frame.
+  assert.ok(trunkBound(0.2, false, M));
 });
 
 // Stage W11, item 7. The bough reads as a limb of its tree, and the cluster as a spray held clear of an infant.
