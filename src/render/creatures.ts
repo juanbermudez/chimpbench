@@ -817,7 +817,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       a.perchRole = perchPosture(a.id, perchBout(a.id, animClock), th >= LARGE_LIMB_TREE_M && a.chimp.age >= 4 && !a.holds ? 2 : th >= RECLINE_TREE_M ? 1 : 0, debug.perch);
       if (a.seatHost >= 0) { a.lies = false; continue; }
       // A lying posture (as drawn: the clip and role of the last pose) takes a bough through its own seat and lies along it.
-      a.lies = a.clip === 'perch' && perchLies(a.role);
+      // (Never the actor of a pairing: its role is its pairing's this frame, not the posture it was drawn in.)
+      a.lies = !a.paired && a.clip === 'perch' && perchLies(a.role);
       if (a.lies && boughOf(a)) {
         const half = LIE_HALF * a.morph.size;
         a.seatHost = a.id; a.seatX = a.gx; a.seatY = a.gy; a.seatZ = a.gz; a.gt0 = -half; a.gt1 = half; a.gOn = true;
@@ -994,6 +995,11 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         default: break;
       }
       if (a.nursed) return ['nurse', 0, null];
+      // The actor of a pairing with no clip of its own at height (a pant-grunt, a submission, an attack) keeps the seat
+      // its pairing names: update() rewrites a paired actor's role every frame, so any other posture was dropped and
+      // started again about three times a second (the fault stage W5 found on receivers; measured here before the fix:
+      // 11 clip changes in 4 s). The pairing's role is 0 in all three, the plain seat.
+      if (pairA) return ['perch', perchLies(a.role) ? PERCH.hold : a.role, null];
       // Only an animal that rests, or keeps a resting companion company (follow), lies down along a bough; in any other
       // act (guarding a mate, a pause in a trip, a partner out of reach) it keeps to the seated postures.
       return ['perch', act !== 'rest' && act !== 'follow' && perchLies(rest) ? PERCH.hold : rest, null];
