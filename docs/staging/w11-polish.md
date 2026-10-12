@@ -315,6 +315,8 @@ Repaired (commits 96672fd, 1489caa, a0a5e64, 7f0df75, f9b5cbf; registrations 8.0
 | Q5. Real time, the parting of item 1: largest step of the placement alone; steps over 25 cm; clambers | 0.084 m; 0; 3 | 0.125 m in a frame of 50 ms; 0; 3 | 0.042 m; 0; 3; nothing faster than 2.5 m a second | "under 0.1 m" did not hold in the first run as it was written (see 8.0b); the rest holds |
 | Q5. A plain "grooming" tag with no grooming pose at Real time; the builder's turns | 0 s; 1.88 to 1.92 rad | 0 s; 1.88 to 1.91 | 0 s; 1.90 to 1.93 | holds |
 
+(In 8.0b the direction of the steps is given as "2.03 rad west of north". The figure is the heading the layer holds, −2.03 rad, not a compass bearing; the registration is left as it was committed.)
+
 Left as it is, and reported:
 
 - **At 1 min/s a move through a crown is a dash.** The clamber's speed grows with the playback rate, so on the 160 m map, which is watched at 1 min/s, a move lasts under half a second: 139 clamber episodes a minute among 49 animals, 25 of them under a tenth of a second, where the unchanged build drew those moves as jumps (12 of its 40 largest steps are over 2 m, against 1). Counted as steps over 25 cm the two builds are alike (875 and 962), and clips change as often (754 and 794 a minute; 85 and 75 clips held under a quarter of a second). Whether the clip should play above Watch 4x is a matter of taste, so it is the user's.
@@ -344,7 +346,7 @@ Left as it is, and reported:
 | Party view: the whole frame | 2.49, 2.42, 2.41 | 2.36, 2.47, 2.54, 2.99, 1.95 |
 | Party view: the creature layer | 1.08, 1.04, 1.01 | 1.03, 1.10, 1.12, 1.26, 0.83 |
 
-No difference can be read: the runs of one build differ from each other by more than the builds do. The machine was shared with the training all morning, and from 09:10 with somebody else's graphics probe. On the two films taken while the machine was calm (frames of 18 ms at the 95th percentile on both builds), the creature layer's update, timed in the page, costs 0.47 against 0.48 ms a frame at Real time on the 160 m map with all 49 animals in view, and 0.58 against 0.64 ms at 1 min/s there, where 139 animals a minute clamber. Frame time on the graphics card is not measured.
+No difference can be read: the runs of one build differ from each other by more than the builds do. The machine was shared with the training all morning, and from 09:10 with somebody else's graphics probe. On the two films taken while the machine was calm (frames of 18 ms at the 95th percentile on both builds), the creature layer's update, timed in the page, costs 0.47 against 0.48 ms a frame at Real time on the 160 m map with all 49 animals in view, and 0.58 against 0.64 ms at 1 min/s there, where there are 139 clamber episodes a minute. Frame time on the graphics card is not measured.
 
 ### 8.6 The pictures, read honestly
 
@@ -379,7 +381,7 @@ Commits of the second reading, on `w11-polish` after 50c6d00:
 | 7f0df75 | R3: a clambering body is not turned to its goal or to its trunk as well |
 | 584d828 | The registration of the second run (8.0b) |
 | f9b5cbf | R3b: nor along its simulated path |
-| 9a856dd, e5209ac and the one after | Sections 8.1 to 8.8, the plan block, two lines of `AGENTS.md` |
+| 9a856dd, e5209ac and the commits after them | Sections 8.1 to 8.8, the plan block, two lines of `AGENTS.md` |
 
 R2, R3 and R3b have no unit test: each is a line inside the creature layer, which cannot be built without a renderer. The films of Q1 to Q3b hold them.
 
