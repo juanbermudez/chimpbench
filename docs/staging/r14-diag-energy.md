@@ -6,6 +6,11 @@ proposes no setting. Field numbers are not used. Every number below is in the ge
 [r14-diag-energy-numbers.md](r14-diag-energy-numbers.md); the section of that file is named in brackets, as (N4) for
 its section 4.
 
+**Read with section 11.** A second reader computed the key numbers again by another route. The accounting below
+holds. Section 11.3 corrects six statements built on it (among them items 3 and 7 of the short answer, "the state
+reaches the model", the last paragraph of "Why the model does not know better" and candidate 3), and sections 11.4
+and 11.5 add what holds the animal in its nest and where the calls come from.
+
 **Every number of the model arm is a "rules-taught model on a rules menu"**: stage R11's first honest-packet adapter
 (`r11-p5b-s7`, one training), one seeded draw from its odds per ask, the rules' menu, the gate on, animals under 8 on
 the rules. One world seed (3613), one run of 20 days. Nothing here is about wild chimpanzees.
@@ -338,4 +343,252 @@ None is chosen to hit a rate, and none was tried.
 - `tests/r14-energy.test.ts`: the pure readers (6 tests; the only test file run).
 - `docs/staging/r14-diag-energy-numbers.md`: the generated tables.
 
-Not committed: the traces under `artifacts/r14/energy/` (1.5 GB; rebuilt by the commands above in two minutes).
+- `scripts/r14-energy-second.py`, `scripts/r14-energy-second.ts`, `docs/staging/r14-diag-energy-second-numbers.md`: the
+  second reader's scripts and generated tables (section 11).
+
+Not committed: the traces under `artifacts/r14/energy/` (1.5 GB; rebuilt by the commands above in two minutes) and
+the second reader's sums under `artifacts/r14/energy-second/` (rebuilt by the commands of section 11.1).
+
+## 11. The second reader (12 October 2026, 16:21 to 17:19 EDT; no model; nothing changed under `src`)
+
+A second agent read sections 1 to 10 against the records and tried to refute them, with scripts of its own. Its
+numbers are in [r14-diag-energy-second-numbers.md](r14-diag-energy-second-numbers.md): sections S1 to S10 come from
+the run folders' rows, receipts and saved contexts alone (no replay, no trace), sections T1 to T6 from a second
+replay tap. Still a description of one run of a rules-taught model on a rules menu, one world seed, one training.
+
+**Verdict: the reading holds in part.** The accounting holds to the digit by a route that shares no code and no
+trace with it. Six statements built on the accounting do not hold as written (11.3). Two things it left open are
+answered here: what holds the animal in its nest (11.4), and why the walk toward a caller is offered twice as often
+(11.5).
+
+### 11.1 How it was read again
+
+```sh
+B=.claude/worktrees/bench-r13/artifacts/r13          # stage R13's run folders (read only)
+W=.claude/worktrees/r11-honest-retrain/artifacts     # stage R11's files (read only)
+T=.claude/worktrees/bench-t1/artifacts/r10/night-s48 # stage R10's population run (read only)
+pnpm exec tsx scripts/r14-energy-second.ts --run $B/model-s3613 --out artifacts/r14/energy-second/model.json            # 40 s
+pnpm exec tsx scripts/r14-energy-second.ts --run $B/rules-s3613 --out artifacts/r14/energy-second/rules.json            # 20 s
+pnpm exec tsx scripts/r14-energy-second.ts --run $B/model-s3613 --out artifacts/r14/energy-second/model-labels.json --labels   # 17 minutes
+python3 -I scripts/r14-energy-second.py --model-run $B/model-s3613 --rules-run $B/rules-s3613 --r11-loop $W/r11/loop \
+  --r11-ft $W/decide-ft/r11 --r10-run $T --tap artifacts/r14/energy-second --md docs/staging/r14-diag-energy-second-numbers.md
+```
+
+Both replays reproduce their runs (20 of 20 day hashes, every receipt line, every row file), the labelling pass
+included; that pass was run twice and gave the same 3,992 labels. The tap's books equal the rows' within 0.50 kcal on every animal-day, its ground path equals theirs to
+the 0.1 m the rows keep and its trips to food equal them exactly (T).
+
+### 11.2 What holds
+
+| | The first reading | The second route |
+| --- | --- | --- |
+| reserves, % of the store a day | −0.054 against +0.008 (−0.061, −0.080 to −0.042) | the same (S1, rows) |
+| eaten, kcal; distance, km | 1,591 against 1,617; 2.37 against 1.90 | the same (S1) |
+| absorbed; spent, kcal a day | −30.0 (−45.8 to −14.3); −2.7 (−13.8 to +8.5) | −30.1 (−45.8 to −14.3); −2.7 (−13.8 to +8.4) (S1) |
+| walking, activity, milk, kcal | +14.3, −8.4, −7.3 | the same (T1) |
+| eaten before 09:00; 09:00 to 18:00 | −84; +60 | −85 (−105 to −65); +60 (+37 to +83) (T1) |
+| daylight minutes in a nest | 88.0 against 34.6 | the same (T2) |
+| animal-days by late-morning nest minutes | 559 with none, then 40, 75, 44, 42 | 562, 42, 70, 44, 42 from the receipts alone (S4); 559 by the tap (T2) |
+| what the late days carry of −0.054 | −0.117; the others +0.063 | −0.117; +0.064 (S4), +0.063 (T2) |
+| a late day against the animal's own on-time days | −573 kcal eaten | −591 (−679 to −503) (S4) |
+| late asks: nest the model's top; the rules' best-valued; the draw stayed | 853; 0; 800 | 853; 0; 800 (S5) |
+| the draw: top option; 0.2 or more; 0.1 to 0.2; under 0.1 | 66.6%, 16.1%, 8.7%, 8.6% | the same; every one of the 47,007 draws comes out again from its logged number and odds (S3) |
+| metres toward a caller; own trips; behind a leader; to water | +347; +240; −143; +73 | +353; +242; −139; +74, counted to the act the tick began in (T3) |
+| metres on own trips not completed | 403 against 210 | 416 against 226 (+190, +120 to +261) (T3) |
+| crop where a stretch of crown feeding begins; daylight kcal a minute | 0.340 against 0.345; 7.13 in both | 0.339 against 0.344; 7.14 in both (T3b, T1) |
+| the odds on food by the day's deficit | 0.165 to 0.386 | the same (S7) |
+| ten animals: animal-days with a late nest ask | 7 to 21 of 50 (top pick), 0 to 8 (draw), 0 (first adapter) | the same (S8) |
+
+Also held, where the first reading had no figure: a late morning does not follow a short night (0 of 18 animal-days
+after a night short of a nest are late) and does not repeat by animal (15.9% of days after a late day are late,
+19.8% after an on-time day; S4). The weather does not sort the days: no morning ask of the run has rain, and the
+sky is not clear at 0.16 of the morning asks on the eight days with ten or more late animals and at 0.33 on the three
+days with one or none (S4). Stage R10's population on the first adapter and the top pick has no late morning at all:
+0 of 342 animal-days, no ask in a nest after 07:45 (S10).
+
+One split the first reading did not print makes "eats less" plainer. Against each animal's own mean in the rules
+arm, its late days carry −96 kcal a day of energy eaten (−117 to −75) and its on-time days +70 (+52 to +89). Adult
+males make up 106 kcal a day on their on-time days; lactating females make up 6 (−35 to +48), which is why they
+show the largest shortfall (−78 kcal) with the fewest late mornings (16% of their days; S4).
+
+### 11.3 What does not hold as written
+
+1. **"The draw is what gets the animal up: 61% of all risings were draws off the top"** (section 3, and item 3 of
+   the short answer). The count is right (344 of 539 here, 63.8%), the reading is not. A top pick would have stayed
+   in the nest at 210 of the 539 risings (39.0%). At 151 the model's top option was itself another act than the
+   nest, and at 155 the nest was no longer on the menu (the act had ended as "not possible", the context's word), so
+   any answer rises. Of the 181 risings after 07:45 a top pick would have stayed at 67. The same slip is in "the
+   draw left at 156": at 34 of those asks the model was not offered the nest (S5).
+2. **"`rulesIndex` is not what the rules do: at first light the rules arm stays in the nest more often than its
+   best-valued option would"** (the head of the numbers file, "How to read a row").
+   Refuted. In the rules arm the rules' own fresh draws in a nest between 06:30 and 07:45 stay at 2,802 of 3,338,
+   the nest is their best-valued option at 2,795, and they stay although it is not at 11 (T5): the rules stay when,
+   and only when, the nest is their best-valued option. The low share in the model arm is real. With the rules' own
+   odds computed at the ask (11.4), the model arm's asks in a nest carry 0.55 on the nest at 06:30, 0.40 at 07:00,
+   0.26 at 07:15 and 0.000 from 07:30, where the rules arm's own draws stay at 0.91, 0.93, 0.58 and 0.03. **The
+   model arm falls behind the rules from first light, not from 07:15.** Per ask it stays about as often as the rules
+   do (0.93 to 0.95 against 0.91 to 0.93 before 07:15), but not at the same asks.
+3. **"The drift is a step, then nearly level"** (item 7). Twenty days do not settle it. The cut after day 5 puts the
+   rebound of days 7 to 10 into the later block: by halves the gap is −0.077% a day in days 1 to 10 and −0.045 in
+   days 11 to 20 (−0.088 to −0.003 over animals). And whole days go well or badly together (16 of the 38 animals
+   are late on day 16, none on days 17 and 19), so a day's 38 animals are not 38 readings of a trend. With the day
+   as the unit, days 7 to 20 give −0.010% a day (−0.110 to +0.091): a new level and a drain of a tenth of a percent
+   a day cannot be told apart. What the records show is the level: the gap is 1.09 points of the store after day 6,
+   0.75 after day 11, 1.49 after day 18 and 1.22 after day 20, and the late mornings do not fade (22.6% of
+   animal-days in days 1 to 5, 19.8% in days 6 to 20; S2, S4).
+4. **"The state reaches the model"** (section 7). At asks with a food option, yes (S7). At asks in the nest, no.
+   At dawn the model gives the nest 0.95 at a hunger of 0.2 to 0.3 and 0.92 at 0.6 to 0.8, where the rules'
+   best-valued option is the nest at 0.61 and at 0.05 of the asks. Late in the morning it still gives the nest 0.89
+   to an animal whose hunger is 0.6 or more (S5b). The answer to "do its odds on feeding rise as reserves fall" is
+   yes where feeding is weighed against rest or a trip, and no where it is weighed against a nest with company.
+5. **"The rules are never there, so the adapter was never shown it; the offline tables could not show it"**
+   (section 3). True of a nest after 07:45. Not true of the miss that puts the animal there. Stage R11's held-out
+   file has 28 fresh draws between 05:00 and 08:00 with a nest in progress at which the rules' odds put under 0.5
+   on the nest. The adapter gives the nest 0.51 there, and 0.5 or more at 13 of the 28 (S9). The training file has
+   71 such draws among its 460 with a nest in progress. The miss was on file before the run; no offline table was
+   cut that way.
+6. **"Today the gate keeps the nest without an ask once the light stops growing"** (candidate 3). The gate is the
+   rules' own (`src/sim/rg.ts` `gate`, the same function in both arms) and it re-opens any choice older than half
+   an hour. A late animal is asked once in 30.3 minutes: 909 asks in 27,559 late-morning nest minutes, 581 of them
+   for the age of the choice, 147 for a need, 137 for an interrupt (S5).
+
+Two sentences that the first reading's script prints carried items 1 and 2; they are repaired in
+`scripts/r14-energy.ts` and its numbers file is generated again (no number in it changed).
+
+### 11.4 What the first reading did not find: the model stays in its nest for company
+
+Stage R11's labeller (the rules' own odds, every candidate's jitter redrawn through the simulation's menu code) was
+run at the ask, on the replayed world, for 3,084 asks of an animal in its nest between 06:30 and 13:00 (every ask
+from 07:00, one in four before; T6). The rules are near-certain one way or the other at 83.5% of them. Beside the
+model's own odds, by the number of animals the packet lists nearby as "in a nest":
+
+| Animals nearby in a nest | Dawn (06:30 to 07:45): the rules' own odds on the nest | the model's | Late (07:45 to 13:00): the rules' own odds | the model's | the model's top option is the nest |
+| --- | --- | --- | --- | --- | --- |
+| none | 0.02 | 0.20 | 0.000 | 0.14 | at 6% of asks |
+| one | 0.26 | 0.89 | 0.000 | 0.81 | 97% |
+| two | 0.31 | 0.95 | 0.000 | 0.94 | 100% |
+| three or more | 0.45 | 0.98 | 0.000 | 0.97 | 100% |
+
+- **Late in the morning the rules' own odds on the nest are 0.000 at every one of the 893 labelled asks**; the model
+  gives it 0.88. This is the figure candidate 1 said was still to be computed. The first reading had only the
+  receipt's `rulesIndex` for it.
+- **The model's odds follow the neighbours.** 654 of the 909 late asks (71.9%) have two or more animals nearby in a
+  nest; the draw stays at 0.965 of those. With nobody nearby in a nest it stays at 0.06. Within an animal the
+  probability on the nest is 0.226 higher (0.197 to 0.255) with two or more such neighbours than with one or none
+  (S5b). Hunger and light move it little (11.3, item 4).
+- **It was taught this, and scored on it.** In the training file the rules' own odds on the nest, for a nest in
+  progress at dawn, are 0.34 with no animal named nearby "in a nest", 0.87 with one and 0.93 with three or more.
+  Only 15 of 199 such draws with a neighbour named are labelled under 0.5. On the held-out draws the adapter gives
+  0.23, 0.90, 0.96 and 0.98; at the 5 held-out draws where the rules leave with a neighbour named it gives 0.90 to
+  0.99 (S9). In the rules' own worlds a neighbour still in its nest nearly always means it is too early, and the
+  adapter learned the neighbour.
+- **It is two cues together, and one of them was tested by removal.** Stage R11 scored the same held-out draws
+  with the packet's line "doing" taken out ("in my nest, 749 min"). The adapter's probability on the nest falls
+  from 0.23, 0.90 and 0.98 to 0.01, 0.12 and 0.36 (no neighbour in a nest, one, two or more; S9). The model stays
+  where the packet says it is in its nest and its neighbours are in theirs.
+- **What the rule turns on is not in the packet.** By day the rules count a nest-mate's company only if it is
+  asleep (`src/sim/candidates.ts`, `nestCompanyValue` with `asleepOnly`); the packet writes "in a nest" for a
+  neighbour asleep or awake (`src/kernel/packet-own.ts`).
+- **With every adult on the model the cue feeds itself**: each animal that stays is a reason for its neighbours to
+  stay. That fits three facts of the record, and shows none of them as cause: whole days go bad together (11.3,
+  item 3); the draw arms at ten animals, whose other animals were on the rules and got up, had few late mornings
+  (S8); and the lock opens when one animal draws a low-odds option, most often "drink" (76 of the 109 leavings).
+
+For the neighbours this is sequence, not cause: the neighbours, the hour and the animal's own state move together.
+A probe that changes only the words "in a nest" in the nearby lines of saved packets and scores them again would
+settle it. It needs the model and was not run.
+
+### 11.5 Where the calls come from (the question section 8 left open)
+
+**The walk toward a caller is offered twice as often because twice as many calls are heard, and they are heard
+because more pant-hoots are given.** Counted as the simulation made them (T4, T5):
+
+| Per animal and day | The model arm | The rules arm |
+| --- | --- | --- |
+| pant-hoots given | 4.19 | 2.51 (+1.68, +0.94 to +2.42) |
+| · on arrival at food | 2.39 | 1.20 |
+| · at a display or charge | 1.11 | 0.72 |
+| · by the act "call" | 0.69 | 0.47 |
+| · otherwise | 0.00 | 0.11 |
+| calls heard that can raise the walk for 18 minutes | 58.7 | 30.3 |
+| the walk offered afresh | 8.18 | 4.11 |
+| taken, per offer | 0.322 | 0.325 |
+| walks begun | 2.60 | 1.33 |
+
+- Per offer the model walks as often as the rules do, as the first reading said. The rules' own odds on the walk at
+  the model arm's offers are 0.44 (908 offers labelled); the model gives 0.37 (T6).
+- The model arm is not more scattered: 2.61 animals of the community in sight against 2.43, and the caller is 260 m
+  away when heard against 272 m (T4).
+- The model does not pick displays more often (1.42 a day against the rules arm's 1.43) and picks the act "call" a
+  little more (0.68 against 0.46; T5). **The largest part is the arrival call**, which no ask decides: the
+  simulation gives it when it is worth more than silence. A stretch of crown feeding begins with a pant-hoot at
+  0.231 of stretches against 0.114.
+- That value is the animal's social need times the share of its allies it has not located. **The social need is
+  0.58 in the model arm against 0.39** (+0.19, +0.12 to +0.25); the share of allies not located is 0.48 against
+  0.43 (T4). The model arm grooms for 0.076 of its daylight minutes against 0.096 and spends 0.053 against 0.081 in
+  other social acts (S1); the draw takes grooming 2.83 times a day at asks where grooming is the rules' best-valued
+  option 5.91 times (S6).
+
+- **It is not the late mornings.** On the model arm's 559 animal-days with no late-morning nest minute the social
+  need is 0.56, a stretch of crown feeding begins with a pant-hoot at 0.232, and the animal walks 867 m toward
+  callers (the rules arm, all its animal-days pooled the same way: 0.39, 0.122 and 409 m; T4).
+
+So the chain the records carry, as sequence: less grooming and social time by day, a higher social need, the
+simulation's own arrival call twice as often, twice the calls heard, twice the offers, the same share taken, twice
+the walks (+353 m a day). The model gives grooming 0.09 when it is on the menu; why its social time is short was not
+read further.
+
+**Trips dropped on the way** (the first report's fifth candidate): it is not that a trip in progress is asked
+about more often. An own trip is put to a fresh draw 1.85 times a day in the rules arm and to an ask 1.99 times in
+the model arm, and goes on at 0.625 and 0.651 of them; 0.69 and 0.70 trips a day are given up that way (T5). Trips
+not completed are as many (5.26 against 4.98 a day) and longer when given up (86 m against 55 m). Why they are
+longer is not found.
+
+### 11.6 The candidate changes of section 9, one by one
+
+1. **Teach the adapter the states its own population reaches: survives, narrowed.**
+   - *What must be true, and whether it is shown.* The rules' own odds at those states are off the nest: shown
+     (0.000 at 893 of 893, T6). The new examples oppose the cue the adapter leans on: shown (645 labelled late asks
+     with two or more neighbours in a nest, every one at 0.000 on the nest; the training file has 15 dawn draws
+     where a neighbour is named and the rules leave). The packet carries what separates staying from leaving: in
+     full light yes (the light words); at dawn only in part (whether the neighbour is asleep is not in it, 11.4).
+     That a training on them moves the adapter: not shown.
+   - *Narrowed.* The states that matter are a nest with company at dawn and by day, and the dawn miss is in the
+     rules' own worlds too (11.3, item 5). More fresh draws of rules worlds at dawn are a second source that needs
+     no state the rules never reach.
+   - *Harm these records cannot show.* Nights. At dusk and at night the rules put 0.99 or more on the nest where
+     this adapter puts 0.91 (stage R11's offline table, `r11-offline.md` section 11), and this run already loses
+     nights (0.972 against a floor of 0.982). An adapter taught that a
+     neighbour in its nest is no reason to stay may leave more at dusk; only a population run reads that. Also:
+     contexts of seed 3613 in a training file end that seed as a test seed, and 48,034 contexts beside 3,120 draws
+     change what the file is mostly about. How many to add must be fixed before any rate is seen.
+2. **Read rising before any population run on the top pick: survives, and is stronger than written.** With two or
+   more neighbours in a nest the nest is the model's top option at 3,627 of 3,627 asks (S5b), so under a top pick
+   such an animal never chooses to rise; it rises when the nest drops off its menu or the company thins. The
+   figure that supports this is 39% of risings, not 61% (11.3, item 1). Stage R10's population
+   on the top pick had no late morning (S10), so this belongs to this adapter and its packet, not to the top pick.
+   No harm in a reading. "Up by 07:45" and "daylight minutes in a nest" are in T2 for both arms.
+3. **Ask again in full light: does not survive.** Its premise is false (11.3, item 6). With company the draw stays
+   at 0.965 an ask, so an ask every five minutes would still leave the animal 142 minutes in its nest on average,
+   for as long as the company holds (S5b). How often to ask would be a setting chosen by the rate of rising it gives. It would make the model arm's gate differ from
+   the rules' own. And under a draw every added ask is one more chance to leave any act, a nest at night included:
+   a harm to nights that these records cannot show.
+4. **For the walking, nothing yet: stands, with the reading done.** The calls are read (11.5). No setting follows
+   from it: what differs upstream is social time. The next reading is of grooming (how often it is offered, taken
+   and broken off in each arm), with no model.
+5. **Count the rules' fresh draws during a trip** (the first report's fifth): done, and it removes that candidate
+   (11.5).
+
+### 11.7 What this second reading did not do
+
+- **No model**, so no probe of the packet: "the model stays for company" is a description of its odds, not a
+  demonstrated cause.
+- Feeding bouts cut short and the "hour after an ask" tables were not computed again. Of the patches only the crop,
+  the feeders and the count of stretches were (T3b).
+- The 21 nights short of a nest were not read.
+- Why trips given up are longer, and why the model arm's social time is short (how often grooming is offered,
+  taken and broken off in each arm), were not found.
+- One world seed, one training; intervals are 95% t intervals over the 38 animals unless a line says "over days".
+- No test file was added: the second reader's scripts have no library of their own to test. Their checks are the
+  replay's hashes, the tap against the rows, and each draw recomputed from its logged number (S3).
+- `AGENTS.md`, `HANDOFF.md` and `IMPLEMENTATION_PLAN.md` were not edited. Not pushed, not merged.
