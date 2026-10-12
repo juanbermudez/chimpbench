@@ -1,6 +1,9 @@
 # Stage R14 diagnosis: where the short nights of stage R13's model arm come from
 
 A reading of finished runs, made on 12 October 2026 between 15:28 and 16:26 EDT on branch `r14-diag-nights`.
+**A second reader went over it the same day (§13).** The counts below held; the explanation was taken one step
+further and several statements are corrected or qualified. Each carries a note "(second reader: ...)" where it
+stands.
 **It is a description.** It registers nothing, ran no model, changed nothing under `src`, `server`, `training`,
 `data` or `tests/fixtures`, and proposes no setting chosen to reach a behavioural rate or a field number (§9 lists
 candidates, each with what would refute it). Field numbers enter nothing.
@@ -36,8 +39,8 @@ to the dark, a reading aid only. **The sleep latch**: the simulation's own switc
    evening alone; 8 are an evening of 24 to 49 dark minutes plus that early rise.
 4. **The model does not leave the nest option more often than the rules do. It leaves it at the wrong asks.** Over
    the 3,771 asks at dusk or in the dark with a nest on the menu, the model's odds on the nest average 0.848 and
-   595 draws left it: 15.8 per 100. The rules' own odds at those same asks (stage R11's label machinery, run at
-   each ask) average 0.846: 15.4 per 100. On the paired world the rules left the nest option at 15.3 per 100 of
+   595 draws left it: 15.8 per 100 (second reader: 593, 15.7 per 100; at 2 of the 595 the rules decided, §13.1).
+   The rules' own odds at those same asks (stage R11's label machinery, run at each ask) average 0.846: 15.4 per 100. On the paired world the rules left the nest option at 15.3 per 100 of
    their own draws. The difference is where:
    - **In a finished nest in late dusk** the rules put 0.999 on the nest (0.99 or more at 0.995 of asks); the
      model puts 0.964 (0.99 or more at 0.678 of asks). There are 1.34 such asks per animal-night. The model's draw
@@ -56,10 +59,16 @@ to the dark, a reading aid only. **The sleep latch**: the simulation's own switc
 6. **Rules worlds hold almost no example of the state that makes a stretch long.** Of the 3,420 training and
    development draws of the adapter, 1 is out of the nest act in the dark of the evening, and none after 19:54.
    On the paired rules world the rules drew 17 times in that state before the latch and never after it.
+   (Second reader: true, and not the whole reason. The same low odds appear wherever the animal has nobody in
+   sight, and on held-out draws the adapter puts 0.55 on a sure change of act with 586 training draws: §13.3.)
 7. **It is everyone, it does not compound, and it does not grow.** 15 of 38 animals, both sexes, every class and
    community, in the numbers equal risk would give; 10 short nights in days 1 to 10 and 11 in days 11 to 20; of
    the 111 leaves of a finished nest at dusk, 4 were opened by another animal moving off or calling, and none of
    the 27 costly ones. No animal asleep in its nest was asked anything in 760 animal-nights.
+   (Second reader: corrected. The risk is not even over nights: 19 of the 21 short nights fall in the 130
+   animal-nights in which the animal had nobody in sight at a dusk ask, and 34 of the 38 late-dusk leaves come from
+   the 114 asks with nobody in sight. A companion out of its nest does raise the leave rate, on 3 leaves: §13.2,
+   §13.3.)
 8. **At ten animals the same asks carry the same odds; 50 nights could not see what they cost.** There the same
    asks come as often (1.49 late-dusk asks in the nest act per animal-night against 1.35), with the same odds
    (0.966 against 0.964), and a draw left the nest at 2.2 per 100 against 3.7 (Fisher's exact test p = 0.32). The
@@ -401,7 +410,9 @@ The run's parameters that set it: a nest bout lasts 60 to 100 minutes in the dar
 Asks of the model arm in a finished nest in the dark with the sleep latch on at the tick before: 758, of which 758 are the bout end the waking itself raises (src/sim/circadian.ts: "waking is a decision point") and 0 an interrupt. Their clock times: 05:24 to 06:17, median 05:35. Asks in a finished nest between the latch closing and that waking: 0.
 The rules arm: 760 decisions of the rules in a finished nest in the dark with the sleep latch on at the tick before, 0 of them opened by an interrupt; their clock times 05:23 to 05:47, median 05:37; decisions in a finished nest between the latch closing and that waking: 0.
 
-So "asks at night" are two things. At dusk, felt sleepiness climbs through the buckets as the latch approaches,
+So "asks at night" are two things. At dusk, felt sleepiness climbs through the buckets as the latch approaches
+(second reader: sleepiness at 688 of the 984 late-dusk asks the gate opened on a need, hunger alone at 289; before
+18:45 it is hunger at 537 of 547: §13.1),
 and each crossing opens the gate at the next bout end, a few minutes later: 1.3 asks per animal-night in the last
 twenty minutes of light, nearly all of them `need-bucket`. At waking, one ask. Between the two, nothing: no
 interrupt opened a decision for an animal asleep in its nest in either arm (0 of 758 and 0 of 760). The rules get
@@ -458,6 +469,10 @@ No. An ask opened by another animal moving off is no likelier to end in a leave 
 per 100), a travel hoo never did, the two pairs of short nights in one community on one day were 188 and 461
 metres apart, and nobody is woken.
 
+(Second reader: weakened. What opens an ask is not what the packet shows. Late dusk in a nest, the draw left at 3 of
+52 asks whose packet listed a companion out of the nest act against 1 of 854 where every companion was in a nest:
+§13.3.)
+
 ## 8. Ten animals against the population
 
 `scripts/r14-nights.ts ten`
@@ -513,7 +528,8 @@ was how large a rate 50 nights can hide. A rate of 2.8% is hidden one time in fo
 ## 9. What this reading supports
 
 Candidates only. Each rests on what is named and would be refuted by what is named; none is chosen to reach a
-rate, and none is registered here.
+rate, and none is registered here. (Second reader: §13.5 goes through them one by one. Candidate 2 stands restated
+for the solitary states, candidate 1 as its out-of-nest half, candidate 5 not as a repair.)
 
 1. **Teach the states a draw reaches and the rules do not.** Out of a nest after dark the adapter has one training
    example in 3,420 and answers 0.47 to 0.65 where the rules' label is 0.95 to 1.00. Labels for such states can
@@ -555,7 +571,8 @@ What this reading does not support: fewer asks (the rules draw at the same point
   Asks without a nest on the menu and all daytime asks were not labelled.
 - Why the model hedges at a particular late-dusk ask was not found. It is not hunger, thirst or sleepiness (rank
   correlations of 0.12 or less); finding it needs the model asked again with lines of the packet removed, which
-  this stage could not do (no model process).
+  this stage could not do (no model process). (Second reader: found in the saved contexts, with no model: the
+  packet lists nobody nearby. Which words of the packet carry it does need the model: §13.2, §13.4.)
 - The reserves (the other failed readout) are not read here. The two arms are equally hungry at dusk; that is all
   this stage can say about them.
 - The animals under 8, on the rules in both arms, were not read.
@@ -603,6 +620,13 @@ its own checkout.
 - The label of every dusk and night ask of the model arm is on file after `odds model`
   (`artifacts/r14/nights/odds.model.json`, not committed): 3,745 states with the rules' own odds, 105 of them out
   of a nest in the dark of the evening.
+- The second reader added `scripts/r14-nights-second.ts` (its own tap on `replayRun`; stage R11's label at its own
+  sample) and `scripts/r14-nights-second.py` (every number of §13; `selftest` for its arithmetic), and §13. A line
+  for `AGENTS.md`, if wanted: `pnpm exec tsx scripts/r14-nights-second.ts ticks model|rules | label`, then
+  `/usr/bin/python3 -I scripts/r14-nights-second.py all | selftest   # stage R14 diagnosis, second reading
+  (docs/staging/r14-diag-nights.md §13), no model: the nights by whether the animal has anyone in sight`.
+- What to carry from §13 into any registration that follows: the state to look at is "in a nest at dusk with nobody
+  in sight" (9 training draws from 18:45 to dark, 8 before), and the offline test for it needs no loop run.
 
 ## 12. Appendix: the short nights, one by one
 
@@ -686,3 +710,254 @@ by `asks` to `artifacts/r14/nights/short-night-asks.md`.
 | 19 | Ebini (26) | 05:32 | the bout ended; the gate opened on need-bucket | forage 0.024, drink 0.458, travel 0.215, nest 0.303 | travel | drink | drink | 0.006 |
 | 20 | Dembiri (8) | 05:46 | the bout ended; the gate opened on need-bucket | forage 0.088, drink 0.341, travel 0.170, nest 0.401 | drink | nest | drink | 0.000 |
 | 20 | Tindiro (16) | 05:28 | the bout ended; the gate opened on need-bucket | forage 0.068, drink 0.214, travel 0.274, nest 0.444 | drink | nest | drink | 0.004 |
+
+## 13. The second reader's review (12 October 2026, 16:27 to 16:58 EDT; no model process)
+
+A second reading of the same finished runs, made to refute the reading above. It is a description too: it registers
+nothing, ran no model and changed nothing under `src`, `server`, `training`, `data` or `tests/fixtures`. Every number
+of this section is printed by `scripts/r14-nights-second.py` (the command is named at each), which reads the run
+folders directly and, for the tick-level record, two files written by `scripts/r14-nights-second.ts`: the
+repository's own replay (`replayRun`) with this reader's own tap. Neither script imports or reruns
+`scripts/r14-nights.ts`. Tables are pasted as printed; where rows are left out the text says so.
+
+### 13.0 Verdict
+
+**The reading holds in part.** Its counts hold: every key number came out again by another route (§13.1). Its
+explanation stops one step short, and that step changes what follows:
+
+1. **The short nights are the nights of animals with nobody in sight.** Late dusk, in a finished nest: when the
+   packet lists no animal nearby (114 of 1,020 asks) the model puts 0.772 on the nest and the draw leaves at 29.8 per
+   100; when it lists companions that are all in a nest (854 asks) the model puts 0.991 and the draw left once. 34 of
+   the 38 late-dusk leaves were at an ask with nobody in sight; so was the leaving ask of 18 of the 20 short nights
+   that began with a nest left; and 19 of the 21 short nights fall in the 130 animal-nights (of 760) in which the
+   animal had nobody in sight at a dusk ask. §10 says the reason for the hedge "was not found" and needs the model;
+   it is in the saved contexts.
+2. **The model learned something true of the rules and did not learn where it stops.** With nobody in sight the
+   rules themselves leave a finished nest at 50 per 100 draws from 18:00 to 18:30, at 8.7 per 100 from 18:30 to 18:45
+   and never after (0 of 129). The model leaves a solitary nest at 14 to 40 per 100 through the whole of dusk.
+3. **The training file holds 9 draws of that state.** Of the 90 training draws "in a nest in late dusk, label
+   1.000" (§5), 81 are in company and 9 with nobody in sight. On the held-out draws the adapter puts 0.984 on the
+   nest in company (31 draws) and 0.821 alone (4 draws): the offline gap of §5 (0.965) is those four.
+4. **So "it is everyone, in the counts equal risk gives" (§0 item 7) does not hold for nights**, "it does not
+   compound" is weakened (a companion out of its nest raises the leave rate from 0.1 to 5.8 per 100, on 3 leaves),
+   candidate 2 of §9 rests on the wrong count (9 solitary training draws, not 90) and candidate 1 on a premise the
+   held-out draws qualify (§13.3, §13.5).
+
+### 13.1 What was computed again, and how
+
+| What | The first reading | This reader's route | Read |
+| --- | --- | --- | --- |
+| nights in a nest | 739 of 760; 760 of 760 | the rows; the card's arm files; the tick record of `replayRun` with a new tap (`figure`) | 739 of 760 (0.9724) and 760 of 760 by all three; 0 of 1,520 animal-nights differ between the rows and the tick record |
+| dark stretches out of a nest, by kind | 56 / 2,262 min; 7 / 234; 1 / 14; 175 / 7,016 (rules arm 21 / 223; 4 / 27; 0; 226 / 8,831) | a classification written again over per-tick strings (`nights`) | the same counts; the rules arm's morning total reads 8,830 (rounding) |
+| evening alone, or with the morning | 13 and 8 | `nights` | 13 and 8; no night has no evening part; no night without a nest; no nest given up |
+| leaves of a finished nest | before 18:45: 73 against 104; from 18:45: 38 against 2 | `nights` | the same; by the quarter hour the arms part between 18:30 and 18:45, not at 18:45 |
+| asks at dusk and in the dark with a nest on the menu | 3,771; 595 draws left the nest | the receipts (`asks`) | 3,771; **593**: at 2 of the 595 the kernel's answer was not applied and the rules decided (15.7 per 100, not 15.8) |
+| the draw itself | not checked | the hash and the running sum written again in Python (`asks`) | the uniform number and the option applied come out again at 47,007 of 47,007 asks; the odds expect 573.2 draws off the nest (standard deviation 16.5), 593 were |
+| in a nest from 18:45: model against rules | 38 of 1,020 against 2 of 1,048 | receipts and tick record; the rules' draws by a tap written again (`asks`) | the same |
+| the rules' own odds (stage R11's label) | 3,745 asks labelled | `labelData` called from this reader's script at its own sample of 667 asks with its own seed (`label`) | 664 labelled, all 664 also in the first reader's file; the largest difference on the nest 0.036; late dusk in a nest 1.000 (79 sampled one in ten); out of a nest in the evening dark 0.951 and 1.000 |
+| the 20 leaving asks | odds on the nest mean 0.641; top pick the nest at 19; label 1.000 at 18, 0.684 and 0.204 | `cause` | 0.641; 19; 18, 0.684 and 0.205 |
+| the asks while out | 70; top pick the nest at 45; the draw took it at 21; label 0.951 | `cause` | the same |
+| ten animals | 2 of 150; p = 0.404; 5 of 224 against 38 of 1,023, p = 0.318 | the arm files and receipts; binomial and Fisher arithmetic written again (`ten`, `selftest`) | the same; answers under 0.9 on the nest at those asks 18 of 224 against 90 of 1,023 (8.0 and 8.8 per 100) |
+| stage R11's offline table | 0.72; 0.90 for a nest at dusk or night | the held-out file and the adapter's answers (`heldout`) | 0.718 and 0.910 |
+
+Not computed again: the hunger of the two arms as dusk begins (§4), the label on the rules arm's own draws (§5's
+check of the instrument).
+
+Two smaller corrections. **Which need opened the gate** (`buckets`: the animal's four buckets after the tick of the
+ask against those after its last applied choice): from 18:45 to dark, felt sleepiness is among the buckets that moved
+at 688 of the 984 asks and hunger alone at 289; before 18:45 it is hunger at 537 of 547. §6 names sleepiness alone.
+Loneliness is among them at 14 of the 984: asks are not opened by a companion's leaving. **The paired rules arm's 1.000 is
+not the rules' only face** (`figure`, from the card's arm files):
+
+- rules-2: 13 short nights of 13 animals; by run day and community: day 2 community 1: 6, day 2 community 2: 4, day 2 community 3: 3; dark minutes out: 148, 147, 159, 154, 161, 158, 148, 148, 158, 149, 147, 160, 148.
+- rules-3: 5 short nights of 4 animals; by run day and community: day 15 community 1: 2, day 15 community 2: 1, day 15 community 3: 1, day 18 community 3: 1; dark minutes out: 91, 94, 284, 98, 72.
+- rules-8: 2 short nights of 1 animal; by run day and community: day 8 community 1: 1, day 9 community 1: 1; dark minutes out: 672, 672.
+- the model arm, short nights per run day: [1, 0, 0, 0, 2, 1, 3, 3, 0, 0, 0, 1, 0, 0, 1, 3, 1, 1, 1, 3]; on 12 of 20 days; mean 1.05, variance 1.31; the largest count for one community on one day: 2.
+
+The eight rules re-draws lose [0, 13, 5, 0, 0, 0, 0, 2] nights: 20 of 6080 (0.33%; exact 95% interval 0.20 to 0.51). The registered floor of 0.982 allows 13 short nights in 760; the model arm has 21.
+
+A rules world loses nights in one go (13 animals of three communities on one night, about 150 dark minutes each; what
+happened that night is not in the card's files). The model arm's 21 are of another kind: spread over 12 of the 20 days, never
+more than two in a community on one day. If the true rate were exactly the floor's (13 of 760) a run would show 21 or
+more with probability 0.024 (`ten`): the failure of the readout is not chance, on one seed and one decode salt.
+
+### 13.2 What the first reading missed: nobody in sight
+
+`scripts/r14-nights-second.py alone` and `packet`. The packet's `nearby` lines are the simulation's own list of the
+animals in sight, each with what it is doing ("..., in a nest"). The saved context of every ask holds that list.
+
+Rows of the table `alone` prints (in a finished nest at dusk; out of one at dusk and in the evening dark):
+
+| Situation | In a finished nest | Company in the packet | Asks | the model's odds on the nest, mean | under 0.9 | the draw left the nest, per 100 | the top pick was not the nest | the rules' top option was not the nest | the label on the nest, mean (asks labelled by this reader) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| dusk, before 18:45 | yes | nobody in sight | 104 | 0.634 | 88 | 33 (31.7) | 19 | 23 | 0.664 (54) |
+| dusk, before 18:45 | yes | company, all in a nest | 517 | 0.983 | 9 | 8 (1.5) | 0 | 25 | 0.924 (58) |
+| dusk, before 18:45 | yes | company, at least one up | 339 | 0.932 | 48 | 30 (8.8) | 10 | 28 | 0.815 (71) |
+| dusk, from 18:45 to dark | yes | nobody in sight | 114 | 0.772 | 75 | 34 (29.8) | 3 | 0 | 0.997 (81) |
+| dusk, from 18:45 to dark | yes | company, all in a nest | 854 | 0.991 | 6 | 1 (0.1) | 0 | 1 | 1.000 (79) |
+| dusk, from 18:45 to dark | yes | company, at least one up | 52 | 0.954 | 7 | 3 (5.8) | 0 | 0 | 0.992 (12) |
+| dusk, before 18:45 | no | nobody in sight | 113 | 0.769 | 68 | 25 (22.1) | 10 | 25 | 0.835 (26) |
+| dusk, before 18:45 | no | company, all in a nest | 123 | 0.925 | 30 | 6 (4.9) | 0 | 20 | 0.846 (13) |
+| dusk, before 18:45 | no | company, at least one up | 581 | 0.679 | 423 | 203 (34.9) | 100 | 182 | 0.617 (58) |
+| dusk, from 18:45 to dark | no | nobody in sight | 19 | 0.687 | 14 | 6 (31.6) | 3 | 1 | 1.000 (4) |
+| dusk, from 18:45 to dark | no | company, all in a nest | 16 | 0.914 | 5 | 0 (0.0) | 0 | 1 | none |
+| dusk, from 18:45 to dark | no | company, at least one up | 19 | 0.790 | 10 | 4 (21.1) | 1 | 3 | 1.000 (1) |
+| dark, evening, sleep latch off | no | nobody in sight | 41 | 0.644 | 37 | 18 (43.9) | 7 | 2 | 0.951 (41) |
+| dark, evening, sleep latch off | no | company, all in a nest | 13 | 0.880 | 4 | 0 (0.0) | 0 | 1 | 0.923 (13) |
+| dark, evening, sleep latch off | no | company, at least one up | 13 | 0.457 | 12 | 8 (61.5) | 7 | 0 | 0.976 (13) |
+| dark, evening, sleep latch on | no | nobody in sight | 26 | 0.511 | 26 | 15 (57.7) | 10 | 0 | 1.000 (26) |
+| dark, evening, sleep latch on | no | company, all in a nest | 2 | 0.906 | 1 | 0 (0.0) | 0 | 0 | 1.000 (2) |
+| dark, evening, sleep latch on | no | company, at least one up | 10 | 0.281 | 10 | 8 (80.0) | 7 | 0 | 0.999 (10) |
+
+Late dusk in a finished nest: nobody in sight at 114 of 1020 asks (11.2%), and 34 of the 38 leaves; with company all in a nest 1 of 854; Fisher's exact test of the two leave rates p = 6.2e-33. With a companion up: 3 of 52, against company all in a nest p = 0.0007.
+
+Animal-nights with a late-dusk ask in a nest with nobody in sight: 90 of 760; short among them 15 (16.7%); among the other 670 nights 6 (0.9%); Fisher's exact test p = 1.3e-10.
+Animal-nights with any dusk ask (in a nest or out of one, a nest on the menu) with nobody in sight: 130 of 760; short among them 19 (14.6%); among the other 630 nights 2 (0.3%); Fisher's exact test p = 1.3e-13.
+
+What it is not (`packet`, over the 1,020 late-dusk asks in a nest): the rank correlation of the model's odds on the
+nest is 0.63 with the number of companions listed and 0.63 with the party size the packet states; with felt
+loneliness 0.06, hunger −0.11, the energy still to find that day −0.03, the stomach's fill 0.03, the minutes already
+in the nest 0.10, the light level −0.09. The rules do value a solitary nest less: their margin for the nest averages
+0.83 with nobody in sight and 1.24 in company. But it is beyond what their noise can turn (0.24) at 107 of 114 and
+849 of 854, so their odds stay at 1 (label 0.997) where the model's follow the value down.
+
+Who: 28 of the 38 animals had such an ask at least once, which is why the counts by animal in §7 look like equal
+risk. By class the share of late-dusk asks with nobody in sight is 0.12 to 0.18, and 0 of 222 for mothers with a
+dependent infant (it is always in sight): they have 1 short night of 160 against 20 of 600 for everyone else
+(Fisher's exact test p = 0.098).
+
+Both arms, and the rules' own behaviour alone (`alone`):
+
+| | the model arm | the rules arm |
+| --- | --- | --- |
+| animal-evenings in a finished nest at 18:45 | 680 of 760 | 689 of 760 |
+| ... of them with nobody in sight | 70 (10.3%) | 76 (11.0%) |
+| animal-evenings in a finished nest when the dark falls | 697 of 760 | 735 of 760 |
+| ... of them with nobody in sight | 72 (10.3%) | 126 (17.1%) |
+| the rules' draws in a finished nest from 18:45 to dark, nobody in sight: left the nest | | 0 of 129 |
+| ... in company: left the nest | | 2 of 919 |
+| the rules' draws in a finished nest at dusk before 18:45, nobody in sight: left the nest | | 25 of 88 (28.4 per 100) |
+| ... in company: left the nest | | 58 of 917 (6.3 per 100) |
+
+In a finished nest with nobody in sight, by the quarter hour (the model arm's asks from the packet's list; the rules arm's draws from the tick record):
+
+| Clock | the model arm: asks | the model's odds on the nest, mean | the draw left the nest, per 100 | the rules arm: draws | the rules left the nest, per 100 |
+| --- | --- | --- | --- | --- | --- |
+| 18:00 to 18:15 | 21 | 0.739 | 3 (14.3) | 20 | 10 (50.0) |
+| 18:15 to 18:30 | 30 | 0.582 | 12 (40.0) | 22 | 11 (50.0) |
+| 18:30 to 18:45 | 53 | 0.622 | 18 (34.0) | 46 | 4 (8.7) |
+| 18:45 to 19:00 | 100 | 0.772 | 29 (29.0) | 95 | 0 (0.0) |
+| 19:00 to 19:15 | 14 | 0.773 | 5 (35.7) | 34 | 0 (0.0) |
+
+The two arms hold as many solitary nests at 18:45 (10.3% and 11.0%): the model arm does not make its animals more
+alone by then. What differs is what a solitary animal does after 18:30.
+
+Stage R11's files by company (`alone`; rows in the nest act at dusk, of the table it prints):
+
+| Situation | In the nest act | Company in the packet | Training draws with a nest on the menu | the label on the nest, mean | label at 0.99 or more | Held-out draws | the label on the nest, mean | the adapter's odds on the nest, mean | the adapter under 0.9 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| dusk, before 18:45 | yes | nobody in sight | 8 | 0.653 | 4 | 4 | 0.692 | 0.704 | 2 |
+| dusk, before 18:45 | yes | company | 66 | 0.917 | 55 | 26 | 0.944 | 0.921 | 5 |
+| dusk, from 18:45 to dark | yes | nobody in sight | 9 | 1.000 | 9 | 4 | 1.000 | 0.821 | 2 |
+| dusk, from 18:45 to dark | yes | company | 81 | 1.000 | 81 | 31 | 1.000 | 0.984 | 1 |
+
+Training and development draws at dusk or in the dark with nobody in sight: 51 of 357; over the whole day: 318 of 3420.
+
+### 13.3 The other claims, one by one
+
+- **"One event" (§0 item 2): holds**, with one addition (`cause`, `nights`). A leave of a finished nest at dusk lasts
+  35 minutes at the median in both arms (the rules arm: nine in ten under 52, the longest 75). With each evening
+  stretch of the 21 cut at 52 minutes away, 10 nights are still short; cut at 75, 16. So for about half of the short
+  nights the leave alone is enough, at the rules' own length of an outing, because it falls after 18:45 and the
+  rules' own early rise takes 40 of the 67 minutes the line allows. The long stays matter for the other half.
+- **"The model does not leave the nest option more often than the rules" (§0 item 4): holds as an average** (593 of
+  3,771 against 589 of 3,839) and should not be read as more: it is the sum of rows of opposite sign.
+- **"Does not compound" (§0 item 7): weakened.** A companion out of the nest act goes with a higher leave rate (3 of
+  52 against 1 of 854, p = 0.0007), and out of a nest in the evening dark the model's odds on a nest are lowest
+  beside a companion that is also up (0.457 and 0.281 over 23 asks; some of those are a mother with her infant).
+  It is small: 3 of the 38 late-dusk leaves, and 16 of the 20 animals that left were already alone at their first
+  ask of that dusk. No sign that leaving makes others alone by 18:45 (above).
+- **"Does not grow": holds** (10 and 11; `figure`).
+- **Ten animals (§8): holds as a non-rejection.** The same share of hedged answers (8.0 against 8.8 per 100), the
+  same leave rate within chance (p = 0.318). The ten-animal test could rule out a rate above 4.1% and nothing below
+  it (`ten`). The first reader's own caution stands: this does not show the two units are the same. Whether the five
+  focal animals a seed were alone as often as a population's animals cannot be read from the loop's receipts (they
+  hold no context); the equal share of hedged answers is the only sign that they were.
+- **The top-pick arms at ten animals (0 of 100 short):** at the draw's population rate 100 nights show none with
+  probability 0.061 (`ten`). That is weak evidence that the top pick keeps nights, not proof.
+- **"Rules worlds hold almost no example of the state that makes a stretch long" (§0 item 6): true and not the whole
+  reason.** Out of a nest in the evening dark the model's odds on a nest are 0.644 and 0.511 with nobody in sight
+  and 0.880 and 0.906 beside animals in their nests (15 asks): the same split as in a nest. And on stage R11's
+  held-out draws, of the kind the adapter was trained on (`heldout`):
+
+| Draws where the label is sure | Training and development draws | Held-out draws | the adapter's odds on the sure option, mean | median | at 0.9 or more | under 0.5 | a draw leaves it, per 100 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| all | 1360 | 628 | 0.718 | 0.815 | 0.382 | 0.210 | 28.2 |
+| carry on (the sure option is the act in progress) | 774 | 347 | 0.851 | 0.929 | 0.556 | 0.052 | 14.9 |
+| switch (the sure option is another act) | 586 | 281 | 0.553 | 0.620 | 0.167 | 0.406 | 44.7 |
+| the sure option is a nest, at dusk or in the dark | 227 | 84 | 0.910 | 0.982 | 0.798 | 0.036 | 9.0 |
+| ... carry on (in the nest act) | 188 | 70 | 0.928 | 0.985 | 0.871 | 0.043 | 7.2 |
+| ... switch (not in the nest act: go to a nest) | 39 | 14 | 0.824 | 0.898 | 0.429 | 0.000 | 17.6 |
+
+  Where the rules are sure of an act other than the one in progress the adapter puts 0.553 on it with 586 training
+  draws of that kind, and 0.824 on "go to a nest" with 39. An animal out of its nest in the dark is asked to switch.
+  The 0.65 and 0.47 of §5 are about what this adapter does at any sure switch; more examples of the state would have
+  to do better than the 0.82 that 39 examples give at dusk.
+
+### 13.4 What this reading cannot tell apart
+
+1. **Which words of the packet carry it.** An empty `nearby` list, or the party size in the line `now`. It is not
+   the felt loneliness. Telling them apart needs the model asked with one line removed.
+2. **Too few examples, or a line the model cannot draw.** The rules go from 50 leaves per 100 to none within half an
+   hour of dusk when alone, on the light and the body clock. The adapter had 17 solitary draws in a nest at dusk (8
+   early, label 0.653; 9 late, label 1.000) and answers 0.704 and 0.821 on held-out ones. Nothing here says whether
+   ten times as many would teach it the cut. A held-out file with more solitary dusk draws would, with no loop run.
+3. **Solitude, or sight.** In the rules arm the share of nests with nobody in sight rises from 11.0% at 18:45 to
+   17.1% when the dark falls. Whether those animals are far from others or only see less in the dark was not read.
+4. **How much is chance.** One seed, one salt. 21 against a floor of 13 is beyond chance at 0.024; how far beyond is
+   not known.
+
+### 13.5 The candidates of §9
+
+For each: what the records would have to show for it to help, whether they do, and a harm they cannot show.
+
+| Candidate of §9 | What would have to be true | Shown? | Harm these records cannot show | Stands? |
+| --- | --- | --- | --- | --- |
+| 1. Teach the states a draw reaches and the rules do not (out of a nest in the dark) | that the low odds there come from missing examples, and that examples lift them to near 1 | In part. Out of a nest and alone the model's odds on a nest fall as the dark deepens (0.769 before 18:45, 0.687 after, 0.644 and 0.511 in the dark) where the label rises to 1, and the training file holds 1 draw there. Against it: beside animals in their nests the odds are 0.88 to 0.91 in the same dark, and where the label is sure of a change of act the adapter gives 0.553 with 586 training draws (0.824 for "go to a nest" with 39) | none beyond that of 2 | As the out-of-nest half of 2, not as the main repair: 18 of the 21 nights began at a leave the rules would not have made (`cause`) |
+| 2. Close the gap where the label is 1 (in a nest in late dusk) | that more draws of the state close it | The state is narrower than §9 says: solitary, 9 training draws, held-out 0.821. Whether more draws close it is not shown (§13.4 item 2) | an adapter that over-learns "alone: stay" would stop leaving a solitary nest early in dusk, where the rules leave at 28 to 50 per 100, and at waking, where the rules' label on the nest is 0.13 alone; the timing rows the draw now matches could move | Yes, restated: more training draws of the solitary states, chosen by state and never by label, read offline on held-out solitary draws before any loop run |
+| 3. The top pick | that the top pick is the nest where the draw left | At 19 of the 20 leaving asks; at the 114 solitary late-dusk asks it was not the nest at 3 | while out the top pick was the nest at 45 of 70 asks only, and out in the evening dark beside a companion that is up it was not the nest at 14 of 23 asks: a top pick does not re-roll, so an animal whose top pick is to go on feeding stays out until its state changes. Rarer outings, possibly longer. By day it is told from the rules downward (stage R11) | As the registered next run, not as a repair |
+| 4. Read the nights in two parts | nothing | It is arithmetic | with the mornings left out 13 nights are short, which is exactly what the floor allows. As a readout it would turn a clear fail into a tie. No floor exists for it: the control arms have no tick record | As description only |
+| 5. A ruling for stage R12's table | that the two options are never the rules' own | "Leave a finished nest in the last light": no. The rules leave a solitary nest at 28 per 100 before 18:45 and a cut by the clock would be picked where the arms part on this run. "Go on feeding with the sleep latch closed": the rules arm is never there | by accounting, with the dark minutes out under a closed latch not counted (1,066 of 2,510) 12 nights are short and the readout passes by one, with the model's odds unchanged. It would hide the fault the readout exists to catch | Not as a repair. As a question of what an animal can do, put to the user without this readout in view |
+| fewer asks at dusk | | each late-dusk ask is one more draw at 0.964, so fewer asks would mean fewer leaves; §9 says "not supported" for another reason | the gate is the rules' own: changing it changes the yardstick, and it would be a setting picked for a rate | Out |
+
+By the accounting of `cause` (sequence, not a forecast): 18 of the 21 evening stretches began at an ask where the
+label put 0.99 or more on the nest, 2 at an ask where the rules themselves were split (0.684 and 0.205) and 1 with no
+nest left; with each stretch cut at the first ask out at which the label put 0.99 or more on a nest, 5 nights are
+still short. So the rules' odds at the leaving asks could have reached 18 nights at most, and the rules' odds while
+out 16.
+
+What the records do support, said once: the adapter reads "night" off its companions. Where an animal can see others
+in their nests it nests as the rules do, under a draw, in a population (1 leave in 854 late-dusk asks). The fault
+is the animal with nobody in sight, and the training file is thin exactly there.
+
+### 13.6 Limits, and how to run it again
+
+- The same single run as §10: one world seed, one training, one decode salt.
+- "Nobody in sight" is the packet's list at the ask (model arm) and the simulation's `seen` list at the tick before
+  (both arms); they agree at 1,011 of 1,020 late-dusk asks.
+- The accounting of §13.3 and §13.5 (stretches cut, minutes not counted) is sequence, not a forecast: after another
+  choice the world is another world.
+- The whole test suite and the build were not run. `scripts/r14-nights-second.ts` passes the strict type-check by
+  hand; `scripts/r14-nights-second.py selftest` holds the exact arithmetic and the draw against values worked by hand.
+
+```sh
+fnm exec --using=22.22.3 -- pnpm exec tsx scripts/r14-nights-second.ts ticks model   # 45 s; must land on 20 of 20 day hashes
+fnm exec --using=22.22.3 -- pnpm exec tsx scripts/r14-nights-second.ts ticks rules   # 20 s
+fnm exec --using=22.22.3 -- pnpm exec tsx scripts/r14-nights-second.ts label         # 3.5 min; stage R11's label at 667 asks
+/usr/bin/python3 -I scripts/r14-nights-second.py all        # 25 s: figure, nights, asks, cause, buckets, packet, alone, label, ten, heldout
+/usr/bin/python3 -I scripts/r14-nights-second.py selftest
+```
+
+One process at a time, no model, no `data/raw`. The three files the first two commands write are under
+`artifacts/r14/nights-second` and are not committed. `label` compares with the first reader's label file when it is
+on disk (`artifacts/r14/nights/odds.model.json`, not committed) and says so when it is not.
