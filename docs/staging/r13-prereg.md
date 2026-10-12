@@ -343,7 +343,7 @@ Sections 0 to 11 stand as registered at 04:51 EDT (commit 1386135; the code came
 iteration 0: no model, one process at a time, from a committed head with a clean tree. Run folders and logs are
 under `artifacts/r13/` of the worktree `r13-population` (not in git).
 
-### 12.1 What was built beyond §1, and three choices made while building (none changes §2 to §8)
+### 12.1 What was built beyond §1, and what was left out (none of it changes §2 to §8)
 
 - **A command `rule <r11-numbers.md>`** prints the decode rule of §3 as the script reads it, and `scripts/r13-run.sh
   model` refuses unless the integrator's `R13_ARM` is the arm that rule names. `R13_R11_NUMBERS` has no default: the
@@ -358,6 +358,8 @@ under `artifacts/r13/` of the worktree `r13-population` (not in git).
   accepted like the others, on seed 3613 only. Nothing registers a run of them.
 - **Not built:** a re-draw of the rules through the night script. The eight re-draws are stage R7's own control
   arms, on the run's burned-in world (§8).
+- **Two words of §1 and §7, explained here and not edited there:** "unit P" and the folder `P` are stage R7's name
+  for the population unit; "the launch order of §12" is the launch order under "For the integrator".
 
 ### 12.2 The proofs of §10 (12 October 2026, 05:16 to 05:24 EDT; head e0ec7e6, tree clean; load 4 to 9)
 
@@ -380,7 +382,7 @@ ask, plus this run's own seconds a day):
 | 0.50 | the same night, `p5b-s7-draw-1` (974 s for 1,955 calls), on a shared machine | 19.0 | 28 |
 
 That is at the stand-in's 2,270 asks a day. Stage R11's P5b arms asked 71 to 76 times per focal animal and day; a
-population asked at that rate (2,700 to 2,890 asks a day) takes 18.5 to 24.2 minutes a day at 0.41 to 0.50 s, so
+population asked at that rate (2,700 to 2,900 asks a day) takes 18.5 to 24.2 minutes a day at 0.41 to 0.50 s, so
 nine hours cover 22 to 29 days. **`--days 20` is expected to end the run, after 4 to 8 hours**; `--hours 9` is the
 guard. Not in the table: the model load (55 to 220 s here) and the hold while swap in use is above 6 GB (up to 30
 minutes).
@@ -392,7 +394,8 @@ check of the instrument holds: the rules through the night script are told from 
 five level rows, hold all five guards and are told on 0 of stage R7's 14 timing rows. The stand-in's "population"
 reads not viable (nights in a nest 0.342 against 0.998 ± 0.005 for the rules; reserves −0.504% a day against a line
 of −0.087), as arbitrary odds should: V2 and V3 can fail. Its tables are under `artifacts/r13/dry/tables` and are
-not published.
+not published. Run once more at the stage's last code (head e5aa077, 05:29 to 05:32 EDT, a fresh burn-in): the same
+day hashes, 6,606 lines and 4,539 packets.
 
 **The refusals, from the command line** (each exit code 2, nothing written; in `tests/r13-population.test.ts`): a
 sealed seed (4333) for a run and for the control arms; `p5b-s7-draw-1` on seed 48; a dry arm on seed 7; `--packet
@@ -417,7 +420,25 @@ the count of animals (49 living, 38 aged 8 and over). The two-day rules folder o
 `artifacts/r13/smoke`; the registered paired rules arm is run again by the integrator, for N days, into its own
 folder.
 
-### 12.4 Not done, and limits
+### 12.4 Tests and checks (12 October 2026, 05:08 to 05:43 EDT)
+
+| What | Head | Result |
+| --- | --- | --- |
+| `tests/r13-population.test.ts` (the small map, seed 48; one test starts the script as a child process 15 times, the fake worker among them) | e0ec7e6; again after the last script edit | 8 of 8 |
+| `tests/r10-night.test.ts`, `tests/r10-wiring.test.ts`, unedited | ee8684b | 13 of 13, 6 of 6 |
+| `tests/r11.test.ts`, `r5-pilot`, `r9-decode`, `r7-engine`, unedited | ee8684b | 13 of 13, 5 of 5, 11 of 11, 2 of 2 |
+| `tsc --noEmit` | e5aa077 | clean |
+| the stage's scripts and tests under the same strict options (a temporary configuration; a planted error is caught) | the last code | clean |
+| `scripts/gen-params.ts --check` | e5aa077 | valid: 1,050 entries, none added; `params.gen.ts` up to date; lint clean |
+| `git diff d6a8e0e -- src data server tests/fixtures` | e5aa077 | empty: the goldens and the field pin cannot have moved |
+| the whole suite, once (`tsx --test`, four files at a time) | e5aa077, this document being edited | **1,313 tests: 1,312 pass, 0 fail, 1 skipped** (the guide's scorecard check, whose data file is not on this computer); 8 min 12 s. `tests/sim-params.test.ts` (the goldens) and `tests/sim-track-e.test.ts` (the field pin) are in it |
+| `pnpm build` | e5aa077 | passes (9 s) |
+
+One problem met while building, one iteration: a test asserted that the packet P5a of a context never equals its
+P5b packet; 4 packets of the test's run carry neither of the two lines P5a deletes, so the two are the same there.
+The assertion was wrong, not the code.
+
+### 12.5 Not done, and limits
 
 - **The run.** No model arm, no paired rules arm of N days, no control arm on seed 3613, no statement of §8 read.
 - **Nothing on the model's path has met a real worker in this stage:** the worker's start with the adapter of stage

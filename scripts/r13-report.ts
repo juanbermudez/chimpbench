@@ -64,7 +64,7 @@ export function outcome(viable: boolean | null, days: number, sides: Record<stri
 }
 export const OUTCOME_MEANS: Record<Outcome, string> = {
   'not read': 'The run is shorter than the registered minimum, a readout has no value or viability could not be read: no outcome is named.',
-  'not viable': 'A population on this adapter with this decode did not hold the viability readouts; the level below is printed and not named.',
+  'not viable': 'A population on this adapter with this decode did not hold the viability readouts; the level is printed and not named.',
   'at the rules\' level': 'A whole population on this adapter moves, sets out and switches as the same animals do on the rules. The sedentary population of stage R10 was a property of the first adapter, its packet and its decode, not of putting every adult on a model. It does not mean the model is better than its teacher or nearer to wild chimpanzees.',
   sedentary: 'The honest packet and labels (and the draw, if it ran) do not remove the under-travel when every adult is on the model. Next: the "who decided" ledger and the odds by kind on this run\'s own states, not another population night.',
   restless: 'Drawing when everyone draws switches or sets out more than the rules do: the signature of the rules with a share of random choices. The draw would need a hold or a smaller share of asks before it drives a population.',
