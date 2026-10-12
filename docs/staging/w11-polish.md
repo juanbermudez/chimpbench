@@ -203,11 +203,11 @@ The tile sheet of `scripts/groom-shots.mjs`: 27 of 30 tiles are pixel-identical 
 | 32f8187 | Item 1: long moves in a crown are clambered |
 | 592107b | Item 7: the bough as a limb of its tree, the leaf spray |
 | 546113e | Items 1 and 2, second and third run: the faults the first run found, and the last 0.3 m of a climb |
-| the commit after it | This document's sections 1 to 7, the plan block, four lines of `AGENTS.md` |
+| def1ff2 and the one after it | This document's sections 1 to 7, the plan block, four lines of `AGENTS.md` |
 
 ### Checks at the head
 
-Run on the tree of the last commit, 12 October 2026, 06:58 to 07:07 EDT:
+Run on this branch's final code, 12 October 2026, 06:58 to 07:07 EDT (the commits after 546113e change documents only):
 
 - `pnpm exec tsc --noEmit`: clean. The three changed test files type-check under the same strict options with node's types added.
 - `pnpm exec tsx scripts/gen-params.ts --check`: valid, 1,050 entries, up to date, lint clean.
