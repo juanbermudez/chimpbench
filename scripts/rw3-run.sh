@@ -156,6 +156,8 @@ run_step() {
     assembled || refuse "no training file under $FT/tai: run the dry step first"
     have "$FT" "$NAME" && refuse "$FT/adapters/$NAME exists already; it is not trained over"
     cut_short "$FT" "$NAME" && refuse "$FT/adapters/$NAME holds a training cut short (weights, no manifest.json); delete the folder, then run this step again"
+    # the chooser's own future (prereg section 7, check 5) is checked where the dates are: a file built without it does not teach
+    grep -q '"historyCheck": "not run' "$FT/tai/data-manifest.json" && [ -z "$RW3_ALLOW_NO_HISTORY" ] && refuse "the training file was built without the history check: link data/raw and run the dry step again"
     before_model "train $NAME"
     export MGOGO_FT_ROOT="$AFT"
     logged "train-$NAME" $KEEP "$PY" train_rw3.py --name "$NAME" --train tai/train.jsonl --extra tai/data-manifest.json --seed "$2"

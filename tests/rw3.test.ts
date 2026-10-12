@@ -204,7 +204,7 @@ function trainerRoot(dir: string, rows: unknown[], over: Record<string, unknown>
   const ft = join(dir, 'artifacts', 'decide-ft', 'rw3'), text = rows.map(r => JSON.stringify(r)).join('\n') + '\n';
   mkdirSync(join(ft, 'tai'), { recursive: true });
   writeFileSync(join(ft, 'tai', 'train.jsonl'), text);
-  writeFileSync(join(ft, 'tai', 'data-manifest.json'), JSON.stringify({ stage: 'RW3', label_source: RW3_LABEL_SOURCE, sealedPartRead: false, trainFileSha256: sha(text), ...over }));
+  writeFileSync(join(ft, 'tai', 'data-manifest.json'), JSON.stringify({ stage: 'RW3', label_source: RW3_LABEL_SOURCE, sealedPartRead: false, leakCheck: { ok: true }, historyCheck: { ok: true }, trainFileSha256: sha(text), ...over }));
   return ft;
 }
 const trainer = (ft: string, ...args: string[]) => spawnSync(PY, ['-I', 'training/decide_ft/train_rw3.py', ...args, '--stop-before-load', '1'], { encoding: 'utf8', env: { ...process.env, MGOGO_FT_ROOT: ft } });
@@ -221,7 +221,7 @@ test('trainer: the pre-load step checks the file, reports the registered plan an
       assert.deepEqual([plan.adapter, plan.seed, plan.registered, plan.rows], [`${RW3_ADAPTER}-s${seed}`, seed, true, rows.length]);
       // the trainer's arithmetic is the assembler's: the same rows an epoch, the same optimiser steps and warm-up
       assert.deepEqual(plan.rows_per_epoch, counts.rowsPerEpoch); assert.deepEqual({ perEpoch: plan.steps_per_epoch, total: plan.steps, warmUp: plan.warm_up_steps }, counts.optimiserSteps);
-      assert.match(ok.stdout, /stopped before the model load/); assert.match(ok.stdout, /no development file; the last epoch is saved/);
+      assert.match(ok.stdout, /stopped before the model load/); assert.match(ok.stdout, /no development file; the last epoch is saved/); assert.match(ok.stdout, /leak checks passed; history check: passed/);
     }
     assert.ok(!existsSync(join(ft, 'adapters')), 'nothing was written');
     // the registered recipe in the trainer is the registered recipe in the assembler
@@ -245,6 +245,9 @@ test('trainer: the pre-load step checks the file, reports the registered plan an
     refused(trainer(trainerRoot(join(dir, 'd'), rows, { trainFileSha256: 'f'.repeat(64) }), ...usual()), /not the one its data manifest describes/);
     refused(trainer(trainerRoot(join(dir, 'e'), rows, { label_source: 'field choices, Ngogo male grooming' }), ...usual()), /not this stage's/);
     refused(trainer(trainerRoot(join(dir, 'f'), rows, { sealedPartRead: true }), ...usual()), /sealed part was not read/);
+    refused(trainer(trainerRoot(join(dir, 'h'), rows, { leakCheck: { ok: false } }), ...usual()), /leak checks passed/);
+    refused(trainer(trainerRoot(join(dir, 'i'), rows, { historyCheck: { ok: false } }), ...usual()), /history check failed/);
+    assert.match(trainer(trainerRoot(join(dir, 'j'), rows, { historyCheck: 'not run (no raw files linked)' }), ...usual()).stdout, /history check: NOT RUN/);
     const taken = trainerRoot(join(dir, 'g'), rows);
     mkdirSync(join(taken, 'adapters', `${RW3_ADAPTER}-s7`), { recursive: true }); writeFileSync(join(taken, 'adapters', `${RW3_ADAPTER}-s7`, 'adapter_model.safetensors'), 'not weights');
     refused(trainer(taken, ...usual()), /already holds weights/);
@@ -289,6 +292,11 @@ test('wrapper: refuses a sealed part, an unknown seed, a tracked folder, a run b
     assert.equal(chained.status, 3); assert.match(chained.stdout, /a registered chain of model steps says it is running/);
     writeFileSync(state, 'done\n');
     assert.equal(run(['train', '7']).status, 0);
+    // a training file built without the history check does not teach
+    writeFileSync(join(ft, 'tai', 'data-manifest.json'), '{\n "historyCheck": "not run (no raw files linked)"\n}\n');
+    const unchecked = run(['train', '7']);
+    assert.equal(unchecked.status, 2); assert.match(unchecked.stdout, /built without the history check/);
+    writeFileSync(join(ft, 'tai', 'data-manifest.json'), '{}\n');
     // an adapter that is missing is never scored as if it were there (the worker would answer with the untuned model)
     const missing = run(['eval', '7']);
     assert.equal(missing.status, 2); assert.match(missing.stdout, /no adapter rw3-tai-groom-s7/);
@@ -315,7 +323,7 @@ function scores(hit: number[], index?: number[]): RecordScore[] {
 }
 const N = 120, every = (k: number) => Array.from({ length: N }, (_, i) => +(Math.floor(i / 6) % 10 < k));   // k of every ten records of each of the six animals: the same share in every animal
 const both = (s: RecordScore[]): KernelScores => ({ plain: s, fan: s });
-const goodManifest = (seed: number) => ({ adapter: `${RW3_ADAPTER}-s${seed}`, label_source: RW3_LABEL_SOURCE, hyperparameters: { ...RW3_RECIPE, seed }, registered_recipe: true, saved_epoch: RW3_RECIPE.epochs, history: [{ train_loss: 1.4 }, { train_loss: 1.2 }], cost: { training_seconds: 900, seconds_per_example: 0.4, peak_footprint_gib: 5.4 } });
+const goodManifest = (seed: number) => ({ adapter: `${RW3_ADAPTER}-s${seed}`, label_source: RW3_LABEL_SOURCE, sealedPartRead: false, leakCheck: { ok: true }, hyperparameters: { ...RW3_RECIPE, seed }, registered_recipe: true, saved_epoch: RW3_RECIPE.epochs, history: [{ train_loss: 1.4 }, { train_loss: 1.2 }], cost: { training_seconds: 900, seconds_per_example: 0.4, peak_footprint_gib: 5.4 } });
 const devRecords = Array.from({ length: N }, (_, i) => record(200 + i, 4, { key: `k${String(i).padStart(3, '0')}`, part: 'development', stratum: i % 2 ? 'seen' : 'unseen' }));
 const base: Omit<Rw3Input, 'seeds'> = { part: 'development', chance: scores(every(2)), bar: scores(every(4)), untuned: both(scores(every(3))), ngogo: both(scores(every(3))), records: devRecords, expect: null, reps: 300 };
 const seedsOf = (a: KernelScores | null, b: KernelScores | null, m: (s: number) => Record<string, unknown> | null = goodManifest) => [{ seed: 7, scores: a, manifest: m(7) }, { seed: 11, scores: b, manifest: m(11) }];
@@ -357,6 +365,8 @@ test('report: a run that is not valid is not read (S0)', () => {
   invalid({ ...base, seeds: seedsOf(good, good, s => ({ ...goodManifest(s), label_source: 'field choices, Ngogo male grooming' })) }, /label source/);
   invalid({ ...base, seeds: seedsOf(good, good, s => ({ ...goodManifest(s), hyperparameters: { ...RW3_RECIPE, seed: s, epochs: 3 } })) }, /not the registered ones/);
   invalid({ ...base, seeds: seedsOf(good, good, s => ({ ...goodManifest(s), registered_recipe: false })) }, /not the registered ones/);
+  invalid({ ...base, seeds: seedsOf(good, good, s => ({ ...goodManifest(s), leakCheck: { ok: false } })) }, /leak checks passed/);
+  invalid({ ...base, seeds: seedsOf(good, good, s => ({ ...goodManifest(s), sealedPartRead: true })) }, /sealed part was not read/);
   invalid({ ...base, seeds: seedsOf(good, good, s => ({ ...goodManifest(s), hyperparameters: { ...RW3_RECIPE, seed: 7 } })) }, /another seed/);
   invalid({ ...base, seeds: seedsOf(both(scores(every(8)).map((s, i) => i ? s : { ...s, refused: 'kernel-error', hit: 0 })), good) }, /refused/);
   invalid({ ...base, seeds: seedsOf(good, null) }, /no scores on file/);

@@ -145,6 +145,11 @@ def preflight(args: dict) -> dict:
         raise Refused(f"--extra: the data manifest is not this stage's (label source '{LABEL_SOURCE}')")
     if extra.get("sealedPartRead") is not False:
         raise Refused("--extra: the data manifest does not say that the sealed part was not read")
+    if not isinstance(extra.get("leakCheck"), dict) or extra["leakCheck"].get("ok") is not True:
+        raise Refused("--extra: the data manifest does not say that the leak checks passed (docs/staging/rw3-prereg.md section 7): assemble again")
+    history = extra.get("historyCheck")
+    if isinstance(history, dict) and history.get("ok") is not True:
+        raise Refused("--extra: the history check failed (a later outcome reaches an earlier record)")
     train_sha = hashlib.sha256(train_path.read_bytes()).hexdigest()
     if extra.get("trainFileSha256") != train_sha:
         raise Refused("refused: the training file is not the one its data manifest describes (the hashes differ): assemble again")
@@ -155,7 +160,8 @@ def preflight(args: dict) -> dict:
     out = ft / "adapters" / name
     if (out / "adapter_model.safetensors").exists():
         raise Refused(f"refused: {out} already holds weights; an adapter is not trained over (a training cut short: delete the folder first)")
-    return {"rows": rows, "extra": extra, "train_path": train_path, "train_sha256": train_sha, "out": out, "registered": registered, "plan": plan(per_epoch, args)}
+    return {"rows": rows, "extra": extra, "train_path": train_path, "train_sha256": train_sha, "out": out, "registered": registered, "plan": plan(per_epoch, args),
+            "history_checked": isinstance(history, dict)}
 
 
 def train(args: dict, pre: dict) -> None:
@@ -291,7 +297,8 @@ def main(argv: list) -> None:
     name, p = args["name"], pre["plan"]
     print(f"[{name}] RW3 pre-load check passed: {p['rows']} rows of the train part in {len(p['rows_per_epoch'])} epochs {p['rows_per_epoch']}; "
           f"optimiser steps {p['steps_per_epoch']}, {p['steps']} in all, {p['warm_up_steps']} of warm-up; training seed {args['seed']}; "
-          f"registered recipe: {'yes' if pre['registered'] else 'NO (--unregistered 1)'}; label source '{pre['extra']['label_source']}'; no development file; the last epoch is saved", flush=True)
+          f"registered recipe: {'yes' if pre['registered'] else 'NO (--unregistered 1)'}; label source '{pre['extra']['label_source']}'; leak checks passed; "
+          f"history check: {'passed' if pre['history_checked'] else 'NOT RUN (no raw files were linked when the file was built)'}; no development file; the last epoch is saved", flush=True)
     if args["stop_before_load"]:
         loaded = sorted(m for m in ("torch", "common", "train", "peft", "gliner2", "transformers") if m in sys.modules)
         if loaded:

@@ -76,6 +76,7 @@ export function rw3Report(input: Rw3Input) {
     const m = s.manifest, h = (m?.hyperparameters ?? {}) as Record<string, unknown>;
     if (!m) { faults.push(`${s.name}: no manifest (not trained to the end)`); continue; }
     if (m.label_source !== RW3_LABEL_SOURCE) faults.push(`${s.name}: the manifest does not carry the label source`);
+    if (m.sealedPartRead !== false || (m.leakCheck as { ok?: unknown } | undefined)?.ok !== true) faults.push(`${s.name}: the manifest does not say that the leak checks passed and the sealed part was not read`);
     if (m.adapter !== s.name || h.seed !== s.seed) faults.push(`${s.name}: the manifest is another adapter's or another seed's`);
     if (Object.entries(RW3_RECIPE).some(([k, v]) => h[k] !== v) || m.registered_recipe !== true || m.saved_epoch !== RW3_RECIPE.epochs) faults.push(`${s.name}: the hyperparameters are not the registered ones`);
   }
