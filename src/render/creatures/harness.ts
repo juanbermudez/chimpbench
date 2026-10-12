@@ -6,6 +6,8 @@
 // patrol (&phase=out|listen|incursion|return|release|heard|cycle|none, &n=6: a border patrol in single file with a
 // published Party.patrolPhase; docs/realism-design.md §5.3.1 P4b; the camera follows the middle animal).
 // single also takes &age=, &sex=male|female and &swelling=0..1 for its first animal.
+// &idle=0 switches idle life and breathing off; &w8=0 every channel of stage W8 as well (the picture of the build
+// before it, but for the taller coat of a clip that raises it).
 // Other params: zoom=close|mid|far|rts, rain=0..1, night=1, sel=<id>, labels=1,
 // social=1, perception=1, hl=<troopId>, rate=<eco s per s>, moving=1.
 import * as THREE from 'three';
@@ -514,6 +516,9 @@ const dbg = layer.debug as { clip: string | null; attention: boolean; lodFade: b
 if (q.get('clip')) dbg.clip = q.get('clip');
 // &groomee=0|2|3|4: forces the receiver's posture in grooming pairs (poses.ts GROOMEE: sit, prone, side, present).
 if (q.has('groomee')) dbg.groomee = Number(q.get('groomee'));
+// Stage W8: &idle=0 (no idle life, no breathing: a stance can be compared frame for frame), &w8=0 (none of the stage).
+if (q.get('idle') === '0') (dbg as { idle?: boolean }).idle = false;
+if (q.get('w8') === '0') (dbg as { w8?: boolean }).w8 = false;
 // Face tiles: seated facing the camera, gaze held forward (&attn=1 lets the attention system move the heads) and
 // eyes held open (&blink=1 lets them blink: two of the twelve were caught mid-blink at the usual 11 s capture).
 if (mode === 'faces') { dbg.clip = q.get('clip') ?? 'portrait'; dbg.attention = q.has('attn'); dbg.blink = q.has('blink'); }
