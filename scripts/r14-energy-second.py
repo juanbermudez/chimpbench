@@ -151,6 +151,14 @@ gap = lambda a, b: est([x - y for x, y in zip(slopes(mRes, a, b), slopes(rRes, a
 p(f'**The trend of the gap** (each animal\'s own straight line through its daily change in the reserves, the model arm less the rules arm; % of the store a day, per day): over days 1 to 20 {ci(gap(1, 20), 4)}; over days 6 to 20 alone {ci(gap(6, 20), 4)}; over days 2 to 20 {ci(gap(2, 20), 4)}. '
   f'A positive figure is a gap that closes; a negative one over days 6 to 20 is a gap that opens again after the step.')
 p()
+# the day as the unit: whole days go well or badly together (S4), so the animals of one day are not 38 separate readings of the trend
+dgap = {d: mean([mRes[(i, d)] - rRes[(i, d)] for i in IDS]) for d in range(1, DAYS + 1)}
+dayci = lambda a, b: ci(est([dgap[d] for d in range(a, b + 1)])[:3] + (b - a + 1,), 3).replace('animals', 'days')
+level = lambda b: sum(dgap[d] for d in range(1, b + 1))
+p(f'**The same with the day as the unit** (the mean over the days of each day\'s gap, with a 95% t interval over days): days 1 to 6 {dayci(1, 6)}; days 7 to 20 {dayci(7, 20)}; days 6 to 20 {dayci(6, 20)}; days 11 to 20 {dayci(11, 20)}. '
+  f'The gap in the level (the daily gaps summed) stands at {num(level(5), 2)} points of the store after day 5, {num(level(6), 2)} after day 6, {num(level(11), 2)} after day 11, {num(level(18), 2)} after day 18 and {num(level(20), 2)} after day 20. '
+  f'Days on which the model arm\'s reserves fall by more than 0.1 point against the rules arm: {", ".join(str(d) for d in range(1, DAYS + 1) if dgap[d] < -0.1)}; days on which they rise by more than 0.1: {", ".join(str(d) for d in range(1, DAYS + 1) if dgap[d] > 0.1)}.')
+p()
 
 # ----------------------------------------------------------------------------------------------------------------------
 # the receipts and the contexts of the model arm
@@ -166,7 +174,7 @@ for d in range(1, DAYS + 1):
         CTX[(round(c['t'], 6), c['id'], c['v'])] = {'cur': f['currentAction'], 'doing': doing.get('action'), 'min': doing.get('minutes'), 'form': (doing.get('about') or {}).get('form') if isinstance(doing.get('about'), dict) else None,
             'res': b.get('reserves'), 'def': b.get('deficit'), 'light': (x.get('light') or {}).get('level'), 'trend': (x.get('light') or {}).get('trend'), 'party': x['environment'].get('partySize'), 'nestScore': nest_score, 'bestOther': best_other,
             'hunger': f.get('hunger'), 'sleepy': b.get('sleepiness'), 'ended': doing.get('ended'),
-            'mates': sum(1 for o in x['social'] if o.get('action') == 'nest'), 'near': len(x['social'])}
+            'mates': sum(1 for o in x['social'] if o.get('action') == 'nest'), 'near': len(x['social']), 'weather': x['environment'].get('weather'), 'rain': x['environment'].get('rain')}
 ASKS = [l for l in REC if l['k'] == 'ask']
 def ctx_of(l): return CTX.get((round(l['t'], 6), l['id'], l['v']))
 missing = sum(1 for l in ASKS if ctx_of(l) is None)
@@ -250,7 +258,7 @@ for name, lo, hi in bins + [('all', -1, 1e9)]:
 rowsB.append(['the rules arm, all days', AD, '', '', num(mean([rFin[(i, d)] for i in IDS for d in range(1, DAYS + 1)]), 0), num(mean([rRes[(i, d)] for i in IDS for d in range(1, DAYS + 1)]), 3), num(mean([rKm[(i, d)] for i in IDS for d in range(1, DAYS + 1)]), 2), ''])
 table(['Late-morning nest minutes (model arm)', 'Animal-days', 'Share', 'Mean late minutes', 'Eaten, kcal', 'Reserves, % of the store', 'km (fixes)', 'Carried of the run\'s mean reserves (sum over these days / all animal-days)'], rowsB)
 lateMean = [mean([late.get((i, d), 0) for d in range(1, DAYS + 1)]) for i in IDS]
-p(f'Late-morning nest minutes per animal and day: {num(mean(lateMean), 1)} ({ci(est(lateMean), 1)} over animals). Up for good by 07:45 (no nest minute from 07:45 to 16:00): {pct(sum(1 for i in IDS for d in range(1, DAYS + 1) if lastnest.get((i, d), 0) <= 7.75) / AD)} of animal-days; by 09:00 {pct(sum(1 for i in IDS for d in range(1, DAYS + 1) if lastnest.get((i, d), 0) <= 9) / AD)}; by 12:00 {pct(sum(1 for i in IDS for d in range(1, DAYS + 1) if lastnest.get((i, d), 0) <= 12) / AD)}.')
+p(f'Late-morning nest minutes per animal and day: {num(mean(lateMean), 1)} ({num(est(lateMean)[1], 1)} to {num(est(lateMean)[2], 1)} over animals). Up for good by 07:45 (no nest minute from 07:45 to 16:00): {pct(sum(1 for i in IDS for d in range(1, DAYS + 1) if lastnest.get((i, d), 0) <= 7.75) / AD)} of animal-days; by 09:00 {pct(sum(1 for i in IDS for d in range(1, DAYS + 1) if lastnest.get((i, d), 0) <= 9) / AD)}; by 12:00 {pct(sum(1 for i in IDS for d in range(1, DAYS + 1) if lastnest.get((i, d), 0) <= 12) / AD)}.')
 p()
 # within animal
 wi = {'fin': [], 'res': [], 'km': []}
@@ -260,6 +268,16 @@ for i in IDS:
         wi['fin'].append(mean([mFin[(i, d)] for d in L]) - mean([mFin[(i, d)] for d in O])); wi['res'].append(mean([mRes[(i, d)] for d in L]) - mean([mRes[(i, d)] for d in O])); wi['km'].append(mean([mKmC[(i, d)] for d in L]) - mean([mKmC[(i, d)] for d in O]))
 p(f'**Within an animal** (its days with more than 30 late minutes less its own days with none; {len(wi["fin"])} animals with two of each): eaten {ci(est(wi["fin"]), 0)} kcal, reserves {ci(est(wi["res"]), 3)} % of the store, distance {ci(est(wi["km"]), 2)} km.')
 p()
+# by class: who is late, and who makes it up on the other days (each animal against its own mean in the rules arm)
+D_ = range(1, DAYS + 1); rowsK = []
+for c in classes + [None]:
+    ids_ = [i for i in IDS if c is None or CLS[i] == c]; rm = {i: mean([rFin[(i, d)] for d in D_]) for i in ids_}
+    on = [mean([mFin[(i, d)] for d in D_ if late.get((i, d), 0) == 0]) - rm[i] for i in ids_]; lt = [mean([mFin[(i, d)] for d in D_ if late.get((i, d), 0) > 0]) - rm[i] for i in ids_ if any(late.get((i, d), 0) > 0 for d in D_)]
+    cl = [sum(mFin[(i, d)] - rm[i] for d in D_ if late.get((i, d), 0) > 0) / DAYS for i in ids_]; co = [sum(mFin[(i, d)] - rm[i] for d in D_ if late.get((i, d), 0) == 0) / DAYS for i in ids_]
+    rowsK.append([c or 'all', len(ids_), num(mean([mean([late.get((i, d), 0) for d in D_]) for i in ids_]), 1), pct(mean([sum(1 for d in D_ if late.get((i, d), 0) > 0) / DAYS for i in ids_])), ci(est(on), 0), ci(est(lt), 0), ci(est(cl), 0), ci(est(co), 0)])
+p('**By class: who is late, and who makes it up.** Each animal\'s energy eaten in the model arm less its own mean in the rules arm, on its days with no late-morning nest minute and on its days with some; then the same summed over those days and divided by the 20 days (what each kind of day carries of the animal\'s difference in energy eaten).')
+p()
+table(['Class', 'Animals', 'Late-morning nest minutes a day', 'Share of days with any', 'Eaten on its on-time days, less its rules-arm mean, kcal', 'Eaten on its late days, less its rules-arm mean', 'Carried by the late days, kcal a day', 'Carried by the on-time days'], rowsK)
 # the day AFTER a late morning, and the day before: does a late morning follow something?
 rowsN = []
 mNest = cell(mRows, lambda r: r['nestShare'])
@@ -268,8 +286,18 @@ for name, keep in [('after a night with under 0.9 of the dark ticks in a nest', 
     ks = [(i, d) for i in IDS for d in range(1, DAYS + 1) if keep(i, d)]
     rowsN.append([name, len(ks), pct(sum(1 for k in ks if late.get(k, 0) > 30) / len(ks)) if ks else '', num(mean([late.get(k, 0) for k in ks]), 1), num(mean([mFin[k] for k in ks]), 0), num(mean([mRes[k] for k in ks]), 3)])
 table(['Model arm: animal-days', 'Animal-days', 'With more than 30 late minutes', 'Mean late minutes', 'Eaten, kcal', 'Reserves, % of the store'], rowsN)
-perday = [[d, sum(1 for i in IDS if late.get((i, d), 0) > 30), sum(1 for i in IDS if late.get((i, d), 0) >= 314.99), num(mean([late.get((i, d), 0) for i in IDS]), 1)] for d in range(1, DAYS + 1)]
-table(['Day', 'Animals with more than 30 late minutes (of 38)', 'In the nest the whole late morning', 'Mean late minutes'], perday)
+# the morning's weather, from the contexts of the asks between 06:30 and 10:00 (the same sky for every animal of a day)
+wx = defaultdict(list)
+for l in ASKS:
+    c = ctx_of(l)
+    if c and 6.5 <= hour_of(l['t']) < 10: wx[l['day']].append(c)
+perday = [[d, sum(1 for i in IDS if late.get((i, d), 0) > 30), sum(1 for i in IDS if late.get((i, d), 0) >= 314.99), num(mean([late.get((i, d), 0) for i in IDS]), 1),
+           pct(sum(1 for c in wx[d] if c['weather'] != 'clear') / len(wx[d])), num(max((c['rain'] or 0) for c in wx[d]), 2)] for d in range(1, DAYS + 1)]
+table(['Day', 'Animals with more than 30 late minutes (of 38)', 'In the nest the whole late morning', 'Mean late minutes', 'Asks from 06:30 to 10:00 under a sky that is not clear', 'Most rain at any of them (0 to 1)'], perday)
+bad = [d for d in range(1, DAYS + 1) if sum(1 for i in IDS if late.get((i, d), 0) > 30) >= 10]; good = [d for d in range(1, DAYS + 1) if sum(1 for i in IDS if late.get((i, d), 0) > 30) <= 1]
+cloud = lambda ds: mean([sum(1 for c in wx[d] if c['weather'] != 'clear') / len(wx[d]) for d in ds])
+p(f'Days with ten or more late animals: {", ".join(map(str, bad))}; days with one or none: {", ".join(map(str, good))}. Share of the morning asks under a sky that is not clear: {num(cloud(bad), 2)} on the first, {num(cloud(good), 2)} on the second. No morning ask of the run has rain.' if max((c['rain'] or 0) for d in wx for c in wx[d]) == 0 else f'Days with ten or more late animals: {", ".join(map(str, bad))}; days with one or none: {", ".join(map(str, good))}.')
+p()
 blk = lambda a, b, f: sum(f(i, d) for i in IDS for d in range(a, b + 1)) / (N * (b - a + 1))
 table(['Days', 'Share of animal-days with more than 30 late minutes', 'with the whole late morning in the nest', 'Mean late minutes', 'Eaten on days with no late minute, kcal: model', 'rules arm, all days', 'Eaten on days with more than 30 late minutes'],
       [[f'{a} to {b}', pct(blk(a, b, lambda i, d: late.get((i, d), 0) > 30)), pct(blk(a, b, lambda i, d: late.get((i, d), 0) >= 314.99)), num(blk(a, b, lambda i, d: late.get((i, d), 0)), 1),
@@ -369,6 +397,8 @@ for i in IDS:
     if len(a_) >= 5 and len(b_) >= 5: wd.append(mean(a_) - mean(b_))
 p(f'**Late in the morning the model stays for company, not for want of hunger.** Of the {len(late_o)} late asks, {len(comp)} ({pct(len(comp) / len(late_o))}) have two or more animals nearby in a nest; the model gives the nest {num(mean([o["p"] for o in comp]), 3)} there and the draw stays at {num(mean([o["stay"] for o in comp]), 3)}. '
   f'With nobody nearby in a nest ({len(alone)} asks) it gives the nest {num(mean([o["p"] for o in alone]), 3)} and the draw stays at {num(mean([o["stay"] for o in alone]), 3)}. At the {len(hungry)} late asks of an animal whose hunger is 0.6 or more the model still gives the nest {num(mean([o["p"] for o in hungry]), 3)}. '
+  f'Over dawn and late together, {sum(1 for o in NO if o["mates"] >= 2):,} asks have two or more animals nearby in a nest, and the nest is the model\'s top option at {sum(1 for o in NO if o["mates"] >= 2 and o["top"]):,} of them. '
+  f'With the draw staying at {num(mean([o["stay"] for o in comp]), 3)} an ask, a late animal leaves after {num(1 / (1 - mean([o["stay"] for o in comp])), 1)} asks on average for as long as such company holds: {num(30.3 / (1 - mean([o["stay"] for o in comp])) / 60, 1)} hours at the one ask in 30.3 minutes it gets, and still {num(5 / (1 - mean([o["stay"] for o in comp])), 0)} minutes at one ask every five minutes. '
   f'Within an animal (all its asks in the nest from 06:30 to 13:00; {len(wd)} animals with five asks of each kind): the probability on the nest is {ci(est(wd), 3)} higher with two or more animals nearby in a nest than with one or none. The rules\' best-valued option is the nest at none of the late asks whatever the company.')
 p()
 
@@ -476,9 +506,28 @@ if A.r11_ft:
         te = [r for r in test if r['act']['action'] == 'nest' and r['act'].get('onMenu') and 6.5 <= float(r['hour']) < 7.75 and r['id'] in score and a_ <= in_nest(packs.get(r['id'])) < b_]
         lo = [r for r in te if nm(r) < 0.5]
         rowsM.append([str(a_) if b_ == a_ + 1 else f'{a_} or more', len(tr), num(mean([nm(r) for r in tr]), 3) if tr else '', sum(1 for r in tr if nm(r) < 0.5), len(te), num(mean([nm(r) for r in te]), 3) if te else '', num(mean([pn(r) for r in te]), 3) if te else '', len(lo), num(mean([pn(r) for r in lo]), 3) if lo else ''])
+    fam_rows = []
+    for fam in ['affiliative', 'greet', 'call', 'aggression', 'rest', 'feed', 'food-trip', 'social-move', 'drink', 'nest']:
+        x = [r for r in test if r['id'] in score and any(o['family'] == fam for o in r['options'])]
+        if len(x) < 30: continue
+        lab = [sum(r['soft'].get(o['alias'], 0) for o in r['options'] if o['family'] == fam) for r in x]; ad = [sum(q for q, o in zip(score[r['id']], r['options']) if o['family'] == fam) / sum(score[r['id']]) for r in x]
+        fam_rows.append([fam, len(x), num(mean(lab), 3), num(mean(ad), 3), sg(mean(ad) - mean(lab), 3)])
+    p('**By kind of act on all the held-out fresh draws** (the families of the held-out file; "affiliative" is grooming, play, making up and consoling; "social-move" a walk toward a caller, a trip behind a leader or following):')
+    p()
+    table(['Kind on the menu', 'Held-out draws', 'The rules\' odds on it (label)', 'The adapter\'s probability', 'Adapter less label'], fam_rows)
     p('**The same in the files the adapter was taught and scored on** (fresh draws with a nest in progress between 06:30 and 07:45, by the animals the packet names nearby as "in a nest"):')
     p()
     table(['Animals nearby in a nest', 'Training draws', 'The rules\' odds on the nest (label)', 'of them labelled under 0.5', 'Held-out draws', 'Label', 'The adapter\'s probability on the nest', 'Held-out draws labelled under 0.5', 'the adapter there'], rowsM)
+    # stage R11's own ablation on the same held-out draws: the packet without its line "doing" (what the animal is in, and for how long)
+    nod = {x['id']: x['probs'] for x in lines(f'{A.r11_ft}/eval/all.{regM["adapter"]}.jsonl') if x['packet'] == 'p5bNoDoing'}
+    pn0 = lambda r: sum(q for q, o in zip(nod[r['id']], r['options']) if o['action'] == 'nest') / sum(nod[r['id']])
+    rowsD = []
+    for a_, b_ in [(0, 1), (1, 2), (2, 99)]:
+        te = [r for r in test if r['act']['action'] == 'nest' and r['act'].get('onMenu') and 6.5 <= float(r['hour']) < 7.75 and r['id'] in score and r['id'] in nod and a_ <= in_nest(packs.get(r['id'])) < b_]
+        if te: rowsD.append([str(a_) if b_ == a_ + 1 else f'{a_} or more', len(te), num(mean([nm(r) for r in te]), 3), num(mean([pn(r) for r in te]), 3), num(mean([pn0(r) for r in te]), 3)])
+    p('**The other cue: the line that says what the animal is doing.** Stage R11 scored the same held-out draws with the packet\'s line "doing" taken out ("in my nest, 749 min"). For the draws above:')
+    p()
+    table(['Animals nearby in a nest', 'Held-out draws', 'Label', 'The adapter\'s probability on the nest, whole packet', 'without the line "doing"'], rowsD)
 
 # ----------------------------------------------------------------------------------------------------------------------
 if A.r10_run:
@@ -549,6 +598,7 @@ if A.tap:
     lateT = TM['perDay']['nestLate']; nlate = sum(1 for a in range(N) for d in range(DAYS) if lateT[a][d] > 0)
     resT = [[mRes[(ids[a], d + 1)] for d in range(DAYS)] for a in range(N)]
     p(f'Model-arm animal-days with any late-morning minute in a finished nest: {nlate} of {AD}. They carry {num(sum(resT[a][d] for a in range(N) for d in range(DAYS) if lateT[a][d] > 0) / AD, 3)} of the run\'s mean daily change in the reserves ({num(sum(resT[a][d] for a in range(N) for d in range(DAYS)) / AD, 3)}% of the store) and the {AD - nlate} days with none {num(sum(resT[a][d] for a in range(N) for d in range(DAYS) if lateT[a][d] == 0) / AD, 3)}. '
+      f'Animal-days with 600 or more daylight minutes in a finished nest: {sum(1 for a in range(N) for d in range(DAYS) if TM["perDay"]["nestDay"][a][d] >= 600)} in the model arm, {sum(1 for a in range(N) for d in range(DAYS) if TR["perDay"]["nestDay"][a][d] >= 600)} in the rules arm. '
       f'The receipts-only rebuilding of section S4 and this tap differ by more than 15 minutes on {sum(1 for a in range(N) for d in range(DAYS) if abs(lateT[a][d] - late.get((ids[a], d + 1), 0)) > 15)} of {AD} animal-days.')
     p()
     p('### T3. Ground metres by the act the tick began in; bouts; own trips to food')
@@ -573,6 +623,11 @@ if A.tap:
     table(['Per animal and day', 'The model arm', 'The paired rules arm', 'Difference (95% interval)'], [tpair('pant-hoots given', 'phGiven', 2), tpair('· by the act "call"', 'phByCall', 2), tpair('· at a display or charge', 'phByDisplay', 2), tpair('· on arrival at food, and the rest', 'phOther', 2),
         tpair('calls heard that became the animal\'s "latest call" (a walk toward the caller can then be offered for 18 minutes)', 'heard', 1), tpair('minutes with such a call heard in the last 18 minutes', 'minHeard', 0), tpair('· of them out of a nest in daylight', 'minHeardUp', 0),
         rpair('distance to the caller when heard, m', 'heardDistSum', 'heard', 0), rpair('own-community animals in sight (daylight ticks out of a nest)', 'visSum', 'visTicks', 2)])
+    p('**What the simulation\'s own pant-hoot rule turns on.** An animal that reaches a crown, or weighs the act "call", pant-hoots when the call is worth more than silence (`src/sim/calls.ts` `pantHootValue`): its social need, times the share of its allies\' bond weight it has neither seen nor heard calling for 18 minutes, times how stale its own last call is, less what the listeners would cost it at the crown. Read here at every daylight tick out of a nest:')
+    p()
+    table(['Per animal (mean over its daylight ticks out of a nest)', 'The model arm', 'The paired rules arm', 'Difference (95% interval)'], [rpair('social need (1 less the social state)', 'needSum', 'visTicks', 3), rpair('share of the allies\' bond weight not located', 'unlocSum', 'visTicks', 3),
+        rpair('the two multiplied (the gain of a call before staleness)', 'gainSum', 'visTicks', 3), rpair('share of the stretches of crown feeding that begin with a pant-hoot of the animal', 'runsCalled', 'runs', 3),
+        pair('grooming, share of the night script\'s daylight minutes (rows)', per_animal(mRows, share('groom')), per_animal(rRows, share('groom')), 3), pair('other social acts, share of daylight minutes (rows)', per_animal(mRows, share('social')), per_animal(rRows, share('social')), 3)])
     # the model arm's asks beside the rules arm's own draws
     prog = {'on': 0, 'cont': 0, 'top': 0, 'rules': 0}
     for i_, ls in by_animal.items():
