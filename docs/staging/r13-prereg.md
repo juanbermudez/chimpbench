@@ -453,7 +453,7 @@ The assertion was wrong, not the code.
   population for 30 days"; the window is N days, as its first lines say.
 - A journal line carries the decode setting, not the decode's record of the ask (§1).
 
-## 13. The second reader's review and amendments (12 October 2026, 05:43 to 06:36 EDT; before any run of the registered arm; no model process)
+## 13. The second reader's review and amendments (12 October 2026, 05:43 to 06:47 EDT; before any run of the registered arm; no model process)
 
 A second agent read the branch at 531e961 with the instruction to refute the builder's report, not to trust it. **The
 registered run has still not been made. No model process was started; nothing in `bench-r11` or in the main checkout
@@ -609,8 +609,8 @@ world, sent the kernel the state-only packet and wrote the packet 5 version and 
 | `tsc --noEmit`; `scripts/gen-params.ts --check` | 925018b | clean; valid, 1,050 entries, none added |
 | the whole suite, once (`tsx --test`, four files at a time; 06:37 to 06:45 EDT) | 925018b | **1,313 tests: 1,312 pass, 0 fail, 1 skipped** (the guide's scorecard check, whose data file is not on this computer); 8 min 1 s. The goldens' test and the field pin are in it; `tests/r10-night.test.ts`, `tests/r10-wiring.test.ts` and `tests/r11.test.ts` are unedited |
 
-The suite ran on 925018b, which holds every line of code of this branch. The one commit after it adds these rows and
-two sentences to this document (written 06:46 EDT) and touches nothing else; no test reads this file.
+The suite ran on 925018b, which holds every line of code of this branch. The two commits after it add these rows,
+two sentences and the section's end time to this document (written 06:46 EDT) and touches nothing else; no test reads this file.
 
 ## For the integrator
 
