@@ -1,7 +1,7 @@
 # Stage R14 reading: what the model's own odds say about the decode, and where the model hedges
 
 Agent `r14-diag-decode`, branch `r14-diag-decode` from `track-e` cfac813. Read and written on 12 October 2026, 15:28 to
-16:10 EDT (times from `date`). **Reviewed by a second reader the same day, 16:12 to 16:50 EDT: §7, which corrects
+16:10 EDT (times from `date`). **Reviewed by a second reader the same day, 16:12 to 16:49 EDT: §7, which corrects
 answers 2, 4 and 5 below and reads where the lost nights and the reserves went. Read §7 before the short answers.**
 Notes marked "second reader" in the text below point to it.
 
@@ -453,7 +453,7 @@ None of these is chosen to hit a rate, and none is registered here.
 - **Checks**: `tests/r14-decode.test.ts`, 9 of 9; the three scripts and the test pass a strict type check run on
   them directly. No other test file was run, no build, no simulation.
 
-## 7. The second reader's review (12 October 2026, 16:12 to 16:50 EDT; times from `date`)
+## 7. The second reader's review (12 October 2026, 16:12 to 16:49 EDT; times from `date`)
 
 A second agent, on this branch, tried to refute the reading above. Like it, this section is **a description of
 finished records**: it registers nothing, runs no world, loads no model, changes no file under `src`, `server`,
