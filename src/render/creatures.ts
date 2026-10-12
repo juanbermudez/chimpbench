@@ -724,8 +724,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   /** Two seats nearer than this share of the two body sizes are in each other's bodies, and the gap a neighbour joining
    * a bough is given (design assumptions; the ground's separation uses 0.36). */
   const CROWD = 0.42, NEIGHBOUR_GAP = 0.44;
-  /** Furthest a seat's place may jump and still be glided to; beyond it the animal is drawn there at once (m). */
-  const SEAT_GLIDE_M = 6;
+  /** Furthest a seat's place may jump and still be moved to; beyond it the animal is drawn there at once (m). And the
+   * fastest a body moves to its seat, in real metres a second (design assumptions: a hurried clamber). */
+  const SEAT_GLIDE_M = 6, SEAT_MPS = 2.5;
   /** Lays host h's bough for this frame (once): origin, axis and an empty extent. False when it is in no tree. */
   function boughOf(h: Anim): boolean {
     if (h.gFrame === frameNo) return true;
@@ -1866,15 +1867,16 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
           // Its nest place is a seat like any other (W9: the body eases into it and off the trunk; it used to be put
           // there in one frame once the clamber from the trunk was half done).
           if (inNest) { x = a.nestX; y = a.nestY; z = a.nestZ; }
-          // Stage W9: the drawn seat eases to its place (about a second, as partners slide into place on the ground),
-          // so an animal joining a partner's bough or lying down along one glides there instead of jumping. A
-          // relocation, a first frame in the crown, or a place more than SEAT_GLIDE_M away is drawn at once. A seat that
-          // does not move (every animal resting or feeding alone on a limb) is exactly where it was before this stage.
+          // Stage W9: the drawn seat eases to its place (as partners slide into place on the ground, a little slower and
+          // never faster than SEAT_MPS), so an animal joining a partner's bough or lying down along one moves there
+          // instead of jumping. A relocation, a first frame in the crown, or a place more than SEAT_GLIDE_M away is
+          // drawn at once. A seat that does not move (every animal resting or feeding alone on a limb) is exactly where
+          // it was before this stage.
           if (!a.seated || a.track.jumped || hyp2(x - a.sx, z - a.sz) > SEAT_GLIDE_M) { a.sx = x; a.sy = y; a.sz = z; }
           else if (a.sx !== x || a.sy !== y || a.sz !== z) {
-            const k = 1 - Math.exp(-3 * curDt);
-            a.sx += (x - a.sx) * k; a.sy += (y - a.sy) * k; a.sz += (z - a.sz) * k;
-            if (Math.abs(x - a.sx) + Math.abs(y - a.sy) + Math.abs(z - a.sz) < 2e-3) { a.sx = x; a.sy = y; a.sz = z; }
+            const ex = x - a.sx, ey = y - a.sy, ez = z - a.sz, el = hyp2(hyp2(ex, ez), ey);
+            const k = Math.min(1 - Math.exp(-2.5 * curDt), el > 1e-6 ? SEAT_MPS * curDt / el : 1);
+            if (el < 2e-3) { a.sx = x; a.sy = y; a.sz = z; } else { a.sx += ex * k; a.sy += ey * k; a.sz += ez * k; }
           }
           a.seated = true; x = a.sx; y = a.sy; z = a.sz;
         }
