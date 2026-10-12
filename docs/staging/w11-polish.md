@@ -275,3 +275,82 @@ The first run of the repaired build (commits 96672fd to 7f0df75) read Q1, Q2 and
 
 - Q3b. `nest-14-2812`, animal 14, the same uneven frames: fewer than 10 reversals of the heading while the clamber clip plays, and over its way to the trunk the heading ends within 0.3 rad of the direction its steps take (first repair: a radian off).
 - Q5b. `steps-rt-field-1585`: none of the placement's steps over 25 cm, three clamber episodes, and no step faster than the clamber's 2.5 m a second. (Q5 as first written asked for "under 0.1 m" a frame and read 0.125 m: one frame of the film lasted 50 ms, and the body covered it at exactly 2.5 m a second. The statement should have named the speed; it is put right here, and the first reading stands as reported.) `join-watch-1187`: Q2 again.
+
+### 8.1 The difference, read whole
+
+- Nothing under `src/sim`, `data` or `tests/fixtures` differs from 9be7d44, nor `src/types.ts` or `src/simulation.ts`, at the builder's head and at this section's. `tests/fixtures/golden-world.json` and `tests/sim-track-e.test.ts` are untouched.
+- Every added source line was read and searched: no `Math.random`, no render pass, render target or material, no assignment to anything of the World. Two geometries are replaced (the leaf block, the branch prop). The branch prop's material turns white and its colour moves to the instance, which gives that one material a second shader variant: the renderer counts 109 programs where it counted 108, the same 71 geometries and 42 textures.
+- A default world has the same hash here, in the main checkout (`track-e` at d6a8e0e) and in the export of 9be7d44: seeds 48 and 7, the 160 m map after 1,500 ticks and the field map after 600.
+- Drawing writes nothing. A field world played and drawn for 90 s at Real time, all 49 animals read every frame, has at tick 1306 the hash of the same world stepped there with nothing drawn. In the three census films of section 8.4 (360, 24 and 240 ticks played) the unchanged build and this one end on equal hashes.
+
+### 8.2 The eight claims, measured again
+
+"Unchanged" is the export of 9be7d44, "builder's head" is 50c6d00. A step "of the placement alone" is the body's step less the step of its own drawn path, as in section 0.1; the probe also takes the difference as a vector, which is the larger of the two where it differs.
+
+| Item | The reader's own film | Unchanged | Builder's head | Reading |
+| --- | --- | --- | --- | --- |
+| 1. Real time, field map | 60 s from tick 1585, animals 28, 26 and 32 | 7.82 m in one frame; 21 steps of the placement over 25 cm | largest 0.084 m (a frame of 33 ms); none over 25 cm; every step at 2.5 m a second or under; three clambers of 0.7 to 2.0 s over 1.9 to 5.3 m | holds |
+| 1. Real time, 160 m map | 60 s from tick 700, all 49 animals | largest 0.46 m; 12 steps over 25 cm | largest 0.042 m; none over 25 cm | holds |
+| 1. 1 min/s, field map | 240 ticks from 1582, the same three animals | 7.82 m; 8 steps over 25 cm, 1 over 50 cm | largest 0.46 m (0.60 m as a vector); 9 over 25 cm, none over 50 cm; a clamber lasts 0.45 s and covers 10 to 13 m, most of it down the trunk | the registration reads Real time and Watch 4x only; nothing jumps 7.8 m any more |
+| 1. 1 min/s, 160 m map | 240 ticks from 707, all 49 animals | 875 steps over 25 cm, 371 over 50 cm; 12 of the 40 largest are over 2 m; largest 22.1 m | 919 and 510; 1 of the 40 largest is over 2 m; largest 22.1 m, the same event; 142 clamber episodes, 28 of them under a tenth of a second | not a speed at which either build is free of jumps: see section 8.3, "left as it is" |
+| 2. The tag against the picture | a parting of my own choice at Real time (animals 10 and 9, 80 s from tick 852); animals 35 and 30 at Watch 4x | at Watch 4x a plain "grooming" tag stood over a body in no grooming pose for 11.3 s | 0 s at Real time for both animals; 7.3 s at Watch 4x, all of it the animal that stays after its partner's body has set off (the simulation's act, section 6) | holds |
+| 3. A scratch cut short | four cuts at Watch 4x: animal 40 on the ground and animals 26 and 15 in crowns, each cut by its decision beat; animal 1 by a call | not filmed again | the wrist's largest step in a sixtieth of a second 2.8, 1.0, 0.9 and 2.0 cm (reach at the cut 1.0, 0.35, 0.35, 0.6); under 3% of the reach after 0.43 to 0.44 s | holds. The speeds are by the layer's own frame time; the 4.6 cm of section 3 was the probe's clock |
+| 4. An animal alone | all 49 animals, 90 s at Real time from tick 1300, the same world on both builds | turns of the idle schedule a minute, alone against in company: 9.7 against 3.6 feeding in a crown, 10.7 against 3.7 resting; weight shifts feeding alone in a crown 2.96 a minute | 3.7 against 3.6 and 3.7 against 3.6; 1.19 a minute. The animals in company have the same events on both builds (56 and 55) | holds. A ratio of weight shifts alone to in company cannot be read in this window: the animals feeding in company made one |
+| 5. The nest builder's heading | animal 14 with every frame made 0 to 45 ms longer at random, and animal 16 with every third frame 35 ms longer; a sleeper (animal 35) for 12 s | not filmed again | turns of 1.89, 1.88, 1.92, 1.92 rad and 1.90 four times; 1 and 3 reversals while building; the sleeper's heading does not move | holds, with the clause the builder reports as not met |
+| 6. Nests at night | the clock jumped to tick 3300 by the public tick with no play before it; every sleeper read, then the camera sent 4.8 km to another party and back | not filmed again | 41 sleepers in trees, 85 nests drawn: each sleeper has a full-size nest within 0.3 m (0.17 to 0.18 m under the body), at first, in the frame the camera left, 0.7 s later, when the forest had been rebuilt, and back | holds |
+| 8. The hand at the mouth | animal 9, 90 s at Real time from tick 1300 | not filmed again | 12 picks, finger joint to lip joint 5.5 to 6.0 cm, the look system asking for the head at half weight at every one | holds |
+
+Item 7 is pictures: section 8.6.
+
+### 8.3 What the fixes broke, what was repaired, what was left
+
+Repaired (commits 96672fd, 1489caa, a0a5e64, 7f0df75, f9b5cbf; registrations 8.0 and 8.0b). Two runs of repaired code.
+
+| Statement | Builder's head | First run | Second run (final) | Reading |
+| --- | --- | --- | --- | --- |
+| Q1. The animal that stays, 2 s after its partner sets off: frames in the clamber clip, frames tagged "going to" | 21 and 1 | 0 and 0 | 0 and 0 | holds |
+| Q2. The joiner: restarts of its clamber clip; frames on all fours after it has arrived | 9 and 18 | 0 and 0; tagged "going to groom" 3.2 s | 0 and 0; 3.2 s | holds |
+| Q3. Reversals of the heading while the clamber clip plays, uneven frames | 55 in 223 frames | 14 in 216 | 2 in 215; on its way to the trunk the heading ends 0.03 rad from the direction of its steps | did not hold in the first run (14 against "fewer than 10"); holds in the second, after R3b |
+| Q4. Clamber episodes in 30 s at 10 min/s, field map and 160 m map | 133 and 329 | 0 and 0; clip changes 713 and 1,291 (unchanged build: 709 and 1,306) | not filmed again | holds. At 1 min/s the field film keeps its three clambers |
+| Q5. Real time, the parting of item 1: largest step of the placement alone; steps over 25 cm; clambers | 0.084 m; 0; 3 | 0.125 m in a frame of 50 ms; 0; 3 | 0.042 m; 0; 3; nothing faster than 2.5 m a second | "under 0.1 m" did not hold in the first run as it was written (see 8.0b); the rest holds |
+| Q5. A plain "grooming" tag with no grooming pose at Real time; the builder's turns | 0 s; 1.88 to 1.92 rad | 0 s; 1.88 to 1.91 | 0 s; 1.90 to 1.93 | holds |
+
+Left as it is, and reported:
+
+- **At 1 min/s a move through a crown is a dash.** The clamber's speed grows with the playback rate, so on the 160 m map, which is watched at 1 min/s, a move lasts under half a second: 139 clamber episodes a minute among 49 animals, 25 of them under a tenth of a second, where the unchanged build drew those moves as jumps (12 of its 40 largest steps are over 2 m, against 1). Counted as steps over 25 cm the two builds are alike (875 and 962), and clips change as often (754 and 794 a minute; 85 and 75 clips held under a quarter of a second). Whether the clip should play above Watch 4x is a matter of taste, so it is the user's.
+- **An animal whose pairing ends goes back to its own limb first, even when it is about to leave.** Animal 9 clambered 3.5 m to its own limb, sat for 2.3 s and clambered 4.3 m to the trunk. Animal 14, with her infant, went 8.1 m to her own limb, 4.3 m to the trunk, up it, and 3.9 m to her nest: three clambers in nine seconds at Watch 4x. Before this stage the first of those moves was a jump or a seated slide; the stage makes it visible. The cure is in the seats (stage W9), not here.
+- **A clamber starts with a quick turn.** The body is turned along its way at 8 a second: 0.2 to 0.3 s for the turn, 0.66 to 1.09 rad in one frame when that frame is long. Animal 16 turned 3.9 rad in a third of a second on a way of 1.1 m to its trunk.
+- **The builder's nest place moves about a metre one tick after it arrives**, so it builds for 0.37 s, clambers for 0.35 s and builds again (animal 16, ticks 2834 and 2835).
+- **A plain tag over a body clambering to its own limb**: "foraging" for 2.3 s over an animal that had come up the trunk 5.9 m from its limb (160 m map, Real time). The registration (0.3) said "going to"; the builder kept that for a partner's bough only. Wording, the user's.
+- **Stage W6's reading of "the body has set off" now counts a clambering body as moving.** On the field map nothing changes (156 animal-seconds "walking to" in 90 s on both builds); on the 160 m map it is 114 against 95 in a minute.
+- **After skipped states** (the public tick called while the film plays) six animals of 49 clambered to places that had changed meanwhile, where they slid or jumped before. Relocations themselves are drawn at once.
+- **Not this stage's**, seen on both builds: on the 160 m map at 1 min/s an animal whose act is grooming is drawn walking beside a walking partner for 113 animal-seconds a minute; a climb to another tree places the body on that tree's trunk at once (22.1 m); the last 0.3 m of a descent that the body could not keep up with is a jump of up to 10 m; a body at its old seat during a decision beat trembles when frame times are uneven (25 reversals in 253 frames, animal 16), as it does on the trunk (section 6).
+
+### 8.4 The earlier stages
+
+- **The decision beat, held bodies, poses ahead of tags** (the stage W6 review's census, `w6census.mjs`, on the unchanged build and on the first-run head, the same worlds): seconds the beat has the gaze 48.9 and 48.9 (field map, 1 min/s, 90 s), 30.1 and 30.0 (Watch 4x), 28.7 and 28.8 (160 m map); seconds a body is sampled behind its path 21.8 and 21.8, 68.7 and 68.7; bodies held while moving 0 and 0, 0.02 s and 0.02 s; a pose ahead of its tag 0, 0.37 and 0.03 s against 0.08, 0.42 and 0.29 s; a plain tag over an approach 16.0, 1.9 and 5.8 s against 16.0, 1.9 and 1.4 s. The census names no problem on either build.
+- **Pairs, chains, mothers with infants**: `scripts/groom-shots.mjs cases` 11 of 11 on the builder's head and on the first-run head.
+- **Calls, fruit, the state on the body**: none of their files is touched but `env/vegetation.ts`, which gains two functions that read the forest already built and takes no new random draw. A call still cuts a scratch and holds the clip (animal 1, item 3). They were not filmed again.
+- **The cases drawn at once.** When the forest window gives or takes a tree's limbs: 32 such changes while the camera went to and fro between two parties 3.5 km apart; each body was at its new place in that frame (6.6 to 6.7 m for the one that was near) and none clambered. A relocation: drawn at once. Above 2 min/s: the place was, the clip was not (R4). More than 14 m: seen once, an infant's place 14.1 m away at Watch 4x, drawn at once on both builds. A first frame in a tree: every arrival up a trunk in the films.
+
+### 8.5 Script time on the main thread
+
+`?perf=1` (no graphics probe), 45 s of a close view on the pair of animals 35 and 30 on their bough at Real time and 45 s of a party view at Watch 4x, the two builds served in turn. Milliseconds a frame, the mean of about 2,600 frames; each figure is one run.
+
+| | Unchanged (three runs) | This branch (five runs: the builder's head, the first run, the final head three times) |
+| --- | --- | --- |
+| Pair on a bough: the whole frame | 2.61, 2.39, 2.75 | 2.32, 2.56, 2.43, 1.96, 2.16 |
+| Pair on a bough: the creature layer | 1.10, 1.05, 1.12 | 1.00, 1.09, 1.05, 0.82, 0.88 |
+| Party view: the whole frame | 2.49, 2.42, 2.41 | 2.36, 2.47, 2.54, 2.99, 1.95 |
+| Party view: the creature layer | 1.08, 1.04, 1.01 | 1.03, 1.10, 1.12, 1.26, 0.83 |
+
+No difference can be read: the runs of one build differ from each other by more than the builds do. The machine was shared with the training all morning, and from 09:10 with somebody else's graphics probe. On the two films taken while the machine was calm (frames of 18 ms at the 95th percentile on both builds), the creature layer's update, timed in the page, costs 0.47 against 0.48 ms a frame at Real time on the 160 m map with all 49 animals in view, and 0.58 against 0.64 ms at 1 min/s there, where 139 animals a minute clamber. Frame time on the graphics card is not measured.
+
+### 8.6 The pictures, read honestly
+
+In `review/after/`: `pic-bough-35-30-full*.png`, `pic-chain-10-7-13-full*.png`, `pic-lying-27-full*.png`, `pic-feed-9-full*.png`, `pic-feed-infant-44-full*.png` (the app, fixed cameras round the animal), and `harness/boughs-side-below.png`, `harness/feed-below.png` (the creature harness, from the side and from below).
+
+- **The bough.** It no longer floats and is no longer black: it has the green of the tree's limbs and a stem to a limb or to the bark. From the side at five metres it reads as a branch the pair sits on. Close, and from below, it reads as what it is: a straight, level, smooth pole with flat cut ends, paler and more even than the barked limbs beside it; seen end-on it is a blunt peg, and under a lying animal a thick beam. In the harness, whose trees have no limbs, it is a crossbar on a post with a strut under it. A careful viewer sees a prop joined to a tree, not a limb of the tree.
+- **The leaf spray.** Against the sky or from two metres it reads as a twig with four or five leaves, which is right. In the app, against foliage of the same green, it is easy to miss, as the builder says. With an infant on the belly the spray is held out beside the infant and does not cover it.
+- **The hand at the mouth.** From below and from the side the picking hand comes to the muzzle, not the cheek.
+- **The clamber.** In stills it is an animal on all fours among the limbs. What stills cannot show is how it reads in motion at 2.5 m a second; that is the user's first decision in section 7.
