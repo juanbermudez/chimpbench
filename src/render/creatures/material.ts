@@ -58,9 +58,9 @@ float cTuft(vec3 p) { return smoothstep(0.25, 0.75, 0.65 * cVNoise(p * vec3(24.0
  * sourced [M, mullerWrangham2004b]; how far it stands is not.
  * COAT_RAISE: the most a coat on end lifts the surface, at the top of a tuft (it was 6 to 24 mm and could not be seen);
  * COAT_SLEEK: how far a sleeked coat is drawn in; BELLY_FULL and BELLY_EMPTY: the belly at channel +1 and −1 (a
- * pregnancy at term on a full gut reaches +2); FLANK: the flanks at ±1; BREATH_CHEST and BREATH_BELLY: half the travel of a resting breath.
+ * pregnancy at term on a full gut reaches +1.8); FLANK: the flanks at ±1; BREATH_CHEST and BREATH_BELLY: half the travel of a resting breath.
  */
-export const BODY_STATE = { COAT_RAISE: 0.05, COAT_SLEEK: 0.006, BELLY_FULL: 0.05, BELLY_EMPTY: 0.028, FLANK: 0.022, BREATH_CHEST: 0.0045, BREATH_BELLY: 0.0055 } as const;
+export const BODY_STATE = { COAT_RAISE: 0.05, COAT_SLEEK: 0.006, BELLY_FULL: 0.065, BELLY_EMPTY: 0.035, FLANK: 0.03, BREATH_CHEST: 0.0045, BREATH_BELLY: 0.0055 } as const;
 // Shared by the colour, depth and silhouette passes: skin the vertex, then inflate the swelling, raise or sleek the
 // coat, round or tuck the belly and flanks and move the ribcage with the breath, so shadows and outlines follow.
 const SKIN_VERTEX = /* glsl */`
@@ -86,7 +86,7 @@ const SKIN_VERTEX = /* glsl */`
   float cCoat = 0.0;
   if (cP2.x > 0.004) cCoat = cP2.x * cCoatM * (0.7 + 0.3 * cTuft(position)) * ${g(BODY_STATE.COAT_RAISE)};
   else if (cP2.x < -0.004) cCoat = max(cP2.x, -1.0) * cCoatM * ${g(BODY_STATE.COAT_SLEEK)};
-  // Belly and flanks (W8; P6.x belly -1 tucked .. 1 full, to 2 with a pregnancy; P6.y flank -1 hollow .. 1), and the
+  // Belly and flanks (W8; P6.x belly -1 tucked .. 1 full, to 1.8 with a pregnancy; P6.y flank -1 hollow .. 1), and the
   // breath (P6.z, signed): the front of the abdomen, its sides below the ribs, and the ribcage, all clear of the arms.
   float cBellyM = 1.0 - smoothstep(0.55, 1.2, length(vec3(position.x / 0.135, (position.y - 0.715) / 0.135, (position.z - 0.075) / 0.105)));
   float cFlankM = smoothstep(0.055, 0.105, cAx) * (1.0 - smoothstep(0.135, 0.15, cAx)) * (1.0 - smoothstep(0.6, 1.15, length(vec2((position.y - 0.705) / 0.12, (position.z + 0.005) / 0.115))));

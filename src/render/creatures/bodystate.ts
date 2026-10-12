@@ -45,9 +45,9 @@ const smooth = (a: number, b: number, x: number) => { const t = clamp((x - a) / 
  * 1 − hunger has a median of 0.65 to 0.75 between 09:00 and 18:00 on the default field world, and foregut fill a
  * median of 0.75 over waking hours on the working base. */
 export const FILL_NEUTRAL = 0.7;
-/** What a pregnancy at term adds to the belly channel (as much as a full gut over an ordinary one), and the share of
- * gestation from which it starts to show. */
-export const PREGNANT = 1, PREGNANT_FROM = 0.25;
+/** What a pregnancy at term adds to the belly channel (four fifths of what a full gut adds over an ordinary one), and
+ * the share of gestation from which it starts to show. */
+export const PREGNANT = 0.8, PREGNANT_FROM = 0.25;
 /** How much of the gut's part of the belly channel the flanks follow: an empty gut tucks them, a full one rounds them. */
 export const GUT_FLANK = 0.5;
 /** Gestation the renderer divides by (the simulation's shortest, data/params.json gestationMinDays 222 plus half its
@@ -55,10 +55,11 @@ export const GUT_FLANK = 0.5;
 export const GESTATION_DAYS = 227;
 /** Public health below which the flanks hollow where no reserve state is published, and the span over which they hollow fully. */
 export const HEALTH_SOUND = 0.9, HEALTH_SPAN = 0.5;
-/** Felt sleepiness between which the upper lid sinks, and the most it covers while the animal is awake. On the working
- * base felt sleepiness passes 0.55 at about 16:00 and 0.9 at about 19:00 (states-w50.ts): the lids sink over the last
- * two to three hours before the nest, not from midday. */
-export const LID_FROM = 0.55, LID_FULL = 0.95, LID_MAX = 0.55;
+/** Felt sleepiness between which the upper lid sinks, and the most it covers while the animal is awake (a little over
+ * half the eye). On the working base felt sleepiness passes 0.45 at about 15:00 and 0.85 between 18:00 and 19:00
+ * (states-w50.ts): the lids sink over the last three hours before the nest, not from midday. On the default world the
+ * public stand-in, 1 − energy, stays under 0.2 by day (states.ts): no lid droops there. */
+export const LID_FROM = 0.45, LID_FULL = 0.85, LID_MAX = 0.55;
 /** Public stress between which the coat begins to rise where no arousal state is published, and its ceiling. On the
  * default field world stress is over 0.3 in half a percent of animal-time (states.ts). */
 export const STRESS_FROM = 0.3, STRESS_FULL = 0.8, STRESS_COAT = 0.6;

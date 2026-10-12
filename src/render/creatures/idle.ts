@@ -35,8 +35,6 @@ export function lieOf(v: Float32Array): number {
   const pitch = v[B.hips * 3], roll = v[B.hips * 3 + 2];
   return Math.abs(roll) > 1 ? Lie.side : pitch < -1.1 ? Lie.supine : Lie.prone;
 }
-/** Upright on two feet (the display, the alarm, a patrol's tall stop): the hips joint high and the trunk near vertical. */
-export function upright(v: Float32Array): boolean { return v[PI.root + 1] > 0.5 && Math.abs(v[B.hips * 3]) < 0.6; }
 
 /** Reach of a scratch 0..1: in over SCRATCH_IN seconds, out over SCRATCH_OUT at the end. */
 const SCRATCH_IN = 0.45, SCRATCH_OUT = 0.5;
