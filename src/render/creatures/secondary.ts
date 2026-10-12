@@ -125,9 +125,9 @@ export const SCRATCH = { flank: 0, thigh: 1, head: 2 } as const;
 /** Bit of an event kind in the `allow` mask of idleStep. */
 export const idleBit = (kind: number) => 1 << kind;
 /** Seconds between the end of one event and the start of the next at the idle rate 1 (uniform by hash). */
-export const IDLE_GAP = [9, 26] as const;
+export const IDLE_GAP = [6, 20] as const;
 /** Share of events by kind at baseline drives (scratch, yawn, weight shift, glance); a nod only enters when asked (NOD_SHARE). */
-export const IDLE_SHARE = [0, 0.3, 0.06, 0.3, 0.34, 0] as const;
+export const IDLE_SHARE = [0, 0.34, 0.06, 0.28, 0.32, 0] as const;
 export const NOD_SHARE = 0.3;
 /** An animal that has just become still (it was walking, calling, in a decision beat) waits at least this long on the idle clock. */
 export const IDLE_SETTLE = 3;
