@@ -338,8 +338,257 @@ run at most twice.
 
 ## 12. Iteration log and results
 
-(Filled after the runs of §10.)
+Sections 0 to 11 stand as registered at 04:51 EDT (commit 1386135; the code came after it, commit e0ec7e6 at 05:16).
+**The registered run has not been made, and no model process was started at any point.** Everything below is
+iteration 0: no model, one process at a time, from a committed head with a clean tree. Run folders and logs are
+under `artifacts/r13/` of the worktree `r13-population` (not in git).
+
+### 12.1 What was built beyond §1, and three choices made while building (none changes §2 to §8)
+
+- **A command `rule <r11-numbers.md>`** prints the decode rule of §3 as the script reads it, and `scripts/r13-run.sh
+  model` refuses unless the integrator's `R13_ARM` is the arm that rule names. `R13_R11_NUMBERS` has no default: the
+  copy of `r11-numbers.md` under `docs/staging` was written before any engine arm existed and would silently read
+  "N1 not read".
+- **The check for another model process** also knows the scripts stage R11 added (`train_r11.py`, `em_score.py`,
+  `parity.py` and four others) by name. It already counted every Python started from the model environment.
+- **The field table has two words §8.3 did not name**, both description: "outside by less than D" (the rules inside
+  the band, the model arm outside it by no more than D: not told from inside) and "further out" (the rules outside
+  the band, the model arm further outside by more than D).
+- **The first adapter's arms of stage R11's loop** (`old-…`, the state-only packet in a world with `observeV5` 1) are
+  accepted like the others, on seed 3613 only. Nothing registers a run of them.
+- **Not built:** a re-draw of the rules through the night script. The eight re-draws are stage R7's own control
+  arms, on the run's burned-in world (§8).
+
+### 12.2 The proofs of §10 (12 October 2026, 05:16 to 05:24 EDT; head e0ec7e6, tree clean; load 4 to 9)
+
+| # | Proof | Result |
+| --- | --- | --- |
+| 0 | The old path, `argmax-gate`, seed 48, two days | **Unmoved.** The burned-in world is the pilot's (4b5cc61f8ad797e0); 2,060 and 2,069 asks; day hashes 95bfc1fd4e6ddfda and 07ec9b9f26b64f60; the replay regenerates all 6,423 lines: each figure is the one in `r10-prereg.md` §10.3 |
+| 1 | Seed 3613: the rules arm through the script against the plain rules world | **Equal.** `plain --packet p5b`: 909ec298b1169a33 after 30 days, then 250e63547c2ee49f and ec253e94405682e7; the rules arm through the script: the same three. Without the animals' own record: 46fa3807cbcdc8e4, 0e6f3c9b0720a72c, bf8b2d5bac9ce290, which are the three hashes of the plain world without `observeV5`. 49 living, 38 aged 8 and over |
+| 2 | Seed 48: a stand-in through the model path (`wire-p5b-draw-1`: the fake worker, packet P5b, decode draw, salt 1), two days | Burn-in b35818060f2fe16b, which without the own record is the pilot's; day hashes 4789054307f31932 and 119e075380e536ca. **2,235 and 2,304 asks** (59.7 per animal on the kernel and day); the stand-in's choice settled 2,207 and 2,281, the rules 28 and 23 (every one `not-applied`); 1,032 and 1,035 acts held by the gate; no packet over the kernel's budget, no death, no timeout. Per day: receipts 1.8 MB, contexts 7.3 MB before gzip, a checkpoint 0.9 MB; 0.1 minutes of wall time; largest memory 525 MB |
+| 3 | The same run killed with SIGKILL after 8,000 ticks (inside day 2; exit code 137) and resumed | 3 files of the day set aside, **1,492 journalled answers reused**, the decoder's notes of 38 animals read from the checkpoint, end hash **119e075380e536ca**, the uninterrupted run's. No worker process was left behind |
+| 4 | Replay, and the packet check | The receipts reproduce the run: 2 of 2 day hashes equal, 0 asks without a receipt, 0 menus differ, **0 of 6,606 receipt lines differ** when regenerated (the context's hash, the packet's hash, the packet version and the decode's record are fields of a line), 0 row files differ. `packets`: **4,539 of 4,539** packets rebuilt from their saved contexts by stage R11's builder hash to the receipt's `sha`; every ask line carries `r11-p5b`. The killed and resumed run replays and checks the same way |
+| 5 | Length and time | Estimated input tokens of the 4,539 packets: median 364, mean 370, 95th percentile 495, largest 600 (the kernel's budget on the estimate is 1,000). At stage R11's measured ratio for this packet (0.83): about 302, 307, 411 and 498 real tokens. Projection below |
+
+**The projection of the night** (printed by `packets` from proof 2: this run's asks a day at a model's seconds an
+ask, plus this run's own seconds a day):
+
+| Seconds per ask | Where the figure is from | Minutes per simulated day | Simulated days in 9 hours |
+| --- | --- | --- | --- |
+| 0.32 | stage R11's smoke run, one P5b packet at a time (`r11-prereg.md` §12.4) | 12.2 | 44 |
+| 0.41 | stage R11's first night, `p5b-s7-top` on seed 4111 (872 s for 2,126 calls) | 15.6 | 34 |
+| 0.50 | the same night, `p5b-s7-draw-1` (974 s for 1,955 calls), on a shared machine | 19.0 | 28 |
+
+That is at the stand-in's 2,270 asks a day. Stage R11's P5b arms asked 71 to 76 times per focal animal and day; a
+population asked at that rate (2,700 to 2,890 asks a day) takes 18.5 to 24.2 minutes a day at 0.41 to 0.50 s, so
+nine hours cover 22 to 29 days. **`--days 20` is expected to end the run, after 4 to 8 hours**; `--hours 9` is the
+guard. Not in the table: the model load (55 to 220 s here) and the hold while swap in use is above 6 GB (up to 30
+minutes).
+
+**The whole reading, dry** (`scripts/r13-run.sh dry`, seed 48, two days, 3 minutes in all; a fake worker, never a
+result): the stand-in arm, the rules arm, stage R7's sixteen control arms on the same burn-in (4 to 8 s each), four
+replays, the packet check, stage R7's report with both runs beside the control arms and this stage's report. The
+check of the instrument holds: the rules through the night script are told from the eight re-draws on none of the
+five level rows, hold all five guards and are told on 0 of stage R7's 14 timing rows. The stand-in's "population"
+reads not viable (nights in a nest 0.342 against 0.998 ± 0.005 for the rules; reserves −0.504% a day against a line
+of −0.087), as arbitrary odds should: V2 and V3 can fail. Its tables are under `artifacts/r13/dry/tables` and are
+not published.
+
+**The refusals, from the command line** (each exit code 2, nothing written; in `tests/r13-population.test.ts`): a
+sealed seed (4333) for a run and for the control arms; `p5b-s7-draw-1` on seed 48; a dry arm on seed 7; `--packet
+p5a` or `--decode top` against the arm's name; a dry arm without the fake worker; on seed 3613 an adapter folder
+with weights and no manifest, and one with a manifest and other bytes than the registered ones; `--r7` on a run of
+the small map. The last two model refusals come before the check for another model process and before any world
+is built, so the test starts nothing and runs nothing on seed 3613. **Another model process:** read on this machine
+at 05:23 EDT with two `ps` calls and nothing started, the script's check saw one (the offline scoring of stage
+R11's chain); a model arm launched then would have been refused and named it.
+
+**Written before the runs, checked.** The burned-in world of seed 48 without the own record is the pilot's: yes.
+"Asked 55 to 85 times per animal and day, 2,100 to 3,200 asks a day": the stand-in 59.7, and 2,235 and 2,304.
+"The estimate has a median near 409": no, 364 (the packets of days 31 and 32 of a population are shorter than the
+training file's); none over the budget: yes. "A day takes 14 to 27 minutes, nine hours cover 20 to 38 days": 12.2
+to 19.0 minutes and 28 to 44 days at the stand-in's rate; 18.5 to 24.2 minutes and 22 to 29 days at stage R11's.
+
+### 12.3 What seed 3613 has seen
+
+The rules, twice: the plain world for 32 days (with and without `observeV5`) and the rules arm through the script
+for the same 32 days. No kernel, no stand-in, no control arm. Nothing was read from those runs but their hashes and
+the count of animals (49 living, 38 aged 8 and over). The two-day rules folder of the proof is under
+`artifacts/r13/smoke`; the registered paired rules arm is run again by the integrator, for N days, into its own
+folder.
+
+### 12.4 Not done, and limits
+
+- **The run.** No model arm, no paired rules arm of N days, no control arm on seed 3613, no statement of §8 read.
+- **Nothing on the model's path has met a real worker in this stage:** the worker's start with the adapter of stage
+  R11 named, its ready line with the adapter's hash, the warm-up on a P5b packet, a timeout and a replacement. The
+  same code ran on the first adapter in stage R10's night and stage R11's loop ran P5b packets through its own
+  harness; the combination is new. The first minutes of the run are where a surprise would show.
+- **Real token counts were not taken** (the tokenizer belongs to the model's environment). The lengths are the
+  project's estimate and the 0.83 is stage R11's ratio for the training file.
+- The swap hold of the night script is stage R10's (up to 30 minutes above 6 GB, then it goes ahead), not stage
+  R11's shorter one.
+- One world seed, one training of the recipe. Stage R7's report prints its section 3 under the heading "the
+  population for 30 days"; the window is N days, as its first lines say.
+- A journal line carries the decode setting, not the decode's record of the ask (§1).
 
 ## For the integrator
 
-(Filled at the end of this stage: the launch order, the status file, the block for `IMPLEMENTATION_PLAN.md`.)
+*(Written by the builder on 12 October 2026. The frozen checkout must hold this branch's last commit or a merge of
+it.)*
+
+**Read first.** (1) Nothing here is a result: the stage registers a run and delivers the script, a report, a run
+script and the no-model proofs. (2) The decode is not chosen yet. It is read from stage R11's final table by the rule
+of §3, once the chain of stage R11 has ended; at 05:25 EDT on 12 October that table held one training per arm, so
+the rule read "N1 not read: the top pick". (3) Seed 3613 has only seen the rules (§12.3). (4) The first population
+run was on another adapter, packet, seed and length: nothing here is a comparison with it.
+
+**The launch order.** One model process at a time; from a frozen detached checkout; in a detached `screen` session
+(a closed terminal kills a run, `r10-prereg.md` §10.6). Restart the Mac first if swap in use is above 6 GB, or
+expect a hold of up to 30 minutes before the model loads.
+
+```sh
+# 0. the frozen checkout (a minute)
+cd /Volumes/Drive/chimpbench/MGOGO
+git worktree add --detach .claude/worktrees/bench-r13 <the head that holds this branch>
+cd .claude/worktrees/bench-r13
+ln -s /Volumes/Drive/chimpbench/MGOGO/node_modules node_modules
+ln -s /Volumes/Drive/chimpbench/MGOGO/data/raw data/raw      # the report's Taï anchor reads it (aggregates only)
+git status --short                                            # must print nothing
+
+# 1. the variables (the same in every shell that runs a step)
+export MGOGO_GHN_ROOT=/Volumes/Drive/chimpbench/GHN
+export MGOGO_DECIDE_PYTHON=/Volumes/Drive/chimpbench/decide-env/bin/python
+export HF_HOME=/Volumes/Drive/chimpbench/hf-cache HF_HUB_CACHE=/Volumes/Drive/chimpbench/hf-cache/hub
+export R13_FT_ROOT=/Volumes/Drive/chimpbench/MGOGO/.claude/worktrees/r11-honest-retrain/artifacts/decide-ft/r11
+# stage R11's table AFTER its second night (the chain's state must read "done"); after `scripts/r11-run.sh publish` and a merge it is docs/staging/r11-numbers.md
+export R13_R11_NUMBERS=/Volumes/Drive/chimpbench/MGOGO/.claude/worktrees/bench-r11/artifacts/r11/tables/r11-numbers.md
+
+# 2. the decode, by the rule of §3 (starts nothing): prints the line of the table it read and the arm it names
+scripts/r13-run.sh decode
+export R13_ARM=<the arm it printed: p5b-s7-draw-1 if N1 is MET for the recipe P5b, else p5b-s7-top>
+
+# 3. the pre-flight (starts nothing): the adapter's hash, the arm, other model processes, the tree, swap, disk
+scripts/r13-run.sh check
+
+# 4. everything, with a status file, in a detached session. The line is whole in itself: put the arm of step 2 in it
+screen -dmS r13 sh -c 'cd /Volumes/Drive/chimpbench/MGOGO/.claude/worktrees/bench-r13 && export MGOGO_GHN_ROOT=/Volumes/Drive/chimpbench/GHN MGOGO_DECIDE_PYTHON=/Volumes/Drive/chimpbench/decide-env/bin/python HF_HOME=/Volumes/Drive/chimpbench/hf-cache HF_HUB_CACHE=/Volumes/Drive/chimpbench/hf-cache/hub R13_FT_ROOT=/Volumes/Drive/chimpbench/MGOGO/.claude/worktrees/r11-honest-retrain/artifacts/decide-ft/r11 R13_R11_NUMBERS=/Volumes/Drive/chimpbench/MGOGO/.claude/worktrees/bench-r11/artifacts/r11/tables/r11-numbers.md R13_ARM=<the arm of step 2> && scripts/r13-run.sh chain'
+
+# to watch (reading only)
+cat artifacts/r13/chain/state            # running | failed | done
+tail artifacts/r13/chain/status.log      # a START and an END line per step, with its exit code
+scripts/r13-run.sh status                # the same, and the model run's own status (days done, asks, seconds a call, the stop check)
+```
+
+The chain's steps: `00-check`, `01-dry` (no model, three minutes: the whole path on seed 48 against a fake worker),
+`10-model`, `11-rules`, `12-controls`, `20-report`; each step's output is `artifacts/r13/chain/<step>.log`. The
+steps by hand, which is what the chain runs:
+
+```sh
+# the model arm (the only step with a model): at most 20 simulated days in 9 hours; 4 to 8 hours expected
+export MGOGO_FT_ROOT="$R13_FT_ROOT" MGOGO_FT_ADAPTERS=r11-p5b-s7
+caffeinate -i fnm exec --using=22.22.3 -- pnpm exec tsx scripts/r10-night.ts run --seed 3613 --arm "$R13_ARM" --days 20 --hours 9 --out artifacts/r13/model-s3613
+#   (scripts/r13-run.sh model does this, and resumes instead when the folder holds an unfinished run)
+
+# the paired rules arm, N = the whole days the model arm completed (seconds a day, no model)
+fnm exec --using=22.22.3 -- pnpm exec tsx scripts/r10-night.ts run --seed 3613 --arm rules --packet p5b --days <N> --out artifacts/r13/rules-s3613
+
+# stage R7's sixteen control arms at the population unit on the same burned-in world, the same N days (about a minute an arm at 20 days)
+fnm exec --using=22.22.3 -- pnpm exec tsx scripts/r10-night.ts controls --seed 3613 --packet p5b --days <N> --out artifacts/r13/card
+
+# the replays, the arm files beside the control arms, the packet check and both reports (no model, some minutes)
+scripts/r13-run.sh report
+scripts/r13-run.sh publish        # afterwards: copies the four tables to docs/staging; commit them on a branch
+```
+
+- **If it stops.** `state` reads `failed` and the last line of `status.log` names the step. A model arm that was
+  interrupted or died is continued by `R13_HOURS=<hours left> scripts/r13-run.sh model` (it resumes from the newest
+  checkpoint and asks nothing twice), then `rules`, `controls`, `report`; or launch `chain` again, which skips the
+  dry run and resumes. To stop the model arm on purpose: `kill -TERM` to the script's own process (`status` prints
+  its pid). An arm on file is never run again.
+- **Healthy first minutes:** "the burned-in world … without the animals' own record is the same burn-in without
+  observeV5"; "worker warm: the model answered its first packet in N s"; "worker ready" with `r11-p5b-s7` and the
+  hash `582e409a…c74c`; "packet: r11-p5b (p5b)"; "decode: draw (one seeded draw per ask, salt 1)" or "top"; then a
+  line every simulated hour and "0 timeouts". A day should take 12 to 25 minutes.
+- **If the stop check ends the run after day 5** (exit code 3, state `stopped`), the chain goes on: the rules arm,
+  the control arms and the report are made for five days, and the report reads "not viable" (§5, §8.1).
+- **What comes out:** `artifacts/r13/tables/r13-numbers.md` (the registered statements, in §8's order),
+  `r13-card.md` (stage R7's whole card with both runs beside the control arms), `r13-model-replay.md` and
+  `r13-rules-replay.md` (the replays through the field observer: party size, grooming, greeting by value). The run
+  folders carry this machine's host name and paths: never publish one as it is.
+
+**How to read the result.** `r13-numbers.md` §0 first: if the paired rules arm is told from the re-draws, stop and
+find out why. Then §1 (viable or not), §2 (the outcome and what it means, in §8.2's words), §3 (rows that left the
+band; "nearer" is a description and never a claim). Name it "rules-taught model on a rules menu", say "animals under
+8 years stay on the rules" and "one training of the recipe, one world seed" beside every number.
+
+**Proposed block for `IMPLEMENTATION_PLAN.md`** (after "Stage R11"):
+
+> ## Stage R13: A whole population on the first honest-packet adapter
+> **Goal**: the population run stage R10 left open: every animal aged 8 and over on the first adapter of stage R11
+> (`r11-p5b-s7`, the whole packet 5, taught the rules' own odds), the gate on, on a world seed nothing has run on,
+> beside the same animals on the rules and stage R7's control arms at the population unit.
+> **Success Criteria** (registered in `docs/staging/r13-prereg.md` before any code or run): the decode is read from
+> stage R11's registered mark N1 by a rule fixed beforehand (a draw from the adapter's odds only if N1 is met for the
+> recipe P5b, else the top pick); the run is read in a fixed order: viability (the stop check, deaths by starvation,
+> nights in a nest, reserves), then the level on distance, trips begun, trips completed and act changes against the
+> rules' mean ± the smallest difference eight re-draws can show on the same world, with the outcome named by rule
+> ("at the rules' level", "sedentary", "restless", "mixed"), then the field observer's rows by the distance outside
+> the band, where no row is reported as closer to wild chimpanzees; the name "rules-taught model on a rules menu";
+> animals under 8 on the rules.
+> **Tests**: `tests/r13-population.test.ts` (8 tests); `tests/r10-night.test.ts` and `tests/r10-wiring.test.ts`
+> unedited.
+> **Status**: Registered and built on branch `r13-population` (12 October 2026; agent-reported, awaiting review);
+> **not run, and no model process was started.** *Fixed:* adapter `r11-p5b-s7` (sha256 `582e409a…c74c`), packet
+> P5b, world seed 3613 (searched in every tracked file of 177 branch heads, the reserved and retired lists, and the
+> names and registries under every `artifacts/` folder: unused), at most 20 simulated days in 9 hours, the stop
+> check of stage R10, the paired rules arm and stage R7's sixteen control arms for the same days. *Built:*
+> `scripts/r10-night.ts` runs the arms of stage R11's loop by their own names, with the packet, the kernel and the
+> decode made by that stage's exported functions; packet 5 runs write receipts of schema `r10-receipt-3` (the packet
+> version on every ask line; the journal also carries the decode setting); new refusals (sealed seeds, an adapter
+> without its manifest, registered weights with other bytes, an arm of stage R11 on another seed than 3613);
+> `controls`, `replay --r7`, `packets` and `rule` commands; `scripts/r13-report.ts` (the registered statements);
+> `scripts/r13-run.sh` (the launch order with a status file). *Proved without a model:* the old arm `argmax-gate` on
+> seed 48 lands on stage R10's recorded hashes and 6,423 receipt lines, so the old path is unmoved; on seed 3613 a
+> rules arm through the script equals the plain rules world (909ec298b1169a33, then 250e63547c2ee49f and
+> ec253e94405682e7), and without the animals' own record it is the world without `observeV5`; a stand-in through the
+> model path (a fake worker, packet P5b, a draw) is asked 2,235 and 2,304 times a day on seed 48, and killed inside
+> day 2 and resumed it ends on the uninterrupted run's hash (119e075380e536ca) with 1,492 journalled answers reused;
+> the replay regenerates all 6,606 receipt lines; all 4,539 packets rebuilt by stage R11's builder hash to their
+> receipts; the whole reading runs dry in three minutes, with the rules through the night script told from the
+> re-draws on no row. Packets: an estimated median of 364 tokens (about 302 real), none over the budget. Projection:
+> 12 to 25 minutes a simulated day, so the 20 days are expected in 4 to 8 hours. Nothing under `src/` or `data/`
+> changed. *Open:* the run itself (the integrator, after stage R11's chain has ended and its table is read for the
+> decode); real token counts; whether one training and one world seed are enough to act on.
+
+**Proposed line for `AGENTS.md`, Commands** (after the `r10-night.ts` line):
+
+```
+scripts/r13-run.sh check | decode | dry | model | rules | controls | report | chain | status | publish   # stage R13 (docs/staging/r13-prereg.md; launch order at its end): every animal aged 8 and over on stage R11's first adapter (r11-p5b-s7, packet P5b) on the fresh seed 3613, beside the same animals on the rules and stage R7's sixteen control arms at the population unit on the same burned-in world. Through scripts/r10-night.ts: run --seed 3613 --arm p5b-s7-draw-1 | p5b-s7-top (an arm of stage R11's loop by its own name: adapter, packet and decode are that stage's), run --arm rules --packet p5b, controls --seed N --packet p5b --days N, replay <out> --r7 <dir> (the replay read by stage R7's readers, an arm file beside the control arms), packets <out> (every packet rebuilt from its saved context against the receipt's hash; lengths; the night's projection), rule <r11-numbers.md> (the decode rule: a draw only if stage R11's N1 is met for the recipe P5b), plain --packet p5b. A packet 5 run puts observeV5 1 on the world from the first tick (checked against the plain burn-in) and writes receipts r10-receipt-3; refused: sealed seeds, an adapter without manifest.json, registered weights with other bytes, an arm of stage R11 on another seed. dry: the whole path on seed 48 against a fake worker (no model, three minutes). Then scripts/r13-report.ts prints the registered statements (viability, the level and its outcome, the field rows by the distance outside the band); tables under artifacts/r13/tables until publish
+```
+
+**Proposed line for `HANDOFF.md`, next tasks:** "R13: when stage R11's chain reads `done` and its report is
+written, the launch order at the end of `docs/staging/r13-prereg.md` from a frozen detached checkout: `decode`
+(reads N1 from stage R11's final table), `check`, then `chain` in a detached `screen` session (4 to 8 hours of
+model time, one model process). Seed 3613 is spent by that run; name another for whatever follows."
+
+`docs/simulation.md`: **no rows.** The stage adds no parameter and no switch.
+
+**Merge notes.** `scripts/r11-loop.ts` and `scripts/lib/r11-packets.ts` changed only by moving `packetOf` into the
+library and exporting three makers (`engineSpec`, `engineKernel`, `workerRefusal`) that the loop itself now calls;
+`tests/r11.test.ts` passes unedited. `scripts/lib/r10-run.ts` gains an optional packet for `runDay`, two optional
+fields on a journal line and one on an ask line, and optional registry fields; without the packet its lines are
+those of `r10-receipt-2`. A run folder of stage R10 (`bench-t1/artifacts/r10/night-s48`) still replays at this
+head as far as this stage is concerned.
+
+**Decisions that are the user's or the integrator's.**
+
+1. **Whether to run it as registered once stage R11 has reported**, or to wait for a second training of the
+   adapter under the population (nothing here covers the recipe).
+2. **The V2 floor of 0.01** (one animal-night in a hundred below the rules' mean when the eight re-draws leave no
+   spread). If one lost night in 760 should already count, it must be tightened before the run.
+3. **The minimum of nine days** for reading the level, and the cap of 20.
+4. **Seed 3613 is spent by this run.** The next sealed pair is still to be named (`r11-prereg.md`, the user's
+   decisions, item 1).
+5. Whether the swap hold of the night script should become stage R11's (it goes ahead after five minutes when swap
+   is not falling).
