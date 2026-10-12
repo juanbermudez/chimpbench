@@ -25,6 +25,7 @@ import { reserveCap } from '../../src/sim/energy';
 import { paramsOf } from '../../src/sim/params';
 import { index, ix, TICK_HOURS, TICK_SECONDS } from '../../src/sim/state';
 import { tickWorld } from '../../src/simulation';
+import type { LocalPacket } from '../../src/providers/packet';
 import type { Candidate, Chimp, DecisionContext, World } from '../../src/types';
 import { worldHash } from '../../tests/fixtures/golden';
 import { familyOf } from '../em-sample';
@@ -43,6 +44,13 @@ export const UNDER_AGE = `animals under ${MIN_AGE} years stay on the rules`;
  * held line's `v` is the decision version when the gate ran, as an ask's is, not the version after the act was set.
  */
 export const RECEIPT_SCHEMA = 'r10-receipt-2';
+/**
+ * r10-receipt-3 (stage R13; docs/staging/r13-prereg.md §1): the lines of a run whose kernel is sent a named packet
+ * (DayOpts.packet: packet 5). An ask line is a line of r10-receipt-2 plus `pk`, the packet's version; a journal line also
+ * carries `pk` and `dc`, the decode setting. A run on the state-only packet of stage R4 keeps r10-receipt-2, line for line.
+ */
+export const RECEIPT_SCHEMA_PACKET = 'r10-receipt-3';
+export const RECEIPT_SCHEMAS: readonly string[] = [RECEIPT_SCHEMA, RECEIPT_SCHEMA_PACKET];
 /** A night counts as spent in a nest at this share of the dark hours (scripts/r5-report.ts NIGHT_IN_NEST). */
 export const NIGHT_IN_NEST = 0.9;
 /**
@@ -78,8 +86,10 @@ export interface AskLine {
   by: 'kernel' | 'rules'; refusal: string; detail: string;
   /** The option position applied (-1: the rules decided) and the act the animal is in after the step, whoever set it. */
   picked: number; act: [string, number];
-  /** sha256 (16 hex) of the state-only packet and of the context; the estimated input tokens; the kernel's time. */
+  /** sha256 (16 hex) of the packet the kernel is sent (the state-only packet unless the run names another) and of the context; the estimated input tokens; the kernel's time. */
   sha: string; ctx: string; tokens: number; ms: number;
+  /** r10-receipt-3 only: the version of the packet the kernel was sent (scripts/lib/r11-packets.ts PACKET_VERSION). */
+  pk?: string;
   /** 1: the answer came from the journal of an interrupted segment, not from a new call. */
   re?: 1;
 }
@@ -93,7 +103,13 @@ export interface HeldLine { k: 'held'; tick: number; t: number; day: number; id:
 export type Line = AskLine | HeldLine;
 
 /** A kernel answer as it arrived (the journal): only read by a resume, so that no answer is asked twice. */
-export interface Arrival { t: number; id: number; v: number; sha: string; index: number | null; p: number[] | null; err: string | null; ms: number; tokens: number }
+export interface Arrival { t: number; id: number; v: number; sha: string; index: number | null; p: number[] | null; err: string | null; ms: number; tokens: number;
+  /** r10-receipt-3 only: the packet's version and the decode setting the answer was journalled under (`decodeKey`); an answer is reused only under the same two. */
+  pk?: string; dc?: string }
+/** A decode setting in one word, for the journal: `none` (no decode step), `top:0`, `draw:1`, `held:1:act`. */
+export const decodeKey = (spec: HarnessDecode | null | undefined): string => !spec ? 'none' : `${spec.mode}:${spec.salt}${spec.mode === 'held' ? `:${spec.hold}` : ''}`;
+/** The packet a run's kernel is sent when it is not the state-only packet of stage R4: its version (on every ask line and journal line) and its builder (the receipt's hash and token estimate are of this packet). */
+export interface RunPacket { version: string; of: (context: DecisionContext) => LocalPacket }
 
 export const keyOf = (t: number, id: number, v: number) => `${t.toFixed(6)}:${id}:${v}`;
 export const sha16 = (text: string) => createHash('sha256').update(text).digest('hex').slice(0, 16);
@@ -266,6 +282,13 @@ export interface DayOpts {
   minAge?: number; maxErrorsInRow?: number;
   /** Ticks in this "day" (tests only; a real day is DAY). */
   ticks?: number;
+  /**
+   * Stage R13: the packet the kernel is sent (packet 5 of stage R11's arms). Absent: the state-only packet of stage R4, and
+   * the lines of r10-receipt-2 as they were. Present: each ask line carries the packet's version and the hash and token
+   * estimate of this packet, each journal line the version and the decode setting, and a journalled answer is reused only
+   * under the same two. The caller hands the kernel the same builder (scripts/r11-loop.ts engineKernel).
+   */
+  packet?: RunPacket;
 }
 
 /**
@@ -281,14 +304,14 @@ export async function runDay(e: Engine, kernel: Kernel | null, o: DayOpts = {}):
   const ms: number[] = [], tok: number[] = [], last = new Map<number, { ms: number; answer: KernelAnswer | null; sha: string; tokens: number; re: boolean }>();
   const timeouts0 = o.guard?.timeouts ?? 0, starts0 = o.guard?.starts ?? 0;
   let kernelMs = 0, calls = 0, asks = 0, byKernel = 0, heldN = 0, reused = 0, errorsInRow = 0, withRulesPick = 0, agree = 0;
-  const fallbacks: Record<string, number> = {};
+  const fallbacks: Record<string, number> = {}, dc = decodeKey(o.decoder?.spec);
   // the kernel, timed, with its answer kept for the receipt and written to the journal the moment it arrives
   const timed: Kernel | null = kernel && { ...kernel, async decide(request, env) {
-    const c = request.context, packet = buildStateOnlyQuestion(c);
+    const c = request.context, packet = o.packet ? o.packet.of(c) : buildStateOnlyQuestion(c);
     const rec = { ms: 0, answer: null as KernelAnswer | null, sha: sha16(JSON.stringify(packet)), tokens: tokensOf(packet), re: false };
     last.set(c.chimpId, rec);
     const j = o.journal?.get(keyOf(c.time, c.chimpId, c.version));
-    if (j && j.err === null && j.sha === rec.sha) {
+    if (j && j.err === null && j.sha === rec.sha && (!o.packet || (j.pk === o.packet.version && j.dc === dc))) {
       rec.re = true; rec.ms = j.ms; reused++;
       rec.answer = { index: j.index ?? undefined, choice: j.index === null ? undefined : `c${j.index}`, probabilities: j.p ?? undefined } as KernelAnswer;
       o.sink?.arrival?.(j);
@@ -302,7 +325,7 @@ export async function runDay(e: Engine, kernel: Kernel | null, o: DayOpts = {}):
       rec.ms = performance.now() - s; ms.push(rec.ms); tok.push(rec.tokens);
       const a = rec.answer;
       o.sink?.arrival?.({ t: +c.time.toFixed(6), id: c.chimpId, v: c.version, sha: rec.sha, index: a && typeof a.index === 'number' ? a.index : null, p: a && Array.isArray(a.probabilities) ? a.probabilities as number[] : null,
-        err, ms: +rec.ms.toFixed(1), tokens: rec.tokens });
+        err, ms: +rec.ms.toFixed(1), tokens: rec.tokens, ...(o.packet ? { pk: o.packet.version, dc } : {}) });
     }
   } };
   // the taps of src/sim/decide.ts, set around each tick only (they are module-level)
@@ -363,7 +386,7 @@ export async function runDay(e: Engine, kernel: Kernel | null, o: DayOpts = {}):
           trig: { why: !pt ? 'waiting' : pt.intr ? 'interrupt' : pt.finished ? 'finished' : 'bout-end', intr: pt?.intr ?? '', gate: opened.get(r.chimpId) ?? '' },
           index: a && typeof a.index === 'number' ? a.index : null, p: a && Array.isArray(a.probabilities) ? a.probabilities as number[] : null, ...(record ? { dec: record } : {}),
           by: r.by, refusal: r.refusal, detail: r.refusal === 'invalid-context' && r.detail === 'body' ? `body: ${bodyFieldError(req.context.body)}` : r.detail,
-          picked: r.by === 'kernel' ? r.index : -1, act: [c.action, c.targetId], sha: l?.sha ?? '', ctx, tokens: l?.tokens ?? 0, ms: l ? +l.ms.toFixed(1) : 0, ...(l?.re ? { re: 1 as const } : {}) });
+          picked: r.by === 'kernel' ? r.index : -1, act: [c.action, c.targetId], sha: l?.sha ?? '', ctx, tokens: l?.tokens ?? 0, ms: l ? +l.ms.toFixed(1) : 0, ...(o.packet ? { pk: o.packet.version } : {}), ...(l?.re ? { re: 1 as const } : {}) });
         o.sink?.context?.({ t, id: r.chimpId, v: req.context.version, ctx, context: req.context });
       }
       last.clear();
@@ -624,7 +647,7 @@ export function modelProcesses(ps: string, ignore: number[] = [], python = proce
     if (!m || ignore.includes(+m[1])) continue;
     const program = m[3], rest = m[4], startedAs = launchers.get(+m[1]) ?? '';
     if (!/python[0-9.]*$/i.test(program)) continue;
-    if (decideEnv(program) || decideEnv(startedAs) || /decide_provider|decide_ft|(?:^|[\s/])(?:worker|server|train|train_r4|eval_offline|score_contexts)\.py\b/.test(rest))
+    if (decideEnv(program) || decideEnv(startedAs) || /decide_provider|decide_ft|(?:^|[\s/])(?:worker|server|train|train_r4|train_r11|em_score|eval_offline|eval_ab|score_contexts|parity|distill|bench_batch|bench_train)\.py\b/.test(rest))
       out.push({ pid: +m[1], command: `${`${program}${rest}`.slice(0, 160)}${startedAs && startedAs !== program ? ` (started as ${startedAs})` : ''}` });
   }
   return out;
@@ -706,9 +729,14 @@ export interface Registry {
   seed: number; seedRole: string; profile: 'field' | 'compressed'; burnInDays: number; daysAsked: number; hours: number | null;
   paramsFile: string; paramsSha256: string; params: Record<string, number>;
   /** The loop switches the run is made with (the first two at creation, the last two on the burned-in world: scripts/r5-pilot.ts armWorld). */
-  switches: { observeV4: number; menuParity: number; kernelGate: number; kernelNoRulesPick: number };
+  switches: { observeV4: number; menuParity: number; kernelGate: number; kernelNoRulesPick: number; /** Stage R13: 1 in a packet 5 run (the animals' own record, from the first tick). */ observeV5?: number };
   arm: string; kernel: string; adapter: string | null; /** sha256 of the adapter's weights file, read before the worker starts. */ adapterSha256?: string;
-  /** The decode in words, and the setting itself (stage R9: mode, salt, epoch rule); null or absent: no decode step. */ decode: string; decodeSpec?: HarnessDecode | null; packet: string;
+  /** The decode in words, and the setting itself (stage R9: mode, salt, epoch rule); null or absent: no decode step. */ decode: string; decodeSpec?: HarnessDecode | null;
+  /** The version of the packet the kernel is sent; `packetName` (stage R13) names it for the builder (scripts/lib/r11-packets.ts packetOf; absent: the state-only packet). */ packet: string; packetName?: 'state' | 'p5b' | 'p5a';
+  /** Stage R13: the arm of stage R11's loop this run is (scripts/r11-loop.ts engineArm: the name fixes the adapter, the packet and the decode), and whether it is the arm docs/staging/r13-prereg.md registers. */
+  engine?: { name: string; key: string; adapter: string; packet: string; decodeName: string; what: string; registered: boolean };
+  /** Stage R13, a packet 5 run: the hash of the same burn-in built without observeV5; the script stopped unless it is this run's burned-in world with the animals' own record removed. */ plainBurnInHash?: string;
+  /** The stage whose registration the run belongs to (absent: stage R10). */ stage?: string;
   /** The name a result of this run must carry (IMPLEMENTATION_PLAN.md, "Names every result must use"). */ name: string;
   minAge: number; /** Who decides for animals under minAge. */ under: string;
   burnInHash: string; startHash: string;
