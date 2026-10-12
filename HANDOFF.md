@@ -135,12 +135,12 @@ failure of the first does not stop the second. No result of either has been read
   checkpoint with what is left of its nine hours, and never past a stop check that ended the run (`r13-prereg.md`,
   "For the integrator").
 
-**Stage W11 (viewer polish) is under its second reading and is not merged** (true at 10:15 EDT on 12 October). It is
-built on branch `w11-polish` on top of 9be7d44 (the builder's head 50c6d00; the second reader's commits follow, the
-last of them bc513ba at 09:38): no jump across a crown, a pair picture that agrees with its tag, an eased cut-off
+**Stage W11 (viewer polish) is on `track-e` since 10:18 EDT on 12 October** (merge cafc203 of branch `w11-polish`,
+head bc513ba: the builder's eight fixes and the second reader's four repairs; its whole suite read 1,412 tests, 1,411
+pass, 1 skipped, on the branch): no jump across a crown, a pair picture that agrees with its tag, an eased cut-off
 scratch, a lone animal no busier, a steady nest heading, nests under sleepers, the bough as a limb of its tree with
-a leafy spray, a hand that meets the mouth. Its document is `docs/staging/w11-polish.md` on that branch; its plan
-block arrives with its merge.
+a leafy spray, a hand that meets the mouth. Its document is `docs/staging/w11-polish.md`. Not yet done on the merged head: the
+whole suite, `pnpm build`, and frame time on the graphics card (all wait for the model queue to end).
 
 ## 3. Set-up on this computer
 
@@ -212,8 +212,8 @@ addresssed and we move faster parelalizing more work to get closer to the real r
 | --- | --- | --- |
 | `main`, and `track-e` on the remote | 7f9ec5b | Equal. Pushed on 11 October 2026 at 14:59 EDT, at the user's request. Nothing has been pushed since: a push needs the user's ask (§6) |
 | `track-e` (local, the integration branch; the main checkout is on it) | 57718b5 when this was written | **191 commits ahead of the remote, not pushed:** stages RW2 and R11 with R11's results, the viewer stages W6 to W10 (`integrate-t2`, fast-forwarded at 9be7d44), the merges of `r13-population` (15798c1) and `rw3-tai-adapter` (e0fd29e). Count again before trusting this: `git rev-list --count origin/track-e..track-e` |
-| `docs-12oct` | this file's branch | The shared documents brought up to date on 12 October; to be merged by the integrator |
-| `w11-polish` | bc513ba when this was written | Stage W11, under its second reading (§2.2); not merged |
+| `docs-12oct` | 65d2494 | The shared documents brought up to date on 12 October; merged into `track-e` |
+| `w11-polish` | bc513ba | Stage W11, merged into `track-e` on 12 October (cafc203) |
 | Merged into `track-e`: `r7-card` to `r12-menu-design`, `rw2-wild-records`, `w1-travel-walk` to `w5-grooming`, `docs-refresh` (11 October); `integrate-t2` with `w6-decision-beat`, `w7-fruit`, `w10-calls-map`, `w8b-state-on-body` and `w9b-tree-pairs`, then `r13-population` and `rw3-tai-adapter` (12 October) | | Nothing on them is missing from `track-e`. The cut-off first builds `w8-state-on-body` and `w9-tree-pairs` are superseded |
 | **Worktrees to keep for their `artifacts/`** (not in git): `r11-honest-retrain`, `r4-train`, `r4b-retrain`, `r5-pilot` | | `r11-honest-retrain`: stage R11's four adapters and its loop arms (`artifacts/decide-ft/r11`, `artifacts/r11/loop`); stage R13 loads `r11-p5b-s7` from there. `r4-train`: the adapters of stage R4, among them the Ngogo-taught `r4-field-groom` that stage RW3 scores. `r4b-retrain`: the adapters of stages R4b and R4c, and the first adapter as the population run loaded it. `r5-pilot`: the pilot's run folders |
 | `bench-rw3` (frozen, c6024c7) | | **Running (§2.2). Do not touch.** Keep afterwards: the Taï training file, the adapters `rw3-tai-groom-s7` and `-s11` and their scores exist only there, and its `artifacts/rw2` holds derived wild records (never commit them) |
@@ -234,9 +234,9 @@ addresssed and we move faster parelalizing more work to get closer to the real r
    the level, the field rows. Each stage's `publish` copies its tables to `docs/staging`: commit them on a branch and
    write the result into the registration and the plan in the registered words. For RW3 a statement counts only if
    both seeds meet it; R13 is a level of one training on one world seed.
-2. **Stage W11:** when its second reading has ended, merge it: `pnpm test` and `pnpm build` while no model step runs,
-   one look in the running app, and frame time on the graphics card in a close view on a crown with a pair.
-3. **Merge `docs-12oct`** (documents only; the whole suite on its code is on record, §3). Before any push: the
+2. **Stage W11** is merged (cafc203). Still owed on the merged head, while no model step runs: `pnpm test` and
+   `pnpm build`, one look in the running app, and frame time on the graphics card in a close view on a crown with a pair.
+3. **`docs-12oct` is merged** (documents only; the whole suite on its code is on record, §3). Before any push: the
    user's ask, a privacy check of the range (no personal data, no raw rows), and only the two branches by name (§4).
 4. **Put §6 to the user**, the ten rulings first. Nothing of stage R12 is built before them.
 5. **Then:** with no model, the heat probe read on the rules' own odds (until then stage R11's failed mark O3 is not
@@ -298,7 +298,7 @@ and what is recommended. Where no recommendation is on file it says so, and what
 17. **The viewer's stylizations** (the plan's "The user's" lines for stages W6 to W10; the ends of `w2-bloom-sky.md`
     to `w5-grooming.md`): each stands as built; the larger ones are how busy idle life is, whether public stress
     raises the coat, the first mover's look back, which calls draw arcs on the whole map, and the prop bough.
-18. **Stage W11's choices** (`docs/staging/w11-polish.md` on branch `w11-polish`, not merged): recommended to keep
+18. **Stage W11's choices** (`docs/staging/w11-polish.md`): recommended to keep
     each as built, and a small registered simulation stage so that no animal grooms a partner that has climbed down.
 19. **The Ngogo fission paper and its supplement:** only the user can save them (`docs/datasets.md`, row 24).
 20. **Smaller, when convenient** (no recommendation on file): 2 h 45 min of model time for stage R9's gate-off
