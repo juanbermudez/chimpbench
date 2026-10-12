@@ -4967,15 +4967,15 @@ simulation code is involved.
   gestation on; felt sleepiness, or 1 − energy, to a lowered upper lid, slow blinks, yawns and nods; competitive and
   fast arousal, or stress above 0.3 and the published mood, to the coat and to the scratch and breathing rates; fear
   to a sleeked coat;
-- the amounts (`material.ts` `BODY_STATE`): the coat 5 cm, the belly 5 cm out and 2.8 cm in, the flanks 2.2 cm, a
-  breath 4.5 to 5.5 mm either way, all in bind metres of an adult drawn at 1.5 times life size, and that a raised
+- the amounts (`material.ts` `BODY_STATE`): the coat 5 cm, the belly 6.5 cm out and 3.5 cm in, the flanks 3 cm, a
+  breath 6 to 8 mm either way, all in bind metres of an adult drawn at 1.5 times life size, and that a raised
   coat is drawn up to twice as high on an animal that is small on screen;
 - idle life (`secondary.ts`, `idle.ts`): that a stationary animal scratches its flank, thigh or head, yawns, shifts
-  its weight, glances at a neighbour or nods off; the share of each (34, 6, 28 and 32% at rest), the gaps (6 to 20
-  s at Real time, a quarter of that at 1 min/s), the lengths (1.2 to 3.6 s) and the shapes of the movements; the
+  its weight, glances at a neighbour or nods off; the share of each (22, 6, 34 and 38% at rest), the gaps (6 to 20
+  s at Real time, a third of that at 1 min/s), the lengths (1.2 to 3.6 s) and the shapes of the movements; the
   breathing rate (0.26 to 0.36 breaths a second at rest) and its depth. The rates are chosen so that a resting party
-  reads as alive; they are several times anything a field rate would be expected to give and must not be read off
-  the screen.
+  reads as alive (in the running app a stationary animal starts about 3.5 events a minute at Real time, of which
+  about one is a scratch); no field rate was compared with them and they must not be read off the screen.
 
 **Not found in this file, and not searched for on the web for this stage:** a resting respiratory rate of
 chimpanzees; rates of yawning, self-scratching, weight shifts or glances in the wild; how the abdomen changes with

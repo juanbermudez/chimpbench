@@ -60,7 +60,7 @@ float cTuft(vec3 p) { return smoothstep(0.25, 0.75, 0.65 * cVNoise(p * vec3(24.0
  * COAT_SLEEK: how far a sleeked coat is drawn in; BELLY_FULL and BELLY_EMPTY: the belly at channel +1 and −1 (a
  * pregnancy at term on a full gut reaches +1.8); FLANK: the flanks at ±1; BREATH_CHEST and BREATH_BELLY: half the travel of a resting breath.
  */
-export const BODY_STATE = { COAT_RAISE: 0.05, COAT_SLEEK: 0.006, BELLY_FULL: 0.065, BELLY_EMPTY: 0.035, FLANK: 0.03, BREATH_CHEST: 0.0045, BREATH_BELLY: 0.0055 } as const;
+export const BODY_STATE = { COAT_RAISE: 0.05, COAT_SLEEK: 0.006, BELLY_FULL: 0.065, BELLY_EMPTY: 0.035, FLANK: 0.03, BREATH_CHEST: 0.006, BREATH_BELLY: 0.008 } as const;
 // Shared by the colour, depth and silhouette passes: skin the vertex, then inflate the swelling, raise or sleek the
 // coat, round or tuck the belly and flanks and move the ribcage with the breath, so shadows and outlines follow.
 const SKIN_VERTEX = /* glsl */`
