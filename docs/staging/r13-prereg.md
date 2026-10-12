@@ -670,6 +670,32 @@ reserves, distance, nights in a nest); the half-hour share is further out than t
    `bench-r13/artifacts/r13` (the receipts of 48,034 asks, each with its odds) is kept; reading where the nights and the
    reserves go is the next step and needs no model.
 
+### 14.4 What the readings of the run found (the integrator, 12 October 2026, 17:25 EDT; no model)
+
+Three readings of this run's records, each computed again by a second reader, are in
+[r14-diag-nights.md](r14-diag-nights.md), [r14-diag-energy.md](r14-diag-energy.md) and
+[r14-diag-decode.md](r14-diag-decode.md) (with [r14-second-reader.md](r14-second-reader.md)). They are descriptions
+and register nothing. They correct two sentences of §14.3:
+
+- **Item 3 located the nights in the wrong place.** "0.90 on a nest, so one draw in ten leaves it" is an average over
+  asks where the rules are near-certain. Over all dusk and night asks the model leaves the nest option as often as
+  the rules' own odds would (15.8 against 15.4 per 100). All 21 short nights are one event: a finished nest left in
+  late dusk by an animal with nobody in sight (the adapter puts 0.77 on the nest there, the rules 0.99 or more), and
+  an outing that runs 24 to 212 minutes into the dark. The rules leave a solitary nest early in dusk and never after
+  18:45; the training file held 9 draws of that state.
+- **Item 2's "the store falls" is an eating shortfall on late mornings, and the top pick would not cure it.** The
+  model arm absorbs 30 kcal a day less and spends 3 less. On about a quarter of animal-days an animal is still in
+  its nest after 07:45 (the rules arm: never after 08:00), held by the adapter's own top option, which follows
+  companions that are still in their nests (0.94 on staying where the rules' own odds are 0.000); with every adult on
+  the model the cue feeds itself. 24 of 3,120 training rows were in a nest by day. So §14.3 item 4 stands only as the
+  registered wording: at first order a top pick stays in the nest at more of those asks, not fewer.
+
+Also found: no decode between the top pick and a plain draw eases both failures (the two ends trade one for the
+other); the extra walking is walking toward callers, offered twice as often because the model arm gives 1.67 times
+the pant-hoots; and stage R11's nest mark at ten animals would have been kept with a probability of about 0.6 at this
+run's rate, so it carried little weight for the decode rule this stage read from it. What follows is stage R14:
+labels from the rules on the states a model-driven population itself reaches, registered before anything runs.
+
 ## For the integrator
 
 **Changed by the review of 12 October 2026 (§13); read this before the launch order.**

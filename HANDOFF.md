@@ -104,7 +104,11 @@ run; 0.307 and 0.353 against the simple rule's 0.353 and the untuned model's 0.3
 Taï record stays a test, not a teacher, at this size). **Stage R13 ran from 10:41 to 15:11 and is read** (`r13-prereg.md` §14: 20 simulated days, no timeout, no death; not
 viable by the registered readouts, nights in a nest 0.972 against a floor of 0.982 and reserves −0.054% a day against
 −0.011; movement at the rules' level on three rows of four, distance above; the draw does not become a decode for
-population runs). **Read the `state` files first
+population runs). **The run's records were then read without a model** (`r14-diag-nights.md`,
+`r14-diag-energy.md`, `r14-diag-decode.md`; `r13-prereg.md` §14.4): both failures sit in states the rules' own worlds
+hardly reach (in a nest by day beside companions in theirs; alone in a finished nest in late dusk), and stage R14
+(labels from the rules on the model population's own states) is being designed, registered and built on branch
+`r14-own-states`; nothing of it has run. **Read the `state` files first
 (third item). If the queue's no longer says `running`, the rest of this paragraph is history: go to §5, task 1.**
 
 - **Stage RW3** (`docs/staging/rw3-prereg.md`): two small adapters taught 557 wild Taï first-grooming-partner
