@@ -56,7 +56,7 @@ reading() {
   title="Stage R13: stage R7's card at the population unit on seed $6, the control arms and both runs (numbers)${7:+ - DRY RUN, a fake worker, not a result}"
   note="Written by stage R7's report script for stage R13 (r13-prereg.md, section 8). The worlds also carry observeV5 1 from the first tick (the rules never read it) and every arm continues one burned-in world. The model arm is a rules-taught model on a rules menu: a model taught the rules' own odds, one training of the recipe, the loop's gate on; animals under 8 years stay on the rules. One world seed and one run: a level measurement. A cell reading 'closer' in section 12 is not a claim of this stage (r13-prereg.md, section 8.3); the registered statements are in r13-numbers.md."
   step $TSX scripts/r7-report.ts --dir "$1" --units P --seeds "$6" --engine "the model arm=$ML;the rules through the night script=$RL" --title "$title" --note "$note" --md "$4/$5-card.md"
-  step $TSX scripts/r13-report.ts --dir "$1" --seed "$6" --model "$ML" --rules "$RL" --model-run "$2" --rules-run "$3" ${R13_R11_NUMBERS:+--r11 "$R13_R11_NUMBERS"} --md "$4/$5-numbers.md"
+  step $TSX scripts/r13-report.ts --dir "$1" --seed "$6" --model "$ML" --rules "$RL" --model-run "$2" --rules-run "$3" ${R13_R11_NUMBERS:+--r11 "$R13_R11_NUMBERS"} --md "$4/$5-numbers.md" ${7:+--dry}
   cp "$2/replay/replay.md" "$4/$5-model-replay.md"; cp "$3/replay/replay.md" "$4/$5-rules-replay.md"
 }
 
