@@ -423,7 +423,7 @@ Found and left as they are, declared here:
 - **`AGENTS.md`**, added to the line of section 13: "eval 7 and eval 11 refuse until both adapters are trained to the end, and train refuses once a score of a Taï-taught adapter is on file; the scoring step writes adapter.sha256 beside the scores, which the report's S0 holds against the adapter's manifest; a run that fails S0 is written without the Taï-taught adapters' figures; RW3_ALLOW_OTHER_MODEL, RW3_ALLOW_DIRTY and RW3_RERUN each leave an OVERRIDE line in the status log".
 - **Checked at the end:** `tsc --noEmit` and the whole suite were run once on the head that holds this section, after it was committed. Their output is kept, outside git, in `artifacts/rw3/logs/whole-suite-second-reader.out`, and their result is in the second reader's report to the integrator.
 
-## 15. Results (the integrator, 12 October 2026, written 10:45 EDT; frozen checkout `bench-rw3` at c6024c7)
+## 15. Results (the integrator, 12 October 2026, written 10:42 EDT; frozen checkout `bench-rw3` at c6024c7)
 
 Table, generated: [rw3-numbers.md](rw3-numbers.md) (aggregates only; the sealed part not opened). The chain ran from
 09:31 to 10:41 EDT with every step at exit code 0: the two reference scorings read stage RW2's figures again (0.301
