@@ -20,10 +20,25 @@
 #
 # THE SEALED PART: no step takes it. Any argument that names it is refused, and so is a run beside an opened sealed file.
 # A model step first checks its arguments and what it needs on file (a wrong name is refused at once, before anything
-# waits), then refuses while another model process of this project is alive or a registered chain of model steps says
-# it is running, refuses a tree that is not clean, then writes the load and the swap in use and holds while swap in use
-# is above 6 GB (as scripts/r11-run.sh). Every step writes a START and an END line with its exit code to
-# artifacts/rw3/status.log, and a refusal a REFUSED line; a model step's output is also kept under artifacts/rw3/logs.
+# waits), then refuses when the process list cannot be read, while another model process of this project is alive or a
+# registered chain of model steps says it is running, refuses a tree that is not clean, then writes the load and the
+# swap in use and holds while swap in use is above 6 GB (as scripts/r11-run.sh). Every step writes a START and an END
+# line with its exit code to artifacts/rw3/status.log, and a refusal a REFUSED line; a model step's output is also kept
+# under artifacts/rw3/logs.
+#
+# THE ORDER OF THE MODEL STEPS (prereg section 11 and amendments 6 and 11): both adapters are trained before either is
+# scored, and nothing is trained once a score of a Tai-taught adapter is on file (the recipe is then closed). `eval 7`
+# and `eval 11` refuse until both adapters are trained to the end; `train` refuses once such a score is on file. The
+# scoring step writes the sha256 of the weights it scores beside the scores (adapter.sha256), which the report holds
+# against the adapter's manifest.
+#
+# Overrides (all unset by default; each writes an OVERRIDE line to the status log when it takes effect):
+#   RW3_ALLOW_OTHER_MODEL  a model step starts beside another model process (as R11_ALLOW_OTHER_MODEL)
+#   RW3_ALLOW_DIRTY        a model step starts from a tree that is not clean (as R11_ALLOW_DIRTY)
+#   RW3_RERUN              scores on file are made again
+# There is no override for the sealed part, for a registered chain that says it is running, for a training file built
+# without the history check, or for the order of the model steps.
+# Tests only: RW3_NO_MODEL (a model step stops after its refusals, before the hold and the model), RW3_PGREP.
 #
 # Where things are (all git-ignored; each must lie under a folder named artifacts):
 #   RW3_FT_ROOT   the training file and the adapters   (default artifacts/decide-ft/rw3)
@@ -42,6 +57,7 @@ abs() { case "$1" in /*) echo "$1" ;; *) echo "$ROOT/$1" ;; esac; }
 AFT="$(abs "$FT")"; AREC="$(abs "$REC")"; AOUT="$(abs "$OUT")"
 export MGOGO_GHN_ROOT="${MGOGO_GHN_ROOT:-/Volumes/Drive/chimpbench/GHN}" MGOGO_DECIDE_PYTHON="${MGOGO_DECIDE_PYTHON:-/Volumes/Drive/chimpbench/decide-env/bin/python}"
 export HF_HOME="${HF_HOME:-/Volumes/Drive/chimpbench/hf-cache}" HF_HUB_CACHE="${HF_HUB_CACHE:-/Volumes/Drive/chimpbench/hf-cache/hub}" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
+unset MGOGO_DECIDE_SERVER   # with it set the scorer joins a shared scoring server, which does not hold this stage's adapters
 TSX="fnm exec --using=22.22.3 -- pnpm exec tsx"
 PY="$ROOT/training/decide_ft/r4_py.sh"; SYSPY=/usr/bin/python3
 PGREP="${RW3_PGREP:-pgrep}"   # a test of this script's refusals names a stand-in here; nothing else does
@@ -74,6 +90,11 @@ model_procs() {
   { $PGREP -fl "^$MGOGO_DECIDE_PYTHON( |\$)"; $PGREP -fl -- '-B (worker|server|em_score|score_contexts|eval_offline|eval_ab|parity|r8_tokens|r11_tokens|token_audit|train|train_r4|train_r11|train_rw3|distill|bench_batch|bench_train)\.py'
     $PGREP -fl -- '-m experiments\.active_perception\.decide_provider'; } 2>/dev/null | grep -v pgrep | grep -v fake-worker.mjs | sort -u
 }
+# The process list is trusted only if it can be read: it must at least hold this script (`-a`: this script is an
+# ancestor of the question, which the tool leaves out by default). Otherwise "nothing found" would read as "nothing runs".
+procs_readable() { [ -n "$($PGREP -a -f 'rw3-run\.sh' 2>/dev/null)" ]; }
+# A score of a Tai-taught adapter on file, on either part: from then on the recipe is closed (prereg section 11).
+tai_scores_on_file() { for f in "$BENCH"/rw3-tai-groom-s*-own/*-records.jsonl "$OUT"/bench-train/rw3-tai-groom-s*-own/*-records.jsonl; do [ -e "$f" ] && return 0; done; return 1; }
 # A registered chain of model steps (stage R11's nights, stage RW2's scoring) between two of its steps has no model
 # process alive, and its own guard does not know this stage's trainer by name: its state file is read instead.
 chains_running() { for f in $STATES; do [ "$(cat "$f" 2>/dev/null)" = running ] && echo "$f"; done; }
@@ -85,16 +106,27 @@ records_on_hand() { [ -f "$REC/tai-groom/records-train.jsonl" ] && [ -f "$REC/ta
 scored() { [ -s "$1/$2-own/tai-groom-$3-gliner-records.jsonl" ] && [ -s "$1/$2-own/tai-groom-$3-gliner+fan2-records.jsonl" ]; }   # <bench> <adapter> <part>
 # Every refusal comes before the hold, and the caller has checked its arguments before it calls this: nothing waits on a wrong call.
 before_model() { # <what>
+  procs_readable || refuse "the process list cannot be read (not even this script is found in it), so it cannot be told whether another model process is running ($1)" 3
   others="$(model_procs)"
-  [ -n "$others" ] && [ -z "$RW3_ALLOW_OTHER_MODEL" ] && { echo "$others"; refuse "another model process is running ($1)" 3; }
+  if [ -n "$others" ]; then
+    echo "$others"
+    [ -z "$RW3_ALLOW_OTHER_MODEL" ] && refuse "another model process is running ($1)" 3
+    say "OVERRIDE [$STEP] RW3_ALLOW_OTHER_MODEL is set: going on beside another model process ($1)"
+  fi
   chains="$(chains_running)"
   [ -n "$chains" ] && { echo "$chains"; refuse "a registered chain of model steps says it is running ($1)" 3; }
-  [ -n "$(git status --porcelain)" ] && [ -z "$RW3_ALLOW_DIRTY" ] && refuse "the tree is not clean; commit first ($1)" 3
+  if [ -n "$(git status --porcelain)" ]; then
+    [ -z "$RW3_ALLOW_DIRTY" ] && refuse "the tree is not clean; commit first ($1)" 3
+    say "OVERRIDE [$STEP] RW3_ALLOW_DIRTY is set: going on from a tree that is not clean ($1)"
+  fi
   [ -x "$MGOGO_DECIDE_PYTHON" ] || refuse "the model runtime is not at $MGOGO_DECIDE_PYTHON ($1)" 3
   # RW3_NO_MODEL: a test of this script's own refusals stops here, before the hold and the model step, whatever came before
   [ -n "$RW3_NO_MODEL" ] && { say "STOPPED [$STEP] RW3_NO_MODEL is set: no refusal applies and nothing was started"; exit 0; }
   hold_swap
-  if [ "$n" -gt 0 ]; then others="$(model_procs)"; [ -n "$others" ] && [ -z "$RW3_ALLOW_OTHER_MODEL" ] && { echo "$others"; refuse "another model process started during a hold of $n min ($1)" 3; }; fi
+  if [ "$n" -gt 0 ]; then
+    procs_readable || refuse "the process list cannot be read after a hold of $n min ($1)" 3
+    others="$(model_procs)"; [ -n "$others" ] && [ -z "$RW3_ALLOW_OTHER_MODEL" ] && { echo "$others"; refuse "another model process started during a hold of $n min ($1)" 3; }
+  fi
   say "MACHINE [$STEP] before the model load: $(uptime | sed 's/.*load averages: /load /') | swap $(swap_mb) MB in use | waited $n min$([ "$still" -ge 5 ] && echo ' (swap above 6 GB and not falling: going ahead)')"
   return 0
 }
@@ -122,7 +154,9 @@ run_step() {
     echo "model runtime: $MGOGO_DECIDE_PYTHON ($([ -x "$MGOGO_DECIDE_PYTHON" ] && echo found || echo MISSING))"
     echo "machine: $(date '+%d %b %H:%M') | $(uptime | sed 's/.*load averages: /load /') | swap $(swap_mb) MB in use"
     # every reason a model step would refuse or wait, all of them, starting nothing; exit 3 if it would refuse
+    if tai_scores_on_file; then echo "RW3 check: a score of a Tai-taught adapter is on file: the recipe is closed, and train would refuse for an adapter that is not trained to the end"; else echo "RW3 check: no score of a Tai-taught adapter is on file"; fi
     rc=0; others="$(model_procs)"; chains="$(chains_running)"
+    if procs_readable; then echo "RW3 check: the process list can be read"; else echo "RW3 check: the process list cannot be read; a model step would refuse"; rc=3; fi
     if [ -n "$others" ]; then echo "RW3 check: another model process is running; a model step would refuse:"; echo "$others"; rc=3; else echo "RW3 check: no other model process"; fi
     if [ -n "$chains" ]; then echo "RW3 check: a registered chain of model steps says it is running; a model step would refuse:"; echo "$chains"; rc=3; else echo "RW3 check: no registered chain is running"; fi
     if [ -n "$(git status --porcelain)" ]; then echo "RW3 check: the tree is not clean; a model step would refuse"; rc=3; else echo "RW3 check: the tree is clean"; fi
@@ -157,9 +191,11 @@ run_step() {
     assembled || refuse "no training file under $FT/tai: run the dry step first"
     # a finished step does nothing when it is run again, so a chain can be launched again after a failure
     have "$FT" "$NAME" && { say "ON FILE [$STEP] $FT/adapters/$NAME is trained to the end; it is not trained again"; exit 0; }
+    # once a score of a Tai-taught adapter is on file the recipe is closed (prereg section 11): nothing is trained after it
+    tai_scores_on_file && refuse "a score of a Tai-taught adapter is on file: the recipe is closed and nothing is trained after it (docs/staging/rw3-prereg.md section 11). After an S0 that failed for a fault only a new training repairs: log the iteration in the registration first, then move the invalid scores away"
     cut_short "$FT" "$NAME" && refuse "$FT/adapters/$NAME holds a training cut short (weights, no manifest.json); delete the folder, then run this step again"
     # the chooser's own future (prereg section 7, check 5) is checked where the dates are: a file built without it does not teach
-    grep -q '"historyCheck": "not run' "$FT/tai/data-manifest.json" && [ -z "$RW3_ALLOW_NO_HISTORY" ] && refuse "the training file was built without the history check: link data/raw and run the dry step again"
+    grep -q '"historyCheck": "not run' "$FT/tai/data-manifest.json" && refuse "the training file was built without the history check: link data/raw and run the dry step again"
     before_model "train $NAME"
     export MGOGO_FT_ROOT="$AFT"
     logged "train-$NAME" $KEEP "$PY" train_rw3.py --name "$NAME" --train tai/train.jsonl --extra tai/data-manifest.json --seed "$2"
@@ -172,13 +208,21 @@ run_step() {
       cut_short "$AROOT" "$A" && refuse "$AROOT/adapters/$A is a training cut short (weights, no manifest.json); it is never scored"
       have "$AROOT" "$A" || refuse "no adapter $A under $AROOT/adapters (the scoring worker would answer with the untuned model)"
     fi
-    scored "$B" "$A" "$PART" && [ -z "$RW3_RERUN" ] && { say "ON FILE [$STEP] the $PART scores of $A are under $B/$A-own; they are not made again"; exit 0; }
+    # both trainings come before any Tai-taught adapter is scored (amendments 6 and 11): no score of one exists while a training is still to run
+    case "$2" in 7|11) { have "$AFT" rw3-tai-groom-s7 && have "$AFT" rw3-tai-groom-s11; } || refuse "both adapters are trained before either is scored (docs/staging/rw3-prereg.md section 12.1, amendment 6): rw3-tai-groom-s7 and rw3-tai-groom-s11 must both be trained to the end" ;; esac
+    if scored "$B" "$A" "$PART"; then
+      [ -z "$RW3_RERUN" ] && { say "ON FILE [$STEP] the $PART scores of $A are under $B/$A-own; they are not made again"; exit 0; }
+      say "OVERRIDE [$STEP] RW3_RERUN is set: the $PART scores of $A on file are made again"
+    fi
+    mkdir -p "$B/$A-own"
+    # the weights about to be scored, named beside the scores: the report holds them against the adapter's manifest (amendment 10)
+    if [ "$A" != base ]; then shasum -a 256 "$AROOT/adapters/$A/adapter_model.safetensors" | cut -d' ' -f1 > "$B/$A-own/adapter.sha256"; fi
     before_model "score $A on the $PART part"
     export MGOGO_FT_ROOT="$AROOT" MGOGO_FT_ADAPTERS="$A"
-    mkdir -p "$B/$A-own"
     logged "eval-$A-$PART" $KEEP $TSX scripts/rw2-score.ts --dataset tai-groom --part "$PART" --kernels null,rules,gliner,gliner+fan2 --load-model --adapter "$A" --view own \
       --dir "$REC" --out "$B/$A-own" --md "$B/$A-own/numbers.md"
-    scored "$B" "$A" "$PART" || { echo "RW3 failed: the scorer ended without the per-record files of $A"; exit 1; } ;;
+    scored "$B" "$A" "$PART" || { echo "RW3 failed: the scorer ended without the per-record files of $A"; exit 1; }
+    if [ "$A" != base ]; then [ "$(shasum -a 256 "$AROOT/adapters/$A/adapter_model.safetensors" | cut -d' ' -f1)" = "$(cat "$B/$A-own/adapter.sha256")" ] || { echo "RW3 failed: the weights of $A changed while they were scored"; exit 1; }; fi ;;
   report)
     records_on_hand || refuse "no derived records under $REC/tai-groom"
     mkdir -p "$TABLES"

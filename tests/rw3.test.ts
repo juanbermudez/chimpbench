@@ -234,6 +234,7 @@ test('trainer: the pre-load step checks the file, reports the registered plan an
     refused(trainer(ft, ...usual(5)), /not the registered ones/);
     refused(trainer(ft, ...usual(), '--epochs', '6'), /not the registered ones/);
     refused(trainer(ft, ...usual(), '--lr', '0.001'), /not the registered ones/);
+    refused(trainer(ft, ...usual(), '--device', 'cpu'), /not the registered ones/);   // amendment 13: the device is part of the registered recipe
     refused(trainer(ft, '--name', `${RW3_ADAPTER}-s11`, '--train', 'tai/train.jsonl', '--extra', 'tai/data-manifest.json', '--seed', '7'), /the adapter is rw3-tai-groom-s7/);
     refused(trainer(ft, '--name', `${RW3_ADAPTER}-s7`, '--train', 'tai/train.jsonl', '--extra', 'tai/data-manifest.json', '--seed', '7', '--top_layers', '4', '--unregistered', '1'), /may not carry a registered adapter's name/);
     const iteration = trainer(ft, '--name', 'rw3-tai-groom-top4-s7', '--train', 'tai/train.jsonl', '--extra', 'tai/data-manifest.json', '--seed', '7', '--top_layers', '4', '--unregistered', '1');
@@ -248,6 +249,11 @@ test('trainer: the pre-load step checks the file, reports the registered plan an
     refused(trainer(trainerRoot(join(dir, 'h'), rows, { leakCheck: { ok: false } }), ...usual()), /leak checks passed/);
     refused(trainer(trainerRoot(join(dir, 'i'), rows, { historyCheck: { ok: false } }), ...usual()), /history check failed/);
     assert.match(trainer(trainerRoot(join(dir, 'j'), rows, { historyCheck: 'not run (no raw files linked)' }), ...usual()).stdout, /history check: NOT RUN/);
+    // amendment 12: past the pre-load step such a file is refused, before anything of the model's code is reached. (Were the
+    // refusal ever lost, this call could not load a model either: the folder named for the model's code does not exist.)
+    const unchecked = spawnSync(PY, ['-I', 'training/decide_ft/train_rw3.py', ...usual()], { encoding: 'utf8', env: { ...process.env, MGOGO_FT_ROOT: join(dir, 'j', 'artifacts', 'decide-ft', 'rw3'), MGOGO_GHN_ROOT: join(dir, 'no-such-folder'), HF_HUB_CACHE: join(dir, 'no-such-folder') } });
+    assert.notEqual(unchecked.status, 0); assert.match(unchecked.stderr, /built without the history check/); assert.match(unchecked.stdout, /pre-load check passed/);
+    assert.ok(!existsSync(join(dir, 'j', 'artifacts', 'decide-ft', 'rw3', 'adapters')), 'nothing was written');
     const taken = trainerRoot(join(dir, 'g'), rows);
     mkdirSync(join(taken, 'adapters', `${RW3_ADAPTER}-s7`), { recursive: true }); writeFileSync(join(taken, 'adapters', `${RW3_ADAPTER}-s7`, 'adapter_model.safetensors'), 'not weights');
     refused(trainer(taken, ...usual()), /already holds weights/);
@@ -256,7 +262,7 @@ test('trainer: the pre-load step checks the file, reports the registered plan an
 
 // ---------------------------------------------------------------------------------------------------- the wrapper
 
-test('wrapper: refuses a sealed part, an unknown seed, a tracked folder, a run beside another model process or a running chain; writes its status lines', () => {
+test('wrapper: refuses a sealed part, an unknown seed, a tracked folder, a run beside another model process or a running chain, a score before both trainings and a training after a score; writes its status lines', () => {
   const dir = scratch();
   try {
     const out = join(dir, 'artifacts', 'rw3'), ft = join(dir, 'artifacts', 'decide-ft', 'rw3'), rec = join(dir, 'artifacts', 'rw2'), pgrep = join(dir, 'stand-in'), state = join(dir, 'state');
@@ -264,7 +270,8 @@ test('wrapper: refuses a sealed part, an unknown seed, a tracked folder, a run b
     for (const f of ['train.jsonl', 'data-manifest.json']) writeFileSync(join(ft, 'tai', f), '{}\n');
     for (const p of ['train', 'development']) writeFileSync(join(rec, 'tai-groom', `records-${p}.jsonl`), '');
     // a stand-in for the process list: it answers the pattern that names this stage's trainer when the test says a model process is running
-    writeFileSync(pgrep, `#!/bin/sh\necho "$*" >> "${join(dir, 'asked')}"\ncase "$*" in *train_rw3*) [ -f "${join(dir, 'busy')}" ] && echo "4242 Python -B train_r11.py --name invented" ;; esac\nexit 0\n`); chmodSync(pgrep, 0o755);
+    // (and, unless the test says the list cannot be read, the question for the wrapper's own script: amendment 15)
+    writeFileSync(pgrep, `#!/bin/sh\necho "$*" >> "${join(dir, 'asked')}"\n[ -f "${join(dir, 'blind')}" ] && exit 3\ncase "$*" in *train_rw3*) [ -f "${join(dir, 'busy')}" ] && echo "4242 Python -B train_r11.py --name invented" ;; *rw3-run*) echo "4141 /bin/sh scripts/rw3-run.sh" ;; esac\nexit 0\n`); chmodSync(pgrep, 0o755);
     const env = { ...process.env, RW3_OUT: out, RW3_FT_ROOT: ft, RW3_RECORDS: rec, RW3_RAW: join(dir, 'no-raw'), RW3_NGOGO_FT: join(dir, 'artifacts', 'none'), RW3_WAIT_STATES: state, RW3_PGREP: pgrep, RW3_NO_MODEL: '1', RW3_ALLOW_DIRTY: '1', MGOGO_DECIDE_PYTHON: '/usr/bin/false' };
     const run = (args: string[], more: Record<string, string> = {}) => spawnSync('/bin/sh', ['scripts/rw3-run.sh', ...args], { encoding: 'utf8', env: { ...env, ...more } });
     const log = () => readFileSync(join(out, 'status.log'), 'utf8');
@@ -277,7 +284,8 @@ test('wrapper: refuses a sealed part, an unknown seed, a tracked folder, a run b
     // nothing else is running: every refusal check passes and the step stops before the hold and the model
     const free = run(['train', '7']);
     assert.equal(free.status, 0, free.stdout + free.stderr); assert.match(free.stdout, /no refusal applies and nothing was started/);
-    assert.match(log(), /START \[train 7\]\n.*STOPPED \[train 7\].*\n.*END {3}\[train 7\] rc=0/);
+    // (the suite runs from a tree that may hold uncommitted work, so the test sets RW3_ALLOW_DIRTY; when it takes effect it leaves its line)
+    assert.match(log(), /START \[train 7\]\n(?:.*OVERRIDE \[train 7\] RW3_ALLOW_DIRTY.*\n)?.*STOPPED \[train 7\].*\n.*END {3}\[train 7\] rc=0/);
     assert.match(readFileSync(join(dir, 'asked'), 'utf8'), /train_r4\|train_r11\|train_rw3/, 'the process list is asked for this stage\'s trainer and the earlier stages\' by name');
     // another model process
     writeFileSync(join(dir, 'busy'), '');
@@ -285,7 +293,16 @@ test('wrapper: refuses a sealed part, an unknown seed, a tracked folder, a run b
     assert.match(log(), /REFUSED \[train 11\] another model process is running[^\n]*\n[^\n]*END {3}\[train 11\] rc=3/);
     const check = run(['check']);
     assert.equal(check.status, 3); assert.match(check.stdout, /a model step would refuse/); assert.match(check.stdout, /not trained yet: rw3-tai-groom-s7/);
+    // amendment 12: the override is a switch that leaves a line
+    const beside = run(['train', '7'], { RW3_ALLOW_OTHER_MODEL: '1' });
+    assert.equal(beside.status, 0); assert.match(log(), /OVERRIDE \[train 7\] RW3_ALLOW_OTHER_MODEL is set[^\n]*\n(?:[^\n]*OVERRIDE \[train 7\] RW3_ALLOW_DIRTY[^\n]*\n)?[^\n]*STOPPED \[train 7\]/);
     rmSync(join(dir, 'busy'));
+    // amendment 15: a process list that cannot be read is not "nothing is running"
+    writeFileSync(join(dir, 'blind'), '');
+    for (const args of [['train', '7'], ['eval', 'base']]) { const r = run(args); assert.equal(r.status, 3, args.join(' ')); assert.match(r.stdout, /the process list cannot be read/); }
+    const blindCheck = run(['check']);
+    assert.equal(blindCheck.status, 3); assert.match(blindCheck.stdout, /the process list cannot be read; a model step would refuse/);
+    rmSync(join(dir, 'blind'));
     // a registered chain between two of its steps
     writeFileSync(state, 'running\n');
     const chained = run(['train', '7']);
@@ -296,6 +313,7 @@ test('wrapper: refuses a sealed part, an unknown seed, a tracked folder, a run b
     writeFileSync(join(ft, 'tai', 'data-manifest.json'), '{\n "historyCheck": "not run (no raw files linked)"\n}\n');
     const unchecked = run(['train', '7']);
     assert.equal(unchecked.status, 2); assert.match(unchecked.stdout, /built without the history check/);
+    assert.equal(run(['train', '7'], { RW3_ALLOW_NO_HISTORY: '1' }).status, 2, 'there is no override for it (amendment 12)');
     writeFileSync(join(ft, 'tai', 'data-manifest.json'), '{}\n');
     // an adapter that is missing is never scored as if it were there (the worker would answer with the untuned model)
     const missing = run(['eval', '7']);
@@ -306,12 +324,36 @@ test('wrapper: refuses a sealed part, an unknown seed, a tracked folder, a run b
     writeFileSync(join(ft, 'adapters', 'rw3-tai-groom-s7', 'manifest.json'), '{}');
     const again = run(['train', '7']);
     assert.equal(again.status, 0); assert.match(again.stdout, /ON FILE \[train 7\].*not trained again/); assert.doesNotMatch(again.stdout, /STOPPED|MACHINE/, 'the step ended before any model check: nothing was started');
-    assert.equal(run(['eval', '7']).status, 0, 'a finished adapter may be scored (the step stops before the model)');
+    // amendments 6 and 11: both adapters are trained before either is scored
+    const early = run(['eval', '7']);
+    assert.equal(early.status, 2); assert.match(early.stdout, /both adapters are trained before either is scored/); assert.equal(run(['eval', '7', 'train']).status, 2);
+    assert.equal(run(['eval', 'base']).status, 0, 'the untuned model may be scored at any time'); assert.ok(!existsSync(join(out, 'bench', 'base-own', 'adapter.sha256')));
+    mkdirSync(join(ft, 'adapters', 'rw3-tai-groom-s11'), { recursive: true });
+    for (const f of ['adapter_model.safetensors', 'manifest.json']) writeFileSync(join(ft, 'adapters', 'rw3-tai-groom-s11', f), 'not weights either');
+    const both = run(['eval', '7']);
+    assert.equal(both.status, 0, both.stdout); assert.match(both.stdout, /STOPPED \[eval 7\]/, 'both adapters trained to the end: the step goes on (and stops before the model)');
+    // amendment 10: the weights about to be scored are named beside the scores
+    assert.equal(readFileSync(join(out, 'bench', 'rw3-tai-groom-s7-own', 'adapter.sha256'), 'utf8').trim(), sha('not weights'));
+    // amendment 11: once a score of a Taï-taught adapter is on file, on either part, nothing is trained; a finished adapter is still a no-op
+    rmSync(join(ft, 'adapters', 'rw3-tai-groom-s11'), { recursive: true });
+    for (const where of [join(out, 'bench', 'rw3-tai-groom-s7-own', 'tai-groom-development-gliner-records.jsonl'), join(out, 'bench-train', 'rw3-tai-groom-s7-own', 'tai-groom-train-gliner-records.jsonl')]) {
+      mkdirSync(join(where, '..'), { recursive: true }); writeFileSync(where, '{}\n');
+      const closed = run(['train', '11']);
+      assert.equal(closed.status, 2, where); assert.match(closed.stdout, /the recipe is closed and nothing is trained after it/);
+      assert.match(run(['check']).stdout, /a score of a Tai-taught adapter is on file/);
+      const still = run(['train', '7']);
+      assert.equal(still.status, 0); assert.match(still.stdout, /ON FILE \[train 7\]/);
+      rmSync(where);
+    }
+    rmSync(join(out, 'bench-train'), { recursive: true });
+    assert.equal(run(['train', '11']).status, 0, 'with no such score on file the second training may start (the step stops before the model)');
     // scores on file are not made again
     mkdirSync(join(out, 'bench', 'base-own'), { recursive: true });
     for (const k of ['gliner', 'gliner+fan2']) writeFileSync(join(out, 'bench', 'base-own', `tai-groom-development-${k}-records.jsonl`), '{}\n');
     const onFile = run(['eval', 'base']);
     assert.equal(onFile.status, 0); assert.match(onFile.stdout, /ON FILE \[eval base\].*not made again/); assert.doesNotMatch(onFile.stdout, /STOPPED|MACHINE/);
+    const rerun = run(['eval', 'base'], { RW3_RERUN: '1' });
+    assert.equal(rerun.status, 0); assert.match(rerun.stdout, /OVERRIDE \[eval base\] RW3_RERUN is set/); assert.match(rerun.stdout, /STOPPED \[eval base\]/);
     // an opened sealed file beside the records stops every step, unread
     writeFileSync(join(rec, 'tai-groom', 'records-sealed.jsonl'), 'never read\n');
     for (const args of [['check'], ['dry'], ['train', '11'], ['eval', 'base'], ['report']]) { const r = run(args); assert.equal(r.status, 2, args.join(' ')); assert.match(r.stdout, /an opened sealed file/); }

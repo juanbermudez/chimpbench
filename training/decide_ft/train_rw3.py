@@ -19,8 +19,9 @@ registered before any run:
 Rows are {"id", "part", "epoch", "packet", "pick"}: scripts/rw3-assemble.ts writes them. A row is shown only in its
 epoch. The trainer refuses a row that is not of the train part, a pick that is not an offered option, a path that names
 the development or sealed part, a training file whose hash is not the one its manifest records, settings other than
-the registered ones (unless --unregistered 1, which the manifest then says) and an adapter folder that already holds
-weights. Paths are relative to MGOGO_FT_ROOT. The manifest is the last write: weights without it are a training cut
+the registered ones, the device among them (unless --unregistered 1, which the manifest then says), an adapter folder
+that already holds weights and, past the pre-load step, a training file built without the history check. Paths are
+relative to MGOGO_FT_ROOT. The manifest is the last write: weights without it are a training cut
 short, which scripts/rw3-run.sh never scores.
 """
 from __future__ import annotations
@@ -43,6 +44,7 @@ LABEL_SOURCE = "field choices, Tai first grooming partner"
 RESULT_NAME = "Taï-taught adapter on the Taï record's own menu"
 # The registered recipe (prereg section 3): stage R4's field adapter, copied; nothing searched.
 REGISTERED = {"epochs": 4, "lr": 2e-4, "batch": 2, "accum": 4, "r": 16, "alpha": 32.0, "dropout": 0.05, "checkpointing": 0, "top_layers": 8, "amp": "bf16"}
+REGISTERED_DEVICE = "mps"
 SEEDS = (7, 11)
 DEFAULTS = {"name": "", "train": "", "extra": "", "device": "mps", **REGISTERED, "seed": 7, "limit": 0, "unregistered": 0, "stop_before_load": 0}
 
@@ -126,10 +128,11 @@ def preflight(args: dict) -> dict:
     name = args["name"]
     for text in (name, args["train"], args["extra"]):
         open_part_only(text)
-    registered = all(args[k] == v for k, v in REGISTERED.items()) and args["seed"] in SEEDS and not args["limit"]
+    # the device is part of the registered recipe (prereg section 3: bf16 autocast on the Apple GPU backend)
+    registered = all(args[k] == v for k, v in REGISTERED.items()) and args["seed"] in SEEDS and not args["limit"] and args["device"] == REGISTERED_DEVICE
     if not registered and not args["unregistered"]:
         raise Refused("refused: the settings are not the registered ones (docs/staging/rw3-prereg.md section 3: " + ", ".join(f"{k} {v}" for k, v in REGISTERED.items())
-                      + f"; training seed {SEEDS[0]} or {SEEDS[1]}; no --limit). A logged iteration passes --unregistered 1, and the manifest says so")
+                      + f"; device {REGISTERED_DEVICE}; training seed {SEEDS[0]} or {SEEDS[1]}; no --limit). A logged iteration passes --unregistered 1, and the manifest says so")
     if registered and name != f"rw3-tai-groom-s{args['seed']}":
         raise Refused(f"refused: with the registered settings and training seed {args['seed']} the adapter is rw3-tai-groom-s{args['seed']}, not {name}")
     if not registered and name.startswith("rw3-tai-groom-s") and name[len("rw3-tai-groom-s"):].isdigit():
@@ -306,6 +309,9 @@ def main(argv: list) -> None:
         print("RW3_PLAN " + json.dumps({"adapter": name, "seed": args["seed"], "registered": pre["registered"], **p}), flush=True)
         print(f"[{name}] stopped before the model load (--stop-before-load 1): nothing of the model's code was imported, nothing was written", flush=True)
         return
+    if not pre["history_checked"]:
+        # check 5 of prereg section 7 is run where the dates are; a file built without it does not teach (amendments 3 and 12)
+        raise Refused("refused: the training file was built without the history check (docs/staging/rw3-prereg.md section 7, check 5): link data/raw and run scripts/rw3-run.sh dry again")
     train(args, pre)
 
 
