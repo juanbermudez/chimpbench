@@ -1713,6 +1713,11 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     idleOverlay(pw, a.posture, ICTX);
   }
 
+  /** The coat value as it is drawn close up: without the gain an animal small on screen gets (writeParams). */
+  function coatNear(a: Anim): number {
+    const dc = debug.w8 ? debug.channels : undefined;
+    return (dc !== undefined && (dc.only === undefined || dc.only === a.id) ? dc.coat : undefined) ?? a.bristle;
+  }
   function writeParams(a: Anim, elapsed: number) {
     const d = mats.data, o = (a.slot * ROW_TEXELS + PARAM_TEXEL) * 4;
     const c = a.chimp;
@@ -1723,7 +1728,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     // Stage W8. P2.x: the coat, −1 sleek .. 0 as built .. 1 on end, and up to COAT_FAR_GAIN times more on an animal
     // that is small on screen (material.ts). The harness can hold the drawn values (debug.channels).
     const w8 = debug.w8, dc = w8 ? debug.channels : undefined, held = dc !== undefined && (dc.only === undefined || dc.only === a.id) ? dc : undefined, ch = a.ch;
-    const coat = held?.coat ?? a.bristle, lid = w8 ? held?.lid ?? ch.lid : 0;
+    const coat = coatNear(a), lid = w8 ? held?.lid ?? ch.lid : 0;
     d[o + 8] = w8 && coat > 0 ? coat * (1 + COAT_FAR_GAIN * (1 - smoothstep(40, 140, a.px))) : coat;
     d[o + 9] = swell > 0.01 ? swell : -a.tuft; d[o + 10] = a.beard; d[o + 11] = a.bald;
     // A sleepy animal blinks slowly (W8; stylization). With the lid at 0 the blink is what it was.
@@ -2254,6 +2259,11 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       portraitLevel = level;
     }
     (portraitSlot.array as Float32Array)[0] = a.slot; portraitSlot.needsUpdate = true;
+    // Stage W8: the picture is taken from an arm's length, whatever the main camera's distance, so the coat is drawn
+    // at its own height in it, without the gain an animal small on screen gets (seen in the review: a portrait asked
+    // for from the strategy view showed a raised coat twice as high, the crown a pale dome). The picture is drawn
+    // straight after this call, after the main frame; the row is written again on the next frame (writeParams).
+    { const o = (a.slot * ROW_TEXELS + PARAM_TEXEL) * 4 + 8, near = coatNear(a); if (mats.data[o] !== near) { mats.data[o] = near; mats.texture.needsUpdate = true; } }
     // The head bone's frame (bind pose: +Z out of the face, +Y to the crown): the picture faces the face, head upright.
     boneWorld(a.fk, a.bodyQ, a.bx, a.by, a.bz, a.lift, B.head, TP, TQ4);
     portraitQ.set(TQ4[0], TQ4[1], TQ4[2], TQ4[3]);
