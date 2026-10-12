@@ -38,12 +38,16 @@ test('no two neighbours are in step: every animal has its own schedule', () => {
   const ids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], seq = ids.map(id => run(id, 180));
   for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) {
     const a = seq[i], b = seq[j];
-    // Never the same kind starting within a quarter second of each other more than once in three minutes.
+    // The same kind starting within a quarter second of each other is chance (about one start in eighty for two
+    // independent schedules): never more than twice in the ten or so events each has in three minutes.
     let together = 0;
     for (const x of a) for (const y of b) if (x[1] === y[1] && Math.abs(x[0] - y[0]) < 0.25) together++;
-    assert.ok(together <= 1, `animals ${ids[i]} and ${ids[j]} start the same event together ${together} times`);
+    assert.ok(together <= 2 && together <= 0.25 * Math.min(a.length, b.length), `animals ${ids[i]} and ${ids[j]} start the same event together ${together} times of ${a.length} and ${b.length}`);
     assert.notDeepEqual(a.map(e => e[1]), b.map(e => e[1]), 'and their sequences of kinds differ');
   }
+  // Over all 66 pairs such chance meetings stay a small share of the starts.
+  { let meet = 0, starts = 0; for (let i = 0; i < ids.length; i++) { starts += seq[i].length; for (let j = i + 1; j < ids.length; j++) for (const x of seq[i]) for (const y of seq[j]) if (x[1] === y[1] && Math.abs(x[0] - y[0]) < 0.25) meet++; }
+    assert.ok(meet < 0.15 * starts, `${meet} meetings among ${starts} starts`); }
   // The first event of twelve neighbours is spread over many seconds, not one moment.
   const first = seq.map(s => s[0][0]);
   assert.ok(Math.max(...first) - Math.min(...first) > 8);
@@ -64,8 +68,8 @@ test('gaps, kinds and lengths are what the constants say', () => {
 
 test('events come faster at a faster playback rate, and keep their own length', () => {
   assert.equal(idleRate(1), 1); assert.equal(idleRate(4), 1, 'Real time and Watch 4x: as they are');
-  assert.ok(idleRate(60) > 3.8 && idleRate(60) < 4, '1 min/s: nearly four times as often');
-  assert.equal(idleRate(600), 4); assert.equal(idleRate(0), 1);
+  assert.equal(idleRate(60), 3, '1 min/s: three times as often');
+  assert.equal(idleRate(600), 3); assert.equal(idleRate(0), 1); assert.ok(idleRate(16) > 1.9 && idleRate(16) < 2.1);
   let prev = 0; for (const r of [0, 1, 4, 10, 30, 60, 120, 3600]) { assert.ok(idleRate(r) >= prev); prev = idleRate(r); }
   const slow = run(5, 240, { rate: idleRate(1) }), fast = run(5, 240, { rate: idleRate(60) });
   assert.ok(fast.length > 1.9 * slow.length, `${fast.length} against ${slow.length} events`);
@@ -88,6 +92,11 @@ test('the drives: more scratching when aroused or after aggression, more yawning
 test('only what the pose permits: a forbidden kind gives way, nothing starts while the animal is not idle, nor the moment it is idle again', () => {
   const faceOnly = idleBit(IDLE.yawn) | idleBit(IDLE.glance);
   for (const id of [1, 2, 3, 4, 5, 6]) for (const e of run(id, 300, { allow: faceOnly })) assert.ok(e[1] === IDLE.yawn || e[1] === IDLE.glance);
+  // A scratch or a shift that is not permitted becomes a glance, never a yawn: yawns keep their own share.
+  { const ev = Array.from({ length: 40 }, (_, i) => run(i + 1, 300, { allow: faceOnly })).flat(); assert.ok(Math.abs(count(ev, IDLE.yawn) / ev.length - IDLE_SHARE[IDLE.yawn]) < 0.04, `yawns ${count(ev, IDLE.yawn)} of ${ev.length}`); }
+  // A clip that permits nothing but a yawn (being groomed, sitting out rain) yawns at its own share of turns and skips the rest.
+  { const all = Array.from({ length: 40 }, (_, i) => run(i + 1, 300)).flat().length, ev = Array.from({ length: 40 }, (_, i) => run(i + 1, 300, { allow: idleBit(IDLE.yawn) })).flat();
+    assert.ok(ev.every(e => e[1] === IDLE.yawn) && ev.length > 0 && ev.length < 0.15 * all, `${ev.length} yawns against ${all} events of a free animal`); }
   assert.deepEqual(run(3, 120, { allow: 0 }), [], 'walking, calling, asleep: nothing');
   // Not idle for a minute, then idle: the first event waits at least IDLE_SETTLE.
   for (const id of [1, 2, 3, 4, 5, 6, 7, 8]) { const ev = run(id, 120, { allow: t => (t < 60 ? 0 : ALL) }); assert.ok(ev.length > 0 && ev[0][0] >= 60 + IDLE_SETTLE - 0.05, `animal ${id}: first event at ${ev[0]?.[0]}`); }

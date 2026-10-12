@@ -127,7 +127,7 @@ export const idleBit = (kind: number) => 1 << kind;
 /** Seconds between the end of one event and the start of the next at the idle rate 1 (uniform by hash). */
 export const IDLE_GAP = [6, 20] as const;
 /** Share of events by kind at baseline drives (scratch, yawn, weight shift, glance); a nod only enters when asked (NOD_SHARE). */
-export const IDLE_SHARE = [0, 0.34, 0.06, 0.28, 0.32, 0] as const;
+export const IDLE_SHARE = [0, 0.22, 0.06, 0.34, 0.38, 0] as const;
 export const NOD_SHARE = 0.3;
 /** An animal that has just become still (it was walking, calling, in a decision beat) waits at least this long on the idle clock. */
 export const IDLE_SETTLE = 3;
@@ -148,10 +148,10 @@ export function createIdle(id: number): Idle {
 }
 /**
  * How much faster idle events come at a playback rate (ecological seconds per real second): 1 at Real time and at
- * Watch 4×, about 3.9 at 1 min/s, at most 4. Events keep their own length in real seconds, so at 1 min/s a resting
+ * Watch 4×, 3 from 36 s/s on (so at 1 min/s). Events keep their own length in real seconds, so at 1 min/s a resting
  * bout of ten simulated minutes (ten seconds on screen) still shows one or two of them. Design assumption.
  */
-export function idleRate(simRate: number): number { const r = Math.sqrt(Math.max(0, simRate) / 4); return r < 1 ? 1 : r > 4 ? 4 : r; }
+export function idleRate(simRate: number): number { const r = Math.sqrt(Math.max(0, simRate) / 4); return r < 1 ? 1 : r > 3 ? 3 : r; }
 /** Ends the event under way (the animal moved off, or the clip no longer allows it) and waits a short gap. */
 export function idleCancel(s: Idle): void { if (s.kind !== IDLE.none) { s.kind = IDLE.none; s.t = 0; s.dur = 0; s.leanFrom = s.lean; s.next = s.clock + 2; } }
 /**
@@ -177,8 +177,11 @@ export function idleStep(s: Idle, id: number, dt: number, rate: number, allow: n
   const w1 = IDLE_SHARE[1] * scratchK, w2 = IDLE_SHARE[2] * yawnK, w3 = IDLE_SHARE[3], w4 = IDLE_SHARE[4], w5 = NOD_SHARE * Math.max(0, nodK);
   let r = hashUnit(id, 4001 + n) * (w1 + w2 + w3 + w4 + w5);
   let kind: number = (r -= w1) < 0 ? IDLE.scratch : (r -= w2) < 0 ? IDLE.yawn : (r -= w3) < 0 ? IDLE.shift : (r -= w4) < 0 || w5 <= 0 ? IDLE.glance : IDLE.nod;
-  // A kind the pose does not permit gives way to the next one that it does.
-  for (let k = 0; k < 5 && !(allow & idleBit(kind)); k++) kind = kind % 5 + 1;
+  // A kind the pose does not permit gives way to a glance or, failing that, to a weight shift (the two that ask
+  // least of the body); where neither is permitted the turn is skipped. A scratch, a yawn or a nod only ever comes by
+  // its own draw, so a clip that permits nothing but a yawn does not yawn at every turn.
+  if (!(allow & idleBit(kind))) kind = allow & idleBit(IDLE.glance) ? IDLE.glance : allow & idleBit(IDLE.shift) ? IDLE.shift : IDLE.none;
+  if (kind === IDLE.none) { s.next = s.clock + idleGap(id, n, scratchK, yawnK, nodK); return false; }
   const h = hashUnit(id, 5001 + n);
   s.kind = kind; s.t = 0;
   s.site = Math.min(2, Math.floor(hashUnit(id, 6001 + n) * 3)); s.side = hashUnit(id, 7001 + n) > 0.5 ? 1 : 0;
