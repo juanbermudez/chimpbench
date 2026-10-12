@@ -174,11 +174,13 @@ export function createNests(parent: THREE.Object3D, ctx: CreatureContext) {
     // so is one that has since been dropped from the list.
     if (n && (n.treeId !== treeId || n.kx !== Math.round(pos[0] * 2) || n.kz !== Math.round(pos[2] * 2) || nests.get(n.key) !== n)) n = undefined;
     if (!n) {
+      // A sleeper whose building was not followed has nothing to finish here (update() lists its nest and keeps it in
+      // use): no key is built for it. (Before, a sleeper not in the map below built a key string to be put in it, and
+      // the map held 64: with more animals asleep than that, each of them would have built one every frame.)
+      if (k >= 1) return;
       const key = keyOf(treeId, pos);
       n = nests.get(key);
       if (!n) {
-        // (A finished nest not listed yet: update() lists it this frame, and it grows in by the clock as before.)
-        if (k >= 1) return;
         spotFor(treeId, pos, builderId, P);
         n = { key, treeId, x: P.x, y: P.y, z: P.z, built: time, lastUsed: time, seed: hash01(builderId, Math.round(time)), grow: 0 };
         nests.set(key, n);
@@ -187,7 +189,7 @@ export function createNests(parent: THREE.Object3D, ctx: CreatureContext) {
       // (Found already listed: a nest nobody was seen building has no `grow` and keeps growing in by the clock.)
       n.kx = Math.round(pos[0] * 2); n.kz = Math.round(pos[2] * 2);
       building.set(builderId, n);
-      if (building.size > 64) { const first = building.keys().next(); if (!first.done) building.delete(first.value); }
+      if (building.size > MAX_NESTS) { const first = building.keys().next(); if (!first.done) building.delete(first.value); }
     }
     if (n.grow !== undefined && k > n.grow) n.grow = Math.min(1, k);
     n.lastUsed = time;

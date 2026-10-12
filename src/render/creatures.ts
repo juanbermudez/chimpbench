@@ -1873,7 +1873,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         }
         // (The remembered place only while the drawn body is at it: REMEMBERED_TREE_M.)
         inNest = a.nestOk && (c.action === 'nest' || hyp2(a.nestX - a.x, a.nestZ - a.z) < REMEMBERED_TREE_M);
-      } else a.nestOk = false;
+      } else { a.nestOk = false; a.nestK = 1; } // (nestK: a build given up is not carried into the next nest)
       if (tree) {
         const r0 = trunkRadius(tree);
         let dx = x - tree.position[0], dz = z - tree.position[2];
