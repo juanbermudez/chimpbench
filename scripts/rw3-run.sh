@@ -94,7 +94,8 @@ model_procs() {
 # ancestor of the question, which the tool leaves out by default). Otherwise "nothing found" would read as "nothing runs".
 procs_readable() { [ -n "$($PGREP -a -f 'rw3-run\.sh' 2>/dev/null)" ]; }
 # A score of a Tai-taught adapter on file, on either part: from then on the recipe is closed (prereg section 11).
-tai_scores_on_file() { for f in "$BENCH"/rw3-tai-groom-s*-own/*-records.jsonl "$OUT"/bench-train/rw3-tai-groom-s*-own/*-records.jsonl; do [ -e "$f" ] && return 0; done; return 1; }
+# (the model's own per-record files; chance and the simple rules, which the scorer writes first, are not scores of an adapter)
+tai_scores_on_file() { for f in "$BENCH"/rw3-tai-groom-s*-own/*-gliner*-records.jsonl "$OUT"/bench-train/rw3-tai-groom-s*-own/*-gliner*-records.jsonl; do [ -e "$f" ] && return 0; done; return 1; }
 # A registered chain of model steps (stage R11's nights, stage RW2's scoring) between two of its steps has no model
 # process alive, and its own guard does not know this stage's trainer by name: its state file is read instead.
 chains_running() { for f in $STATES; do [ "$(cat "$f" 2>/dev/null)" = running ] && echo "$f"; done; }

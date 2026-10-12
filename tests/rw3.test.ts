@@ -345,6 +345,9 @@ test('wrapper: refuses a sealed part, an unknown seed, a tracked folder, a run b
       assert.equal(still.status, 0); assert.match(still.stdout, /ON FILE \[train 7\]/);
       rmSync(where);
     }
+    // chance and the simple rules, which the scorer writes first into the same folder, are not scores of an adapter
+    writeFileSync(join(out, 'bench', 'rw3-tai-groom-s7-own', 'tai-groom-development-stack-own-records.jsonl'), '{}\n');
+    assert.match(run(['check']).stdout, /no score of a Tai-taught adapter is on file/);
     rmSync(join(out, 'bench-train'), { recursive: true });
     assert.equal(run(['train', '11']).status, 0, 'with no such score on file the second training may start (the step stops before the model)');
     // scores on file are not made again
