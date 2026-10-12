@@ -1,7 +1,7 @@
 # Stage R14 reading: what the model's own odds say about the decode, and where the model hedges
 
 Agent `r14-diag-decode`, branch `r14-diag-decode` from `track-e` cfac813. Read and written on 12 October 2026, 15:28 to
-16:10 EDT (times from `date`). **Reviewed by a second reader the same day, from 16:12 EDT: §7, which corrects
+16:10 EDT (times from `date`). **Reviewed by a second reader the same day, 16:12 to 16:50 EDT: §7, which corrects
 answers 2, 4 and 5 below and reads where the lost nights and the reserves went. Read §7 before the short answers.**
 Notes marked "second reader" in the text below point to it.
 
@@ -453,7 +453,7 @@ None of these is chosen to hit a rate, and none is registered here.
 - **Checks**: `tests/r14-decode.test.ts`, 9 of 9; the three scripts and the test pass a strict type check run on
   them directly. No other test file was run, no build, no simulation.
 
-## 7. The second reader's review (12 October 2026, from 16:12 EDT; times from `date`)
+## 7. The second reader's review (12 October 2026, 16:12 to 16:50 EDT; times from `date`)
 
 A second agent, on this branch, tried to refute the reading above. Like it, this section is **a description of
 finished records**: it registers nothing, runs no world, loads no model, changes no file under `src`, `server`,
@@ -528,7 +528,7 @@ Every figure below came out the same by the second route.
    asks), the published 0.910 (S §R3).
 2. **The saved contexts do say whether a nest-mate was asleep, and none was.** At all 1,571 asks in the nest by
    day the rules counted no company: 0 of 1,358 with a nest-mate of 12 or more listed, 0 of 213 with none. The
-   listed nest-mates were awake. And the rules' pick is to leave at 0.999 and 0.991 of those asks, their best
+   listed nest-mates were awake. And the rules' pick is to stay at 0.001 and 0.009 of those asks, their best
    other option ahead of staying by 0.86 and 0.85 at the median where the jitter spans 0.24 (S §R4). So by day the word
    "asleep" would separate nothing: the right answer is "leave" either way, and the packet already says "full
    daylight" (two packets are printed in S §E).
@@ -598,7 +598,10 @@ minute out of a nest with the ask that chose the act the animal was then in:
 
 At the 62 asks of the first two kinds the adapter gives the rules' nest 0.501 on average where the rules' odds are
 0.997; it gives 0.9 or more at one of them. A nest-mate is listed at one of the 62; the animal is in a finished nest
-at 18; 41 are at night, 21 at dusk; the draw took feeding here (41) or a trip (18).
+at 18; 41 are at night, 21 at dusk; the draw took feeding here (41) or a trip (18). The animal is hungrier at them
+than at the other dusk and night asks where the rules pick a nest (0.66 against 0.39), and the adapter gives
+feeding 0.445 of its odds there against 0.050. Hunger alone is not the mark: over all 996 such asks with hunger at
+0.5 or more the adapter gives the nest 0.923.
 
 **So the published reading of where a draw goes wrong does not name these nights.** Stage R13 §14.3 item 3 has
 "0.90 for a nest at dusk or night, so one draw in ten leaves it". That happens (331 such draws) and mostly costs
@@ -672,7 +675,8 @@ records could not show.
 - **The nights at which the rules' pick is not a nest either** (0.219 of the lost dark minutes) are states the
   rules would leave too. Why the run's animals are awake and alone at night more than the rules' are was not
   read. A short night is not followed by a long morning (2 minutes in the nest by day on the morning after,
-  against 50), nor much preceded by one (64 against 49) (S §R7).
+  against 50). It is somewhat more frequent after a day with an hour or more in the nest (8 of 147 against 13 of
+  613): small counts, a sequence and not a cause (S §R7).
 - **A held draw** (stage R9) would hold either choice: with a companion listed the odds barely move between asks,
   so a stay that won would go on winning. Not run here or anywhere on this adapter.
 - **One training, one seed, one run** for everything in §7.2 item 1 and §7.3. The second training has no
