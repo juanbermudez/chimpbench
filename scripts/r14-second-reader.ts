@@ -440,14 +440,16 @@ P();
   P();
   table(['Asks where the rules are near-certain', 'n', 'Share of asks', 'The adapter\'s mean probability on the rules\' option', 'Share at 0.9 or more', 'The top option is it', 'The run\'s draw applied another option'], [row('all', sure), ...['dawn', 'day', 'dusk', 'night'].map(ph => row(ph, sure.filter(a => a.phase === ph))),
     row('dusk and night, the rules\' option a nest', sure.filter(a => (a.phase === 'dusk' || a.phase === 'night') && a.fam[amax(a.qj)] === 'nest')),
-    row('in its nest, the rules\' option is to stay', sure.filter(a => a.stay >= 0 && amax(a.qj) === a.stay)), row('in its nest, the rules\' option is another', sure.filter(a => a.stay >= 0 && amax(a.qj) !== a.stay)), row('not in its nest', sure.filter(a => a.stay < 0))]);
+    row('in its nest, the rules\' option is to stay', sure.filter(a => a.stay >= 0 && amax(a.qj) === a.stay)), row('in its nest, the rules\' option is another', sure.filter(a => a.stay >= 0 && amax(a.qj) !== a.stay)), row('not in its nest', sure.filter(a => a.stay < 0)),
+    row('not in its nest, no trip to food on the menu (where the approximation leaves out no belief draw)', sure.filter(a => a.stay < 0 && !a.trips.length)), row('not in its nest, a trip to food on the menu', sure.filter(a => a.stay < 0 && a.trips.length > 0))]);
   // the same reading of the held-out draws (the same approximation, the same adapter), so the two columns are like for like
   const hIn = (x: { h: H }) => x.h.r.act.action === 'nest' && x.h.r.carryOn >= 0 && x.h.r.options[x.h.r.carryOn].action === 'nest', hs = rowsOk.filter(x => x.qj[amax(x.qj)] >= 0.99), pOf = (x: { h: H; qj: number[] }) => heldP.get(a0)!.get(x.h.r.id)![amax(x.qj)];
   const hrow = (name: string, g: { h: H; qj: number[] }[]) => [name, n0(g.length), f3(g.length / rowsOk.length), f3(mean(g.map(pOf))), f3(share(g, x => pOf(x) >= 0.9)), f3(share(g, x => amax(heldP.get(a0)!.get(x.h.r.id)!) === amax(x.qj))), f3(mean(g.map(x => 1 - pOf(x))))];
   P('The held-out draws by the same approximation and the same adapter (the last column there is 1 less the mean probability: the expected share of draws that take another option):');
   P();
   table(['Held-out draws where the approximation is near-certain', 'n', 'Share of draws', 'The adapter\'s mean probability on the rules\' option', 'Share at 0.9 or more', 'The top option is it', 'A draw takes another option'], [hrow('all', hs), ...['dawn', 'day', 'dusk', 'night'].map(ph => hrow(ph, hs.filter(x => x.h.r.phase === ph))),
-    hrow('in its nest, the rules\' option is to stay', hs.filter(x => hIn(x) && amax(x.qj) === x.h.r.carryOn)), hrow('in its nest, the rules\' option is another', hs.filter(x => hIn(x) && amax(x.qj) !== x.h.r.carryOn)), hrow('not in its nest', hs.filter(x => !hIn(x)))]);
+    hrow('in its nest, the rules\' option is to stay', hs.filter(x => hIn(x) && amax(x.qj) === x.h.r.carryOn)), hrow('in its nest, the rules\' option is another', hs.filter(x => hIn(x) && amax(x.qj) !== x.h.r.carryOn)), hrow('not in its nest', hs.filter(x => !hIn(x))),
+    hrow('not in its nest, no trip to food on the menu', hs.filter(x => !hIn(x) && !x.h.trips.length)), hrow('not in its nest, a trip to food on the menu', hs.filter(x => !hIn(x) && x.h.trips.length > 0))]);
 }
 
 P('## R4. In the nest');
@@ -494,8 +496,9 @@ P();
   // the same animal, the same morning: consecutive asks in the nest where the listing changes
   const byAD = new Map<string, Ask[]>(); for (const a of nestAsks) { if (a.phase !== 'day' && a.phase !== 'dawn') continue; const k = `${a.day}:${a.id}`; if (!byAD.has(k)) byAD.set(k, []); byAD.get(k)!.push(a); }
   const drop: { k: number; v: number }[] = [], gain: { k: number; v: number }[] = [], same1: { k: number; v: number }[] = [];
-  for (const g of byAD.values()) for (let i = 1; i < g.length; i++) { const a = g[i - 1], b = g[i]; if (b.phase !== 'day' || a.phase !== 'day') continue; const d = b.p[b.stay] - a.p[a.stay]; if (a.matesAny > 0 && b.matesAny === 0) drop.push({ k: b.id, v: d }); else if (a.matesAny === 0 && b.matesAny > 0) gain.push({ k: b.id, v: d }); else if (a.matesAny > 0 && b.matesAny > 0) same1.push({ k: b.id, v: d }); }
-  P(`**The same animal on the same day, two consecutive asks in the nest by day.** The change in the adapter's probability of staying when the last companion listed in a nest (of any age) is gone from the list: ${drop.length ? ci(clusterMean(drop)) : 'none'} (${n0(drop.length)} pairs); when one appears: ${gain.length ? ci(clusterMean(gain)) : 'none'} (${n0(gain.length)} pairs); when one is listed at both: ${same1.length ? ci(clusterMean(same1)) : 'none'} (${n0(same1.length)} pairs). Intervals over animals.`);
+  let bothTop = 0, firstTop = 0;
+  for (const g of byAD.values()) for (let i = 1; i < g.length; i++) { const a = g[i - 1], b = g[i]; if (b.phase !== 'day' || a.phase !== 'day') continue; const d = b.p[b.stay] - a.p[a.stay]; if (a.matesAny > 0 && b.matesAny === 0) drop.push({ k: b.id, v: d }); else if (a.matesAny === 0 && b.matesAny > 0) gain.push({ k: b.id, v: d }); else if (a.matesAny > 0 && b.matesAny > 0) { same1.push({ k: b.id, v: d }); if (a.top === a.stay) { firstTop++; if (b.top === b.stay) bothTop++; } } }
+  P(`**The same animal on the same day, two consecutive asks in the nest by day.** The change in the adapter's probability of staying when the last companion listed in a nest (of any age) is gone from the list: ${drop.length ? ci(clusterMean(drop)) : 'none'} (${n0(drop.length)} pairs); when one appears: ${gain.length ? ci(clusterMean(gain)) : 'none'} (${n0(gain.length)} pairs); when one is listed at both: ${same1.length ? ci(clusterMean(same1)) : 'none'} (${n0(same1.length)} pairs). Intervals over animals. Of the ${n0(firstTop)} pairs with a companion listed at both asks and staying the adapter's top option at the first, staying is still its top option at the second in ${n0(bothTop)}: at first order a top pick that stays once goes on staying for as long as a companion is listed.`);
   P();
 }
 
@@ -558,7 +561,7 @@ P();
     over.push({ first, min: m }); void k;
   }
   const mornings = new Set(asks.map(a => `${calDay(a.t)}:${a.id}`)).size;
-  P(`**From the first ask of a morning at which the rules' pick is to leave the nest, how long the animal was still in a nest act** (per calendar morning and animal; the first dawn or day ask in the nest with the rules' pick another option; then the minutes in a nest act from that ask to 17:00, from the time line: each receipt line sets the act until the animal's next line). Such a first ask exists on ${n0(over.length)} of ${n0(mornings)} animal-mornings. At it the adapter gives staying ${f3(mean(over.map(o => o.first.p[o.first.stay])))} on average (0.9 or more at ${f3(share(over, o => o.first.p[o.first.stay] >= 0.9))}; under 0.5 at ${f3(share(over, o => o.first.p[o.first.stay] < 0.5))}); the draw left at that very ask on ${n0(over.filter(o => o.first.drawn !== o.first.stay).length)} mornings. Minutes still in a nest act after it: median ${n0(qtl(over.map(o => o.min), 0.5))}, mean ${n0(mean(over.map(o => o.min)))}, 90th percentile ${n0(qtl(over.map(o => o.min), 0.9))}, most ${n0(Math.max(...over.map(o => o.min)))}; an hour or more on ${n0(over.filter(o => o.min >= 60).length)} mornings, three hours or more on ${n0(over.filter(o => o.min >= 180).length)}. Summed over the run: ${f3(sum(over.map(o => o.min)) / 60 / mornings, 2)} hours per animal and day past the rules' first pick to leave. The rules' pick is one decision's pick: with the rules the animal would have left at that ask.`);
+  P(`**From the first ask of a morning at which the rules' pick is to leave the nest, how long the animal was still in a nest act** (per calendar morning and animal; the first dawn or day ask in the nest with the rules' pick another option; then the minutes in a nest act from that ask to 17:00, from the time line: each receipt line sets the act until the animal's next line). Such a first ask exists on ${n0(over.length)} of ${n0(mornings)} animal-mornings. At it the adapter gives staying ${f3(mean(over.map(o => o.first.p[o.first.stay])))} on average (0.9 or more at ${f3(share(over, o => o.first.p[o.first.stay] >= 0.9))}; under 0.5 at ${f3(share(over, o => o.first.p[o.first.stay] < 0.5))}); the draw left at that very ask on ${n0(over.filter(o => o.first.drawn !== o.first.stay).length)} mornings, and the top pick would have left at it on ${n0(over.filter(o => o.first.top !== o.first.stay).length)}. Minutes still in a nest act after it: median ${n0(qtl(over.map(o => o.min), 0.5))}, mean ${n0(mean(over.map(o => o.min)))}, 90th percentile ${n0(qtl(over.map(o => o.min), 0.9))}, most ${n0(Math.max(...over.map(o => o.min)))}; an hour or more on ${n0(over.filter(o => o.min >= 60).length)} mornings, three hours or more on ${n0(over.filter(o => o.min >= 180).length)}. Summed over the run: ${f3(sum(over.map(o => o.min)) / 60 / mornings, 2)} hours per animal and day past the rules' first pick to leave. The rules' pick is one decision's pick: with the rules the animal would have left at that ask.`);
   P();
   const hrBlock = (h: number) => (h < 6.5 ? 'before 06:30' : h < 7 ? '06:30 to 07:00' : h < 7.5 ? '07:00 to 07:30' : h < 8.5 ? '07:30 to 08:30' : '08:30 and later');
   table(['Hour of that first ask', 'Mornings', 'The adapter\'s mean probability of staying at it', 'a nest-mate of 12 or more listed', 'Median minutes still in a nest act', 'Mean', 'Three hours or more'], ['before 06:30', '06:30 to 07:00', '07:00 to 07:30', '07:30 to 08:30', '08:30 and later'].map(k => { const g = over.filter(o => hrBlock(o.first.hour) === k); return [k, n0(g.length), f3(mean(g.map(o => o.first.p[o.first.stay]))), f3(share(g, o => o.first.mates > 0)), n0(qtl(g.map(o => o.min), 0.5)), n0(mean(g.map(o => o.min))), n0(g.filter(o => o.min >= 180).length)]; }));
@@ -575,6 +578,12 @@ P();
   const duskNest = withRules.filter(a => (a.phase === 'dusk' || a.phase === 'night') && a.fam[a.rules] === 'nest'), lateNest = nestAsks.filter(a => (a.phase === 'dawn' || a.phase === 'day') && a.rules !== a.stay);
   P(`"Carrying on" here is read by another route than the first reading's: the option that is the animal's act as of its previous receipt line is on this menu, the ask was not raised by the act's own end, and the saved context does not say the act ended: ${n0(carryAsks.length)} asks (the rules' pick carries on at ${f3(share(carryAsks, a => a.rules === a.carry))}). Trip menus by day and dawn: ${n0(tripAsks.length)} (the rules' pick is a trip at ${f3(share(tripAsks, a => a.trips.includes(a.rules)))}). Dusk and night asks where the rules' pick is a nest: ${n0(duskNest.length)}. Dawn and day asks in the nest where the rules' pick is another option: ${n0(lateNest.length)}.`);
   P();
+  {
+    // is the single pick a fair stand-in for what the rules do, on these two rates? The held-out draws have both the pick and the option the rules took
+    const hTrip = held.filter(h => (h.r.phase === 'day' || h.r.phase === 'dawn') && h.trips.length), hCarry = held.filter(h => h.r.carryOn >= 0);
+    P(`**How the single pick reads these two rates where the rules' own choice is on file** (held-out draws). Trip menus by day and dawn (${n0(hTrip.length)}): the rules took a trip at ${f3(share(hTrip, h => h.trips.includes(h.r.rgIndex)))}, the label puts ${f3(mean(hTrip.map(h => sum(h.trips.map(i => h.q[i])))))} on it, and the pick of the receipt's kind is a trip at ${f3(share(hTrip, h => h.trips.includes(h.r.rulesIndex)))}: the pick leaves out the belief draw of a trip to a crown out of sight and reads the rules' trip rate too high. Carrying on (${n0(hCarry.length)} draws): the rules carried on at ${f3(share(hCarry, h => h.r.rgIndex === h.r.carryOn))}, the pick at ${f3(share(hCarry, h => h.r.rulesIndex === h.r.carryOn))}: no such gap.`);
+    P();
+  }
   const show = ['top pick', 'temperature 0.5', 'temperature 0.8', 'nucleus 0.9', 'floor 0.05', 'top when 0.9 or more, else draw', 'plain draw'];
   table(['Setting', `Of the run's ${n0(off.length)} draws off the top, kept`, 'The rules\' pick is the option applied', 'Trip rate', 'Carrying on', `Dusk and night, the rules nest: applies another option (of ${n0(duskNest.length)})`, `Dawn and day in the nest, the rules leave: stays (of ${n0(lateNest.length)})`],
     FAMILY.filter(t => show.includes(t.name)).sort((a, b) => show.indexOf(a.name) - show.indexOf(b.name)).map(t => [t.name, n0(off.filter(a => use(t, a) !== a.top).length), f3(share(withRules, a => use(t, a) === a.rules)), f3(share(tripAsks, a => a.trips.includes(use(t, a)))), f3(share(carryAsks, a => use(t, a) === a.carry)), n0(duskNest.filter(a => use(t, a) !== a.rules).length), n0(lateNest.filter(a => use(t, a) === a.stay).length)]));
@@ -628,6 +637,20 @@ P();
     const t = new Map<string, number>(); for (const a of neither) { const k = a.rules >= 0 ? kindOf(a.fam[a.rules]) : 'none'; t.set(k, (t.get(k) ?? 0) + 1); }
     const t2 = new Map<string, number>(); for (const a of against) { const k = kindOf(a.fam[a.drawn]); t2.set(k, (t2.get(k) ?? 0) + 1); }
     P(`What the rules pick at the asks where their pick is not a nest either: ${[...t].sort((x, y) => y[1] - x[1]).map(([k, v]) => `${k} ${n0(v)}`).join(', ')}. What the draw applied in place of the rules' nest: ${[...t2].sort((x, y) => y[1] - x[1]).map(([k, v]) => `${k} ${n0(v)}`).join(', ')}.`);
+    P();
+  }
+  {
+    // what raised the asks behind the short nights, and how hungry the animal was, against the other dusk and night asks at which the rules' pick is a nest
+    const others = withRules.filter(a => (a.phase === 'dusk' || a.phase === 'night') && a.fam[a.rules] === 'nest' && !opener.has(a));
+    const gates = (g: Ask[]) => { const t = new Map<string, number>(); for (const a of g) t.set(a.gate, (t.get(a.gate) ?? 0) + 1); return [...t].sort((x, y) => y[1] - x[1]).slice(0, 4).map(([k, v]) => `${k} ${f3(v / g.length, 2)}`).join(', '); };
+    table(['Dusk and night asks at which the rules\' pick is a nest', 'Asks', 'Hunger (mean, 0 to 1)', 'hunger 0.5 or more', 'Raised by (share)', 'The adapter\'s mean probability on the nest', 'on feeding here or a trip to food'], [['behind the short nights (the draw applied another option)', against] as [string, Ask[]], ['all the others', others] as [string, Ask[]]].map(([k, g]) =>
+      [k, n0(g.length), f3(mean(g.map(a => a.hunger)), 2), f3(share(g, a => a.hunger >= 0.5)), gates(g), f3(mean(g.map(a => a.p[a.rules]))), f3(mean(g.map(a => sum(a.p.filter((_, i) => a.fam[i] === 'feed' || a.fam[i] === 'food-trip')))))]));
+    const hi = others.filter(a => a.hunger >= 0.5), lo = others.filter(a => a.hunger < 0.5);
+    P(`Over all ${n0(others.length + against.length)} dusk and night asks at which the rules' pick is a nest: with hunger at 0.5 or more (${n0(hi.length + against.filter(a => a.hunger >= 0.5).length)} asks) the adapter gives the nest ${f3(mean([...hi, ...against.filter(a => a.hunger >= 0.5)].map(a => a.p[a.rules])))} on average, with hunger under 0.5 (${n0(lo.length + against.filter(a => a.hunger < 0.5).length)} asks) ${f3(mean([...lo, ...against.filter(a => a.hunger < 0.5)].map(a => a.p[a.rules])))}; the rules' approximated odds on it are ${f3(mean([...hi, ...against.filter(a => a.hunger >= 0.5)].map(a => a.qj[a.rules])))} and ${f3(mean([...lo, ...against.filter(a => a.hunger < 0.5)].map(a => a.qj[a.rules])))}.`);
+    P();
+    // do the short nights follow the days with a long stay in the nest? the rows of the same animal and day
+    const longDay = (r: Row) => (tl.get(`${r.day}:${r.id}`)?.nestDay ?? 0) >= 60, a1 = nights.filter(longDay), a0 = nights.filter(r => !longDay(r));
+    P(`**Short nights after a day with an hour or more in the nest:** ${n0(a1.filter(r => r.nestShare! < 0.9).length)} of ${n0(a1.length)} such animal-days (${f3(share(a1, r => r.nestShare! < 0.9))}) against ${n0(a0.filter(r => r.nestShare! < 0.9).length)} of ${n0(a0.length)} of the others (${f3(share(a0, r => r.nestShare! < 0.9))}). Energy eaten on the day of a short night: ${n0(mean(short.map(r => r.kcalFormula)))} kcal against ${n0(mean(nights.filter(r => r.nestShare! >= 0.9).map(r => r.kcalFormula)))} on the other animal-days. Small counts: a description.`);
     P();
   }
   // how many of the run's dusk and night draws away from a nest the rules pick fell on a short night at all
@@ -713,6 +736,37 @@ P();
     P('## L. Ten animals on the same adapter under a draw (stage R11\'s loop), by the second route');
     P();
     P(`${n0(lo.length)} asks the kernel's choice settled with a rules' pick on the menu (${loopFiles.map(x => `\`${x.split('/').slice(-2).join('/')}\``).join(', ')}). The adapter's top option is the rules' pick at ${f3(share(lo, x => x.top === x.r.rulesIndex))}; where it gives 0.9 or more, at ${f3(share(lo.filter(x => x.p[x.top] >= 0.9), x => x.top === x.r.rulesIndex))} (${n0(lo.filter(x => x.p[x.top] >= 0.9).length)} asks). The receipt marks an act that could be carried on at ${n0(lc.length)} asks: the rules' pick carries on at ${f3(share(lc, x => x.r.rulesIndex === x.cur))}, the draw carried on at ${f3(share(lc, x => x.r.dec!.index === x.cur))}, the top pick would at ${f3(share(lc, x => x.top === x.cur))}. In a nest by day: ${n0(ln.length)} asks, staying at 0.9 or more at ${f3(share(ln, x => x.p[x.cur] >= 0.9))}; in a nest between 07:30 and 18:00 with the rules' pick another option: ${n0(late.length)} asks, ${f3(late.length / lo.length)} of the ten animals' asks.`);
+    P();
+  }
+}
+
+{
+  // the two generated files, cell against cell: the first reader's tables as committed, against this script's own figures
+  const offFile = arg('first-offline', 'docs/staging/r14-decode-offline.md'), runFile = arg('first-run', 'docs/staging/r14-decode-run.md');
+  if (existsSync(offFile) && existsSync(runFile)) {
+    const cells = (line: string) => line.split('|').slice(1, -1).map(x => x.trim()), num = (x: string) => parseFloat(x.replace(/,/g, ''));
+    const off = readFileSync(offFile, 'utf8').split('\n'), rn = readFileSync(runFile, 'utf8').split('\n');
+    let same = 0, all = 0; const differs: string[] = [];
+    for (const a of ADAPTERS) {
+      const start = off.findIndex((l, i) => l === `### ${a}` && off.slice(0, i).some(x => x.startsWith('## 1.')));
+      for (const t of FAMILY) {
+        const row = off.slice(start).find(l => l.startsWith(`| ${t.name} |`)); if (!row) { differs.push(`${a}: no row "${t.name}"`); continue; }
+        const c = cells(row), mine = six(held, h => t.f(heldP.get(a)!.get(h.r.id)!)), theirs = [c[1], c[4], c[5], c[6], c[7], c[8]];
+        SIX.forEach((k, i) => { all++; if (mine[k].toFixed(3) === num(theirs[i]).toFixed(3)) same++; else differs.push(`${a}, ${t.name}, ${k}: ${mine[k].toFixed(3)} against ${theirs[i]}`); });
+      }
+    }
+    const offRun = asks.filter(a => a.drawn !== a.top), tripAsks = withRules.filter(a => (a.phase === 'day' || a.phase === 'dawn') && a.trips.length), duskNest = withRules.filter(a => (a.phase === 'dusk' || a.phase === 'night') && a.fam[a.rules] === 'nest'), lateNest = nestAsks.filter(a => (a.phase === 'dawn' || a.phase === 'day') && a.rules !== a.stay);
+    let sameR = 0, allR = 0;
+    const s5 = rn.findIndex(l => l.startsWith('## 5.'));
+    for (const t of FAMILY) {
+      const row = rn.slice(s5).find(l => l.startsWith(`| ${t.name} |`)); if (!row) { differs.push(`the run: no row "${t.name}"`); continue; }
+      const c = cells(row), mine = [String(offRun.filter(a => use(t, a) !== a.top).length), share(withRules, a => use(t, a) === a.rules).toFixed(3), share(tripAsks, a => a.trips.includes(use(t, a))).toFixed(3), String(duskNest.filter(a => use(t, a) !== a.rules).length), String(lateNest.filter(a => use(t, a) === a.stay).length)];
+      const theirs = [String(num(c[3])), num(c[4]).toFixed(3), num(c[5]).toFixed(3), String(num(c[7])), String(num(c[8]))];
+      mine.forEach((v, i) => { allR++; if (v === theirs[i]) sameR++; else differs.push(`the run, ${t.name}, column ${i}: ${v} against ${theirs[i]}`); });
+    }
+    P('## C. The two generated files, cell against cell');
+    P();
+    P(`The first reader's committed tables, read as text, against this script's own figures. Held-out draws, the six readouts of the ${n0(FAMILY.length)} settings in both trainings: **${n0(same)} of ${n0(all)} cells the same** to three decimals. The run, first order, five columns of the ${n0(FAMILY.length)} settings (the draws off the top option kept, agreement with the rules' pick, the trip rate, the dusk and night asks that apply another option than the rules' nest, the dawn and day asks that stay against the rules' pick; carrying on is left out because it is read by another definition here): **${n0(sameR)} of ${n0(allR)} cells the same**.${differs.length ? ` Differences: ${differs.join('; ')}.` : ' No difference.'}`);
     P();
   }
 }

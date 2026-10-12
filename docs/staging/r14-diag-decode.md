@@ -1,7 +1,9 @@
 # Stage R14 reading: what the model's own odds say about the decode, and where the model hedges
 
 Agent `r14-diag-decode`, branch `r14-diag-decode` from `track-e` cfac813. Read and written on 12 October 2026, 15:28 to
-16:10 EDT (times from `date`).
+16:10 EDT (times from `date`). **Reviewed by a second reader the same day, from 16:12 EDT: §7, which corrects
+answers 2, 4 and 5 below and reads where the lost nights and the reserves went. Read §7 before the short answers.**
+Notes marked "second reader" in the text below point to it.
 
 **This is a description of finished records.** It registers nothing, runs no world and loads no model, changes no file
 under `src`, `server`, `training`, `data` or `tests/fixtures`, and proposes no setting chosen to hit a behavioural rate
@@ -49,7 +51,9 @@ both (O, opening).
    the adapter's odds nearest the rules' is 1.15 in both trainings: a little flatter, not sharper, and worth little
    (a divergence of 0.611 against 0.617). No group a decode could see (the time of day, the kind of the top option,
    its probability) wants a sharpening temperature in both halves. Split by the label, which no decode can see, the
-   two sides appear: 0.80 where the rules are sure, 1.65 where they are spread (O §3).
+   two sides appear: 0.80 where the rules are sure, 1.65 where they are spread (O §3). *(Second reader, §7.2 item 3:
+   "the other way" holds by the divergence and the squared difference; by total variation the best temperature is
+   0.50.)*
 3. **On the rules' own states the adapter is calibrated; what it lacks is the power to tell two kinds of moment
    apart.** When it gives its top option 0.4 to 0.6 the rules' odds on that option average 0.472, and that average
    is made of moments where the rules hold 0.99 or more (0.129 of them), moments where they hold 0.01 or less (0.163)
@@ -66,13 +70,16 @@ both (O, opening).
    animal-days an animal was asked in its nest between 07:30 and 18:00 while the rules' pick was to leave, after 930
    minutes in the nest at the median and with thirst at 0.98 of 1 on average (R §4). Ten animals on the same
    adapter already show the first part (the top option is the rules' pick at 0.523) and not the nest by day (0.004
-   of their asks against 0.028 of the population's) (R §6).
+   of their asks against 0.028 of the population's) (R §6). *(Second reader, §7.2 item 1: "different" is too strong.
+   Outside the nest the adapter hedges more on the run's states than on the held-out draws; both faults are there.)*
 5. **So the decode is the small lever, and it pulls both ways, at first order.** At the run's own asks, with the
    run's own seeded draw: the draw applied another option at 331 of the 3,190 dusk and night asks where the rules'
    pick is a nest, the top pick would at 133; and at the 3,653 dawn and day asks in the nest where the rules' pick is
    to leave, the draw stayed at 3,235 and the top pick would stay at 3,420. A sharper setting saves about as many
    nests at dusk as it adds stays by day, and no setting touches the larger number: under every one the animal stays
-   at 0.886 to 0.938 of those asks (R §5). What the world would then have done, this cannot say.
+   at 0.886 to 0.938 of those asks (R §5). What the world would then have done, this cannot say. *(Second reader,
+   §7.3: asks are not nights. Traced to the two registered readouts, the short nights begin where the adapter gives
+   the nest about a half, and a mild setting changes none of them.)*
 6. **In the code a transform is one line, and a reversal of a registered decision.** Stage R9 registered a decode with
    "no temperature, offset, prior, class weight or threshold", on the user's approval of 10 October, and a test holds
    it (§3 below).
@@ -223,7 +230,9 @@ Partly not. Three things, in the order of how well the records hold them:
    nest" either way (`src/kernel/packet-own.ts`). On the held-out file this could hardly show: 8 of 1,500 draws are in
    the nest by day (24 of 3,120 in the training file, O §7). In the 3 of them with a nest-mate listed the rules stay
    at 0.000 and the adapters give 0.961 and 0.914 (O §6). The population run is where it shows (§2.3 below), and
-   even there it is not shown that this word is what would separate the cases (§5, item 4).
+   even there it is not shown that this word is what would separate the cases (§5, item 4). *(Second reader, §7.2
+   item 2: the saved contexts do say. At none of the run's 1,571 asks in the nest by day did the rules count a
+   nest-mate asleep, and the rules leave either way, so the word would separate nothing there.)*
 3. **Nest-mates the animal knows of without seeing them.** In the dark the rules count a nest-mate within 9 m as
    "known without being seen"; the packet lists only whom the animal perceives. Eight held-out draws, 4 at night and
    4 at dawn, have the animal awake, no nest-mate listed, and staying worth 0.6 or more: the rules stay at 0.761 and
@@ -299,7 +308,8 @@ the held-out draws (R §4).
   long the animal had been in the nest: 930 minutes at the median, 1,232 at the 90th percentile, 2,273 at the most
   (held-out draws in the nest: a median of 752 at dawn, 832 at the most). Thirst is 0.98 on average on a scale to
   1. The
-  rules' pick instead: a drink 442, a trip to food 374, a social act 299, feeding here 209.
+  rules' pick instead: a drink 442, a trip to food 374, a social act 299, feeding here 209. *(Second reader, §7.2
+  item 6: thirst is 0.85 in the rules' own nests at dawn; it does not mark these asks.)*
 - **Ten animals did not show it, a population does** (R §6; the same adapter's draw arm in stage R11's loop, 3,708
   asks). In the nest by day the ten animals' adapter gives staying 0.9 or more at 0.250 of 24 asks, the
   population's at 0.744 of 1,571; in the nest between 07:30 and 18:00 with the rules' pick to leave are 0.004 of the
@@ -421,6 +431,8 @@ None of these is chosen to hit a rate, and none is registered here.
    code, on the table of §2.3 (the adapter follows "a nest-mate is listed", the rules do not) and on 3 and 8 held-out
    draws. It is the weakest of the four: the saved contexts do not say whether the listed nest-mates were asleep, so
    it is not shown that the word would separate the cases. It would be refuted if they were asleep at those asks.
+   *(Second reader, §7.4: the two halves come apart. The word "asleep" is not supported; the nest-mates the rules
+   count in the dark and the packet does not list are.)*
 5. **A longer schedule** rests only on the last epoch's fall in the development loss, and speaks to §1 alone.
 
 ## 6. Limits, and what was not done
@@ -437,17 +449,262 @@ None of these is chosen to hit a rate, and none is registered here.
   reading's question).
 - **Not reconciled**: stage R13's table has rest lower and feeding higher by day for the model arm, which does not
   obviously fit animals lying in nests; how the field observer classes an animal in a nest by day was not looked up.
+  *(Second reader, §7.2 item 7: reconciled. Those rows are shares of the time out of a nest.)*
 - **Checks**: `tests/r14-decode.test.ts`, 9 of 9; the three scripts and the test pass a strict type check run on
   them directly. No other test file was run, no build, no simulation.
 
+## 7. The second reader's review (12 October 2026, from 16:12 EDT; times from `date`)
+
+A second agent, on this branch, tried to refute the reading above. Like it, this section is **a description of
+finished records**: it registers nothing, runs no world, loads no model, changes no file under `src`, `server`,
+`training`, `data` or `tests/fixtures`, and proposes no setting chosen to hit a rate. Every model figure is a
+**"rules-taught model on a rules menu"**; the population figures are one training, one world seed, one run.
+
+**Where its numbers come from.** One generated file, [r14-second-reader.md](r14-second-reader.md), cited as **S §n**,
+printed by `scripts/r14-second-reader.ts`. That script imports nothing of the first reader's code: the transforms,
+the draw, the joins and the definitions of "in the nest" and "could be carried on" are written again, so an error in
+either route shows as a difference between the two files. `tests/r14-second-reader.test.ts` (4 tests) is the one
+place the two routes meet: the two families give the same odds on 400 seeded menus, and the draw written again takes
+the option the decode's own draw takes.
+
+```sh
+fnm exec --using=22.22.3 -- pnpm exec tsx scripts/r14-second-reader.ts --r11 $R11 --run $R13 \
+  --rules <main checkout>/.claude/worktrees/bench-r13/artifacts/r13/rules-s3613 \
+  --loop $LOOP/s4111/p5b-s7-draw-1.receipts.jsonl,$LOOP/s4222/p5b-s7-draw-1.receipts.jsonl \
+  --md docs/staging/r14-second-reader.md                                        # 16 s
+fnm exec --using=22.22.3 -- pnpm exec tsx --test tests/r14-second-reader.test.ts   # 4 tests
+```
+
+**Three things on file that the first reading did not use**, and that most of what follows rests on:
+
+- **The rules' value of every option at every ask of the run.** Each saved context holds each option's score. The
+  jitter in it is a hash of the animal, its decision version, the act and the target (recomputed for 8,951 options
+  of the held-out records, it matches the sampler's own figure to within 0.00005). So the rules' odds on the menu
+  shown can be approximated on the run's own states, not only their single pick. On the held-out draws, where the
+  true label is on file, the approximation is 0.064 from the label in total variation (0.017 from the label on the
+  fixed menu) and agrees with it on "0.99 or more on one option" at 0.938 of draws, 0.976 in the nest (S §H6). It
+  leaves out the belief draw of a trip to a crown out of sight, so it is weakest on trips.
+- **Whether the rules counted a nest-mate's company**, saved with the stay option. By day the rules count it only
+  for a nest-mate asleep.
+- **The timing card's count of every tick of both arms** (in the replay), and the rows per animal and day.
+
+### 7.1 What was computed again, and held
+
+Every figure below came out the same by the second route.
+
+- **Held-out draws** (S §H0, §H1, §H3, §H4): the published figures, 12 of 12 to three decimals; the six readouts of
+  all 24 settings in both trainings; none of the 22 settings between the ends nearer on all six, the most 1 of 6;
+  the same with another split of the animals (odd and even numbers in place of the hash): none, the most 1 of 6,
+  the divergence picking the mildest setting of each family every time. The calibration gap 0.033 and 0.045. Sure
+  draws 628; hedged 388 and 411, both 373 against 254 by chance; correlation 0.97.
+- **The run** (S §R0 to §R6): 68,656 lines, 48,034 asks, 47,007 settled by the kernel, every draw replayed. Top
+  probability 0.381, 0.649, 0.976 at the tenth, the median and the ninetieth. 15,714 draws off the top option; the
+  applied option under 0.05, 0.1 and 0.2 at 0.041, 0.086 and 0.173. The top option is the rules' pick at 0.529
+  (held out 0.626). The whole nest table of §2.3. 1,325 asks in the nest by day against the rules' pick, 38 animals,
+  234 of 760 animal-days. The first-order table of §2.4, cell for cell. Carrying on was read by another definition
+  (the animal's act as of its previous receipt line, 28,482 asks in place of 26,663): the rules' pick 0.385, the
+  draw 0.623, the top pick 0.707, against 0.387, 0.628 and 0.708.
+- **Ten animals** (S §L): 3,708 asks, 0.523, 0.789, carrying on 0.404, 0.601, 0.711, the nest by day 24 asks.
+- **The two generated files of the first reading** come out of their scripts again unchanged but for the header
+  line, and their tables agree with this script's own figures cell for cell: 288 of 288 on the held-out draws,
+  120 of 120 on the run (S §C).
+- **No selection was found.** The 1,027 asks left out are 0.021 of asks, by day and at interrupts; 2 of them are
+  at dusk or night with the rules' pick a nest (S §R9). No ask lacks a context. The same asks are the denominator
+  for the rules' pick and for every setting. Pooling does not flatter the nest figure: at the first ask of each
+  animal-day in the nest by day the adapter gives staying 0.832, against 0.875 over all such asks (S §R5).
+- **The single pick stands in for the odds.** By the approximated odds the reliability table of §2.2 reads the
+  same: where the adapter gives 0.95 to 0.99 the rules' odds on that option are 0.583 (their pick 0.592; held out
+  0.964) (S §R3).
+
+### 7.2 What is corrected or weakened
+
+1. **"Too sure, not too hedged" is half of it.** By their saved values the rules are near-certain at 22,261 of the
+   run's asks (0.474). There the adapter gives the rules' option 0.552, where the held-out draws read the same way
+   give 0.700 (0.718 by the true label). Outside the nest it is 0.510 against 0.640, and a draw takes another
+   option at 0.491 of those asks against 0.360; on menus with no trip to food, where the approximation leaves
+   nothing out, 0.523 against 0.651. By day 0.481 against 0.632. So on the run's own states the
+   adapter is **more hedged** where the rules are sure everywhere but in the nest, **and** too sure of staying in
+   it. One figure does carry over unchanged: a nest at dusk or night that the rules are sure of gets 0.912 (2,916
+   asks), the published 0.910 (S §R3).
+2. **The saved contexts do say whether a nest-mate was asleep, and none was.** At all 1,571 asks in the nest by
+   day the rules counted no company: 0 of 1,358 with a nest-mate of 12 or more listed, 0 of 213 with none. The
+   listed nest-mates were awake. And the rules' pick is to leave at 0.999 and 0.991 of those asks, their best
+   other option ahead of staying by 0.86 and 0.85 at the median where the jitter spans 0.24 (S §R4). So by day the word
+   "asleep" would separate nothing: the right answer is "leave" either way, and the packet already says "full
+   daylight" (two packets are printed in S §E).
+3. **Which way one temperature points depends on the measure.** By the divergence the best is 1.15 (0.611 against
+   0.617), by the squared difference 1.15 (0.272 against 0.274), and the top option alone is calibrated at 1.15.
+   By total variation it is 0.50 (0.322 against 0.352), a larger gain. The divergence charges most for the few
+   draws where the rules take an option the model nearly never does: 75 draws carry 0.247 of its sum, and without
+   them its best temperature is 0.95 (S §H2). "One temperature does not describe the gap" stands. "The best one
+   points the other way" does not.
+4. **"None nearer on all six" could hardly have come out otherwise.** The rules lie between the two ends on the
+   trip rate alone. On carrying on they lie beyond the draw; on leaving a sure option, leaving a nest and
+   disagreeing with the pick they lie beyond the top pick; the divergence is lowest at the draw (S §H1). A setting
+   that moves from one end toward the other cannot win both groups. The count is a property of the question, not
+   evidence about any setting.
+5. **The cue is "a companion listed in a nest", of any age.** By day the adapter gives staying 0.939 with a
+   companion of 12 or more listed in a nest, 0.772 with only younger ones, 0.160 with none (99 asks). The same
+   animal on the same day, two asks running: when the last such companion leaves the list its probability of
+   staying falls by 0.703 (0.666 to 0.740; 58 pairs); when one stays listed it moves by 0.017 (1,227 pairs). Hour,
+   minutes in the nest, thirst, hunger, rain and party size add nothing beside it (S §R4). This is the first
+   reading's finding, sharper, and it rules out two other readings: the `doing` line alone does not hold the
+   animal (0.160), and nor do minutes beyond the training range (1,087 of the 1,571 asks are past the longest
+   training row, 833 minutes, and the term for minutes is 0.00) (S §T).
+6. **Thirst marks nothing.** It is 0.98 at those asks, 0.91 at the run's dawn asks in the nest and 0.85 at the
+   held-out draws in the nest at dawn, with the rules (S §R5).
+7. **The rest row is reconciled.** Stage R13's activity rows are shares of the time out of a nest. The timing card
+   has the model arm out of a nest 10.69 hours a day against 11.60 for the paired rules arm. In the rows per
+   animal and day, which score an animal in a nest by daylight as rest, the model arm rests more (291 against 277
+   minutes), 68 of them in a nest (S §R8).
+8. **"The trip rate is under the rules' on the run's states" is about half the size it reads.** The rules' single
+   pick leaves out the belief draw of a trip to a crown out of sight. On the held-out draws that pick is a trip at
+   0.242 of trip menus where the rules took the trip at 0.220. So the run's 0.273 for the pick, against 0.225 for
+   the draw, overstates the rules' rate by about that much. Carrying on has no such gap (the pick 0.519, the rules
+   0.522), so "the rules' pick carries on at 0.385 where the draw carried on at 0.623" stands as it reads (S §R6).
+
+### 7.3 Where the reserves and the nights went (not read above; stage R13 §14.3 item 4 asked for it)
+
+**The reserves fall on the days with a long stay in the nest, and nowhere else.** By the timing card's count the
+model arm is in a finished nest outside the dark hours 139 minutes a day against 84 for the rules arm (55 more on
+the same animal and day, 44 to 66). Split by that count (S §R8):
+
+| Model arm, minutes in a nest outside the dark | Animal-days | Reserves, % of the usual store a day | Rules arm, same animal-days | Energy eaten, kcal | Rules arm |
+| --- | --- | --- | --- | --- | --- |
+| within the rules arm's range (to 132) | 547 | +0.091 | +0.022 | 1,727 | 1,638 |
+| beyond it by three hours or more | 69 | -1.022 | +0.007 | 746 | 1,565 |
+| all | 760 | -0.054 | +0.008 | 1,591 | 1,617 |
+
+On the 547 ordinary days the model arm gains more than the rules arm and eats more. The registered figure of -0.054
+is made by 69 animal-days, one in eleven. The same animal on its days with an hour or more in the nest by day
+loses 0.652% a day more than on its other days and eats 559 kcal less (37 animals). This is the same animal-days
+read two ways, with a plain mechanism (an animal in a nest does not feed); it is not a controlled test, and the two
+arms are different worlds after the first decision.
+
+How a morning goes (S §R5): on 571 animal-mornings there is a first ask at which the rules' pick is to leave the
+nest. The adapter gives staying 0.816 at it; the draw leaves at once on 97. The animal is then still in a nest 38
+minutes at the median, 91 on average, three hours or more on 86 mornings, 83 of which had a nest-mate listed at
+that first ask. It is asked again every 33 minutes at the median, mostly by the gate's own half-hour limit (682 of
+1,325 asks), and each draw is new.
+
+**The short nights begin where the adapter gives the nest about a half, alone in the dark** (S §R7). 21 of 760
+animal-nights fall short of nine tenths in a nest; the rules arm has none. On every one of the 21 there is an ask
+at which the nest was the rules' pick and the adapter's top option, and the draw took another. Counting each dark
+minute out of a nest with the ask that chose the act the animal was then in:
+
+- 0.485 follow such a draw off a nest that was the top option;
+- 0.296 follow an ask at which the adapter's top option was not the nest the rules pick;
+- 0.219 follow an ask at which the rules' pick was not a nest either (a drink 19, a trip 8, rest 6; all at night).
+
+At the 62 asks of the first two kinds the adapter gives the rules' nest 0.501 on average where the rules' odds are
+0.997; it gives 0.9 or more at one of them. A nest-mate is listed at one of the 62; the animal is in a finished nest
+at 18; 41 are at night, 21 at dusk; the draw took feeding here (41) or a trip (18).
+
+**So the published reading of where a draw goes wrong does not name these nights.** Stage R13 §14.3 item 3 has
+"0.90 for a nest at dusk or night, so one draw in ten leaves it". That happens (331 such draws) and mostly costs
+nothing: 264 of the 331 fall on a night that still counted, and of the 52 where the adapter gave the nest 0.9 or
+more, 2 fall on a short night.
+
+**What each setting would have done at those asks, first order, with the run's own seeded number** (S §R7, §R6):
+
+| Setting | Applies the nest at the 62 asks | Short nights with the nest at every such ask | Stays in the nest by dawn and day against the rules' pick (of 3,653) |
+| --- | --- | --- | --- |
+| plain draw (the run) | 0 | 0 of 21 | 3,235 |
+| top when 0.9 or more, else draw | 1 | 1 of 21 | 3,330 |
+| temperature 0.8 | 5 | 1 of 21 | 3,318 |
+| temperature 0.5 | 16 | 4 of 21 | 3,415 |
+| top pick | 40 | 13 of 21 | 3,420 |
+
+Mild settings change neither failure. The top pick, first order, would turn two thirds of the asks behind the short
+nights and add stays by day; with a companion listed at two asks running, staying is still the top option at the
+second in 1,218 of 1,225 pairs, so a top pick that stays once goes on staying (S §R4). **This cannot say what the
+world would then have done.** After the first different choice the animal is somewhere else and its companions with
+it.
+
+### 7.4 Each change the first reading says it supports
+
+For each: what in the records would have to be true for it to help, whether that is shown, and what harm these
+records could not show.
+
+1. **No reshaped decode: holds, for a sharper reason.** The two ends trade the two registered failures, first
+   order, and nothing between helps both (table above). Not shown either way: anything past first order. It would
+   also be the first fitted number in the decode, against stage R9's registration.
+2. **Labels on the engine's own states: the best supported.** It needs the stay by day to be a matter of rows the
+   training never held, with a target the packet lets a reader learn. Shown: 24 of 3,120 training rows are in the
+   nest by day and no row in a nest is past 833 minutes, against 1,571 of the run's asks, 1,087 of them past it; the rules are certain there
+   (their odds of staying 0.000 at the 1,325 asks, ahead by more than the jitter at 0.996); the packet says "full
+   daylight". The held-out file agrees as far as 8 draws go: in the nest by day the rules stay at 0.125 and the two
+   trainings give 0.511 and 0.605 (S §H5). The same holds for the dark: 63 training rows in the nest at night. Not
+   shown: that an adapter with such rows stops staying; none exists. Harm these records cannot show: rows that
+   teach "leave" in a nest could cost nests at dawn, or at night, where the rules themselves leave an animal alone
+   (their pick is to stay at 0.039 of 155 night asks with no company); and labelling the states of seed 3613 spends
+   that seed as a test.
+3. **The word "asleep" for a listed nest-mate: not supported.** It needs states where the right answer turns on
+   asleep or awake with the rest of the packet alike. By day the run has none (§7.2 item 2), and before full light
+   the rules count an awake nest-mate too.
+4. **Listing the nest-mates the rules count in the dark: supported, and it bears on the nights.** At night, in the
+   nest with no nest-mate listed, the rules' pick turns on company the packet does not show: with it they stay at
+   0.848 (66 asks), without it at 0.039 (155), and the adapter gives 0.329 and 0.409. At dawn 0.581 against 0.000
+   for the rules, 0.261 against 0.542 for the adapter (S §R4). Here what makes the rules sure is not in the packet.
+   Not shown: how many of the 62 asks behind the short nights it would reach (18 are in a finished nest). Harm not
+   shown: a line that says a companion is near in a nest is the cue the adapter over-follows by day.
+5. **A longer schedule: weakly supported, with a harm the held-out file cannot show.** The development divergence
+   fell in the third epoch, but the learning rate falls in a straight line to zero at the end of it, so that fall
+   is also the step size shrinking. The training loss less the labels' entropy (0.670, a mean over the epoch) is
+   not under the development divergence (0.589): no sign of over-fitting, none of a limit either (S §T). The two
+   trainings hedge on the same draws, which points at the input and the rows more than at the optimiser. The harm:
+   longer training makes an adapter surer of what it has learned, and what this one has learned about a nest with
+   companions in it is wrong by day. Eight held-out draws would not show it.
+6. **Not the top pick for the next population run: supported at first order.** The reserves failure sits on the
+   long mornings, and the top pick adds stays there and never re-draws. It would also, first order, turn two
+   thirds of the asks behind the short nights. Stage R13's registered words name the top pick as the next
+   population decode; these counts say what it would meet, not what it would do.
+
+### 7.5 Cause and sequence, and what is not ruled out
+
+- **"A population shows it and ten animals do not, because every animal sees the others still in their nests."**
+  The records hold the first link: the adapter's answer follows the list, within one animal and one morning
+  (§7.2 item 5). They do not hold the loop. Whether one animal's staying keeps another in its nest needs a world
+  in which one of them is made to leave.
+- **Long mornings and the reserves.** Association on the same animal-days, with the same animal as its own
+  control and a plain mechanism. Not ruled out: something else about those days in that world (the two arms
+  share a seed, not a history).
+- **The nights at which the rules' pick is not a nest either** (0.219 of the lost dark minutes) are states the
+  rules would leave too. Why the run's animals are awake and alone at night more than the rules' are was not
+  read. A short night is not followed by a long morning (2 minutes in the nest by day on the morning after,
+  against 50), nor much preceded by one (64 against 49) (S §R7).
+- **A held draw** (stage R9) would hold either choice: with a companion listed the odds barely move between asks,
+  so a stay that won would go on winning. Not run here or anywhere on this adapter.
+- **One training, one seed, one run** for everything in §7.2 item 1 and §7.3. The second training has no
+  population run.
+
+### 7.6 Not done by the second reader
+
+- The margin, reason and packet-line tables of §1.5 and the nest-mate tables of O §6 were not computed again.
+- The rules' odds on the run's states are an approximation (fixed menu, jitter only); the replay with stage R11's
+  label tap, which would give the label itself, was not run.
+- The ask-by-ask story of each of the 21 short nights was not written out; they were counted.
+- Only `tests/r14-second-reader.test.ts` was run (4 of 4), and a strict type check of the script and the test. No
+  whole suite, no build, no simulation, no replay, no model process, no browser.
+
 ## For the integrator
 
-- **Read first:** answers 4 and 5 above. The brief's frame ("where the rules are sure the adapter puts 0.72; which
+- **Read first, as the second reader leaves it (§7):** the numbers above all came out again by another route. Three
+  readings changed. (1) On the population's own states the adapter fails both ways: more hedged than on the held-out
+  draws where the rules are sure (0.552 on their option against 0.700), and too sure of staying in a nest by day
+  when a companion of 12 or more is listed in one (0.939; 0.160 with no companion of any age listed in a nest). (2) The two registered failures have two
+  origins. The reserves fall only on the 69 animal-days with a stay of three hours or more in the nest beyond the
+  rules arm's range (-1.022% a day; +0.091 on the 547 ordinary days). All 21 short nights begin at asks alone in the
+  dark where the adapter gives the nest about a half (0.501), not at the nests it gives 0.9. (3) First order, the
+  top pick would turn 40 of the 62 asks behind the short nights and add stays by day; a mild setting changes
+  neither. Nothing here says what the world would then do.
+- **As the first reader wrote it:** answers 4 and 5 above. The brief's frame ("where the rules are sure the adapter puts 0.72; which
   decode between the two would help") holds on the held-out draws and is the smaller half. On the population's own
   states the adapter is too sure, not too hedged, about staying in the nest, and sharpening the decode goes the wrong
-  way there.
+  way there. *(Second reader: "not too hedged" is corrected in §7.2 item 1.)*
 - **Nothing to merge but files that read**: `scripts/lib/r14-decode.ts`, `scripts/r14-decode-offline.ts`,
-  `scripts/r14-decode-run.ts`, `tests/r14-decode.test.ts`, this document and its two generated tables. Nothing under
+  `scripts/r14-decode-run.ts`, `tests/r14-decode.test.ts`, this document and its two generated tables; from the
+  second reader `scripts/r14-second-reader.ts`, `tests/r14-second-reader.test.ts` and `r14-second-reader.md`. Nothing under
   `src`, `server`, `training` or `data` changed; no switch, no parameter, no golden.
 - **A line for `AGENTS.md`, Commands**, if wanted: `pnpm exec tsx scripts/r14-decode-offline.ts --dir <stage R11's
   artifacts/decide-ft/r11> | scripts/r14-decode-run.ts --run <a population run's folder> [--r11 <dir>] [--loop
@@ -457,3 +714,12 @@ None of these is chosen to hit a rate, and none is registered here.
   (the nest table is the one to look at first)`.
 - **Decisions that are the user's**: whether the next population run is still the top pick, given answer 5; whether
   the registered "nothing fitted in the decode" stands (this reading says leave it).
+- **From the second reader, for the same decisions**: the records point first at rows of the states the run got
+  into (in a nest by day; awake alone in the dark) and at the nest-mates the rules count in the dark and the packet
+  does not list; not at the word "asleep", and not at the decode (§7.4). Labelling the states of seed 3613 would
+  spend that seed as a test: the user's call.
+- **A second line for `AGENTS.md`, Commands**, if wanted: `pnpm exec tsx scripts/r14-second-reader.ts --r11 <stage
+  R11's artifacts/decide-ft/r11> --run <a population run's folder> --rules <the paired rules arm's folder> [--loop
+  <receipts of a loop arm>]   # stage R14, the second reader (docs/staging/r14-diag-decode.md §7), no model: the
+  first reading's figures by another route, the rules' odds approximated from the values saved with every ask,
+  the short nights traced to their asks, the reserves against the time in the nest by day`.
