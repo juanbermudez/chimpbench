@@ -8,6 +8,8 @@
 //                                           src/sim/request.ts, rulesChoice on the same state), what raised the ask
 //           <run>/contexts/dNNN.jsonl.gz    the context of every ask (the act in progress, the hour, who is listed nearby)
 //           --r11 <dir>                     optional: stage R11's held-out file and the same adapter's answers on it, printed beside
+//           --loop <a.receipts.jsonl,b...>  optional: the receipts of stage R11's ten-animal loop arm of the same adapter and decode
+//                                           (scripts/r5-pilot.ts Receipt), read the same way in a last section
 //   writes  --md (default artifacts/r14/tables/r14-decode-run.md)
 //
 //   pnpm exec tsx scripts/r14-decode-run.ts --run <bench-r13>/artifacts/r13/model-s3613 [--r11 <stage R11's artifacts/decide-ft/r11>] [--md docs/staging/r14-decode-run.md]
@@ -20,7 +22,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { resolve } from 'node:path';
 import { gunzipSync } from 'node:zlib';
 import { drawAt } from '../src/kernel/decode';
-import { DRAW, first, KINDS, kindOf, mean, TOP, TRANSFORMS, unit, type Transform } from './lib/r14-decode';
+import { DRAW, first, hourOf, KINDS, kindOf, mean, TOP, TRANSFORMS, unit, type Transform } from './lib/r14-decode';
 
 const SURE = 0.9;
 export const HOURS = ['before 05:30', '05:30 to 06:30', '06:30 to 07:30', '07:30 to 10:00', '10:00 to 14:00', '14:00 to 18:00', '18:00 to 19:15', 'after 19:15'] as const;
@@ -264,6 +266,45 @@ if (process.argv[1]?.endsWith('r14-decode-run.ts')) {
   const cuts: [string, RunAsk[]][] = [...['dawn', 'day', 'dusk', 'night'].map(ph => [ph, off.filter(a => a.phase === ph)] as [string, RunAsk[]]),
     ['went to the rules\' pick', off.filter(a => a.rules >= 0 && a.drawn === a.rules)], ['left the rules\' pick', off.filter(a => a.rules >= 0 && a.top === a.rules)], ['neither was the rules\' pick', off.filter(a => a.rules >= 0 && a.drawn !== a.rules && a.top !== a.rules)]];
   table(['Transform', ...cuts.map(([k, g]) => `${k} (${n(g.length)})`)], TRANSFORMS.filter(t => t !== TOP).map(t => [t.id, ...cuts.map(([, g]) => (g.length ? `${n(g.filter(a => applied(t, a) !== a.top).length)} (${f(share(g, a => applied(t, a) !== a.top), 2)})` : 'none'))]));
+
+  // ---------------------------------------------------------------------------------------------------------------------
+  // 6. the same adapter with ten animals on it (stage R11's loop), read the same way
+  // ---------------------------------------------------------------------------------------------------------------------
+  const loopFiles = arg('loop', '').split(',').filter(Boolean);
+  if (loopFiles.length) {
+    interface LoopAsk { phase: string; hour: number; fam: string[]; p: number[]; top: number; drawn: number; rules: number; cur: number; nest: boolean }
+    const loop: LoopAsk[] = [];
+    let other = 0;
+    for (const file of loopFiles) for (const l of readFileSync(resolve(file), 'utf8').split('\n')) {
+      if (!l) continue;
+      const r = JSON.parse(l) as { t: number; phase: string; rulesIndex: number; opts: [string, number][]; fam: string[]; by: string; p: number[] | null; picked: number; dec?: { mode: string; index: number }; cur?: number };
+      if (r.by !== 'kernel' || !r.p || !r.dec || r.dec.mode !== 'draw' || r.rulesIndex < 0) { other++; continue; }
+      const pr = unit(r.p), cur = r.cur ?? -1;
+      loop.push({ phase: r.phase, hour: hourOf(r.t), fam: r.fam, p: pr, top: first(pr), drawn: r.dec.index, rules: r.rulesIndex, cur, nest: cur >= 0 && r.opts[cur][0] === 'nest' });
+    }
+    const lTop = (a: LoopAsk) => a.p[a.top], popNest = withRules.filter(a => a.stay >= 0), popCarry = withRules.filter(a => a.carry >= 0), lCarry = loop.filter(a => a.cur >= 0), lNest = loop.filter(a => a.nest);
+    p();
+    p('## 6. The same adapter with ten animals on it, read the same way');
+    p();
+    p(`Stage R11's loop: ten focal animals on the adapter under a draw, every other animal on the rules, five days on each of two fresh seeds (${loopFiles.map(x => `\`${x.split('/').slice(-2).join('/')}\``).join(', ')}): ${n(loop.length)} asks the kernel's choice settled with a rules' pick on the menu (${n(other)} other lines left out). "In the nest" is read there from the receipt's own mark of the act in progress (a nest that can be carried on), which is close to this file's reading of the saved context and not the same.`);
+    p();
+    const row = (label: string, pop: RunAsk[], lo: LoopAsk[], popIs: (a: RunAsk) => boolean, loIs: (a: LoopAsk) => boolean) => [label, n(pop.length), f(share(pop, popIs)), n(lo.length), f(share(lo, loIs))];
+    table(['', 'The population run: asks', 'share', 'Ten animals: asks', 'share'], [
+      row('the adapter\'s top option is the rules\' pick', withRules, loop, a => a.top === a.rules, a => a.top === a.rules),
+      row('the same, where the adapter gives 0.9 or more', withRules.filter(a => topP(a) >= SURE), loop.filter(a => lTop(a) >= SURE), a => a.top === a.rules, a => a.top === a.rules),
+      row('the draw applied the rules\' pick', withRules, loop, a => a.drawn === a.rules, a => a.drawn === a.rules),
+      row('the act could be carried on: the rules\' pick carries on', popCarry, lCarry, a => a.rules === a.carry, a => a.rules === a.cur),
+      row('the act could be carried on: the draw carried on', popCarry, lCarry, a => a.drawn === a.carry, a => a.drawn === a.cur),
+      row('the act could be carried on: the top pick would', popCarry, lCarry, a => a.top === a.carry, a => a.top === a.cur),
+      ...['dawn', 'day', 'dusk', 'night'].flatMap(ph => { const pp = popNest.filter(a => a.phase === ph), ll = lNest.filter(a => a.phase === ph); return [
+        row(`in the nest, ${ph}: the rules' pick is to stay`, pp, ll, a => a.rules === a.stay, a => a.rules === a.cur),
+        row(`in the nest, ${ph}: the adapter gives staying 0.9 or more`, pp, ll, a => a.p[a.stay] >= SURE, a => a.p[a.cur] >= SURE),
+        row(`in the nest, ${ph}: the draw stayed`, pp, ll, a => a.drawn === a.stay, a => a.drawn === a.cur)]; }),
+    ]);
+    const lLate = lNest.filter(a => a.hour >= 7.5 && a.hour < 18 && a.rules !== a.cur), pLate = popNest.filter(a => a.hour >= 7.5 && a.hour < 18 && a.rules !== a.stay);
+    p();
+    p(`In the nest between 07:30 and 18:00 with the rules' pick to leave: ${n(pLate.length)} of the population run's ${n(withRules.length)} asks (${f(pLate.length / withRules.length)}), ${n(lLate.length)} of the ten animals' ${n(loop.length)} (${f(lLate.length / loop.length)}).`);
+  }
 
   mkdirSync(resolve(md, '..'), { recursive: true });
   writeFileSync(resolve(md), L.join('\n') + '\n');
