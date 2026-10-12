@@ -45,7 +45,7 @@ import {
 } from './creatures/secondary';
 import type { KeepCandidate } from './env/occluders';
 import { createTreeIndex, type TreeIndex } from './creatures/tree-index';
-import { PERCH, nestTurn, perchBout, perchLies, perchPosture, seatAllowed, seatGroups, type SeatPairs } from './creatures/perch';
+import { PERCH, nestTurn, pairReach, perchBout, perchLies, perchPosture, seatAllowed, seatGroups, type SeatPairs } from './creatures/perch';
 import { endHeard, heardTakesHead, holding, listening } from './creatures/heard';
 import {
   Listen, PatrolCode, RELEASE_BRISTLE_TAU, RELEASE_DRUM_REACH, RELEASE_WINDOW_H, backSide, createFileCue, createPatrolLook, fileCue, listenVariant,
@@ -542,12 +542,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   const pairPool: Pairing[] = [];
   /** True when the animal is itself grooming a third animal it can be paired with (the reach and partner tests of pairingFor). */
   function groomsThird(b: Anim, a: Anim): boolean {
-    const bc = b.chimp;
     if (b.act !== 'groom' || b.actTarget < 0 || b.actTarget === a.id) return false;
     const t = anims.get(b.actTarget);
     if (!t || t === b || !t.chimp.alive || !PASSIVE.has(t.act)) return false;
-    const tc = t.chimp;
-    return hyp2(tc.position[0] - bc.position[0], tc.position[2] - bc.position[2]) <= 4.5 && Math.abs((tc.position[1] ?? 0) - (bc.position[1] ?? 0)) <= 1.5;
+    return pairReach(b.track.x, b.track.y, b.track.z, t.track.x, t.track.y, t.track.z);
   }
   // Stage W6: pairings follow the act each drawn body is in (a.act, a.actTarget: drawn.ts), not the simulation's: a
   // groomer still walking up is not paired until its body is there, and its partner keeps its own pose until then.
@@ -557,9 +555,12 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     const b = anims.get(a.actTarget);
     if (!b || b === a || !b.chimp.alive) return;
     const bc = b.chimp;
-    const dx = bc.position[0] - c.position[0], dz = bc.position[2] - c.position[2];
-    const d = hyp2(dx, dz);
-    if (d > 4.5 || Math.abs((bc.position[1] ?? 0) - (c.position[1] ?? 0)) > 1.5) return;
+    // Stage W11: within reach by the two DRAWN paths (perch.ts pairReach), as the acts are the drawn bodies' (W6). The
+    // simulated positions run two ticks ahead: read from them, a pair stopped being drawn as a pair a tick or two
+    // before the leaving partner's body moved. And a body that has left is not paired: one going up or down its trunk,
+    // or one that has set off on a trip (its partner would be laid out against a walking animal and reach after it).
+    if (!pairReach(a.track.x, a.track.y, a.track.z, b.track.x, b.track.y, b.track.z)) return;
+    if (a.onTrunk || b.onTrunk || (b.moving && BODY_SIGN[b.act] === 'go')) return;
     let kind = '', sep = 0, bHeading = 0, clipA: string | null = null, clipB: string | null = null, roleA = 0, roleB = 0;
     const mutual = b.actTarget === c.id && b.act === act;
     if (act === 'groom') {

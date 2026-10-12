@@ -126,3 +126,18 @@ export function seatAllowed(offset: number, own: number): boolean { return offse
  */
 export const NEST_TURNS = 5, NEST_TURN_RAD = 1.9;
 export function nestTurn(k: number): number { return k < 1 ? Math.floor((k > 0 ? k : 0) * NEST_TURNS) * NEST_TURN_RAD : 0; }
+
+/**
+ * Whether two bodies are within reach of each other for a paired pose (grooming, play, an embrace): no more than
+ * PAIR_REACH_M apart in the plane and PAIR_HEIGHT_M in height (the figures the pairing has always used). Stage W11:
+ * asked with the two DRAWN paths (creatures.ts pairingFor), never the simulated positions. Those run two ticks ahead
+ * of the drawn bodies: a partner that had decided to leave was already metres down its trunk in the simulation while
+ * its body still sat on the bough, so the pair stopped being drawn as a pair one tick or two before anybody moved
+ * (two animals resting side by side under a tag that said grooming, for 3.9 s at Watch 4x and 15 s at Real time),
+ * and the one whose own limb was far off was sent back to it while its partner was still there. A drawing rule.
+ */
+export const PAIR_REACH_M = 4.5, PAIR_HEIGHT_M = 1.5;
+export function pairReach(ax: number, ay: number, az: number, bx: number, by: number, bz: number): boolean {
+  const dx = bx - ax, dz = bz - az, dy = by - ay;
+  return dx * dx + dz * dz <= PAIR_REACH_M * PAIR_REACH_M && (dy < 0 ? -dy : dy) <= PAIR_HEIGHT_M;
+}

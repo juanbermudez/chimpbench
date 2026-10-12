@@ -4,7 +4,7 @@ import type { Chimp } from '../src/types';
 import { B, PI, computeMorph, createFK, createMorph, createPose, solveFK } from '../src/render/creatures/rig';
 import { CLIPS, GROOM_FRONT, GROOM_HIGH, PROP, Pw, feedCycle, feedHold, feedPicks, groomerRole, type PoseCtx } from '../src/render/creatures/poses';
 import { headLook } from '../src/render/creatures/secondary';
-import { NEST_TURNS, NEST_TURN_RAD, PERCH, SEAT_REACH_M, nestTurn, perchBout, perchLies, perchPeriod, perchPosture, seatAllowed, seatGroups, type SeatPairs } from '../src/render/creatures/perch';
+import { NEST_TURNS, NEST_TURN_RAD, PAIR_HEIGHT_M, PAIR_REACH_M, PERCH, SEAT_REACH_M, nestTurn, pairReach, perchBout, perchLies, perchPeriod, perchPosture, seatAllowed, seatGroups, type SeatPairs } from '../src/render/creatures/perch';
 import { dampAngle } from '../src/render/creatures/util';
 
 // Stage W9 (docs/staging/w9b-tree-pairs.md): pairs and postures in trees. Everything drawn here is a stylization, so
@@ -304,4 +304,22 @@ test('a nest builder faces five ways in turn, 1.9 rad apart, and one heading tar
   assert.ok(two.travel > 1, `two targets, uneven frames: ${two.travel.toFixed(2)} rad of travel in 300 frames`);
   assert.ok(Math.abs(twoEven.h - turn) > 0.5, `two targets: it stops ${Math.abs(twoEven.h - turn).toFixed(2)} rad short of the turn`);
   assert.ok(one.travel < 1e-9 && Math.abs(one.h - turn) < 1e-9, 'one target: at the turn, and still');
+});
+
+// Stage W11, item 2. A pair is a pair for as long as the two drawn bodies are within reach of each other.
+test('a pair is formed from the drawn bodies: a partner the simulation has already sent down its trunk is still within reach while its body sits there', () => {
+  assert.equal(PAIR_REACH_M, 4.5); assert.equal(PAIR_HEIGHT_M, 1.5);
+  // Two bodies on one bough, 1.2 m apart at one height.
+  assert.ok(pairReach(0, 15, 0, 1.2, 15, 0));
+  // The reach: 4.5 m in the plane whatever the height in between, 1.5 m in height.
+  assert.ok(pairReach(0, 15, 0, 4.5, 15, 0)); assert.ok(!pairReach(0, 15, 0, 4.6, 15, 0));
+  assert.ok(pairReach(0, 15, 0, 0.5, 13.5, 0)); assert.ok(!pairReach(0, 15, 0, 0.5, 13.4, 0)); assert.ok(pairReach(0, 13.6, 0, 0.5, 15, 0));
+  assert.ok(pairReach(3, 0, 3.3, 0, 0, 0)); assert.ok(!pairReach(3.3, 0, 3.3, 0, 0, 0));
+  // The case filmed: the leaving partner's simulated position is two ticks ahead of its drawn body, 3.8 m and then
+  // 7.6 m down the trunk, while its drawn path is still at the bough. Asked with the simulated positions the pair was
+  // gone; asked with the drawn paths it holds until the body itself has gone 1.5 m down.
+  const stays = [0, 15.1, 0], drawn = [1.2, 15.1, 0];
+  for (const simY of [11.3, 7.5]) assert.ok(!pairReach(stays[0], stays[1], stays[2], 1.2, simY, 0), 'by the simulated position: apart');
+  assert.ok(pairReach(stays[0], stays[1], stays[2], drawn[0], drawn[1], drawn[2]), 'by the drawn bodies: together');
+  assert.ok(!pairReach(stays[0], stays[1], stays[2], drawn[0], drawn[1] - 1.6, drawn[2]), 'and apart once the body is on its way down');
 });
