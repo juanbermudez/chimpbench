@@ -2233,13 +2233,17 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
           const k = Math.max(smoothstep(0, 1, a.trunkK), low);
           x += (px - x) * k; z += (pz - z) * k; y += (py - y) * k;
           if (a.onTrunk || low > 0) { fx = px; fy = py; fz = pz; }   // (bound for the bark)
-          if (k > 0.5) { a.onBranch = false; a.climbTree = tree.id; a.heading = dampAngle(a.heading, Math.atan2(-dx, -dz), 8, curDt); }
+          // (Second reading: not while it clambers. It then faces along its way, which ends at the bark; turned to
+          // the trunk as well, its heading had two targets and trembled when frame times were uneven.)
+          if (k > 0.5) { a.onBranch = false; a.climbTree = tree.id; if (!a.clamber) a.heading = dampAngle(a.heading, Math.atan2(-dx, -dz), 8, curDt); }
         }
         // Perched animals face roughly outward along their branch.
         // (W6: in the decision beat it turns on its branch toward what it chose, so the head can reach it.)
         // (W9: paired or lying on a bough it faces its partner, or along the bough: seatFace, set by layoutCrowns.)
         else if (!climbAct && a.speed < 0.3 * a.morph.size) {
-          const turned = a.way === Way.soon && a.beat.phase >= Phase.look && beatGoal(a, Gaze.goal);
+          // (Second reading of stage W11: not a body that clambers. Its heading is its line of travel, set once in
+          // layoutCrowns; turned to its goal as well it had two targets again: 41 reversals in 96 frames, filmed.)
+          const turned = !a.clamber && a.way === Way.soon && a.beat.phase >= Phase.look && beatGoal(a, Gaze.goal);
           // (W9: building a nest it turns a step at a time, pulling branches in from all round; it settles as it lies
           // down. W11: that turn is in seatFace, set by layoutCrowns; the last term only serves a frame without one.)
           const turn = a.act === 'nest' ? nestTurn(a.nestK) : 0;
