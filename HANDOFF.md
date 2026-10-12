@@ -144,8 +144,9 @@ population runs). **Read the `state` files first
 head bc513ba: the builder's eight fixes and the second reader's four repairs; its whole suite read 1,412 tests, 1,411
 pass, 1 skipped, on the branch): no jump across a crown, a pair picture that agrees with its tag, an eased cut-off
 scratch, a lone animal no busier, a steady nest heading, nests under sleepers, the bough as a limb of its tree with
-a leafy spray, a hand that meets the mouth. Its document is `docs/staging/w11-polish.md`. Not yet done on the merged head: the
-whole suite, `pnpm build`, and frame time on the graphics card (all wait for the model queue to end).
+a leafy spray, a hand that meets the mouth. Its document is `docs/staging/w11-polish.md`. Done on the merged head after the
+model queue ended (12 October, 15:12 to 15:32 EDT): frame time on the graphics card (no difference in eight scenes), the
+whole suite (1,430 tests, all passing, at cfac813) and `pnpm build`.
 
 ## 3. Set-up on this computer
 
@@ -162,6 +163,9 @@ of the first clone macOS had evicted 14,230 of 18,704 files (the git pack among 
    the 8 of stage R13 and the 10 of stage RW3; it was the first run with the three merges of 12 October together.
    It ran beside a training of stage RW3 and held the 1-minute load at 8 to 10; the second training's model load,
    which began a minute into it, took nearly nine minutes against about three for the first (AGENTS.md, "Gotchas").
+   **The whole suite ran again on the final merged head** (`track-e` at cfac813: stage W11 and the three stages' results
+   included) on 12 October, 15:28 to 15:32 EDT, with no model process running: **1,430 tests, all passing**;
+   `gen-params --check` valid; `pnpm build` passes.
    Do not run one beside a scoring, loop or population step (§2.2), and never two at once. `tsc --noEmit`,
    `gen-params --check`, `decision-guide --check` and `pnpm build` pass on this branch's head (12 October).
    **To run the app with no model at all** (the way to look at it while the queue of §2.2 runs): `MGOGO_NO_MODEL=1 fnm
@@ -239,8 +243,8 @@ addresssed and we move faster parelalizing more work to get closer to the real r
    the level, the field rows. Each stage's `publish` copies its tables to `docs/staging`: commit them on a branch and
    write the result into the registration and the plan in the registered words. For RW3 a statement counts only if
    both seeds meet it; R13 is a level of one training on one world seed.
-2. **Stage W11** is merged (cafc203). Still owed on the merged head, while no model step runs: `pnpm test` and
-   `pnpm build`, one look in the running app, and frame time on the graphics card in a close view on a crown with a pair.
+2. **Stage W11** is merged (cafc203); the whole suite, the build and frame time on the graphics card are done on the
+   merged head (§3). Still owed: one look in the running app, and `node scripts/verify-browser.mjs`.
 3. **`docs-12oct` is merged** (documents only; the whole suite on its code is on record, §3). Before any push: the
    user's ask, a privacy check of the range (no personal data, no raw rows), and only the two branches by name (§4).
 4. **Put §6 to the user**, the ten rulings first. Nothing of stage R12 is built before them.
