@@ -1352,6 +1352,92 @@ checkout, on `track-e`); this stage's reader takes 954 draws, 0.609 and 0.386 fr
 Not done: no model on the GPU, so the baseline step has still not met the real model or the real first adapter;
 the whole test suite and the build were not run.
 
+## 14. Results (the integrator, 12 October 2026, written 09:35 EDT; frozen checkout `bench-r11` at 5b5a506)
+
+Tables, generated, no number typed: [r11-offline.md](r11-offline.md), [r11-numbers.md](r11-numbers.md),
+[r11-card.md](r11-card.md), [r11-baseline.md](r11-baseline.md), [r11-costs.md](r11-costs.md), [r11-data.md](r11-data.md).
+**Every engine arm is a rules-taught model on a rules menu** (the teacher is the rules' own odds; the menu and the gate
+are the rules'; every animal but the ten focal ones, and every animal under 8, stays on the rules). **Nothing here is
+about wild chimpanzees** (§11.3).
+
+### 14.1 The runs
+
+- Night one (11 October, 16:23 to 12 October, 01:01): parity, the first training of each arm (`p5b` seed 7, 2 h 0 min;
+  `p5a` seed 7, 1 h 26 min), offline, the like-for-like baseline, the loop on seeds 4111 and 4222, the report.
+- Night two (01:01 to 09:06): the second trainings (`p5b` seed 11, 1 h 50 min; `p5a` seed 11, 1 h 55 min), offline,
+  the loop on both seeds for the four new arms, the optional arm `old-draw-1` on both seeds, the report.
+- **One incident, no result touched.** At 05:49 the loop step for seed 4111 loaded its worker and then got no answer
+  to the warm-up packet in the 600 s allowed; the step failed at 05:59 before any arm had started and wrote nothing.
+  The 1-minute load was 14 at the load: three build agents of other stages were running test suites on this computer.
+  The integrator resumed the remaining steps at 06:01 from the same head with the same commands
+  (`artifacts/r11-chain/chain2.sh`: it waits for a 1-minute load under 6 and tries a step up to three times; an arm on
+  file is never run again). The warm-up then took 372 s (about 100 s on night one) and the asks ran at night one's
+  speed (the first day of `p5b-s11-top`: 347 calls in 157 s). **Every live day line of every arm of both nights reads
+  0 timeouts** (110 of 110); every arm's replay reproduces its run.
+
+### 14.2 Offline (the marks of §6.1, for the recipe P5b: both trainings)
+
+| Mark | `r11-p5b-s7` | `r11-p5b-s11` | For the recipe |
+| --- | --- | --- | --- |
+| O1 divergence from the rules' distribution below both floors | 0.617 (untuned 1.423, kind-prior 1.117): yes | 0.620: yes | **met** |
+| O2 trip probability within 0.03 of the rules' 0.221 | 0.218: yes | 0.212: yes | **met** |
+| O3 no state probe the wrong way | heat −0.023 (−0.038 to −0.011): no | heat −0.026 (−0.035 to −0.018): no | **not met** |
+| O4 no lock-in (carrying on at most 0.05 above the rules' 0.523; share at 0.9 or more at most 0.05 above) | +0.052; share −0.175: no | +0.059; share −0.198: no | **not met** |
+
+- The two trainings are the same model offline: top-1 on the rules' pick 0.625 and 0.628, trip probability 0.218 and
+  0.212, carrying on 0.576 and 0.583. P5a reads the same within its own seed spread (0.626 and 0.626; O4 met in one
+  training of two).
+- **O3**: five probes of six move the right way in every adapter; the heat probe ("rest gains with stored heat") moves
+  about 0.02 the wrong way in all four, as it does in the untuned model (−0.007 and −0.012). Whether the rules' own
+  odds move that way on these situations was not computed; until it is, this is a failed mark and not a finding about
+  the teacher.
+- **O4** fails on the mean by 0.002 and 0.009 while the share of near-certain "carry on" answers is far below the
+  rules' (0.252 and 0.229 against 0.427): the adapters hedge where the rules are sure and lean a little to carrying on
+  where the rules are spread.
+- **W1** (a reading): met by all four adapters (0.625 against the first adapter's 0.375 with neutral options on the
+  same draws, paired +0.250, +0.222 to +0.277).
+
+### 14.3 In the loop (the statements of §6.2; ten animals, five days, seeds 4111 and 4222 pooled)
+
+**The top pick (the registered primary decode): outcome S2.** S0 no (the two P5b trainings differ by at most 0.6 D on
+a timing row, under either decode); S1 no; **S2 yes**. The recipe P5b is told from the rules on act changes (36.6 and 33.7 a day against
+53.9 ± 14.3) and on the half-hour share (0.440 and 0.456 against 0.397 ± 0.025); it fails two guards as a recipe
+(distance 1.67 and 1.68 km against 2.41 ± 0.59; act changes). **L1: lock-in** (carrying on at 0.778 and 0.798 of the
+fresh choices where it could, the rules 0.564 ± 0.031). On the old adapter's rows (trips begun 3.50, completed 0.70)
+both P5b trainings lie nearer the rules (6.12 and 5.64; 1.08 and 0.84).
+
+**The draw (the second line; no outcome is named from it, §11.1): S1 holds on it.** The recipe P5b is told from the
+rules on no timing row and fails no guard as a recipe: act changes 54.0 and 54.3; trips begun 7.51 and 7.86 (the rules
+7.49 ± 1.72); completed 1.71 and 1.44; patch residency 17.3 and 16.9 min; half-hour share 0.413 and 0.426; distance
+2.82 and 2.52 km. The old adapter under the same draw is told on trips begun (5.48) and the half-hour share.
+One training alone is told on the half-hour share (0.426) and on the reserve trend (−0.20% of the cap a day against
+−0.05 ± 0.12; the first training −0.04 and −0.09). Carrying on stays just above the rules' line under a draw (0.601,
+0.626, 0.625 against 0.595).
+
+**N1, nights in a nest under a draw: met for the recipe P5b** (50 and 49 of 50 for the first training's two salts, 49
+of 50 for the second; the top-pick arms 50 of 50; the line is 49). Also met by P5a (50, 50) and by the old adapter on
+these worlds (50). As §11.1 fixed the words: for a model taught the rules' own odds the draw no longer costs nests on
+these worlds; one lost night cannot be told from none.
+
+**The ablation.** The lines `lately` and `last` earn their tokens on no timing row and offline (paired divergence
+−0.003 and −0.010, both intervals including 0): by the registered rule the shorter packet is the one to serve. Beside
+that rule, as description: under a draw one P5a training walks further than the rules (3.30 km, told) and its arm
+`p5a-s7-draw-1` is the only engine arm with deaths in the window (2).
+
+### 14.4 What the integrator reads from it (description beside the registered outcome)
+
+1. **The outcome is S2 under the registered decode, and the draw line qualifies its wording.** S2 says the limit is
+   "not the labels, the decode or the training run". The same two adapters, sampled, are not told from the rules on any
+   timing row, so on timing the top pick itself is a limit: where the rules carry on at about half of their fresh
+   draws, the top pick of a model that has learned those odds carries on at nearly four in five. What S2 was built to
+   say still holds decision by decision: the divergence from the rules' distribution stays at 0.62 (more than half the
+   kind-prior baseline's), so what a single choice turns on is partly not in the packet or not read from it.
+2. **Stage R9's objection to a draw is answered for this recipe**: it no longer costs nests (N1), in both trainings.
+3. **Two trainings are one animal** under both decodes, so a later recipe can be read on two seeds.
+4. **Left open by this stage**: the heat probe against the rules' own odds; the faster loss of reserves of the second
+   training under a draw; the small excess of carrying on that remains under a draw; and everything a population does
+   (stage R13 reads that next, with the draw, as its registered rule now names: `docs/staging/r13-prereg.md`).
+
 ## For the integrator
 
 *(Rewritten by the reviewer on 11 October 2026 after §11; the builder's notes are kept where they still hold. The times were replaced on 11 October at 14:56 by the measurements of §12.6, after a smoke run on the real model. Brought up to date on 11 October at 15:47 after §13: P5a was reassembled strict, the baseline step was added, and **the frozen checkout must hold head 9dc9b76 or later** (the head that holds this text is later still). An earlier head builds the P5a first registered in the loop, which is not what the P5a adapters are now trained on. Checked independently on 11 October at 16:16 (§13.4): step 0 now also links `data/raw`, which the dry run needs, and names stage R8's wording table.)*
