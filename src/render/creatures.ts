@@ -161,8 +161,9 @@ export interface Anim {
   beat: Beat; late: number; intent: number; posture: number;
   /** Stage W6: going up or down its tree's trunk whatever its act (onTrunk), eased 0..1 between its branch and the bark. */
   trunkK: number; onTrunk: boolean;
-  /** Stage W6: where its body lies in its nest, kept while the drawn body is still in the nest act. */
-  nestOk: boolean; nestX: number; nestY: number; nestZ: number;
+  /** Stage W6: where its body lies in its nest, kept while the drawn body is still in the nest act. Stage W9: nestK, how
+   * far the drawn body has come with building it, 0..1 (1: not building). */
+  nestOk: boolean; nestX: number; nestY: number; nestZ: number; nestK: number;
   ox: number; oz: number;          // eased layout offset (pairing, separation) added to the interpolated point
   // Gait and contacts (gait.ts), transitions (secondary.ts).
   moving: boolean; stillT: number; fastGait: boolean; turnRate: number; climbDy: number; dist: number; strides: number; poseDt: number;
@@ -412,7 +413,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       clip: '', clipT: 0, role: 0, gait: null, phase: hash01(chimp.id, 3),
       x: chimp.position[0], y: 0, z: chimp.position[2], heading: chimp.heading ?? 0, speed: 0, vel: 0, inited: false,
       track: createTrack(chimp.position[0], Math.max(0, chimp.position[1] ?? 0), chimp.position[2]), acts: createActTrack(), ox: 0, oz: 0,
-      act: chimp.action, actTarget: chimp.targetId, way: Way.none, beat: createBeat(), late: 0, intent: 0, posture: Posture.other, trunkK: 0, onTrunk: false, nestOk: false, nestX: 0, nestY: 0, nestZ: 0,
+      act: chimp.action, actTarget: chimp.targetId, way: Way.none, beat: createBeat(), late: 0, intent: 0, posture: Posture.other, trunkK: 0, onTrunk: false, nestOk: false, nestX: 0, nestY: 0, nestZ: 0, nestK: 1,
       refSpeed: 0, moveSpeed: 0, settle: 0, moving: false, stillT: 0, fastGait: false, turnRate: 0, climbDy: 0, dist: 0, strides: 0, poseDt: 0,
       gs: { f: 0, stride: 0, regime: Regime.natural }, lapse: 0, locks: [createLock(), createLock(), createLock(), createLock()], drop: 0, planted: false, bank: 0,
       inert: createInertia(POSE_SIZE), prevOut: new Float32Array(POSE_SIZE), prevCur: new Float32Array(POSE_SIZE), outVel: new Float32Array(POSE_SIZE), skip: new Uint8Array(POSE_SIZE), hold: new Float32Array(12), holdMask: 0,
@@ -754,9 +755,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     const a = anims.get(id);
     if (!a) return null;
     const tree = treeFor(a), c = a.chimp;
-    let clear = NaN;
-    if (tree) { trunkPoint(tree, a.by + 0.4 * a.morph.size, T4b); clear = hyp2(a.bx - T4b.x, a.bz - T4b.z) - T4b.w; }
-    return { up: a.up, tree: tree?.id ?? -1, treeHeight: tree?.height ?? 0, seatHost: a.seatHost, lies: a.lies, perchRole: a.perchRole, onLimb: a.ownLimb, own: [a.ownX, a.ownY, a.ownZ], seat: [a.sx, a.sy, a.sz],
+    let clear = NaN, tx = NaN, tz = NaN;
+    if (tree) { trunkPoint(tree, a.by + 0.4 * a.morph.size, T4b); clear = hyp2(a.bx - T4b.x, a.bz - T4b.z) - T4b.w; tx = T4b.x; tz = T4b.z; }
+    return { up: a.up, trunk: [tx, tz], nestK: a.nestK, tree: tree?.id ?? -1, treeHeight: tree?.height ?? 0, seatHost: a.seatHost, lies: a.lies, perchRole: a.perchRole, onLimb: a.ownLimb, own: [a.ownX, a.ownY, a.ownZ], seat: [a.sx, a.sy, a.sz],
       offsetM: hyp2(a.bx - c.position[0], a.bz - c.position[2]), ownOffsetM: hyp2(a.ownX - c.position[0], a.ownZ - c.position[2]), trunkClearM: clear, bough: a.gm > 0.02 ? [a.g0 - a.gm, a.g1 + a.gm] : null };
   };
   const SP: SeatPairs = { a: new Int32Array(64), b: new Int32Array(64), sep: new Float32Array(64), n: 0 };
@@ -883,6 +884,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   // creatures/beat.ts), walks or climbs when its path does, and stands neutral when it pauses on the way; the pose of
   // the new act comes at the moment the tag turns plain. The timings and substitutions are stylizations.
   const NEUTRAL: [string, number, Gait | null] = ['stand', 0, null];
+  /** Simulated seconds the building clip plays from the drawn body's arrival at its nest place (stage W6's four
+   * minutes; the simulation builds for 3 to 5 [H, nestBuildMinS and nestBuildSpanS]). Stage W9: the nest grows over
+   * them, and the builder turns NEST_TURNS times as it pulls branches in from all round (stylization). */
+  const NEST_BUILD_S = 240, NEST_TURNS = 5, NEST_TURN_RAD = 1.9;
   function chooseClip(a: Anim, moving: boolean, fast: number): [string, number, Gait | null] {
     const c = a.chimp;
     if (debug.clip) return [debug.clip, 0, null];
@@ -913,7 +918,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       // (Not after skipped states: the moment the body was first seen in the nest is then not its arrival, and every
       // sleeper would build for four minutes after a fast-forward.)
       const seen = a.acts.shown === a.acts.since && Number.isFinite(a.acts.shownAt) && !startUnseen(a.acts);
-      const building = !about && (seen ? (playback.renderT - a.late - a.acts.shownAt) * 3600 < 240 : (c.actionTime ?? 9999) < 240);
+      const built = seen ? (playback.renderT - a.late - a.acts.shownAt) * 3600 : c.actionTime ?? 9999, building = !about && built < NEST_BUILD_S;
+      // Stage W9: how far the building has come, for the nest that grows under it and the builder's turns (placeGrounded).
+      a.nestK = building ? clamp(built / NEST_BUILD_S, 0, 1) : 1;
       if (about && still && (a.beat.up || a.beat.phase !== Phase.none)) { a.beat.up = true; return ['perch', 0, null]; }
       return [building ? 'nestBuild' : 'sleep', 0, null];
     }
@@ -1812,6 +1819,25 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       const climbAct = c.action === 'climb', vy = Math.abs(a.track.vy) / 3600;
       a.onTrunk = !!tree && !climbAct && a.carry === 0 && vy > (a.onTrunk ? 0.4 : 1) * PATH_MOVING_MPS;
       a.trunkK = a.onTrunk && !wasUp && a.trunkK < 0.5 ? 1 : damp(a.trunkK, a.onTrunk ? 1 : 0, 5, curDt);
+      // (W6: in the nest once the drawn body is in the nest act, not while it is still on its way to the nest tree.)
+      // The place is remembered: the simulation clears Chimp.nest the moment the animal decides to leave, two ticks
+      // before its drawn body does, and it would be lifted out of its nest onto a branch for that long.
+      let inNest = false;
+      if (a.act === 'nest') {
+        if (c.action === 'nest') {
+          // Stage W9: the simulation publishes Chimp.nest when the nest is finished; while the animal builds, the nest
+          // is where it is (it does not move until it is done), in the tree its act names. So the builder sits at its
+          // nest place from the start (it used to build on its branch and jump into the finished nest), and the nest
+          // grows under it (nests.ts build). Only once the drawn body is in the nest act: on its way there the act is
+          // 'travel' (stage W6) and this is not reached.
+          const site = c.nest ? c.nest.treeId : a.nestK < 1 && treeById.has(c.targetId) ? c.targetId : -1;
+          const spot = site >= 0 ? nests.spotFor(site, c.nest ? c.nest.position : c.position, a.id, V2) : false;
+          a.nestOk = spot; if (spot) { a.nestX = V2.x; a.nestY = V2.y + 0.12 * a.morph.size; a.nestZ = V2.z; }
+          if (spot && (a.nestK < 1 || a.clip === 'sleep')) nests.build(a.id, site, c.nest ? c.nest.position : c.position, a.nestK, world.time);
+        }
+        // (The remembered place only while the drawn body is at it: REMEMBERED_TREE_M.)
+        inNest = a.nestOk && (c.action === 'nest' || hyp2(a.nestX - a.x, a.nestZ - a.z) < REMEMBERED_TREE_M);
+      } else a.nestOk = false;
       if (tree) {
         const r0 = trunkRadius(tree);
         let dx = x - tree.position[0], dz = z - tree.position[2];
@@ -1830,12 +1856,16 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
           a.climbTree = tree.id;
           y = Math.min(y, crownTop);
           a.seated = false;
+          if (inNest) { x = a.nestX; y = a.nestY; z = a.nestZ; }
         } else {
           // Its own place in the crown (ownSeat: a limb the environment draws, else out from the crown anchor), or,
           // stage W9, its place on a bough laid by layoutCrowns (a pair or chain, or lying along it; no stick of its own).
           if (a.ownFrame !== frameNo) ownSeat(a, tree, x, z, y);
           x = a.ownX; y = a.ownY; z = a.ownZ; a.onBranch = a.ownLimb; crownTop = a.ownTop; perchYaw = a.ownYaw;
           if (a.seatHost >= 0) { x = a.seatX; y = a.seatY; z = a.seatZ; a.onBranch = true; }
+          // Its nest place is a seat like any other (W9: the body eases into it and off the trunk; it used to be put
+          // there in one frame once the clamber from the trunk was half done).
+          if (inNest) { x = a.nestX; y = a.nestY; z = a.nestZ; }
           // Stage W9: the drawn seat eases to its place (about a second, as partners slide into place on the ground),
           // so an animal joining a partner's bough or lying down along one glides there instead of jumping. A
           // relocation, a first frame in the crown, or a place more than SEAT_GLIDE_M away is drawn at once. A seat that
@@ -1864,18 +1894,12 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         // (W9: paired or lying on a bough it faces its partner, or along the bough: seatFace, set by layoutCrowns.)
         else if (!climbAct && a.speed < 0.3 * a.morph.size) {
           const turned = a.way === Way.soon && a.beat.phase >= Phase.look && beatGoal(a, Gaze.goal);
-          a.heading = dampAngle(a.heading, turned ? Math.atan2(GOAL[0] - x, GOAL[2] - z) : Number.isFinite(a.seatFace) ? a.seatFace : perchYaw + (hash01(a.id, 45) - 0.5) * 1.2, 3, 1 / 30);
+          // (W9: building a nest it turns a step at a time, pulling branches in from all round; it settles as it lies down.)
+          const turn = a.act === 'nest' && a.nestK < 1 ? Math.floor(a.nestK * NEST_TURNS) * NEST_TURN_RAD : 0;
+          a.heading = dampAngle(a.heading, turned ? Math.atan2(GOAL[0] - x, GOAL[2] - z) : Number.isFinite(a.seatFace) ? a.seatFace : perchYaw + (hash01(a.id, 45) - 0.5) * 1.2 + turn, 3, 1 / 30);
         }
-      } else a.seated = false;
+      } else { a.seated = false; if (inNest) { x = a.nestX; y = a.nestY; z = a.nestZ; } }
       // Branch placement is render-only: a.x/a.z keep tracking the sim so speed estimates stay clean.
-      // (W6: in the nest once the drawn body is in the nest act, not while it is still on its way to the nest tree.)
-      // The place is remembered: the simulation clears Chimp.nest the moment the animal decides to leave, two ticks
-      // before its drawn body does, and it would be lifted out of its nest onto a branch for that long.
-      if (a.act === 'nest' && a.trunkK < 0.5) {
-        if (c.action === 'nest') { const spot = c.nest ? nests.spotFor(c.nest.treeId, c.nest.position, a.id, V2) : null; a.nestOk = !!spot; if (spot) { a.nestX = V2.x; a.nestY = V2.y + 0.12 * a.morph.size; a.nestZ = V2.z; } }
-        // (The remembered place only while the drawn body is at it: REMEMBERED_TREE_M.)
-        if (a.nestOk && (c.action === 'nest' || hyp2(a.nestX - a.x, a.nestZ - a.z) < REMEMBERED_TREE_M)) { x = a.nestX; y = a.nestY; z = a.nestZ; }
-      } else if (a.act !== 'nest') a.nestOk = false;
       bodyFrame(a, x, z, y, 0);
       return;
     }
