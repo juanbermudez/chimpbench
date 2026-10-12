@@ -169,8 +169,17 @@ export function crownStep(dist: number, dt: number, simRate: number, pathStep: n
   const may = clamberSpeed(simRate) * dt + pathStep;
   return dist <= may ? 1 : may / dist;
 }
-/** Whether a body `left` metres from its place is drawn clambering, given whether it was in the frame before. */
-export function clambering(was: boolean, left: number): boolean { return left > (was ? CLAMBER_OFF_M : CLAMBER_ON_M); }
+/** No clambering above this playback rate, in simulated seconds a second (the limit of drawn.ts ABOUT_MAX_RATE: above
+ * it every place is drawn at once, and a clip that lasts a few frames is a flicker). */
+export const CLAMBER_MAX_RATE = 120;
+/**
+ * Whether a body `left` metres from its place is drawn clambering, given whether it was in the frame before, at
+ * playback rate `simRate`. (Second reading of stage W11: never above CLAMBER_MAX_RATE. The place is drawn at once
+ * there, but the bark a body on its trunk is bound for and the blend it is drawn at are still apart for half a
+ * second, and that set the clip going: at 10 min/s 133 times in 30 s on the field map, half of them for under a
+ * tenth of a second.)
+ */
+export function clambering(was: boolean, left: number, simRate = 0): boolean { return simRate <= CLAMBER_MAX_RATE && left > (was ? CLAMBER_OFF_M : CLAMBER_ON_M); }
 
 // ---- The bough as a limb of its tree (stage W11) ----
 /** A stem is drawn to a limb the environment draws when one is within this distance of the fork (m); else to the bark. */

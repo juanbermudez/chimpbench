@@ -5,7 +5,8 @@ import { B, PI, computeMorph, createFK, createMorph, createPose, solveFK } from 
 import { CLIPS, FEED_HOLD_INFANT, GROOM_FRONT, GROOM_HIGH, PROP, Pw, feedCycle, feedHold, feedPicks, groomerRole, type PoseCtx } from '../src/render/creatures/poses';
 import { LIMB_TIP, leafSprayGeometry } from '../src/render/creatures/props';
 import { headLook } from '../src/render/creatures/secondary';
-import { CLAMBER_MPS, CLAMBER_OFF_M, CLAMBER_ON_M, CROWN_JUMP_M, NEST_TURNS, NEST_TURN_RAD, PAIR_HEIGHT_M, PAIR_REACH_M, PERCH, SEAT_REACH_M, STEM_REACH_M, boughStem, clamberSpeed, clambering, crownStep, nestTurn, pairReach, perchBout, perchLies, perchPeriod, perchPosture, seatAllowed, seatGroups, type SeatPairs } from '../src/render/creatures/perch';
+import { CLAMBER_MAX_RATE, CLAMBER_MPS, CLAMBER_OFF_M, CLAMBER_ON_M, CROWN_JUMP_M, NEST_TURNS, NEST_TURN_RAD, PAIR_HEIGHT_M, PAIR_REACH_M, PERCH, SEAT_REACH_M, STEM_REACH_M, boughStem, clamberSpeed, clambering, crownStep, nestTurn, pairReach, perchBout, perchLies, perchPeriod, perchPosture, seatAllowed, seatGroups, type SeatPairs } from '../src/render/creatures/perch';
+import { ABOUT_MAX_RATE } from '../src/render/creatures/drawn';
 import { dampAngle } from '../src/render/creatures/util';
 
 // Stage W9 (docs/staging/w9b-tree-pairs.md): pairs and postures in trees. Everything drawn here is a stylization, so
@@ -347,6 +348,11 @@ test('a body in a tree goes to its place no faster than a clamber, plus what its
   assert.ok(Math.abs(go(7.8, [1 / 60], 60).frames * 15 - a.frames) <= 15);
   // Clambering starts beyond a metre and ends within 30 cm, so a body does not flicker in and out of the clip.
   assert.ok(!clambering(false, 0.9)); assert.ok(clambering(false, 1.1)); assert.ok(clambering(true, 0.5)); assert.ok(!clambering(true, 0.25));
+  // Second reading of stage W11: never above 2 min/s, where every place is drawn at once (the limit of the "about to"
+  // tags, drawn.ts). At 1 min/s it still clambers.
+  assert.equal(CLAMBER_MAX_RATE, ABOUT_MAX_RATE);
+  assert.ok(clambering(false, 5, 60)); assert.ok(clambering(true, 0.5, CLAMBER_MAX_RATE));
+  assert.ok(!clambering(false, 5, CLAMBER_MAX_RATE + 1)); assert.ok(!clambering(true, 5, 600));
 });
 
 // Stage W11, item 7. The bough reads as a limb of its tree, and the cluster as a spray held clear of an infant.

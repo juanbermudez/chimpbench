@@ -2268,7 +2268,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         a.glide = left;
         // More than a metre to go: it clambers (chooseClip), turned along its line of travel and pitched with it.
         const was = a.clamber, step = hyp2(hyp2(sx, sz), sy);
-        a.clamber = a.carry === 0 && c.alive && clambering(was, left);
+        a.clamber = a.carry === 0 && c.alive && clambering(was, left, curSimRate);
         if (a.clamber) {
           a.clamberD += step;
           if (curDt > 0) a.clamberV = was ? damp(a.clamberV, step / curDt, 10, curDt) : step / curDt;
@@ -2584,7 +2584,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         a.poseAccum += dt;
         const needPose = a.poseAccum >= interval || a.clip === '' || a.lastSkinFrame < 0;
         // The body frame comes first: contact planting converts between world and body space.
-        if (carried) placeCarried(a, dt);
+        // (Second reading of stage W11: a carried body does not clamber. placeGrounded, which alone ends the clamber,
+        // is not asked for it: an infant picked up on its way to a seat kept the flag for as long as it was carried.)
+        if (carried) { a.clamber = false; a.clamberK = 0; placeCarried(a, dt); }
         else placeGrounded(a);
         if (needPose) {
           const acc = Math.max(dt, a.poseAccum);
