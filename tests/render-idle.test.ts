@@ -3,7 +3,7 @@ import test from 'node:test';
 import { CLIPS, Pw, type PoseCtx } from '../src/render/creatures/poses';
 import { B, LIMB, PI, createFK, createMorph, createPose, solveFK } from '../src/render/creatures/rig';
 import { Posture, postureOf } from '../src/render/creatures/intention';
-import { HEAD_HAND, Lie, SCRATCH_BELLY, SCRATCH_HZ, SCRATCH_POINT, createIdleCtx, idleFace, idleOverlay, lieOf, nodAt, scratchReach, scratchWrist, yawnAt, type IdleCtx } from '../src/render/creatures/idle';
+import { HEAD_HAND, Lie, SCRATCH_BELLY, SCRATCH_HZ, SCRATCH_POINT, createIdleCtx, idleFace, idleOverlay, lieOf, nodAt, nodLids, scratchReach, scratchWrist, yawnAt, type IdleCtx } from '../src/render/creatures/idle';
 import {
   BLINK_SLOW, IDLE, IDLE_GAP, IDLE_SETTLE, IDLE_SHARE, SCRATCH, blinkAt, createBlink, createIdle, idleBit, idleCancel, idleGap, idleLean, idleRate, idleStep,
 } from '../src/render/creatures/secondary';
@@ -183,6 +183,16 @@ test('a nod lets the head sink with the eyes closing, then brings it back', () =
   idleOverlay(w, postureOf(w.v), idle({ kind: IDLE.nod, t: 2.5, dur: 3.6 }));
   assert.ok(w.v[B.head * 3] > base.v[B.head * 3] + 0.25 && w.v[PI.eyes] > 0.9);
   assert.equal(nodAt(0), 0); assert.ok(nodAt(2.6) > 0.99); assert.ok(nodAt(3.1) < 0.01);
+  // The lids sink at its start and open at its end; they never jump (review: they stood at 0.45 from the first frame
+  // to the last, a step of 0.45 at both).
+  assert.equal(nodLids(0, 3.6), 0); assert.ok(nodLids(3.6, 3.6) < 1e-9); assert.ok(nodLids(2.6, 3.6) > 0.99);
+  assert.ok(Math.abs(nodLids(1, 3.6) - (0.45 + 0.55 * nodAt(1))) < 1e-9, 'in between: half shut, closing with the head');
+  let prevLid = 0, step = 0;
+  for (let t = 0; t <= 3.6 + 1e-9; t += 1 / 60) { const l = nodLids(t, 3.6); assert.ok(l >= 0 && l <= 1); step = Math.max(step, Math.abs(l - prevLid)); prevLid = l; }
+  assert.ok(step < 0.07, `the lids move ${step.toFixed(3)} in a sixtieth of a second at most`);
+  const first = pose('sitIdle'), last = pose('sitIdle');
+  idleOverlay(first, postureOf(first.v), idle({ kind: IDLE.nod, t: 0, dur: 3.6 })); idleOverlay(last, postureOf(last.v), idle({ kind: IDLE.nod, t: 3.6, dur: 3.6 }));
+  assert.deepEqual([...first.v], [...base.v], 'it starts at nothing'); assert.deepEqual([...last.v], [...base.v], 'and ends at nothing');
 });
 
 test('an event cut short: a yawn or a nod in mid-course has something to blend out of, one that ended by itself has not', () => {
@@ -198,7 +208,7 @@ test('an event cut short: a yawn or a nod in mid-course has something to blend o
       // Whenever the pose differs from the clip's by more than a hair, idleFace says so (no cut goes unblended).
       const w = pose('sitIdle'); idleOverlay(w, postureOf(w.v), idle({ kind, t, dur }));
       let far = 0; for (let i = 3; i < PI.root; i++) far = Math.max(far, Math.abs(w.v[i] - base.v[i]));
-      far = Math.max(far, Math.abs(w.v[PI.mouth] - base.v[PI.mouth]), Math.abs(w.v[PI.eyes] - base.v[PI.eyes]) - (kind === IDLE.nod ? 0.45 : 0));
+      far = Math.max(far, Math.abs(w.v[PI.mouth] - base.v[PI.mouth]), Math.abs(w.v[PI.eyes] - base.v[PI.eyes]));
       if (far > 0.06) assert.ok(f > 0.05, `kind ${kind} at ${t.toFixed(2)} s: the pose is ${far.toFixed(2)} from the clip and idleFace is ${f.toFixed(3)}`);
     }
     assert.ok(peak > 0.99);

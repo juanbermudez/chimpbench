@@ -83,15 +83,19 @@ export function yawnAt(t: number, dur: number): number { return smooth(t / 0.9) 
 /** Dozing nod 0..1: the head sinks over NOD_DOWN seconds, then comes back up in under half a second. */
 const NOD_DOWN = 2.6;
 export function nodAt(t: number): number { return t < NOD_DOWN ? smooth(t / NOD_DOWN) : 1 - smooth((t - NOD_DOWN) / 0.45); }
+/** The lids through a nod, 0..1: they sink to NOD_LIDS over its first 0.3 s, close with the head, and open again over
+ * its last 0.3 s (as first written they stood at NOD_LIDS from the first frame to the last and jumped at both). */
+const NOD_LIDS = 0.45, NOD_EDGE = 0.3;
+export function nodLids(t: number, dur: number): number { return (NOD_LIDS + (1 - NOD_LIDS) * nodAt(t)) * smooth(t / NOD_EDGE) * (1 - smooth((t - (dur - NOD_EDGE)) / NOD_EDGE)); }
 
 /**
  * How much of an event's face and head movement is in the pose now, 0..1: the yawn's and the nod's own envelopes; 0
  * for the kinds whose release is eased elsewhere (the scratching arm and the lean by the layer, the glance by the look
  * spring). An event that ends by itself ends at 0. One cut short while this is above 0 would drop an open jaw, closed
- * eyes and up to 0.3 rad of head in a single frame: the layer blends out of it instead (creatures.ts stepIdle).
+ * eyes and up to 0.3 rad of head in a single frame: the layer blends out of it instead (creatures.ts stepState).
  */
 export function idleFace(kind: number, t: number, dur: number): number {
-  return kind === IDLE.yawn ? yawnAt(t, dur) : kind === IDLE.nod ? nodAt(t) : 0;
+  return kind === IDLE.yawn ? yawnAt(t, dur) : kind === IDLE.nod ? Math.max(nodAt(t), nodLids(t, dur)) : 0;
 }
 
 /**
@@ -127,7 +131,7 @@ export function idleOverlay(w: Pw, posture: number, idle: IdleCtx): void {
       // Dozing off: the head sinks with the eyes closing, then comes back up.
       const d = nodAt(idle.t);
       w.a(B.neck, 0.16 * d).a(B.head, 0.3 * d).a(B.chest, 0.04 * d);
-      v[PI.eyes] = Math.max(v[PI.eyes], 0.45 + 0.55 * d);
+      v[PI.eyes] = Math.max(v[PI.eyes], nodLids(idle.t, idle.dur));
       break;
     }
     case IDLE.scratch: {
