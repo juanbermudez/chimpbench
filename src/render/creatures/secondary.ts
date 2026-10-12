@@ -4,6 +4,7 @@
 //   mid-stride, and it is cheaper than evaluating two clips through a crossfade.
 // - Critically damped springs (Holden, "Spring-It-On"): exact solution, so the result is independent of dt.
 // - Blinks: hash-seeded, irregular intervals per individual.
+// - Idle life (stage W8): scratches, yawns, weight shifts, glances and nods, hash-scheduled per individual.
 
 /** Scalar inertialization offset at time t for an initial offset x0, offset velocity v0 and duration t1 (tests; allocates). */
 export function inertialize(x0: number, v0: number, t1: number, t: number): number {
@@ -94,15 +95,115 @@ export function hashUnit(id: number, salt: number): number {
 }
 export interface Blink { next: number; count: number; }
 export function createBlink(id: number): Blink { return { next: hashUnit(id, 1) * 6, count: 0 }; }
-/** Eyelid closure 0..1 at time t (s); advances the schedule. A blink closes for ~0.13 s. */
-export function blinkAt(b: Blink, id: number, t: number): number {
-  while (t > b.next + 0.14) {
+/** Eyelid closure 0..1 at time t (s); advances the schedule. A blink closes for ~0.13 s; `dur` lengthens it (stage W8:
+ * a sleepy animal blinks slowly, up to BLINK_SLOW; a stylization). With the default `dur` the schedule is what it was. */
+export function blinkAt(b: Blink, id: number, t: number, dur = 0.13): number {
+  while (t > b.next + dur + 0.01) {
     b.count++;
     const r = hashUnit(id, 7 + b.count);
-    b.next += r < 0.15 ? 0.28 : 2 + 8 * hashUnit(id, 1009 + b.count);
+    // (A double blink follows after 0.28 s; a slow blink is given the time to end first.)
+    b.next += r < 0.15 ? Math.max(0.28, dur + 0.05) : 2 + 8 * hashUnit(id, 1009 + b.count);
   }
-  const u = (t - b.next) / 0.13;
+  const u = (t - b.next) / dur;
   return u > 0 && u < 1 ? Math.sin(Math.PI * u) : 0;
+}
+/** Seconds a blink lasts at full sleepiness (design assumption). */
+export const BLINK_SLOW = 0.42;
+
+// ---------------------------------------------------------------------------
+// Idle life (stage W8): one-shot events over any stationary clip, hash-scheduled per animal as blinks are. A
+// STYLIZATION throughout: kinds, shares, gaps and durations are design assumptions chosen so that a resting party
+// reads as alive (no rate of yawning, shifting or glancing in wild chimpanzees is in docs/research.md, and the rates
+// drawn here are not meant to be read off the screen). One finding is sourced and enters through the scratch drive:
+// self-scratching stays raised for the ten minutes after aggression received [M captive, fraser2008]. The schedule
+// is a pure function of the animal's id, the event number and the drives passed in; two animals never share a
+// schedule, so neighbours are not in step.
+// ---------------------------------------------------------------------------
+export const IDLE = { none: 0, scratch: 1, yawn: 2, shift: 3, glance: 4, nod: 5 } as const;
+/** Where a scratch goes (the layer turns it into a point on the animal's own posed body: idle.ts SCRATCH_POINT). */
+export const SCRATCH = { flank: 0, thigh: 1, head: 2 } as const;
+/** Bit of an event kind in the `allow` mask of idleStep. */
+export const idleBit = (kind: number) => 1 << kind;
+/** Seconds between the end of one event and the start of the next at the idle rate 1 (uniform by hash). */
+export const IDLE_GAP = [6, 20] as const;
+/** Share of events by kind at baseline drives (scratch, yawn, weight shift, glance); a nod only enters when asked (NOD_SHARE). */
+export const IDLE_SHARE = [0, 0.22, 0.06, 0.34, 0.38, 0] as const;
+export const NOD_SHARE = 0.3;
+/** An animal that has just become still (it was walking, calling, in a decision beat) waits at least this long on the idle clock. */
+export const IDLE_SETTLE = 3;
+export interface Idle {
+  /** Idle seconds accrued (real seconds × the idle rate): gaps are measured on this clock. */
+  clock: number;
+  /** Idle-clock time at which the next event starts. */
+  next: number;
+  /** Events scheduled so far (the hash index). */
+  n: number;
+  /** The event under way (IDLE), with its site and side for a scratch, real seconds since it began and its length. */
+  kind: number; site: number; side: 0 | 1; t: number; dur: number;
+  /** Weight shift: the lean held now (−1 .. 1) and the one it came from. */
+  lean: number; leanFrom: number;
+}
+export function createIdle(id: number): Idle {
+  return { clock: 0, next: 1.5 + hashUnit(id, 2003) * IDLE_GAP[1], n: 0, kind: 0, site: 0, side: 0, t: 0, dur: 0, lean: 0, leanFrom: 0 };
+}
+/**
+ * How much faster idle events come at a playback rate (ecological seconds per real second): 1 at Real time and at
+ * Watch 4×, 3 from 36 s/s on (so at 1 min/s). Events keep their own length in real seconds, so at 1 min/s a resting
+ * bout of ten simulated minutes (ten seconds on screen) still shows one or two of them. Design assumption.
+ */
+export function idleRate(simRate: number): number { const r = Math.sqrt(Math.max(0, simRate) / 4); return r < 1 ? 1 : r > 3 ? 3 : r; }
+/** Ends the event under way (the animal moved off, or the clip no longer allows it) and waits a short gap. */
+export function idleCancel(s: Idle): void { if (s.kind !== IDLE.none) { s.kind = IDLE.none; s.t = 0; s.dur = 0; s.leanFrom = s.lean; s.next = s.clock + 2; } }
+/**
+ * Advances one animal's schedule by `dt` real seconds at idle rate `rate`. `allow` is a mask of the kinds the pose
+ * permits now (idleBit; 0 = the animal is not idle); `scratchK`, `yawnK` ≥ 0 multiply the baseline rate of those
+ * kinds (bodystate.ts) and `nodK` > 0 lets a sleepy seated animal nod. Returns true on the call in which an event starts.
+ */
+export function idleStep(s: Idle, id: number, dt: number, rate: number, allow: number, scratchK = 1, yawnK = 1, nodK = 0): boolean {
+  s.clock += dt * rate;
+  if (!(nodK > 0)) allow &= ~idleBit(IDLE.nod);
+  if (s.kind !== IDLE.none) {
+    if (!(allow & idleBit(s.kind))) { idleCancel(s); return false; }
+    s.t += dt;
+    if (s.t < s.dur) return false;
+    s.kind = IDLE.none; s.t = 0; s.dur = 0; s.leanFrom = s.lean;
+    s.next = s.clock + idleGap(id, s.n, scratchK, yawnK, nodK);
+    return false;
+  }
+  // Not idle (walking, calling, asleep, in a decision beat): nothing starts, and nothing starts the moment it is idle again.
+  if (allow === 0) { if (s.next < s.clock + IDLE_SETTLE) s.next = s.clock + IDLE_SETTLE; return false; }
+  if (s.clock < s.next) return false;
+  const n = s.n++;
+  const w1 = IDLE_SHARE[1] * scratchK, w2 = IDLE_SHARE[2] * yawnK, w3 = IDLE_SHARE[3], w4 = IDLE_SHARE[4], w5 = NOD_SHARE * Math.max(0, nodK);
+  let r = hashUnit(id, 4001 + n) * (w1 + w2 + w3 + w4 + w5);
+  let kind: number = (r -= w1) < 0 ? IDLE.scratch : (r -= w2) < 0 ? IDLE.yawn : (r -= w3) < 0 ? IDLE.shift : (r -= w4) < 0 || w5 <= 0 ? IDLE.glance : IDLE.nod;
+  // A kind the pose does not permit gives way to a glance or, failing that, to a weight shift (the two that ask
+  // least of the body); where neither is permitted the turn is skipped. A scratch, a yawn or a nod only ever comes by
+  // its own draw, so a clip that permits nothing but a yawn does not yawn at every turn.
+  if (!(allow & idleBit(kind))) kind = allow & idleBit(IDLE.glance) ? IDLE.glance : allow & idleBit(IDLE.shift) ? IDLE.shift : IDLE.none;
+  if (kind === IDLE.none) { s.next = s.clock + idleGap(id, n, scratchK, yawnK, nodK); return false; }
+  const h = hashUnit(id, 5001 + n);
+  s.kind = kind; s.t = 0;
+  s.site = Math.min(2, Math.floor(hashUnit(id, 6001 + n) * 3)); s.side = hashUnit(id, 7001 + n) > 0.5 ? 1 : 0;
+  s.dur = kind === IDLE.scratch ? 2.2 + 1.4 * h : kind === IDLE.yawn ? 2.7 + 0.6 * h : kind === IDLE.shift ? 1.4 : kind === IDLE.glance ? 1.2 + 1.4 * h : 3.6;
+  if (kind === IDLE.shift) {
+    // Five positions; never the one it is in.
+    let to = (Math.floor(h * 5) - 2) * 0.5;
+    if (to === s.lean) to = to >= 1 ? -0.5 : to + 0.5;
+    s.leanFrom = s.lean; s.lean = to;
+  }
+  return true;
+}
+/** Idle seconds from the end of event n to the next: the hash gap, shortened as the drives raise the total rate. */
+export function idleGap(id: number, n: number, scratchK = 1, yawnK = 1, nodK = 0): number {
+  const m = IDLE_SHARE[1] * scratchK + IDLE_SHARE[2] * yawnK + IDLE_SHARE[3] + IDLE_SHARE[4] + NOD_SHARE * Math.max(0, nodK);
+  return (IDLE_GAP[0] + (IDLE_GAP[1] - IDLE_GAP[0]) * hashUnit(id, 3001 + n)) / Math.max(1, m);
+}
+/** The lean drawn now: eased from the old position to the new one while a weight shift runs. */
+export function idleLean(s: Idle): number {
+  if (s.kind !== IDLE.shift || s.dur <= 0) return s.lean;
+  const u = Math.min(1, s.t / s.dur), e = u * u * (3 - 2 * u);
+  return s.leanFrom + (s.lean - s.leanFrom) * e;
 }
 
 // ---------------------------------------------------------------------------

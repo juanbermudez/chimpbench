@@ -4935,6 +4935,55 @@ states as fact is already here. No behavioural constant, parameter or simulation
 to human observers); head or body orientation toward distant calls; how party size is counted in the field when
 dependent young are present (the marker counts every member, as the simulation's party list does).
 
+## Addendum: W8 state on the body and idle life (11 October 2026)
+
+Written for stage W8 (`docs/staging/w8b-state-on-body.md`; render and interface only, nothing under `src/sim`). No new
+source was opened: this file was searched first (self-scratch, piloerect, hair, yawn, breath, respirat, eyelid, belly,
+distens), and the two statements the stage makes as fact are already here. No behavioural constant, parameter or
+simulation code is involved.
+
+**Sourced (already cited above).**
+- **Hair stands on end in a charging display** [mullerWrangham2004b] (full text) [M], the lines under "Charging
+  displays and chases and attacks per male-hour, Kanyawara 1998": "Charging displays involved exaggerated locomotion,
+  piloerection and branch shaking."
+  - Use in W8 (`src/render/creatures/material.ts`, `bodystate.ts`): the coat of a displaying animal is drawn on end,
+    and an aroused animal's coat rises.
+  - What W8 does NOT take from it: how far the hair stands (up to 5 cm on an adult's back, shoulders, upper arms and
+    crown), where on the body, how it follows any endocrine state, or that a frightened animal's coat lies sleek. The
+    source describes the display, nothing more.
+- **Self-scratching stays raised for the ten minutes after aggression received** [fraser2008] (full text) [M,
+  captive], the lines under "E.15 Addendum: fast arousal": self-grooming and self-scratching of recipients stayed above
+  matched controls "for the entire 10 min" of post-conflict observation.
+  - Use in W8 (`bodystate.ts` `scratchOf`, `POST_CONFLICT_H`): an animal that lost a conflict (the public
+    `Chimp.lastConflict`, the renderer's stand-in for "received aggression") is drawn scratching more often for ten
+    simulated minutes.
+  - What W8 does NOT take from it: the size of the rise (the drawn rate is 3.5 times the idle baseline; the paper
+    compares with matched controls and that ratio was not read off it), the baseline rate itself, or that consolation
+    lowers it (not drawn).
+
+**Stylizations with no source** (labelled so in code):
+- every mapping from state to the body (`bodystate.ts`): gut fill, or 1 − hunger, to the depth of the belly and half
+  of it to the flanks; body reserves, or poor health, to the flanks; a pregnancy to the belly from a quarter of
+  gestation on; felt sleepiness, or 1 − energy, to a lowered upper lid, slow blinks, yawns and nods; competitive and
+  fast arousal, or stress above 0.3 and the published mood, to the coat and to the scratch and breathing rates; fear
+  to a sleeked coat;
+- the amounts (`material.ts` `BODY_STATE`): the coat 5 cm, the belly 6.5 cm out and 3.5 cm in, the flanks 3 cm, a
+  breath 6 to 8 mm either way, all in bind metres of an adult drawn at 1.5 times life size, and that a raised
+  coat is drawn up to twice as high on an animal that is small on screen;
+- idle life (`secondary.ts`, `idle.ts`): that a stationary animal scratches its flank, thigh or head, yawns, shifts
+  its weight, glances at a neighbour or nods off; the share of each (22, 6, 34 and 38% at rest), the gaps (6 to 20
+  s at Real time, a third of that at 1 min/s), the lengths (1.2 to 3.6 s) and the shapes of the movements; the
+  breathing rate (0.26 to 0.36 breaths a second at rest) and its depth. The rates are chosen so that a resting party
+  reads as alive (in the running app a stationary animal starts about 3.5 events a minute at Real time, of which
+  about one is a scratch); no field rate was compared with them and they must not be read off the screen.
+
+**Not found in this file, and not searched for on the web for this stage:** a resting respiratory rate of
+chimpanzees; rates of yawning, self-scratching, weight shifts or glances in the wild; how the abdomen changes with
+gut fill; eyelid closure before sleep; whether a frightened chimpanzee's hair lies flat (the brief asked for a sleek
+coat in fear; piloerection is also reported with fear in other mammals, and nothing here settles it for chimpanzees).
+The review of 10 October cited a sanctuary's notes on piloerection (chimpsnw.org); they are not peer-reviewed, were
+not added here and nothing rests on them.
+
 ## Addendum: W9 pairs and postures in trees (11 October 2026)
 
 Stage W9 (`docs/staging/w9b-tree-pairs.md`) seats animals that interact in a crown together on one support, gives an

@@ -581,9 +581,9 @@ export const CLIPS: Record<string, Clip> = {
     sitBase(w, c, 0.2);
     idleHead(w, c, 0.7);
     earFlick(w, c);
-    // Occasional self-scratch: a common, conspicuous chimp behavior.
-    const sc = Math.pow(pulse(c.time * 0.21 + c.seed * 17), 6);
-    if (sc > 0.05) { reach(w, 0, -0.08, 0.62, 0.02, 0, 0, 0, 0, sc); grip(w, 0, 0.3 + 0.5 * pulse(c.time * 14)); w.a(B.head, 0, -0.3 * sc, 0.2 * sc); }
+    // (Stage W8: the self-scratch this variant played on a 30 s sine, for about 9 s of every 30, is gone. Scratches
+    // are now one-shot idle events over every stationary clip, scheduled per animal and driven by its state:
+    // secondary.ts idleStep, creatures/idle.ts.)
   },
   sitIdle(w, c) { sitBase(w, c, 0.1); idleHead(w, c); earFlick(w, c); },
   forage(w, c) {

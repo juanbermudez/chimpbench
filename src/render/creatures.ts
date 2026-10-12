@@ -4,12 +4,12 @@
 // perception, social links, labels, vocal and interaction FX, nests, prey).
 // Reads World; never writes it.
 import * as THREE from 'three';
-import type { Action, Chimp, Quality, World } from '../types';
+import type { Action, BodyPercept, Chimp, Quality, World } from '../types';
 import { buildChimpGeometry } from './creatures/body';
 import { createChimpMaterials, createSilhouetteMaterial } from './creatures/material';
 import { PORTRAIT_LAYER, type PortraitSubject } from './creatures/portrait';
 import {
-  B, PI, PARAM_TEXEL, POSE_SIZE, ROW_TEXELS, boneWorld, computeMorph, copyPose, createFK, createMorph, createPose,
+  B, LIMB, PI, PARAM_TEXEL, POSE_SIZE, ROW_TEXELS, boneWorld, computeMorph, copyPose, createFK, createMorph, createPose,
   lowestPoint, quat, solveFK, writeSkin, type FKState, type Morph, type Pose,
 } from './creatures/rig';
 import { CLIPS, GROOMEE, GROOM_FRONT, GROOM_LAP, PROP, Pw, cradle, cradleFor, gaitFrequency, groomeePosture, groomerRole, vocalOverlay, type Gait, type PoseCtx } from './creatures/poses';
@@ -32,11 +32,17 @@ import {
   realSeconds, restedBefore, runnerUp, startTime, stepLate, type Beat,
 } from './creatures/beat';
 import { Posture, intention, postureOf } from './creatures/intention';
+import { Lie, SCRATCH_BELLY, createIdleCtx, idleFace, idleOverlay, lieOf, scratchReach, scratchWrist } from './creatures/idle';
+import { LID_MAX, bellyUnder, bodyChannels, coatUnder, coatValue, createChannels, type BodyChannels } from './creatures/bodystate';
+import { bodyStateOf } from '../simulation';
 import { paramsOf } from '../sim/params';
 import { sampleSmooth } from './creatures/motion';
 import { GAITS, Regime, advancePhase, createLock, limbPhase, resetLock, solveClimb, solveGait, stepLock, type ContactLock, type GaitSolve } from './creatures/gait';
 import { referenceRate, smallMapPace } from './creatures/pace';
-import { applyInertia, blinkAt, createAttention, createBlink, createInertia, scanAngles, selectAttention, springStep, startInertia, type AttnCand, type Attention, type Blink, type Inertia } from './creatures/secondary';
+import {
+  BLINK_SLOW, IDLE, SCRATCH, applyInertia, blinkAt, createAttention, createBlink, createIdle, createInertia, idleBit, idleCancel, idleLean, idleRate, idleStep,
+  scanAngles, selectAttention, springStep, startInertia, type AttnCand, type Attention, type Blink, type Idle, type Inertia,
+} from './creatures/secondary';
 import type { KeepCandidate } from './env/occluders';
 import { createTreeIndex, type TreeIndex } from './creatures/tree-index';
 import { PERCH, perchBout, perchLies, perchPosture, seatAllowed, seatGroups, type SeatPairs } from './creatures/perch';
@@ -216,6 +222,14 @@ export interface Anim {
   // piloerection after a release display.
   pCode: number; pSince: number; pPub: number; pPubAt: number; pIndex: number; pCount: number; pAhead: number; pBehind: number; pVariant: number; pSide: number;
   patrolAt: number; relBristle: number;
+  /** Stage W8 (creatures/bodystate.ts): the body's state as read about once a second (tg), as drawn (ch: eased; breath
+   * is the signed breath written to the shader) and the real time it is read next. */
+  tg: BodyChannels; ch: { belly: number; flank: number; lid: number; arousal: number; fear: number; breath: number }; stateAt: number;
+  /** Stage W8, idle life (secondary.ts, creatures/idle.ts): the breathing phase 0..1 and its eased depth, the idle
+   * schedule, the reach of a scratch under way and its eased weight shift, and the neighbour a glance is at (−1 none). */
+  breathPh: number; breathAmp: number; idle: Idle; scratchK: number; leanK: number; glanceId: number;
+  /** Stage W8: what rides on this animal this frame, as bits: 1 an infant (or a dead infant) on the belly, 2 one on the back (the carry modes). */
+  bears: number;
 }
 
 const PASSIVE = new Set(['rest', 'groom', 'forage', 'travel', 'follow', 'consort', 'guard', 'share', 'beg', 'shelter', 'nurse', 'call', 'play']);
@@ -377,7 +391,19 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   // lodFade false: a mesh-level change is drawn at once. The harness tile sheets update the layer once per tile with
   // dt 0, so a cross-fade never advanced and each tile showed the level chosen for the tile before it (W3).
   // blink false: eyes stay open (the face sheet is a check of the eyes; a blink lasts 0.13 s and hides them).
-  const debug: { clip: string | null; attention: boolean; lodFade: boolean; blink: boolean; /** Harness: forces the groomee posture (GROOMEE). */ groomee?: number; /** Harness: forces the resting posture in a crown (PERCH). */ perch?: number; anim?: (id: number) => Anim | undefined; feet?: (id: number) => unknown; /** Probe (stage W9): an animal's seat in its crown and how far its drawn body is from the bark. */ crown?: (id: number) => unknown; lodSwitches: number; lodBlends: number } = { clip: null, attention: true, lodFade: true, blink: true, anim: id => anims.get(id), lodSwitches: 0, lodBlends: 0 };
+  // Stage W8. idle false: no idle life and no breathing (a stance can then be compared frame for frame). w8 false: none
+  // of the stage's channels either (the coat is the clip's value, belly, flanks, lid and breath are 0, blinks are
+  // short): the picture of the build before, but for the taller coat of a clip that raises it. channels: drawn values
+  // forced for every animal, or for the animal `only` (proof pictures: a full coat, a full belly). idleForce: an idle
+  // event held on every stationary animal that permits it, started again when it ends. body: stands in for the
+  // simulation's bodyStateOf (a harness world keeps no Track E state).
+  const debug: {
+    clip: string | null; attention: boolean; lodFade: boolean; blink: boolean; idle: boolean; w8: boolean;
+    channels?: { coat?: number; belly?: number; flank?: number; lid?: number; only?: number }; idleForce?: { kind: number; site?: number; side?: 0 | 1 };
+    body?: (c: Chimp) => BodyPercept | null;
+    /** Harness: forces the groomee posture (GROOMEE). */ groomee?: number; /** Harness: forces the resting posture in a crown (PERCH). */ perch?: number; anim?: (id: number) => Anim | undefined; feet?: (id: number) => unknown;
+    /** Probe (stage W9): an animal's seat in its crown and how far its drawn body is from the bark. */ crown?: (id: number) => unknown; lodSwitches: number; lodBlends: number;
+  } = { clip: null, attention: true, lodFade: true, blink: true, idle: true, w8: true, anim: id => anims.get(id), lodSwitches: 0, lodBlends: 0 };
   // Harness probe (?debug=feet): ankle and wrist world points, stance flags, lock states and counters.
   const FEET = [B.handL, B.handR, B.footL, B.footR];
   debug.feet = (id: number) => {
@@ -435,6 +461,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       deadCarried: false, deadDrop: false, dropX: 0, dropZ: 0, climbTree: -1, drumTree: -1,
       drinkSimX: NaN, drinkSimZ: NaN, drinkOk: false, drinkX: 0, drinkZ: 0,
       pCode: 0, pSince: 0, pPub: 0, pPubAt: 0, pIndex: 0, pCount: 0, pAhead: -1, pBehind: -1, pVariant: Listen.wait, pSide: 1, patrolAt: -1e9, relBristle: 0,
+      tg: createChannels(), ch: { belly: 0, flank: 0, lid: 0, arousal: 0, fear: 0, breath: 0 }, stateAt: -1,
+      breathPh: hash01(chimp.id, 53), breathAmp: 1, idle: createIdle(chimp.id), scratchK: 0, leanK: 0, glanceId: -1, bears: 0,
     };
     anims.set(chimp.id, a);
     animList.push(a);
@@ -1301,7 +1329,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     a.bank = damp(a.bank, a.elevated < 0.5 ? clamp(a.speed / a.morph.size * a.turnRate * 0.05, -0.12, 0.12) : 0, 6, dt);
   }
 
-  const lookTmp = new Float32Array(3);
+  const lookTmp = new Float32Array(3), IKSAVE = new Float32Array(5), SW = new Float32Array(3);
   const W = new Float64Array(3), OUT = new Float64Array(3);
   function evaluatePose(a: Anim, dtAnim: number, dtReal: number, cam: THREE.Camera, plant: boolean) {
     const c = a.chimp, s = a.morph.size;
@@ -1412,6 +1440,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       v[PI.bristle] = Math.max(v[PI.bristle], tn.bristle); v[PI.press] = Math.max(v[PI.press], tn.press);
       if (Math.abs(tn.brow) > Math.abs(v[PI.brow])) v[PI.brow] = tn.brow;
     }
+    // ---- Stage W8 (the state on the body, idle life; creatures/bodystate.ts, idle.ts): the drawn channels ease toward
+    // what was last read (readState), then breathing and the idle layer go over the clip, before the face rig turns
+    // the mouth opening into a jaw angle. Stylizations. ----
+    stepState(a, clip, dtReal);
     {
       // Face rig: the jaw drops with mouth opening; a fear grin retracts both lips off the teeth.
       const v = a.cur.v, m = clamp(v[PI.mouth], 0, 1), g = clamp(v[PI.grin], 0, 1), f = clamp(v[PI.funnel], 0, 1);
@@ -1429,7 +1461,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     }
     // ---- Stage W10 (calls you can see; creatures/heard.ts): a stationary listener holds its clip for a moment once a
     // long call's arc has reached it, and is released through the pop guard's blend below. A stylization. ----
-    const heardRelease = heardHold(a, clip, start);
+    // (W8: not on the frame an idle yawn or nod is cut short. The hold copies last frame's pose, the open jaw with it;
+    // the blend below closes it first and the hold starts a frame later, on the clip's own pose.)
+    const heardRelease = heardHold(a, clip, start || idleCut);
     // Inertialized transition (secondary.ts): the new clip plays at once; the old output's offset and velocity
     // decay over the transition instead of a frozen pose crossfading out.
     const cv = a.cur.v, ov = a.out.v;
@@ -1441,7 +1475,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       const pc = a.prevCur;
       for (let i = 3; i < PI.root; i++) jump = Math.max(jump, Math.abs(cv[i] - pc[i]));
       for (let l = 0; l < 4; l++) { const o = PI.ik + l * 5; if (cv[o + 3] > 0.01 && pc[o + 3] > 0.01) jump = Math.max(jump, 3 * Math.abs(cv[o] - pc[o]), 3 * Math.abs(cv[o + 1] - pc[o + 1]), 3 * Math.abs(cv[o + 2] - pc[o + 2])); }
-      pop = jump > Math.max(0.45, 6 * dtAnim) || heardRelease;   // W10: a held clip resumes through the same blend
+      // W10: a held clip resumes through the same blend. W8: so does a pose whose idle yawn or nod was cut short (a
+      // decision beat began, a call arrived): the jaw, the lids and the head would otherwise jump in one frame, under
+      // the threshold above (seen: 0.3 rad of jaw, the mouth and the eyes from open to shut in 16 ms).
+      pop = jump > Math.max(0.45, 6 * dtAnim) || heardRelease || idleCut;
     }
     a.prevCur.set(cv);
     if (start) {
@@ -1475,7 +1512,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     // follows a sprung look point (turns in ~0.3 s); the clip's own look weight still applies for its partner.
     let look: Float32Array | null = null;
     const allow = ATTN_OFF.has(clip) ? 0 : ATTN_LOW.has(clip) || ov[PI.eyes] > 0.6 ? 0.25 : 1;
-    const want = debug.attention ? updateAttention(a, partner, dtReal) * allow : 0;
+    // (W8: a yawn tips the head back and a nod lets it sink; the look-at would hold it level.)
+    const want = debug.attention ? updateAttention(a, partner, dtReal) * allow * (a.idle.kind === IDLE.yawn || a.idle.kind === IDLE.nod ? 0.25 : 1) : 0;
     a.lookW = damp(a.lookW, want, 5, dtReal);
     const lw = Math.max(ov[PI.look], a.lookW);
     if (lw > 0.01) {
@@ -1514,11 +1552,29 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       }
     }
     else if (a.locks[0].state || a.locks[1].state || a.locks[2].state || a.locks[3].state) for (const l of a.locks) resetLock(l);
+    // Stage W8: the scratching hand goes to a place on the animal's own posed body, so it needs the solved skeleton
+    // (idle.ts scratchWrist). Only the solved skeleton carries the reach: the pose buffer gets its own values back,
+    // so a clip change during a scratch blends from the clip's pose as it always did. Only while a scratch runs.
+    if (a.scratchK > 0.01) {
+      const idle = a.idle, o = PI.ik + (idle.side ? LIMB.armR : LIMB.armL) * 5, k = a.scratchK, w0 = ov[o + 3];
+      for (let j = 0; j < 5; j++) IKSAVE[j] = ov[o + j];
+      scratchWrist(a.fk, a.morph, idle.site, idle.side, idle.t, SW);
+      // (Over the crown the hand is held in a body-space orientation, the rig's end lock: idle.ts HEAD_HAND.)
+      const lock = idle.site === SCRATCH.head ? k : 0;
+      if (w0 > 0.01) { ov[o] += (SW[0] - ov[o]) * k; ov[o + 1] += (SW[1] - ov[o + 1]) * k; ov[o + 2] += (SW[2] - ov[o + 2]) * k; ov[o + 3] = Math.max(w0, k); ov[o + 4] = ov[o + 4] * (1 - k) + lock; }
+      else { ov[o] = SW[0]; ov[o + 1] = SW[1]; ov[o + 2] = SW[2]; ov[o + 3] = k; ov[o + 4] = lock; }
+      solveFK(a.out, a.morph, a.fk, look);
+      for (let j = 0; j < 5; j++) ov[o + j] = IKSAVE[j];
+    }
     // Smoothed piloerection and mouth for the shader. After a patrol's release display the coat settles slowly
     // (RELEASE_BRISTLE_TAU) instead of at once; every other animal is unchanged (relBristle stays 0).
     if (releasing(a)) a.relBristle = Math.max(a.relBristle, ov[PI.bristle]);
     else if (a.relBristle > 0) { a.relBristle *= Math.exp(-dtReal / RELEASE_BRISTLE_TAU); if (a.relBristle < 0.01) a.relBristle = 0; }
-    a.bristle = damp(a.bristle, Math.max(ov[PI.bristle], a.relBristle), 3, dtAnim);
+    // Stage W8: the coat is the larger of what the clip holds and the continuous arousal, sleeked by fear
+    // (bodystate.ts coatValue; −1 .. 1). With arousal and fear at 0 it is the clip's value, as before.
+    const clipCoat = Math.max(ov[PI.bristle], a.relBristle);
+    // (Under an infant riding on the back the coat stands no higher than RIDER_COAT: bodystate.ts coatUnder.)
+    a.bristle = damp(a.bristle, debug.w8 ? coatUnder(coatValue(clipCoat, a.ch.arousal, a.ch.fear), (a.bears & 2) !== 0) : clipCoat, 3, dtAnim);
     a.mouth = clamp(Math.max(ov[PI.mouth], ov[PI.grin] * 0.55), 0, 1);
     a.grin = clamp(ov[PI.grin], 0, 1);
     void cam;
@@ -1673,6 +1729,19 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     // a wait can fall in the middle of a grooming bout, and the head must not leave the partner each time one does.
     const thinking = a.attn.pri === 0 && deliberating(c.controller, c.awaitingDecisionSince, world.modelPolicy.mode);
     if (thinking && a.attn.until > animClock + THINK_SCAN_S) a.attn.until = animClock + THINK_SCAN_S;
+    // Stage W8: an idle glance at a neighbour (stepIdle) is the lowest-priority gaze. It is reached only when neither a
+    // patrol, a decision beat nor a heard call has the head (each returns above), and it gives way to every candidate
+    // (a partner, a caller, a snake model, the alpha): it takes the place of an aimless idle scan, nothing else. An
+    // idle event does not start, and one under way ends, while a beat plays or a call is listened to (stepIdle).
+    if (a.glanceId >= 0 && a.attn.pri === 0 && !thinking) {
+      const o = anims.get(a.glanceId);
+      if (o && o !== a && o.lastSkinFrame >= 0) {
+        GOAL[0] = o.head.x; GOAL[1] = o.head.y; GOAL[2] = o.head.z;
+        if (a.lastSkinFrame < 0 || !Number.isFinite(a.lk[0].x) || Math.abs(a.lk[0].x - GOAL[0]) > 40) for (let k = 0; k < 3; k++) { a.lk[k].x = GOAL[k]; a.lk[k].v = 0; }
+        for (let k = 0; k < 3; k++) springStep(a.lk[k], GOAL[k], 0.11, dt);
+        return 0.6;
+      }
+    }
     if (!goalOf(a, a.attn.key, GOAL)) { a.attn.until = -1; return 0; }
     if (a.lastSkinFrame < 0 || !Number.isFinite(a.lk[0].x) || Math.abs(a.lk[0].x - GOAL[0]) > 40) for (let k = 0; k < 3; k++) { a.lk[k].x = GOAL[k]; a.lk[k].v = 0; }
     for (let k = 0; k < 3; k++) springStep(a.lk[k], GOAL[k], 0.09, dt);
@@ -1802,6 +1871,134 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     return any;
   }
 
+  // --- Stage W8: the body's state and idle life (creatures/bodystate.ts, secondary.ts, creatures/idle.ts) -----------
+  // Whether a Track E mechanism keeps body state the simulation can give (read once: the layer is rebuilt with the world).
+  const trackE = (() => { const P = paramsOf(world); return P.energyLedger === 1 || P.rhythmSleep === 1 || P.endoStates === 1; })();
+  let stateClock = 0;   // real seconds (the frame's own elapsed time can be frozen by a harness)
+  /** Reads the animal's state into its channel targets, about once a second (staggered by slot); never per frame. */
+  function readState(a: Anim) {
+    const c = a.chimp, tg = a.tg;
+    if (c.alive) bodyChannels(c, debug.body ? debug.body(c) : trackE ? bodyStateOf(world, c) : null, world.time, tg);
+    else { tg.arousal = 0; tg.fear = 0; tg.lid = 0; tg.sleepy = 0; tg.scratch = 1; tg.yawn = 1; }   // a body keeps the belly and flanks it had
+    if (a.stateAt < 0) { const ch = a.ch; ch.belly = tg.belly; ch.flank = tg.flank; ch.lid = tg.lid; ch.arousal = tg.arousal; ch.fear = tg.fear; }
+    a.stateAt = stateClock + 0.8 + 0.4 * hash01(a.slot, 91);
+  }
+  // Which idle events a stationary clip permits (a drawing rule; stylization). Everything: standing, sitting, resting
+  // and perching. Feeding keeps its arm and mouth: a shift of weight or a glance. Nursing: the face and a shift. Being
+  // groomed and sitting out rain: a yawn. Clinging to a trunk: a glance. Nothing: asleep, dead, carried, drinking,
+  // grooming, calling, displaying, greeting, fighting, mating, playing, building a nest, hunting, every pause of a
+  // patrol (tense and silent), and every moving clip. A clip this table does not know gets the face only, unless its
+  // name says it is a rest, a sit or a perch.
+  const I_ALL = idleBit(IDLE.scratch) | idleBit(IDLE.yawn) | idleBit(IDLE.shift) | idleBit(IDLE.glance) | idleBit(IDLE.nod);
+  const I_FACE = idleBit(IDLE.yawn) | idleBit(IDLE.glance);
+  const IDLE_ALLOW = new Map<string, number>([
+    ['stand', I_ALL], ['sitIdle', I_ALL], ['rest', I_ALL], ['perch', I_ALL], ['guard', I_ALL & ~idleBit(IDLE.nod)],
+    ['forage', idleBit(IDLE.shift) | idleBit(IDLE.glance)], ['nurse', I_FACE | idleBit(IDLE.shift)], ['groomee', idleBit(IDLE.yawn)], ['shelter', idleBit(IDLE.yawn)], ['clingTrunk', idleBit(IDLE.glance)],
+    ...['sleep', 'dead', 'deadCarried', 'carryVentral', 'carryDorsal', 'drink', 'groom', 'play', 'wrestle', 'tickle', 'display', 'charge', 'attack', 'defend', 'submit', 'pantGrunt', 'embrace', 'mate', 'share', 'beg',
+      'pantHoot', 'drum', 'alarm', 'patrol', 'listen', 'hunt', 'cower', 'nestBuild', 'walk', 'gallop', 'sneak', 'swagger', 'bipedWalk', 'climb', 'bind', 'portrait'].map(k => [k, 0] as [string, number]),
+  ]);
+  const SEATED_NAME = /^(rest|sit|perch)/;
+  function idleAllow(clip: string): number { const k = IDLE_ALLOW.get(clip); return k !== undefined ? k : SEATED_NAME.test(clip) ? I_ALL : I_FACE; }
+  const ICTX = createIdleCtx();
+  /** Set by stepState for the animal being posed: an idle yawn or nod was cut short on this evaluation (evaluatePose blends out of it). */
+  let idleCut = false;
+  /** A raised coat is drawn up to this much higher again on an animal that is small on screen (fully under 40 px of
+   * body, not at all over 140 px), so that an aroused male still has another outline from the strategy camera: a
+   * readability gain on the same footing as rig.ts RENDER_SCALE. A stylization. */
+  const COAT_FAR_GAIN = 1;
+  /** An arm that holds on overhead, or holds something, does not scratch. */
+  function armBusy(pose: Pose, side: number): boolean {
+    const o = PI.ik + (side ? LIMB.armR : LIMB.armL) * 5, v = pose.v;
+    return (v[o + 3] > 0.5 && v[o + 1] > 0.9) || (side ? pose.propR : pose.propL) !== 0;
+  }
+  /** A neighbour to glance at: the nearest drawn animal within 9 m, sometimes the second nearest. Runs when a glance starts, not per frame. */
+  function neighbourOf(a: Anim, n: number): number {
+    let b0 = -1, b1 = -1, d0 = 81, d1 = 81;
+    for (const o of animList) {
+      if (o === a || !o.chimp.alive || o.lastSkinFrame < 0 || (o.carry !== 0 && o.carrierId === a.id)) continue;
+      const d = (o.bx - a.bx) ** 2 + (o.by - a.by) ** 2 + (o.bz - a.bz) ** 2;
+      if (d < d0) { b1 = b0; d1 = d0; b0 = o.id; d0 = d; } else if (d < d1) { b1 = o.id; d1 = d; }
+    }
+    return b1 >= 0 && hash01(a.id, 700 + n) > 0.6 ? b1 : b0;
+  }
+  /** The drawn channels ease toward the state last read; then breathing and idle life, unless switched off or dead. */
+  function stepState(a: Anim, clip: string, dt: number) {
+    const ch = a.ch, tg = a.tg;
+    // (A belly with an infant on it is drawn no rounder than built, and gives way about as fast as the infant settles
+    // on it: bodystate.ts bellyUnder.)
+    const onBelly = (a.bears & 1) !== 0;
+    ch.belly = damp(ch.belly, bellyUnder(tg.belly, onBelly), onBelly && ch.belly > 0 ? 3 : 0.6, dt); ch.flank = damp(ch.flank, tg.flank, 0.6, dt); ch.lid = damp(ch.lid, tg.lid, 0.8, dt);
+    ch.arousal = damp(ch.arousal, tg.arousal, 1.5, dt); ch.fear = damp(ch.fear, tg.fear, 2.5, dt);
+    const idle = a.idle, was = idle.kind, face = idleFace(was, idle.t, idle.dur);
+    if (debug.idle && debug.w8 && a.chimp.alive) stepIdle(a, clip, dt);
+    else { ch.breath = 0; a.scratchK = 0; a.leanK = 0; a.glanceId = -1; if (idle.kind !== IDLE.none) idleCancel(idle); }
+    idleCut = face > 0.05 && idle.kind !== was;
+  }
+  /** Breathing, the idle schedule and the idle layer over the clip just written to a.cur (bound to pw). */
+  function stepIdle(a: Anim, clip: string, dtIn: number) {
+    const c = a.chimp, ch = a.ch, tg = a.tg, idle = a.idle, v = a.cur.v;
+    const dt = Math.min(dtIn, 0.25); // an animal's first evaluation, or one long out of view, carries a long step
+    const lying = a.posture === Posture.lying, lie = lying ? lieOf(v) : 0;
+    // Breathing: each animal's own rate and phase, 0.26 to 0.36 breaths a second at rest, faster after exertion and
+    // when aroused, slower when sleepy; an animal lying down breathes deeper to the eye, the one sign of life a dozing
+    // body gives (design assumptions; no respiratory rate is in docs/research.md).
+    const hz = (0.26 + 0.1 * hash01(a.id, 51)) * (1 + 1.3 * a.exert + 0.5 * ch.arousal) * (1 - 0.25 * tg.sleepy);
+    a.breathPh = (a.breathPh + dt * hz) % 1;
+    a.breathAmp = damp(a.breathAmp, (1 + 1.2 * a.exert) * (lying && !a.moving ? 1.6 : 1), 3, dt);
+    ICTX.breath = Math.sin(a.breathPh * Math.PI * 2); ICTX.breathAmp = a.breathAmp;
+    ch.breath = ICTX.breath * a.breathAmp;
+    // What may start now. Not while the body moves, is carried or patrols; not in the last seconds before it starts a
+    // new act (the decision beat, stage W6, has the head and the body then) nor while it waits for company; not while
+    // it listens to a call (stage W10) or calls itself; not above the rate at which a second spans minutes (drawn.ts).
+    const b = a.beat, inBeat = (b.since > -Infinity && (b.phase !== Phase.none || b.waiting)) || a.intent > 0.01;
+    const still = !a.moving && a.carry === 0 && a.pCode === PatrolCode.none && !inBeat && !pctx.vocal && curSimRate <= ABOUT_MAX_RATE
+      && !listening(fx.heard, a.slot, a.id, lastElapsed);
+    let allow = still ? idleAllow(clip) : 0;
+    const shifts = (allow & idleBit(IDLE.shift)) !== 0 && !lying && !a.holds;
+    if (allow) {
+      if (v[PI.eyes] > 0.9) allow = 0; // asleep: it only breathes (a dozing rester, eyes half shut, still scratches and yawns)
+      else {
+        if (!shifts) allow &= ~idleBit(IDLE.shift);
+        if (a.posture !== Posture.seated) allow &= ~idleBit(IDLE.nod);
+        // A scratch needs a seated body or one lying on its side or back: on all fours and upright the arm's elbow
+        // pole (rig.ts LIMBS; it rides with the chest) stands the elbow over the back. And a free hand with nothing in
+        // the way: not holding an infant, a body or meat, not in a pair.
+        if (!(a.posture === Posture.seated || lie === Lie.side || lie === Lie.supine) || a.holds || a.paired || (c.carryingDeadId ?? -1) >= 0 || c.carryingMeat > 0.05) allow &= ~idleBit(IDLE.scratch);
+      }
+    }
+    const forced = debug.idleForce;
+    let started = false;
+    if (forced && idle.kind === IDLE.none && (allow & idleBit(forced.kind))) {
+      idle.kind = forced.kind; idle.t = 0; idle.dur = forced.kind === IDLE.shift ? 1.4 : 3; idle.site = forced.site ?? 0; idle.side = forced.side ?? 0; idle.n++;
+      if (forced.kind === IDLE.shift) { idle.leanFrom = idle.lean; idle.lean = idle.lean > 0 ? -1 : 1; }
+      started = true;
+    } else started = idleStep(idle, a.id, dt, idleRate(curSimRate), allow, tg.scratch, tg.yawn, tg.lid > 0.2 ? 1 : 0);
+    if (started && idle.kind === IDLE.glance) { a.glanceId = neighbourOf(a, idle.n); if (a.glanceId < 0) idleCancel(idle); }
+    if (started && idle.kind === IDLE.scratch) {
+      // The hand: the arm on top for an animal on its side, the one that rests on the belly for one on its back
+      // (poses.ts lieBack), else the side drawn by hash unless that arm holds on overhead or holds something.
+      if (lie === Lie.side) idle.side = v[B.hips * 3 + 2] > 0 ? 0 : 1;
+      else if (lie === Lie.supine) idle.side = 1;
+      else if (armBusy(a.cur, idle.side)) idle.side = idle.side ? 0 : 1;
+      if (armBusy(a.cur, idle.side)) idleCancel(idle);
+      // The place: the front of the belly for an animal on its back, flank or thigh for one on its side.
+      else if (lie === Lie.supine) idle.site = SCRATCH_BELLY;
+      else if (lie === Lie.side && idle.site === SCRATCH.head) idle.site = SCRATCH.flank;
+    }
+    if (idle.kind !== IDLE.glance) a.glanceId = -1;
+    // The reach and the lean are eased both ways, so an event cut short (the animal moves off, a call arrives) lets go smoothly.
+    a.scratchK = damp(a.scratchK, idle.kind === IDLE.scratch ? scratchReach(idle.t, idle.dur) : 0, 14, dt);
+    a.leanK = damp(a.leanK, shifts || idle.kind === IDLE.shift ? idleLean(idle) : 0, 6, dt);
+    if (Math.abs(a.leanK) < 1e-4) a.leanK = 0;
+    ICTX.kind = idle.kind; ICTX.t = idle.t; ICTX.dur = idle.dur; ICTX.site = idle.site; ICTX.side = idle.side; ICTX.lean = a.leanK;
+    idleOverlay(pw, a.posture, ICTX);
+  }
+
+  /** The coat value as it is drawn close up: without the gain an animal small on screen gets (writeParams). */
+  function coatNear(a: Anim): number {
+    const dc = debug.w8 ? debug.channels : undefined;
+    return (dc !== undefined && (dc.only === undefined || dc.only === a.id) ? dc.coat : undefined) ?? a.bristle;
+  }
   function writeParams(a: Anim, elapsed: number) {
     const d = mats.data, o = (a.slot * ROW_TEXELS + PARAM_TEXEL) * 4;
     const c = a.chimp;
@@ -1809,8 +2006,14 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     // P1.a packs mottle (fraction, <1) and the grin (integer steps of 1/15).
     d[o + 4] = a.skin[0]; d[o + 5] = a.skin[1]; d[o + 6] = a.skin[2]; d[o + 7] = Math.min(0.99, a.mottle) + Math.round(a.grin * 15);
     const swell = c.sex === 'female' ? clamp(c.swelling ?? 0, 0, 1) : 0;
-    d[o + 8] = a.bristle; d[o + 9] = swell > 0.01 ? swell : -a.tuft; d[o + 10] = a.beard; d[o + 11] = a.bald;
-    const blink = debug.blink ? blinkAt(a.blink, a.id, elapsed) : 0;
+    // Stage W8. P2.x: the coat, −1 sleek .. 0 as built .. 1 on end, and up to COAT_FAR_GAIN times more on an animal
+    // that is small on screen (material.ts). The harness can hold the drawn values (debug.channels).
+    const w8 = debug.w8, dc = w8 ? debug.channels : undefined, held = dc !== undefined && (dc.only === undefined || dc.only === a.id) ? dc : undefined, ch = a.ch;
+    const coat = coatNear(a), lid = w8 ? held?.lid ?? ch.lid : 0;
+    d[o + 8] = w8 && coat > 0 ? coat * (1 + COAT_FAR_GAIN * (1 - smoothstep(40, 140, a.px))) : coat;
+    d[o + 9] = swell > 0.01 ? swell : -a.tuft; d[o + 10] = a.beard; d[o + 11] = a.bald;
+    // A sleepy animal blinks slowly (W8; stylization). With the lid at 0 the blink is what it was.
+    const blink = debug.blink ? blinkAt(a.blink, a.id, elapsed, 0.13 + (BLINK_SLOW - 0.13) * Math.min(1, lid / LID_MAX)) : 0;
     d[o + 12] = a.dim; d[o + 13] = a.mouth; d[o + 14] = Math.max(a.out.v[PI.eyes], blink); d[o + 15] = a.fade;
     // P4: iris offset (yaw, pitch in radians, head frame), brow raise (−1 lowered .. 1 raised), lip press.
     d[o + 16] = a.eye[0].x; d[o + 17] = a.eye[1].x; d[o + 18] = a.out.v[PI.brow]; d[o + 19] = a.out.v[PI.press];
@@ -1819,6 +2022,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     // P5.y: the iris of the young is drawn up to 22% wider and a third darker, easing out between 3 and 11 years, so
     // an infant's eye reads large and dark in its pale face (stylization: no measured ratio; W3).
     d[o + 21] = 0.22 * (1 - smoothstep(3, 11, c.age ?? 20));
+    // Stage W8. P5.z: the upper lid's droop (sleepiness). P6 (texel PARAM_TEXEL + 6, inside ROW_TEXELS): belly, flank
+    // and the signed breath. Still free: P5.w, P6.w and the last texel of the row.
+    d[o + 22] = lid;
+    d[o + 24] = w8 ? held?.belly ?? ch.belly : 0; d[o + 25] = w8 ? held?.flank ?? ch.flank : 0; d[o + 26] = w8 ? ch.breath : 0;
   }
 
   // Body frame from heading and terrain slope (quadrupeds align more than sitters).
@@ -2056,6 +2263,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     animClock += dtAnim;
     const now = frame.elapsed;
     lastElapsed = now;
+    stateClock += dt;
     syncRoster();
     const cam = frame.camera;
     cam.updateMatrixWorld();
@@ -2091,9 +2299,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       // "Walking to" is said of a body drawn in a walk; one that runs up to its partner is "going to".
       a.way = DRAWN.way === Way.walking && a.fastGait ? Way.going : DRAWN.way;
     }
-    for (const a of animList) { a.paired = false; a.pairClip = null; a.partnerId = -1; a.headingTarget = null; a.holds = false; a.holdsBack = false; a.nursed = false; a.tx = a.deadDrop ? a.dropX : a.track.x; a.tz = a.deadDrop ? a.dropZ : a.track.z; }
-    // (W9: where the infant is on its carrier, and whether it is suckling by the act its drawn body is in.)
-    for (const a of animList) if (a.carry !== 0 && a.carrierId >= 0) { const m = anims.get(a.carrierId); if (m) { m.holds = true; if (a.carry === 2) m.holdsBack = true; if (a.chimp.alive && a.act === 'nurse') m.nursed = true; } }
+    for (const a of animList) { a.paired = false; a.pairClip = null; a.partnerId = -1; a.headingTarget = null; a.holds = false; a.holdsBack = false; a.nursed = false; a.bears = 0; a.tx = a.deadDrop ? a.dropX : a.track.x; a.tz = a.deadDrop ? a.dropZ : a.track.z; }
+    // (W9: where the infant is on its carrier, and whether it is suckling by the act its drawn body is in. W8: what
+    // rides on the carrier this frame, bit 1 on the belly and bit 2 on the back, for the belly and the coat under it.)
+    for (const a of animList) if (a.carry !== 0 && a.carrierId >= 0) { const m = anims.get(a.carrierId); if (m) { m.holds = true; m.bears |= a.carry; if (a.carry === 2) m.holdsBack = true; if (a.chimp.alive && a.act === 'nurse') m.nursed = true; } }
     for (const a of animList) pairingFor(a);
     // Each animal is positioned by one pairing only: its own (as actor) first, else the first that targets it.
     actorIds.clear();
@@ -2184,6 +2393,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         const carried = a.carry !== 0;
         const c = a.chimp;
         if (now - a.appearanceAt > 2 || a.appearanceAt < 0) { updateAppearance(a); a.appearanceAt = now; }
+        if (stateClock >= a.stateAt) readState(a);   // stage W8: the body's state, about once a second per animal
         if (!carried || a.carryBlend < 1) updateMotion(a, dt);
         // Dead: keep about one ecological day, then dither out.
         if (!c.alive || c.action === 'dead') {
@@ -2374,6 +2584,11 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       portraitLevel = level;
     }
     (portraitSlot.array as Float32Array)[0] = a.slot; portraitSlot.needsUpdate = true;
+    // Stage W8: the picture is taken from an arm's length, whatever the main camera's distance, so the coat is drawn
+    // at its own height in it, without the gain an animal small on screen gets (seen in the review: a portrait asked
+    // for from the strategy view showed a raised coat twice as high, the crown a pale dome). The picture is drawn
+    // straight after this call, after the main frame; the row is written again on the next frame (writeParams).
+    { const o = (a.slot * ROW_TEXELS + PARAM_TEXEL) * 4 + 8, near = coatNear(a); if (mats.data[o] !== near) { mats.data[o] = near; mats.texture.needsUpdate = true; } }
     // The head bone's frame (bind pose: +Z out of the face, +Y to the crown): the picture faces the face, head upright.
     boneWorld(a.fk, a.bodyQ, a.bx, a.by, a.bz, a.lift, B.head, TP, TQ4);
     portraitQ.set(TQ4[0], TQ4[1], TQ4[2], TQ4[3]);

@@ -9,6 +9,8 @@
 // the tile with every animal of the tile that many metres up in it (pairs, chains and resting animals in a crown; the
 // camera follows the first animal; &posture=0..4 forces the resting posture, creatures/perch.ts PERCH; &third=1 adds a
 // second groomer on the receiver; &view=x,y,z places the camera that far from the first animal).
+// &idle=0 switches idle life and breathing off; &w8=0 every channel of stage W8 as well (the picture of the build
+// before it, but for the taller coat of a clip that raises it).
 // Other params: zoom=close|mid|far|rts, rain=0..1, night=1, sel=<id>, labels=1,
 // social=1, perception=1, hl=<troopId>, rate=<eco s per s>, moving=1.
 import * as THREE from 'three';
@@ -528,6 +530,9 @@ if (q.get('clip')) dbg.clip = q.get('clip');
 if (q.has('groomee')) dbg.groomee = Number(q.get('groomee'));
 // &posture=0..4: forces the resting posture of animals in a crown (creatures/perch.ts PERCH; stage W9).
 if (q.has('posture')) (dbg as { perch?: number }).perch = Number(q.get('posture'));
+// Stage W8: &idle=0 (no idle life, no breathing: a stance can be compared frame for frame), &w8=0 (none of the stage).
+if (q.get('idle') === '0') (dbg as { idle?: boolean }).idle = false;
+if (q.get('w8') === '0') (dbg as { w8?: boolean }).w8 = false;
 // Face tiles: seated facing the camera, gaze held forward (&attn=1 lets the attention system move the heads) and
 // eyes held open (&blink=1 lets them blink: two of the twelve were caught mid-blink at the usual 11 s capture).
 if (mode === 'faces') { dbg.clip = q.get('clip') ?? 'portrait'; dbg.attention = q.has('attn'); dbg.blink = q.has('blink'); }
