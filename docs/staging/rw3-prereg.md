@@ -352,7 +352,7 @@ Stage RW3's trainer is `train_rw3.py`: the guards of `scripts/r11-run.sh` and th
 
 A second agent read the stage at a943ec0 with the brief to refute the builder's report. Sections 1 to 11 are untouched. This section has two parts: the amendments, committed before any changed code was run, and what was measured.
 
-### 14.1 Amendments 9 to 13, registered Monday 12 October 2026, 05:34 EDT (by `date`), before any of the changed code was written or run
+### 14.1 Amendments 9 to 15, each registered before its code was written or run (9 to 13: Monday 12 October 2026, 05:34 EDT by `date`; 14 and 15: 05:38)
 
 No model step has run and no score of a Taï-taught adapter exists. Each amendment closes a gap between what sections 5, 7, 11 and 12.1 say and what the code did; each was found by reading the code and by made-up scores, never by a real score. None changes a label, a packet, the training file, the recipe, what is scored or the meaning registered for an outcome.
 
@@ -365,7 +365,12 @@ No model step has run and no score of a Taï-taught adapter exists. Each amendme
 12. **An override leaves a line, and one is removed.** `RW3_ALLOW_OTHER_MODEL`, `RW3_ALLOW_DIRTY` and `RW3_RERUN` (the same kind of switches as stage R11's wrapper has; all unset by default) each write an `OVERRIDE` line to the status log when they take effect. `RW3_ALLOW_NO_HISTORY`, which let a file built without the history check teach, is removed: the wrapper always refuses such a file, and the trainer itself refuses to go past its pre-load step with one. The pre-load step alone (`--stop-before-load 1`) still runs and says "NOT RUN", as section 7 registers for a checkout without the raw files.
 13. **Two holes in "the registered recipe" and in where the answers come from.** The trainer counts the device as part of the registered recipe (section 3: the Apple GPU backend); as built, a training on another device would have been marked registered. The wrapper unsets `MGOGO_DECIDE_SERVER`: with it set, the scorer joins a shared scoring server that does not hold this stage's adapters.
 
-**Iterations.** This is iteration 1 of at most 3 for the second reader's changes. What will be run after this commit: `tests/rw3.test.ts`, the dry step, the wrapper's refusals with `RW3_NO_MODEL=1` (which stops before any model step whatever came before), the report on made-up scores and on the read-only scores of 11 October, `tsc --noEmit`, and the whole suite once. No model process at any point.
+**Amendments 14 and 15, registered Monday 12 October 2026, 05:38 EDT (by `date`), before their code was written.** Found while the report's repair for amendments 9 and 10 was being checked on made-up scores (iteration 2 of at most 3; still no model step and no score of a Taï-taught adapter).
+
+14. **When S0 fails, the figures of the Taï-taught adapters are withheld.** Section 5 registers that if S0 fails "nothing else is read and the fault is repaired without looking further". As built, the generated table and its data file printed every score, paired difference and cut of the Taï-taught adapters under an S0 that said NO. From now on, when S0 fails the table and the data file hold, for the Taï-taught adapters, only what the repair needs: the faults, the manifests' description of the training, and the count of answers unlike the untuned model's. The chance, bar, untuned and Ngogo-taught rows stay (they are stage RW2's known figures). A fault that needs a new training is an iteration: it is logged here first, and the invalid scores are moved away before the wrapper will train again (amendment 11). Not closed, declared: the scorer of stage RW2, which this stage does not change, prints each kernel's top-1 to its own log as it runs.
+15. **A model step refuses when it cannot read the process list.** As built, a process list that could not be read (the tool missing or failing) read as "no other model process". From now on the wrapper first asks the process list for its own script, and refuses a model step when not even that is found.
+
+**Iterations.** This is iteration 1 of at most 3 for the second reader's changes (amendments 14 and 15: iteration 2). What will be run after this commit: `tests/rw3.test.ts`, the dry step, the wrapper's refusals with `RW3_NO_MODEL=1` (which stops before any model step whatever came before), the report on made-up scores and on the read-only scores of 11 October, `tsc --noEmit`, and the whole suite once. No model process at any point.
 
 ## Privacy
 
