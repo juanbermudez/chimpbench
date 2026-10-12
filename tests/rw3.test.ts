@@ -328,17 +328,33 @@ function scores(hit: number[], index?: number[]): RecordScore[] {
 }
 const N = 120, every = (k: number) => Array.from({ length: N }, (_, i) => +(Math.floor(i / 6) % 10 < k));   // k of every ten records of each of the six animals: the same share in every animal
 const both = (s: RecordScore[]): KernelScores => ({ plain: s, fan: s });
-const goodManifest = (seed: number) => ({ adapter: `${RW3_ADAPTER}-s${seed}`, label_source: RW3_LABEL_SOURCE, sealedPartRead: false, leakCheck: { ok: true }, train_sha256: 'c'.repeat(64), hyperparameters: { ...RW3_RECIPE, seed }, registered_recipe: true, saved_epoch: RW3_RECIPE.epochs, history: [{ train_loss: 1.4 }, { train_loss: 1.2 }], cost: { training_seconds: 900, seconds_per_example: 0.4, peak_footprint_gib: 5.4 } });
+const goodManifest = (seed: number) => ({ adapter: `${RW3_ADAPTER}-s${seed}`, label_source: RW3_LABEL_SOURCE, sealedPartRead: false, leakCheck: { ok: true }, historyCheck: { ok: true }, train_sha256: 'c'.repeat(64), adapter_sha256: 'e'.repeat(64), hyperparameters: { ...RW3_RECIPE, seed }, registered_recipe: true, saved_epoch: RW3_RECIPE.epochs, history: [{ train_loss: 1.4 }, { train_loss: 1.2 }], cost: { training_seconds: 900, seconds_per_example: 0.4, peak_footprint_gib: 5.4 } });
 const devRecords = Array.from({ length: N }, (_, i) => record(200 + i, 4, { key: `k${String(i).padStart(3, '0')}`, part: 'development', stratum: i % 2 ? 'seen' : 'unseen' }));
-const base: Omit<Rw3Input, 'seeds'> = { part: 'development', chance: scores(every(2)), bar: scores(every(4)), untuned: both(scores(every(3))), ngogo: both(scores(every(3))), records: devRecords, expect: null, reps: 300 };
+const base: Omit<Rw3Input, 'seeds'> = { part: 'development', chance: scores(every(2)), bar: scores(every(4)), untuned: both(scores(every(3))), ngogo: both(scores(every(3), every(3).map(h => h ? 0 : 2))), records: devRecords, expect: null, reps: 300 };
+/** The same hits as `scores(every(k))` with other wrong answers: a second seed that is as often right and is not the same adapter. */
+const otherAnswers = (k: number) => scores(every(k), every(k).map(h => h ? 0 : 3));
 const seedsOf = (a: KernelScores | null, b: KernelScores | null, m: (s: number) => Record<string, unknown> | null = goodManifest) => [{ seed: 7, scores: a, manifest: m(7) }, { seed: 11, scores: b, manifest: m(11) }];
 
 test('report: a statement is met only on both seeds, the fan-out alone is never "met", and each outcome gets its registered words', () => {
-  // both seeds far above the untuned model and above the bar, in every animal
-  const strong = rw3Report({ ...base, seeds: seedsOf(both(scores(every(8))), both(scores(every(7)))) });
+  // both seeds far above the untuned model and above the bar, in every animal, and as often right as each other
+  const strong = rw3Report({ ...base, seeds: seedsOf(both(scores(every(8))), both(otherAnswers(8))) });
   assert.equal(strong.valid, true, strong.faults.join('; '));
   assert.deepEqual([strong.statements.S1, strong.statements.S2, strong.statements.S3], ['met', 'met', 'met']); assert.match(strong.statements.whole, /beats the simple rule/);
   assert.equal(strong.paired.plain.seeds[0].untuned!.difference, 0.5); assert.equal(strong.records, N); assert.equal(strong.animals, 6);
+  assert.match(strong.statements.S4, /no difference between the seeds/);
+  // amendment 9 (prereg §5, S4): both seeds above everything, and the seeds differ from each other: every statement is seed-dependent, none is "met"
+  const differing = rw3Report({ ...base, seeds: seedsOf(both(scores(every(8))), both(scores(every(6)))) });
+  assert.equal(differing.valid, true, differing.faults.join('; ')); assert.match(differing.statements.S4, /the seeds differ/);
+  assert.deepEqual(differing.statements.perSeed.map(p => [p.S1, p.S2, p.S3]), [['above', 'above', 'above'], ['above', 'above', 'above']]);
+  assert.deepEqual([differing.statements.S1, differing.statements.S2, differing.statements.S3], ['seed-dependent: not shown', 'seed-dependent: not shown', 'seed-dependent: not shown']);
+  assert.doesNotMatch(differing.statements.whole, /beats the simple rule/); assert.match(differing.statements.whole, /did not teach the model anything this record can show/);
+  assert.doesNotMatch(markdown(differing, { reference: false }), /\*\*met\*\*/);
+  // the seeds differ fanned out only: the primary reading stands, the fanned-out one is seed-dependent
+  const fanDiffers = rw3Report({ ...base, seeds: seedsOf({ plain: scores(every(8)), fan: scores(every(8)) }, { plain: otherAnswers(8), fan: scores(every(6)) }) });
+  assert.equal(fanDiffers.statements.S1, 'met'); assert.equal(fanDiffers.statements.fan.S1, 'seed-dependent: not shown');
+  // below on both seeds stays below, whatever the seeds do to each other
+  const belowDiffering = rw3Report({ ...base, bar: scores(every(9)), seeds: seedsOf(both(scores(every(6))), both(scores(every(5)))) });
+  assert.equal(belowDiffering.statements.S2, 'below on both seeds'); assert.equal(belowDiffering.statements.whole, 'below the simple rule');
   // above the untuned model, level with the bar
   const level = rw3Report({ ...base, seeds: seedsOf(both(scores(every(4))), both(scores(every(4)))) });
   assert.deepEqual([level.statements.S1, level.statements.S2], ['met', 'not shown']); assert.match(level.statements.whole, /about what the simple rule knows/);
@@ -380,4 +396,16 @@ test('report: a run that is not valid is not read (S0)', () => {
   invalid({ ...base, seeds: seedsOf(both(scores(every(8)).slice(1)), good) }, /not the same records/);
   invalid({ ...base, expect: { chance: 0.244, bar: 0.353 }, seeds: seedsOf(good, good) }, /not stage RW2's development records/);
   invalid({ ...base, untuned: null, seeds: seedsOf(good, good) }, /untuned model has no scores/);
+  // amendment 10: the Ngogo-taught adapter answered as the untuned model does (the worker did not load it): S3 would be read against the untuned model
+  invalid({ ...base, ngogo: base.untuned, seeds: seedsOf(good, good) }, /the Ngogo-taught adapter: every answer is the untuned model's/);
+  assert.equal(rw3Report({ ...base, ngogo: null, seeds: seedsOf(good, good) }).valid, true, 'without the Ngogo-taught adapter on file S3 is not read; the run is not made invalid');
+  assert.equal(rw3Report({ ...base, ngogo: null, seeds: seedsOf(good, good) }).statements.S3, 'not read');
+  // amendment 10: the history check (check 5) is on file in each adapter's manifest
+  invalid({ ...base, seeds: seedsOf(good, good, s => ({ ...goodManifest(s), historyCheck: 'not run (no raw files linked)' })) }, /history check passed/);
+  invalid({ ...base, seeds: seedsOf(good, good, s => ({ ...goodManifest(s), historyCheck: { ok: false } })) }, /history check passed/);
+  // amendment 10: the scores on file were made with the adapter on file
+  const scoredWith = (a: string | null, b: string | null) => seedsOf(good, good).map((s, i) => ({ ...s, scoredAdapterSha256: i ? b : a }));
+  assert.equal(rw3Report({ ...base, seeds: scoredWith('e'.repeat(64), 'e'.repeat(64)) }).valid, true);
+  invalid({ ...base, seeds: scoredWith('e'.repeat(64), '9'.repeat(64)) }, /rw3-tai-groom-s11: the scores on file were not made with the adapter on file/);
+  invalid({ ...base, seeds: scoredWith(null, 'e'.repeat(64)) }, /rw3-tai-groom-s7: the scores on file were not made with the adapter on file/);
 });

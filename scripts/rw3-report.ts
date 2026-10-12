@@ -17,11 +17,15 @@ import { RW3_ADAPTER, RW3_DATASET, RW3_LABEL_SOURCE, RW3_RECIPE, RW3_RESULT_NAME
 import { loadRecords, sizeReport } from './rw2-score';
 
 export const NGOGO_ADAPTER = 'r4-field-groom', BAR_RULE = 'stack-own';
+/** The file scripts/rw3-run.sh eval writes beside an adapter's scores: the sha256 of the weights it scored (amendment 10). */
+export const SCORED_WITH = 'adapter.sha256';
 /** Stage RW2's figures on the development part (rw2-prereg.md §8.1 and §8.4), which a valid run reproduces. */
 export const RW3_REFERENCE = { records: 329, animals: 13, chance: 0.244, bar: 0.353, untuned: { plain: 0.301, fan: 0.295 }, ngogo: { plain: 0.319, fan: 0.328 } };
 
 export interface KernelScores { plain: RecordScore[]; fan: RecordScore[] | null }
-export interface SeedRun { seed: number; scores: KernelScores | null; manifest: Record<string, unknown> | null }
+export interface SeedRun { seed: number; scores: KernelScores | null; manifest: Record<string, unknown> | null;
+  /** The sha256 of the adapter's weights the scoring step wrote beside its scores (amendment 10). Null: none on file. Undefined: not compared (tests on invented scores). */
+  scoredAdapterSha256?: string | null }
 export interface Rw3Input {
   part: 'development' | 'train';
   chance: RecordScore[] | null; bar: RecordScore[] | null; untuned: KernelScores | null; ngogo: KernelScores | null; seeds: SeedRun[];
@@ -79,6 +83,9 @@ export function rw3Report(input: Rw3Input) {
     if (!m) { faults.push(`${s.name}: no manifest (not trained to the end)`); continue; }
     if (m.label_source !== RW3_LABEL_SOURCE) faults.push(`${s.name}: the manifest does not carry the label source`);
     if (m.sealedPartRead !== false || (m.leakCheck as { ok?: unknown } | undefined)?.ok !== true) faults.push(`${s.name}: the manifest does not say that the leak checks passed and the sealed part was not read`);
+    // amendment 10: check 5 of prereg §7 is on file too, and the scores were made with the adapter on file
+    if ((m.historyCheck as { ok?: unknown } | undefined)?.ok !== true) faults.push(`${s.name}: the manifest does not say that the history check passed`);
+    if (s.scores && s.scoredAdapterSha256 !== undefined && (!s.scoredAdapterSha256 || s.scoredAdapterSha256 !== m.adapter_sha256)) faults.push(`${s.name}: the scores on file were not made with the adapter on file (the hash beside the scores is missing or is not the manifest's)`);
     if (m.adapter !== s.name || h.seed !== s.seed) faults.push(`${s.name}: the manifest is another adapter's or another seed's`);
     if (input.trainFileSha256 !== undefined && m.train_sha256 !== input.trainFileSha256) faults.push(`${s.name}: it was not trained on the training file on hand (the hashes differ)`);
     if (Object.entries(RW3_RECIPE).some(([k, v]) => h[k] !== v) || m.registered_recipe !== true || m.saved_epoch !== RW3_RECIPE.epochs) faults.push(`${s.name}: the hyperparameters are not the registered ones`);
@@ -91,11 +98,15 @@ export function rw3Report(input: Rw3Input) {
   }
   const differs = seeds.map(s => s.scores && input.untuned && sameRecords(s.scores.plain, input.untuned.plain) ? s.scores.plain.filter((x, i) => x.index !== input.untuned!.plain[i].index).length : null);
   seeds.forEach((s, i) => { if (differs[i] === 0) faults.push(`${s.name}: every answer is the untuned model's (the adapter was probably not loaded)`); });
+  // amendment 10: "each adapter" of S0 is also the Ngogo-taught one, or S3 would be read against the untuned model under another name
+  const ngogoDiffers = input.ngogo && input.untuned && sameRecords(input.ngogo.plain, input.untuned.plain) ? input.ngogo.plain.filter((x, i) => x.index !== input.untuned!.plain[i].index).length : null;
+  if (ngogoDiffers === 0) faults.push('the Ngogo-taught adapter: every answer is the untuned model\'s (the adapter was probably not loaded)');
   if (input.expect && chance && bar && (chance.chance.pooled.value !== input.expect.chance || bar.top1Ties.pooled.value !== input.expect.bar))
     faults.push(`chance and the bar read ${chance.chance.pooled.value} and ${bar.top1Ties.pooled.value}, not the registered ${input.expect.chance} and ${input.expect.bar}: these are not stage RW2's development records`);
   const valid = !faults.length;
 
-  const read = (a: Ask, what: 'untuned' | 'bar' | 'ngogo') => over(paired[a].seeds.map(s => side(s[what])));
+  // amendment 9 (prereg §5, S4): where the two seeds differ from each other, a statement both seeds meet is seed-dependent, not met
+  const read = (a: Ask, what: 'untuned' | 'bar' | 'ngogo'): Verdict => { const v = over(paired[a].seeds.map(s => side(s[what]))); return v === 'met' && paired[a].between?.isDifference ? 'seed-dependent: not shown' : v; };
   const s1 = withFan(read('plain', 'untuned'), read('fan', 'untuned')), s2 = withFan(read('plain', 'bar'), read('fan', 'bar')), s3 = withFan(read('plain', 'ngogo'), read('fan', 'ngogo'));
   const whole = !valid ? 'not read: the run is not valid (S0)' : s1 === 'not read' || s2 === 'not read' ? 'not read'
     : s2 === 'below on both seeds' ? 'below the simple rule'
@@ -113,6 +124,7 @@ export function rw3Report(input: Rw3Input) {
   return {
     part: input.part, valid, faults, records: input.bar?.length ?? 0, animals: bar?.individuals ?? 0, chance, bar,
     scores: { untuned: { plain: sum(input.untuned?.plain), fan: sum(input.untuned?.fan) }, ngogo: { plain: sum(input.ngogo?.plain), fan: sum(input.ngogo?.fan) },
+      ngogoAnswersUnlikeTheUntunedModel: ngogoDiffers,
       seeds: seeds.map((s, i) => ({ seed: s.seed, name: s.name, plain: sum(s.scores?.plain), fan: sum(s.scores?.fan), answersUnlikeTheUntunedModel: differs[i],
         fit: s.manifest ? { history: s.manifest.history ?? null, cost: s.manifest.cost ?? null } : null })) },
     paired, agreement,
@@ -177,7 +189,7 @@ export function markdown(R: Rw3Report, o: { reference?: boolean } = {}): string 
       `- **S1, the Taï choices taught the model something** (the adapter minus the untuned model, above 0 on both seeds): ${say('S1', S.S1)}. By seed: ${S.perSeed.map(p => `seed ${p.seed} ${p.S1}`).join(', ') || 'not read'}; fanned out: ${S.fan.S1}.`,
       `- **S2, it reaches the simple rule** (the adapter minus the bar): ${say('S2', S.S2)}. By seed: ${S.perSeed.map(p => `seed ${p.seed} ${p.S2}`).join(', ') || 'not read'}; fanned out: ${S.fan.S2}.`,
       `- **S3, the site's own choices against another site's** (the adapter minus the Ngogo-taught adapter): ${say('S3', S.S3)}. By seed: ${S.perSeed.map(p => `seed ${p.seed} ${p.S3}`).join(', ') || 'not read'}; fanned out: ${S.fan.S3}.`,
-      `- **S4, the two seeds:** ${S.S4}${R.agreement ? `; they answer the same option on ${R.agreement.sameAnswer} of records` : ''}.`,
+      `- **S4, the two seeds:** ${S.S4}${R.agreement ? `; they answer the same option on ${R.agreement.sameAnswer} of records` : ''}. Where the seeds differ, a statement both seeds meet is written "seed-dependent: not shown".`,
       `- **The whole, in the registered words:** ${S.whole}.`, '',
       'Power, stated before any score: no unpaired difference under about 0.08 to 0.10 and no paired one under about 0.04 to 0.06 can be shown on this record, so "not shown" is not "no effect". '
       + 'No result here changes the main label source, enters the simulation\'s loop or says when or whether chimpanzees groom.');
@@ -217,8 +229,9 @@ if (process.argv[1]?.endsWith('rw3-report.ts')) {
     } else {
       const bench = arg('bench', 'artifacts/rw3/bench'), ft = arg('ft', 'artifacts/decide-ft/rw3'), names = RW3_SEEDS.map(s => `${RW3_ADAPTER}-s${s}`), folders = ['base', NGOGO_ADAPTER, ...names];
       const manifestOf = (name: string) => { const f = `${ft}/adapters/${name}/manifest.json`; return existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) as Record<string, unknown> : null; };
+      const scoredWith = (name: string) => { const f = `${bench}/${name}-own/${SCORED_WITH}`; return existsSync(f) ? readFileSync(f, 'utf8').trim() : null; };
       const input: Rw3Input = { part, chance: readRule(bench, folders, part, 'null'), bar: readRule(bench, folders, part, BAR_RULE), untuned: readKernel(bench, 'base', part), ngogo: readKernel(bench, NGOGO_ADAPTER, part),
-        seeds: RW3_SEEDS.map((seed, i) => ({ seed, scores: readKernel(bench, names[i], part), manifest: manifestOf(names[i]) })), records: loadRecords(dir, RW3_DATASET, part).eligible,
+        seeds: RW3_SEEDS.map((seed, i) => ({ seed, scores: readKernel(bench, names[i], part), manifest: manifestOf(names[i]), scoredAdapterSha256: scoredWith(names[i]) })), records: loadRecords(dir, RW3_DATASET, part).eligible,
         trainFileSha256: existsSync(`${ft}/tai/data-manifest.json`) ? (JSON.parse(readFileSync(`${ft}/tai/data-manifest.json`, 'utf8')) as { trainFileSha256?: string }).trainFileSha256 ?? null : null,
         expect: part === 'development' && !has('no-reference') ? { chance: RW3_REFERENCE.chance, bar: RW3_REFERENCE.bar } : null };
       const report = rw3Report(input), md = markdown(report, { reference: !has('no-reference') });
