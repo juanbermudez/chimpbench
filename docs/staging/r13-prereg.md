@@ -453,7 +453,187 @@ The assertion was wrong, not the code.
   population for 30 days"; the window is N days, as its first lines say.
 - A journal line carries the decode setting, not the decode's record of the ask (§1).
 
+## 13. The second reader's review and amendments (12 October 2026, 05:43 to 06:36 EDT; before any run of the registered arm; no model process)
+
+A second agent read the branch at 531e961 with the instruction to refute the builder's report, not to trust it. **The
+registered run has still not been made. No model process was started; nothing in `bench-r11` or in the main checkout
+was written; stage R11's chain was running throughout** (its loop step on seed 4111 at 06:36).
+
+Sections 0 to 12 above are not edited. What changes is said here, with the reason. Each amendment was logged in the
+message of the commit that carries its code (cec52d4 and 65c6434 at 06:26 EDT, 17c616c at 06:32) before that code
+first ran outside its unit tests (the dry runs on seed 48 at 06:27 and 06:32), and is written out here at 06:36. No
+model arm exists, and nothing but the rules has run on seed 3613. None of the six amendments makes a statement of §8
+easier to hold: two add refusals, one removes a way to be listed as "nearer", one closes a way to hold V0, one adds
+description, and one replaces a judgement that would have been made after the result by a check that is exact.
+
+### 13.1 What was re-measured, and held
+
+- **The order.** `git log` and the branch's reflog: the registration is commit 1386135 at 04:51:20 EDT, the first
+  code commit e0ec7e6 at 05:16:09. Between 1386135 and the builder's last commit, sections 0 to 11 do not differ by
+  a character (`git diff 1386135 531e961` touches the file only from §12 on).
+- **The decode rule against stage R11's own words.** The quotation in §3 is `r11-prereg.md` §11.1 word for word. The
+  line the rule reads is written by `scripts/r11-report.ts` (`recipeN1`): MET only when both trainings of P5b have a
+  top-pick arm and a draw arm on file on both seeds and every draw arm meets both parts; "not read" when one is
+  missing. That script and `scripts/r11-loop.ts` at the base of this branch are byte for byte the ones in stage R11's
+  frozen checkout (5b5a506). Read at 06:32 EDT from stage R11's first-night table, the rule gave "N1 not read: the
+  top pick". Nothing else of stage R11 enters it.
+- **The seed.** 3613 does not occur, not even inside a longer number, in any tracked file of the other 177 branch
+  heads (`git grep 3613`; the neighbouring numbers 3612 and 3614 do occur, so the search works). No file or folder
+  name under the main checkout or any worktree carries it but this stage's own burn-in caches and its rules
+  folders. A search of file contents under the main checkout and every worktree (files up to 8 MB; compressed
+  files left out) for the number in a seed's place found none: the 38 files that hold the bare number hold it as a
+  count, a decision version or an energy figure. The review folders outside the repository: none. On this branch
+  seed 3613 has seen the rules only: the builder's two days, and the same two days again by this review.
+- **The proofs of §10, run again** (head 531e961, tree clean, 06:08 to 06:14 EDT; logs under
+  `artifacts/r13/review/logs`). The old arm `argmax-gate` on seed 48: the burn-in 4b5cc61f8ad797e0, the day hashes
+  95bfc1fd4e6ddfda and 07ec9b9f26b64f60, 2,060 and 2,069 asks and a replay of 6,423 lines, each as `r10-prereg.md`
+  §10.3 has it, with receipts of schema `r10-receipt-2` and no new field. Seed 3613: the plain world, the rules arm
+  through the script and the world without `observeV5` give the hashes of §12.2. The stand-in on seed 48: 2,235
+  and 2,304 asks, day hashes 4789054307f31932 and 119e075380e536ca; killed with SIGKILL after 8,000 ticks and
+  resumed: 1,492 journalled answers reused, the same end hash, no worker left behind; the replay regenerates all
+  6,606 lines; 4,539 of 4,539 packets rebuilt; estimated tokens 364, 370, 495 and 600 (median, mean, 95th
+  percentile, largest).
+- **The adapter.** The weights file of `r11-p5b-s7` hashes to the registered sha256, and its folder holds a manifest
+  whose own name for its results is "rules-taught model on a rules menu".
+- **Another model process.** Called at 06:12 EDT with nothing started, the script's own check saw stage R11's
+  worker; `scripts/r13-run.sh check` at 06:32 said the same. A model arm would have been refused.
+- **Nothing under `src/`, `data/`, `server/` or `tests/fixtures/` changed** on this branch, before or after the
+  review (`git diff d6a8e0e` on those paths is empty): no switch, no default, and the goldens and the field pin
+  cannot have moved.
+- **The name.** "Rules-taught model on a rules menu" is what stage R11's own report and the adapter's manifest call
+  it, and every table and registry of this stage carries it with "animals under 8 years stay on the rules".
+
+### 13.2 The packet, byte for byte (the builder's test compared a function with itself)
+
+The unit test that claimed "the bytes stage R11's own kernel hands the scorer" built both sides with `engineKernel`,
+the function this stage added. This review compared against stage R11's kernel written out as its frozen checkout has
+it (`glinerKernel(scorer, adapter, { packet: r => armPacket(r.context, arm) })`), on the line a worker is written
+(`scripts/ft-society.ts` `Worker.score`). The script is `scripts/r13-packet-proof.ts`; it holds no model.
+
+| What was compared | Decision points | The same line |
+| --- | --- | --- |
+| The script itself on seed 48, two days, against a fake worker that kept every line it was handed (5.5 MB); each line against stage R11's kernel on the saved context | 4,539 | 4,539 (and one warm-up line) |
+| The night engine wired as the script wires the arm `p5b-s7-draw-1`, the whole population for one day, seed 48 | 2,235 | 2,235 |
+| The same, seed 7 | 2,105 | 2,105 |
+| Stage R11's own harness (`scripts/r5-pilot.ts` `runArm`, five focal animals, one day), its requests put to the population script's kernel; seeds 48 and 7 | 391 and 306 | 391 and 306 |
+
+The 4,340 population points of the two seeds cover twelve kinds (day, dawn, dusk and night, each opened by an
+interrupt, a finished act or an act's scheduled end), menus of two to eight options, all 38 animals on the kernel,
+and menus with feeding, rest, trips to food, grooming, aggression, calls, nests, greetings, drinking, mating and
+care. On each, the receipt's `sha` is the hash of the packet in the line and its version is `r11-p5b`. The unit test
+now makes the same comparison. **The decode is stage R11's:** the same setting object (`draw`, salt 1, the epoch rule
+`act`), the same `newDecoder`, and the same two calls per pass in both harnesses (`step` handed to the loop, then
+`settle` for every result in order). What differs is registered in §2: the population arm continues the world with
+no salt and drives every animal aged 8 and over.
+
+### 13.3 Amendments (12 October 2026; before any model arm)
+
+- **A1. The check of the instrument has an exact form, and it decides** (amends §8, "A check of the instrument
+  first"). *Why:* the paired rules arm is one more draw of the rules, so it lies outside the eight re-draws' mean ±
+  D on a given row about once in twenty by chance, and on one of the five level rows in about one run in six. The
+  registration then said "nothing below is read until that is explained", which leaves the explanation to be
+  judged after the result is seen. *What changes:* the control arms now include stage R7's own code on the rules
+  world with no salt (`rules-plain`; not one of the eight re-draws, in no spread). That is the world the paired
+  rules arm continues, so the two must end on the same world and give the same number on every readout. If they
+  do, the two paths read alike; a paired rules arm that is told from the re-draws on a row is then chance, is
+  printed as such, and the statements are read. If they do not, nothing is read. Without the file the check stands
+  as first registered. *Measured on seed 48, two days:* the same end world and 66 of 66 readouts equal.
+- **A2. A field row is "nearer on this run" only with stage R7's five guards held** (amends §8.3). *Why:* §8.3
+  names stage R7's rule as amended, and that rule counts a smaller distance outside the band only when reserves
+  and nights in a nest are not below the rules' mean by more than D and distance, act changes and trips completed
+  are inside the rules' mean ± D. The report had left the guards out. A population that does less than the rules
+  can carry a row into its band: stage R10's first run walked a third less and its grooming share (T-ACT-3, one
+  of the fifteen rows) rose into the band (0.101 against the rules' 0.073; band 0.08 to 0.18), as did party size,
+  which is printed beside them. And on the builder's own dry table a fake worker with arbitrary odds, not viable
+  (0.342 of nights in a nest), was listed as "nearer on this run" on patch residency and the half-hour share. *What changes:* with a guard failed such a row reads "nearer by value with a guard failed (not listed)"
+  and is no candidate for a later test. The five guards and which of them fail are printed.
+- **A3. With a real adapter only the registered arm runs** (amends §1 and withdraws the fourth item of §12.1).
+  *Why:* the script accepted every arm of stage R11's loop on seed 3613 (the first adapter, P5a, the second
+  training, other decode salts, held draws), and checked the arm against the decode rule only in
+  `scripts/r13-run.sh`. Either would have spent the fresh seed on something nobody registered, against §4. *What
+  changes:* the script refuses every arm with a real adapter but `p5b-s7-draw-1` and `p5b-s7-top`, and of those
+  the one the rule does not name. It reads the table from `R13_R11_NUMBERS` itself and starts nothing without it.
+  The rule does not read a dry run's table. The rule as read, the table's path and its hash go into the registry.
+- **A4. The world and the length are the registered ones, and the nine hours are the run's** (amends §5). *Why:*
+  `--days`, `--hours`, `--profile`, `--burn-in`, `--params-file`, `--timeout-s`, `--no-stop-check` and
+  `--no-contexts` could be given for the registered arm, and each resume began nine new hours, so N could be moved
+  by how a run was launched or resumed. A finished run could also be resumed and run on. *What changes:* the
+  registered arm starts only on the field map after 30 days of burn-in on the working base, with `--days 20`,
+  `--hours 9` or less, the stop check on, 120 s an ask and its contexts saved. At a resume the script counts the
+  wall time of the whole days on file: the segment gets what is left of nine hours, and when another day would
+  not fit (the rule the run itself ends on) the run is closed as it stands. Time lost inside a day that was cut is
+  not counted.
+- **A5. A run the stop check ended stays ended** (amends §6 and V0 of §8.1). *Why:* `scripts/r13-run.sh model`, or
+  the chain, called again after the stop check had ended the run, resumed it past the check (the night script's
+  resume goes on "on purpose"), and V0 read the registry's state, which then said "done". *What changes:* neither
+  script resumes the registered run past a stop check that said STOP, and V0 reads the check's own verdict.
+- **A6. Two descriptions beside the level, and one sentence tightened** (adds to §8.2). The level table prints D as
+  a share of the rules' mean and, per group of control arms, the movement rows on which both of its realizations
+  are told from the rules. "At the rules' level" is a statement of not being told: the sentence printed with it
+  now begins "to within D on each of the four movement rows". The name and the rule do not change.
+
+### 13.4 Another defect repaired
+
+`--packet p5b` or `p5a` with a model arm that is not stage R11's (`trained-gate`, `untuned-gate`) built a packet 5
+world, sent the kernel the state-only packet and wrote the packet 5 version and hash on every receipt. It is refused.
+
+### 13.5 What stays open, and limits of this review
+
+- **Nothing on the model's path has met a real worker**, as §12.5 says. That includes the path of a real launch
+  past the new refusals: they were exercised from the command line as far as the check of the adapter's hash, with
+  a runtime that can load nothing. The first minutes of the run are still where a surprise would show.
+- **The decode rule was written with stage R11's first night in view** (§0): for the one training then on file the
+  draw arms kept their nests and read nearer the rules than the top pick. The rule is fixed and turns on the second
+  training, which was not known; a reader should still know which way the builder could expect it to fall.
+- The content search for the seed left out compressed files and files over 8 MB (their names were searched).
+- "Viable" does not tell a population that does less from one that does as much: fewer trips cost no nests and no
+  reserves. That is what §8.2 is for; V1 to V3 are guards, not a result.
+- With one world seed, D comes from eight re-draws of one world. A level within D of the rules is a statement about
+  this world, and a short run has a wide D: the table now says how wide.
+- The V2 floor of 0.01, the minimum of nine days and the cap of 20 are the builder's and are not changed; they are
+  the user's to change before the run.
+- A resume that follows a death between a day's checkpoint and its registry entry counts one day too few towards
+  the nine hours (at most one day's wall time).
+- Not checked by this review: real token counts (the tokenizer belongs to the model's environment); the swap hold;
+  stage R7's report at the population unit, beyond its running on the dry files.
+
+### 13.6 Tests and checks
+
+| What | Head | Result |
+| --- | --- | --- |
+| `tests/r13-population.test.ts` (8 tests; one starts the script as a child process about forty times, none with a model) | 17c616c | 8 of 8 |
+| the stage's scripts and tests under the project's strict options (a temporary configuration; a planted error is caught) | 17c616c | clean |
+| the whole reading, dry (`scripts/r13-run.sh dry`, seed 48, a fake worker; 06:32 to 06:35 EDT) | 17c616c | the stand-in's day hashes 4789054307f31932 and 119e075380e536ca, 6,606 lines, 4,539 packets; the seventeen control files; the exact check holds (66 of 66 readouts); "not viable", as arbitrary odds should read; no row listed as nearer |
+| `tsc --noEmit` and the whole suite, once | @SUITE@ |
+
 ## For the integrator
+
+**Changed by the review of 12 October 2026 (§13); read this before the launch order.**
+
+- **`R13_R11_NUMBERS` must be exported in every shell that starts the model arm**, also when the night script is
+  called by hand: the script reads the decode rule from it itself and refuses without it, or when the arm is not
+  the one the rule names. The launch order below already exports it.
+- **By hand, the model arm takes exactly** `--seed 3613 --arm "$R13_ARM" --days 20 --hours 9` (fewer hours are
+  allowed). Other days, another map, burn-in or parameter file, `--no-stop-check`, `--no-contexts` or another
+  `--timeout-s` are refused.
+- **After an interruption** call `scripts/r13-run.sh model` (or the chain) again and leave `R13_HOURS` unset: the
+  script gives the run what is left of its nine hours and closes it when another day would not fit. **After the
+  stop check has ended the run the same call does not resume it**; the chain goes on to the rules arm, the control
+  arms and the report with the five days.
+- **The control arms write seventeen files**: stage R7's sixteen and `rules-plain.json`. In `r13-numbers.md` read §0
+  first: "Exact: it does" says the two paths read alike.
+- **For the `IMPLEMENTATION_PLAN.md` block below**, add to its *Status*: "Reviewed by a second agent on 12 October
+  (`r13-prereg.md` §13): six amendments before any run (an exact check of the instrument; a row is 'nearer' only
+  with stage R7's guards held; only the arm the decode rule names, read by the script itself; the registered world
+  and length, nine hours for the whole run; a stopped run stays stopped; D printed as a share of the mean). The
+  packet is the one stage R11's frozen kernel builds, byte for byte, on 5,037 decision points of seeds 48 and 7
+  and on all 4,539 lines of a two-day run of the script."
+- **For the `AGENTS.md` line below**, add: "the model arm needs R13_R11_NUMBERS (the night script reads the decode
+  rule itself and refuses another arm, other days or hours, or a resume past a stop check that ended the run);
+  `controls` also writes rules-plain.json (stage R7's own reading of the rules world with no salt: the exact check
+  of the instrument); `scripts/r13-packet-proof.ts inprocess | wire` compares the bytes sent with stage R11's
+  kernel, no model".
+
 
 *(Written by the builder on 12 October 2026. The frozen checkout must hold this branch's last commit or a merge of
 it.)*
@@ -523,15 +703,17 @@ scripts/r13-run.sh publish        # afterwards: copies the four tables to docs/s
 ```
 
 - **If it stops.** `state` reads `failed` and the last line of `status.log` names the step. A model arm that was
-  interrupted or died is continued by `R13_HOURS=<hours left> scripts/r13-run.sh model` (it resumes from the newest
-  checkpoint and asks nothing twice), then `rules`, `controls`, `report`; or launch `chain` again, which skips the
+  interrupted or died is continued by `scripts/r13-run.sh model` (it resumes from the newest checkpoint and asks
+  nothing twice; *amended by the review, §13 A4: the script counts the hours left itself, `R13_HOURS` can only lower
+  them*), then `rules`, `controls`, `report`; or launch `chain` again, which skips the
   dry run and resumes. To stop the model arm on purpose: `kill -TERM` to the script's own process (`status` prints
   its pid). An arm on file is never run again.
 - **Healthy first minutes:** "the burned-in world … without the animals' own record is the same burn-in without
   observeV5"; "worker warm: the model answered its first packet in N s"; "worker ready" with `r11-p5b-s7` and the
   hash `582e409a…c74c`; "packet: r11-p5b (p5b)"; "decode: draw (one seeded draw per ask, salt 1)" or "top"; then a
   line every simulated hour and "0 timeouts". A day should take 12 to 25 minutes.
-- **If the stop check ends the run after day 5** (exit code 3, state `stopped`), the chain goes on: the rules arm,
+- **If the stop check ends the run after day 5** (exit code 3, state `stopped`; *the review, §13 A5: it is never
+  resumed*), the chain goes on: the rules arm,
   the control arms and the report are made for five days, and the report reads "not viable" (§5, §8.1).
 - **What comes out:** `artifacts/r13/tables/r13-numbers.md` (the registered statements, in §8's order),
   `r13-card.md` (stage R7's whole card with both runs beside the control arms), `r13-model-replay.md` and
