@@ -194,7 +194,7 @@ The renderer animates what the simulation decides; these sources shape how it lo
 
 - **Great-ape walking is not diagonal-sequence by rule.** Chimpanzees and other great apes shift between lateral- and diagonal-sequence walking; size-adjusted speed best predicts gait variables. *Finestone, Brown, Ross & Pontzer 2018, "Great ape walking kinematics: implications for hominoid evolution", Am J Phys Anthropol 166:43–55* ([PubMed](https://pubmed.ncbi.nlm.nih.gov/29313896/)). **Proposed / moderate** (captive animals). Used: each individual walks with a limb phase between 0.45 and 0.70 that drifts slowly over strides.
 - **Vertical climbing gait.** Chimpanzees climbing trees at Chimfunshi used mostly lateral-sequence gaits (mean limb phase ~0.46), cycles of ~1.6 s and a duty factor of ~63% (~2.5 limbs holding). *Neufuss, Robbins, Baeumer, Humle & Kivell 2018, "Gait characteristics of vertical climbing in mountain gorillas and chimpanzees", J Zool 306:129–138* ([PDF](https://www.eva.mpg.de/documents/Elsevier/Neufuss_Gait_JZool_2018_3004328.pdf)). **Proposed / moderate** (semi-free-ranging). Used: the climb cycle (limb phase 0.46 ± 0.1 by individual, duty 0.63), driven by height climbed so descent runs feet first.
-- **Arboreal posture.** Arm-hanging and quadrumanous climbing occur; brachiation is rare. *Hunt 1992, "Positional behavior of Pan troglodytes in the Mahale Mountains and Gombe Stream National Parks", Am J Phys Anthropol 87:83–105* ([Wiley](https://onlinelibrary.wiley.com/doi/abs/10.1002/ajpa.1330870108)). **Proposed / moderate**. Used: about half of individuals hold a branch overhead with the free arm while feeding in a crown; no brachiation.
+- **Arboreal posture.** Arm-hanging and quadrumanous climbing occur; brachiation is rare. *Hunt 1992, "Positional behavior of Pan troglodytes in the Mahale Mountains and Gombe Stream National Parks", Am J Phys Anthropol 87:83–105* ([Wiley](https://onlinelibrary.wiley.com/doi/abs/10.1002/ajpa.1330870108)). **Proposed / moderate**. Used: an animal in a crown may hold a branch overhead with one hand (since stage W9 as one of its resting postures and when alarmed; until then about half of individuals did so with the free arm while feeding); no brachiation.
 - **Facial expressions by muscle action.** ChimpFACS-based classification separates expression categories (bared-teeth, scream, pant-hoot, play face, pout, whimper and others) by facial action units. *Parr, Waller, Vick & Bard 2007, "Classifying chimpanzee facial expressions using muscle action", Emotion 7:172–181* ([PubMed](https://pubmed.ncbi.nlm.nih.gov/17352572/)). **Proposed / moderate** (captive animals). Used: brow raise or lower, compressed lips, lip-smacking while grooming, relaxed and full play faces, pout and whimper faces. Intensities are stylized.
 
 **Stylizations (not sourced):** the hair highlight and halo shells (a look, not a measurement), gait cadence curves and caps, the gallop footfall order, transition times, gaze limits, blink intervals (2–10 s, 15% doubles), the grooming partner's posture shifts every 20–60 s, the stream's pool–riffle spacing, the shape, number and scatter of the bones drawn where a body lay (stage ED, `render/creatures/remains.ts`; that bones outlast a body is reported for other great apes only), and the posture of a mother carrying a dead infant (the simulation's carry itself is tagged [M] in `src/sim/life.ts`).
@@ -4934,3 +4934,44 @@ states as fact is already here. No behavioural constant, parameter or simulation
 **Not found or not looked for:** a field measurement of how far chimpanzees themselves hear a pant-hoot (the 1–2 km is
 to human observers); head or body orientation toward distant calls; how party size is counted in the field when
 dependent young are present (the marker counts every member, as the simulation's party list does).
+
+## Addendum: W9 pairs and postures in trees (11 October 2026)
+
+Stage W9 (`docs/staging/w9b-tree-pairs.md`) seats animals that interact in a crown together on one support, gives an
+animal resting in a crown five postures, redraws feeding in a crown and lets a night nest grow while it is built. No
+new source was opened for it. This addendum says which statement rests on a source already in this file and which do not.
+
+**Sourced (already cited above).**
+- **Arm-hanging occurs; brachiation is rare** (Hunt 1992, the "Arboreal posture" line of the animation sources)
+  [moderate]. Use in W9 (`src/render/creatures/poses.ts`): one of the five resting postures has a hand on a branch
+  overhead, and an alarmed animal in a crown stands with one hand holding on overhead. Nobody swings by the arms. The
+  feeding clip no longer holds overhead: both hands feed (the "Used" note at that line was brought up to date).
+- **Much of a chimpanzee's day is spent in trees** [sarringhaus2022] [H as compiled]: 52/34% of time (females/males) at
+  Mahale and Gombe. It is why the stage exists (the review of 10 October counted 61% of drawn animal-time off the
+  ground in one sample of the field map); nothing in the code is fitted to it.
+- **Adult great apes take 2 to 5 minutes to build a night nest** [khayer2025] [M]: the simulation's own building time
+  (`nestBuildMinS`, `nestBuildSpanS`: 3 to 5 minutes). Use in W9 (`src/render/creatures/nests.ts`, `creatures.ts`): the
+  drawn nest grows over the four simulated minutes the building clip plays (stage W6's figure), from the builder's
+  arrival. The sizes on the way are not sourced.
+
+**Stylizations with no source** (labelled so in code):
+- that two or more animals grooming, playing, mating, embracing, begging or sharing in a crown sit together on one
+  level bough, at the distances the ground layout uses; which animal's place the bough is laid at; on which side of a
+  partner an animal sits; the bough itself (a prop: the environment's limbs are too steep and short to seat two);
+- that an animal whose place in the crown falls inside another's body sits beside it on that animal's bough;
+- the five resting postures, their shares (26, 22, 22, 18 and 12%), how long one lasts (50 to 120 s of animation time),
+  that it changes with every bout, that lying postures need a tree of 10 m or more and lying prone one of 18 m or more;
+- crown feeding: a leaf-and-fruit cluster pulled in and held by one hand, one to three picks from it with the other,
+  then 3 to 10 s of chewing, the hands swapping every cycle, a shift along the limb every 40 to 75 s; and the joint
+  angles that take the hand to the mouth;
+- that a mother whose infant suckles on her in a crown sits in the nursing posture, and the crown variants of
+  sheltering and alarm;
+- that a partner carrying an infant is groomed where the infant is not (from the front when it rides on the back, on
+  the shoulders and head when it clings to the belly and the two face each other);
+- the nest's size while it is built (from 0.3 of the finished nest) and that the builder turns five times.
+
+**Not found in this file, and not searched for on the web for this stage:** how wild chimpanzees space themselves on
+a branch when they groom, the frequencies and durations of resting postures in crowns (Hunt 1992 reports positional
+behaviour by category; only the line above was taken from it here), how a fruit cluster is held and picked, and how a
+nest is built step by step. The review of 10 October quoted "sitting is about 70% of positional behaviour and
+arm-hanging 4.4%" from a dissertation record that is not an entry of this file; it was not checked and is not used.

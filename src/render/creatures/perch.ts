@@ -21,11 +21,12 @@ const SHARE = [0.26, 0.22, 0.22, 0.18, 0.12];
 /** What a tree offers to lie on (`limb`): 0 nothing (seated postures only), 1 a bough to recline along, 2 a large limb
  * to lie prone on as well. */
 function offered(p: number, limb: number): boolean { return p < PERCH.recline || (p === PERCH.recline ? limb >= 1 : limb >= 2); }
-/** A posture drawn by the shares from those the tree offers, leaving out x1 and x2; h is a 0..1 hash. */
-function draw(h: number, limb: number, x1: number, x2: number): number {
+/** A posture drawn by the shares from those the tree offers, leaving out x1 and x2, by the hash of (key, salt). (The
+ * hash is taken in here: every argument is a whole number, so no call passes a boxed fraction.) */
+function draw(key: number, salt: number, limb: number, x1: number, x2: number): number {
   let total = 0;
   for (let p = 0; p < 5; p++) if (offered(p, limb) && p !== x1 && p !== x2) total += SHARE[p];
-  let u = h * total, last: number = PERCH.hold;
+  let u = hash01(key, salt) * total, last: number = PERCH.hold;
   for (let p = 0; p < 5; p++) if (offered(p, limb) && p !== x1 && p !== x2) { last = p; u -= SHARE[p]; if (u < 0) return p; }
   return last;
 }
@@ -38,8 +39,9 @@ function draw(h: number, limb: number, x1: number, x2: number): number {
  */
 export function perchPosture(id: number, bout: number, limb: number, forced?: number): number {
   if (forced !== undefined) return forced;
-  if ((bout & 1) === 0) return draw(hash01(id * 13 + bout, 63), limb, -1, -1);
-  return draw(hash01(id * 13 + bout, 64), limb, draw(hash01(id * 13 + bout - 1, 63), limb, -1, -1), draw(hash01(id * 13 + bout + 1, 63), limb, -1, -1));
+  const key = id * 13 + bout;
+  if ((bout & 1) === 0) return draw(key, 63, limb, -1, -1);
+  return draw(key, 64, limb, draw(key - 1, 63, limb, -1, -1), draw(key + 1, 63, limb, -1, -1));
 }
 
 /** Tree pairings of one frame: actor a[i] turns to partner b[i] and sits sep[i] metres from it (slots index the

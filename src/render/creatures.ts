@@ -196,9 +196,10 @@ export interface Anim {
    * (seated: it had one in the frame before); perchRole: its resting posture of the bout; lies: it is drawn lying along
    * a bough. As a host (gFrame: the frame its bough was laid): the bough's origin gx/gy/gz, axis gyaw, the extent of
    * its members along it gt0..gt1 and whether it is drawn (gOn; wasHost: in the frame before); g0, g1, gm: the drawn
-   * extent and end margin, eased; gr: the largest radius its tree lets it be drawn with. nursed: an infant on it is suckling; holdsBack: an infant rides on its back (both
-   * by the carry state of the last frame, like `holds`). ownFrame: the frame its own place in the crown was found
-   * (ownX/Y/Z), with the bearing of that place from the trunk and whether it is on a limb the environment draws. */
+   * extent and end margin, eased; gr: the largest radius its tree lets it be drawn with. nursed: an infant on it is
+   * suckling; holdsBack: an infant rides on its back (both by the carry state of the last frame, like `holds`).
+   * ownFrame: the frame its own place in the crown was found (ownX/Y/Z), with the bearing of that place from the trunk
+   * (ownYaw), whether it is on a limb the environment draws (ownLimb) and the height nothing in the crown is drawn above. */
   up: boolean; seatHost: number; seatX: number; seatY: number; seatZ: number; seatFace: number; sx: number; sy: number; sz: number; seated: boolean;
   perchRole: number; lies: boolean; gFrame: number; gx: number; gy: number; gz: number; gyaw: number; gt0: number; gt1: number; gOn: boolean; wasHost: boolean; g0: number; g1: number; gm: number; gr: number;
   nursed: boolean; holdsBack: boolean;
