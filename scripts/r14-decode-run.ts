@@ -170,6 +170,16 @@ if (process.argv[1]?.endsWith('r14-decode-run.ts')) {
   p('## 3. The adapter\'s odds against the rules\' own pick, on the run\'s own states');
   p();
   p(`Over the ${n(withRules.length)} asks with a rules' pick on the menu: the adapter's top option is the rules' pick at **${f(share(withRules, a => a.top === a.rules))}**, the option the run's draw applied at ${f(share(withRules, a => a.drawn === a.rules))}, and the adapter's mean probability on the rules' pick is ${f(mean(withRules.map(a => a.p[a.rules])))}.${heldOut.length ? ` On the held-out draws (rules-driven worlds), by the same reading: ${f(share(heldOut.filter(h => h.rules >= 0), h => first(h.p) === h.rules))}, and a mean probability of ${f(mean(heldOut.filter(h => h.rules >= 0).map(h => h.p[h.rules])))}.` : ''}`);
+  {
+    // how much of the gap is the nest: the same reading in the animal's own nest and outside it
+    const cut = (label: string, g: RunAsk[], h: Held[]) => { const gs = g.filter(a => topP(a) >= SURE), hs = h.filter(x => hTop(x) >= SURE); return [label, n(g.length), f(share(g, a => a.top === a.rules)), `${f(share(gs, a => a.top === a.rules))} (${n(gs.length)})`, ...(heldOut.length ? [n(h.length), f(share(h, x => first(x.p) === x.rules)), `${f(share(hs, x => first(x.p) === x.rules))} (${n(hs.length)})`] : [])]; };
+    const hr = heldOut.filter(h => h.rules >= 0);
+    p();
+    p('**In the animal\'s own nest and outside it.** The same reading, split by whether the animal is in its finished nest with staying on the menu.');
+    p();
+    table(['', 'The run: asks', 'the top option is the rules\' pick', 'where the adapter gives 0.9 or more (n)', ...(heldOut.length ? ['Held-out draws', 'the top option is the rules\' pick', 'where the adapter gives 0.9 or more (n)'] : [])], [
+      cut('in its own nest', withRules.filter(a => a.stay >= 0), hr.filter(h => h.stay >= 0)), cut('everywhere else', withRules.filter(a => a.stay < 0), hr.filter(h => h.stay < 0)), cut('all asks', withRules, hr)]);
+  }
   p();
   p('**Reliability of the top probability against that pick.** Calibrated means the two middle columns agree.');
   p();
