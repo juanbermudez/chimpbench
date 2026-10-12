@@ -1001,7 +1001,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     // the last metre to its nest place lost it, was sent back to its limb, and went to and fro for the whole build.)
     const act = a.act;
     const high = a.elevated > 0.5;
-    if (a.clamber && !(act === 'nest' && (high || c.nest))) return CLAMBER;
+    // (Second reading: a paired actor keeps the role its pairing writes every frame. Returned with role 0 the clip was
+    // dropped and started again three times a second, and its fresh clock held the animal on all fours for up to a
+    // third of a second after it had reached its partner: the fault stage W5 found on receivers.)
+    if (a.clamber && !(act === 'nest' && (high || c.nest))) return a.paired ? ['clamber', a.role, 'walk'] : CLAMBER;
     const about = a.way !== Way.none, onWay = a.way >= Way.going;
     // Stage W6: on its tree's trunk, going up or down, whatever its act (placeGrounded): the climb cycle. The creature
     // layer drives its phase by height, so going down runs it backwards (feet first: the project's drawing rule).
