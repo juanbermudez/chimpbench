@@ -139,7 +139,8 @@ failure of the first does not stop the second. No result of either has been read
 built on branch `w11-polish` on top of 9be7d44 (the builder's head 50c6d00; the second reader's commits follow, the
 last of them bc513ba at 09:38): no jump across a crown, a pair picture that agrees with its tag, an eased cut-off
 scratch, a lone animal no busier, a steady nest heading, nests under sleepers, the bough as a limb of its tree with
-a leafy spray, a hand that meets the mouth. Its document is `docs/staging/w11-polish.md` on that branch; its plan block arrives with its merge.
+a leafy spray, a hand that meets the mouth. Its document is `docs/staging/w11-polish.md` on that branch; its plan
+block arrives with its merge.
 
 ## 3. Set-up on this computer
 
