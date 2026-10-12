@@ -40,7 +40,7 @@ import { sampleSmooth } from './creatures/motion';
 import { GAITS, Regime, advancePhase, createLock, limbPhase, resetLock, solveClimb, solveGait, stepLock, type ContactLock, type GaitSolve } from './creatures/gait';
 import { referenceRate, smallMapPace } from './creatures/pace';
 import {
-  BLINK_SLOW, IDLE, SCRATCH, applyInertia, blinkAt, createAttention, createBlink, createIdle, createInertia, idleBit, idleCancel, idleLean, idleRate, idleSpend, idleStep,
+  BLINK_SLOW, IDLE, SCRATCH, applyInertia, blinkAt, createAttention, createBlink, createIdle, createInertia, headLook, idleBit, idleCancel, idleLean, idleRate, idleSpend, idleStep,
   scanAngles, selectAttention, springStep, startInertia, type AttnCand, type Attention, type Blink, type Idle, type Inertia,
 } from './creatures/secondary';
 import type { KeepCandidate } from './env/occluders';
@@ -1522,7 +1522,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     // (W8: a yawn tips the head back and a nod lets it sink; the look-at would hold it level.)
     const want = debug.attention ? updateAttention(a, partner, dtReal) * allow * (a.idle.kind === IDLE.yawn || a.idle.kind === IDLE.nod ? 0.25 : 1) : 0;
     a.lookW = damp(a.lookW, want, 5, dtReal);
-    const lw = Math.max(ov[PI.look], a.lookW);
+    // (Stage W11: a clip can hold the head against the look system, secondary.ts headLook: crown feeding does while a hand is at the mouth.)
+    const lw = headLook(ov[PI.look], a.lookW);
     if (lw > 0.01) {
       const dx = a.lk[0].x - a.bx, dy = a.lk[1].x - a.by, dz = a.lk[2].x - a.bz;
       const ch = Math.cos(-a.heading), sh = Math.sin(-a.heading);

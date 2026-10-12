@@ -246,6 +246,17 @@ export function selectAttention(s: Attention, cands: AttnCand[], count: number, 
   s.until = t + 1.5 + 4.5 * hashUnit(id, 97 + s.n);
   return true;
 }
+/**
+ * The weight with which the head is turned to the look point (stage W11). `clip`: the look weight the clip wrote
+ * (rig.ts PI.look), 0..1 for a clip that looks at its partner by itself, and negative for a clip that needs the head
+ * where it put it (−1: wholly; poses.ts crownFeed while a hand is at the mouth: the arm's angles there were solved for
+ * the head as the clip tips it, and a head turned away by a gaze met the hand with its cheek). `attention`: the look
+ * system's weight (creatures.ts updateAttention). The larger of the two, as before, unless the clip holds the head:
+ * then the look system's weight is scaled down by the hold.
+ */
+export function headLook(clip: number, attention: number): number {
+  return clip < 0 ? attention * (1 + (clip < -1 ? -1 : clip)) : clip > attention ? clip : attention;
+}
 /** Idle-scan direction for choice n: yaw offset from the heading (rad) and pitch (rad). */
 export function scanAngles(id: number, n: number, out: { yaw: number; pitch: number }): void {
   out.yaw = (hashUnit(id, 503 + n) - 0.5) * 2.2;

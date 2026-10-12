@@ -3,6 +3,7 @@ import test from 'node:test';
 import type { Chimp } from '../src/types';
 import { B, PI, computeMorph, createFK, createMorph, createPose, solveFK } from '../src/render/creatures/rig';
 import { CLIPS, GROOM_FRONT, GROOM_HIGH, PROP, Pw, feedCycle, feedHold, feedPicks, groomerRole, type PoseCtx } from '../src/render/creatures/poses';
+import { headLook } from '../src/render/creatures/secondary';
 import { PERCH, SEAT_REACH_M, perchBout, perchLies, perchPeriod, perchPosture, seatAllowed, seatGroups, type SeatPairs } from '../src/render/creatures/perch';
 
 // Stage W9 (docs/staging/w9b-tree-pairs.md): pairs and postures in trees. Everything drawn here is a stylization, so
@@ -206,6 +207,42 @@ test('crown feeding: the hand reaches the mouth with the elbow below the shoulde
   // On the ground the old loop is untouched (and still lifts the elbow: the rig change is deferred).
   w.bind(pose).reset(); CLIPS.forage(w, ctx({ inTree: false, t: 2 }));
   assert.equal(pose.v[PI.ground], 1);
+});
+
+// Stage W11 (docs/staging/w11-polish.md), item 8. The arm's angles at the mouth were solved for the head as the clip
+// tips it; the look system could turn the head away meanwhile, and the hand then met the cheek.
+test('crown feeding: the head is held while a hand is at the mouth, whatever the look system wants', () => {
+  assert.equal(headLook(0.4, 0.9), 0.9); assert.equal(headLook(0.7, 0.2), 0.7); assert.equal(headLook(0, 0.5), 0.5);
+  assert.equal(headLook(-1, 0.9), 0); assert.ok(Math.abs(headLook(-0.5, 0.8) - 0.4) < 1e-12); assert.equal(headLook(-3, 1), 0);
+  const look = new Float32Array(3);
+  let worstHeld = 0, worstFree = 0;
+  for (const [age, sex] of [[24, 'male'], [8, 'male']] as const) {
+    const m = morphOf(age, sex), s = m.size;
+    for (const seed of [0.3, 0.7]) for (const side of [-1, 1]) {
+      const n = 4, L = feedCycle(seed), pick = feedHold(n, seed) ? 0 : 1;
+      for (let t = 0; t <= PICK; t += 0.03) {
+        const v = feed(seed, n * L + PULL + t, age);
+        const atMouth = v[PI.ik + pick * 5 + 3] < 1e-3;
+        // The clip's own request: nothing outside a pick's way to the mouth, the whole head at the mouth.
+        assert.ok(v[PI.look] <= 0 && v[PI.look] >= -1);
+        if (atMouth) assert.ok(v[PI.look] < -0.999, 'at the mouth the clip holds the head wholly');
+        if (!atMouth) continue;
+        // A look point far out to one side at eye height, at full weight: as the layer does it (headLook), then as it was (the larger of the two).
+        look[0] = side * 5 * s; look[1] = 0.8 * s; look[2] = 1 * s;
+        const clip = v[PI.look];
+        v[PI.look] = headLook(clip, 1); solveFK(pose, m, fk, look);
+        worstHeld = Math.max(worstHeld, dist(at(pick ? B.fingR : B.fingL, s), at(B.lipL, s)));
+        v[PI.look] = Math.max(clip, 1); solveFK(pose, m, fk, look);
+        worstFree = Math.max(worstFree, dist(at(pick ? B.fingR : B.fingL, s), at(B.lipL, s)));
+        v[PI.look] = clip;
+      }
+    }
+  }
+  assert.ok(worstHeld < 0.06, `held: fingers at most ${worstHeld.toFixed(3)} body lengths from the lower lip`);
+  assert.ok(worstFree > 2 * worstHeld, `as it was, a head turned by a gaze left them ${worstFree.toFixed(3)} away`);
+  // Chewing and reaching leave the head to the look system.
+  const chew = feed(0.3, 4 * feedCycle(0.3) + PULL + 3 * PICK + 1, 24);
+  assert.equal(chew[PI.look], 0);
 });
 
 // ---- A partner with an infant on its body (poses.ts groomerRole) ----

@@ -360,6 +360,11 @@ function crownFeed(w: Pw, c: PoseCtx) {
   w.a(B.spine, 0, hx * 0.1 * reachK * free, 0).a(B.chest, -0.08 * reachK * free, hx * 0.22 * reachK * free, -hx * 0.07 * reachK * free);
   w.a(B.neck, MOUTH_HEAD * 0.4 * mouthK - 0.12 * reachK * free + 0.1 * look * free, hx * 0.2 * reachK * free, 0);
   w.a(B.head, MOUTH_HEAD * 0.6 * mouthK - 0.3 * reachK * free + 0.28 * look * free, hx * (0.35 * reachK + 0.12 * look) * free, 0);
+  // Stage W11: the head stays where the clip tips it while the hand is at the mouth. A negative look weight holds it
+  // against the look system (secondary.ts headLook; it follows the hand up and back down, so nothing snaps). Before,
+  // a gaze could turn the head 0.5 rad away at that moment and the hand met the cheek (filmed: 13 to 14 cm from the
+  // lip against 7 to 10 with the head free of a gaze).
+  if (mouthK > 0) w.set('look', -mouthK);
   // Now and then a shift along the limb (the animal faces along it): the whole body moves 0.1 body lengths at most,
   // with a small lift, over 1.6 s.
   {
