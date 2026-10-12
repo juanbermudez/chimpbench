@@ -103,12 +103,15 @@ function taken(pairs: SeatPairs, host: Int32Array, s: Float32Array, done: Uint8A
   return false;
 }
 /**
- * Furthest a pair member may be drawn from its own simulated position by the pair layout, in metres: the radius within
- * which an animal already counts as in a tree (creatures.ts treeFor). An animal whose own branch is further than that
- * from its simulated position (the environment's crowns are wide: 4 to 5 m is common) may go as far as that branch is.
- * A seat beyond both is refused and the animal keeps its own branch, as before this stage.
+ * Furthest a pair member may be drawn from its own simulated position by the pair layout, in metres (in the plane): no
+ * further than an own limb already draws an animal. The environment's crowns are wide: over twelve moments of day 1 of
+ * the field map (seed 48) an animal's own place was more than 6 m from its simulated position one time in ten, and up
+ * to 8.9 m. (The first figure here was 6 m, the radius within which an animal counts as in a tree, creatures.ts
+ * treeFor: it refused about one groomer in twenty, among them the first groomer of a chain, left working on the air
+ * 8.7 m from its partner.) An animal whose own branch is further still may go as far as that branch is. A seat beyond
+ * both is refused and the animal keeps its own branch, as before this stage.
  */
-export const SEAT_REACH_M = 6;
+export const SEAT_REACH_M = 9;
 /** True when a seat `offset` metres from the animal's simulated position is allowed, given how far (`own`) its own
  * branch already is from it. */
 export function seatAllowed(offset: number, own: number): boolean { return offset <= Math.max(SEAT_REACH_M, own); }

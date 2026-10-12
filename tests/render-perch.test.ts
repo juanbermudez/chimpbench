@@ -75,12 +75,14 @@ test('the bough stays with the best-ranked animal, and separate groups get separ
   assert.deepEqual(seats([[0, 1, 1.2], [1, 2, 1.1]], [5, 6, 7]), seats([[0, 1, 1.2], [1, 2, 1.1]], [5, 6, 7]));
 });
 
-test('a pair seat is refused beyond 6 m of the simulated position unless the animal\'s own branch is further', () => {
-  assert.equal(SEAT_REACH_M, 6);
-  assert.ok(seatAllowed(5.9, 0.5) && seatAllowed(6, 0));
-  assert.ok(!seatAllowed(6.1, 0.5), 'further than it could be drawn before: it keeps its own branch');
-  assert.ok(seatAllowed(7.3, 7.4), 'no further than its own branch already is');
-  assert.ok(!seatAllowed(7.5, 7.4));
+test('a pair seat is refused beyond 9 m of the simulated position unless the animal\'s own branch is further', () => {
+  // 9 m: as far as an own limb already draws an animal from its simulated position on the field map (8.9 m measured).
+  assert.equal(SEAT_REACH_M, 9);
+  assert.ok(seatAllowed(8.9, 0.5) && seatAllowed(9, 0));
+  assert.ok(seatAllowed(6.3, 1.7), 'a chain\'s first groomer 6.3 m from its place in a wide crown joins its partner');
+  assert.ok(!seatAllowed(9.1, 0.5), 'further than an own limb is ever drawn: it keeps its own branch');
+  assert.ok(seatAllowed(9.9, 10), 'no further than its own branch already is');
+  assert.ok(!seatAllowed(10.1, 10));
 });
 
 // ---- Resting postures (perch.ts perchPosture, poses.ts 'perch') ----
