@@ -207,6 +207,9 @@ function main(): number {
       p();
       table(['Model arm: the rising was set by', `Risen by ${hhmm(LATE_FROM_H)}`, 'Risen later'], Object.entries(rise).sort((x, y) => y[1][0] + y[1][1] - x[1][0] - x[1][1]).map(([k, v]) => [k, String(v[0]), String(v[1])]));
       table(['Rules arm: the rising was set by', `Risen by ${hhmm(LATE_FROM_H)}`, 'Risen later'], Object.entries(riseR).sort((x, y) => y[1][0] + y[1][1] - x[1][0] - x[1][1]).map(([k, v]) => [k, String(v[0]), String(v[1])]));
+      const tot = Object.values(rise).reduce((t, v) => t + v[0] + v[1], 0), offTop = Object.entries(rise).filter(([k]) => k.includes('another option')).reduce((t, [, v]) => t + v[0] + v[1], 0), totR = Object.values(riseR).reduce((t, v) => t + v[0] + v[1], 0);
+      p(`The model arm has ${tot} risings after 06:30 (on the other ${ad - tot} animal-days the animal was up before the day's first record) and the rules arm ${totR}. **Of the model arm's ${tot}, ${offTop} (${pct(offTop / tot)}) were set by a draw that was not the model's top option.**`);
+      p();
     }
     // the animals that rose on time, by how many of their community did not
     {
@@ -274,6 +277,10 @@ function main(): number {
     p();
     const dMin = mean(fruitMin(M)) - mean(fruitMin(R)), dRate = mean(fruitRate(M)) - mean(fruitRate(R));
     p(`**The fruit shortfall, split** (means of the arms): ${signed(mean(fruitFin(M)) - mean(fruitFin(R)), 0)} kcal a day of fruit = ${signed(dMin, 1)} minutes at the rules arm's ${num(mean(fruitRate(R)), 2)} kcal a minute (${signed(dMin * mean(fruitRate(R)), 0)} kcal) and ${signed(dRate, 2)} kcal a minute over the model arm's ${num(mean(fruitMin(M)), 0)} minutes (${signed(dRate * mean(fruitMin(M)), 0)} kcal).`);
+    p();
+    const lightSum = (A: Arm, i: number[]) => { let m = 0, f = 0; for (const x of A.feed) for (const j of [0, 1]) for (const k of i) { m += x[j].lmin[k]; f += x[j].lfin[k]; } return [m / ad, f / ad]; };
+    const [dmM, dfM] = lightSum(M, [2]), [dmR, dfR] = lightSum(R, [2]), [nmM, nfM] = lightSum(M, [0, 1]), [nmR, nfR] = lightSum(R, [0, 1]);
+    p(`**The same shortfall, by the light** (all animal-days pooled): in daylight ${num(dmM, 1)} against ${num(dmR, 1)} minutes of fruit feeding a day and ${num(dfM, 0)} against ${num(dfR, 0)} kcal (${signed(dfM - dfR, 0)}), at ${num(dfM / dmM, 2)} and ${num(dfR / dmR, 2)} kcal a minute; in twilight and the dark ${num(nmM, 1)} against ${num(nmR, 1)} minutes and ${num(nfM, 0)} against ${num(nfR, 0)} kcal (${signed(nfM - nfR, 0)}), at ${num(nfM / nmM, 2)} and ${num(nfR / nmR, 2)} kcal a minute.`);
     p();
     // light and gut
     const tot = (A: Arm, j: number[]) => { const t = { min: 0, fin: 0, lmin: [0, 0, 0], lfin: [0, 0, 0], full: 0, fill: 0, crop: 0, feeders: 0, ticks: 0 }; for (const x of A.feed) for (const k of j) { const f = x[k]; t.min += f.min; t.fin += f.fin; t.full += f.full; t.fill += f.fill; t.crop += f.crop; t.feeders += f.feeders; t.ticks += f.ticks; for (let i = 0; i < 3; i++) { t.lmin[i] += f.lmin[i]; t.lfin[i] += f.lfin[i]; } } return t; };
@@ -483,7 +490,7 @@ function main(): number {
   {
     const block = (v: (A: Arm, a: number, d: number) => number, A: Arm, d0: number, d1: number) => animals.map((_, a) => { let t = 0; for (let d = d0; d < d1; d++) t += v(A, a, d); return t / (d1 - d0); });
     const res = (A: Arm, a: number, d: number) => 100 * A.day[a][d * NF + F.dRes] / cap[a], fin = (A: Arm, a: number, d: number) => A.day[a][d * NF + F.dFin], km = (A: Arm, a: number, d: number) => A.kmFix[a][d], late = (A: Arm, a: number, d: number) => A.lateNest[a][d];
-    const blocks: [string, number, number][] = [['days 1 to 5', 0, 5], ['days 6 to 10', 5, 10], ['days 11 to 15', 10, 15], ['days 16 to 20', 15, 20]];
+    const blocks: [string, number, number][] = [['days 1 to 5', 0, 5], ['days 6 to 10', 5, 10], ['days 11 to 15', 10, 15], ['days 16 to 20', 15, 20], ['days 6 to 20', 5, 20], ['all 20 days', 0, 20]];
     table(['Block', 'Reserves, % of the store a day: model', 'rules', 'difference', 'Eaten, kcal: model', 'rules', 'difference', 'km (fixes): model', 'rules', 'difference', 'Late-morning nest minutes: model', 'rules'],
       blocks.map(([name, a, b]) => [name, ...pair('', block(res, M, a, b), block(res, R, a, b), 3).slice(1), ...pair('', block(fin, M, a, b), block(fin, R, a, b), 0).slice(1), ...pair('', block(km, M, a, b), block(km, R, a, b), 2).slice(1), num(mean(block(late, M, a, b)), 1), num(mean(block(late, R, a, b)), 1)]));
     const slope = (y: number[]) => { const nn = y.length, mx = (nn - 1) / 2, my = mean(y); let sxy = 0, sxx = 0; for (let i = 0; i < nn; i++) { sxy += (i - mx) * (y[i] - my); sxx += (i - mx) ** 2; } return sxy / sxx; };
