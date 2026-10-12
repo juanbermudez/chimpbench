@@ -823,28 +823,36 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       // (Never prone for an infant, nor for an animal with an infant on its body: it would lie on it.)
       a.perchRole = perchPosture(a.id, perchBout(a.id, animClock), th >= LARGE_LIMB_TREE_M && a.chimp.age >= 4 && !a.holds ? 2 : th >= RECLINE_TREE_M ? 1 : 0, debug.perch);
       if (a.seatHost >= 0) { a.lies = false; continue; }
+      if (!ownOf(a)) { a.lies = false; continue; }
+      // Its own place, unless that is inside a body already seated: then beside it, on that animal's bough. An animal
+      // that lies, or would in this bout, needs room for its length as well (`near`): with a neighbour inside that it
+      // stays seated. (Looked for before the lying seat is given: a body lying down was laid through its neighbour;
+      // filmed, a three-year-old reclining inside a feeding adult 0.27 m away.)
+      const long = perchLies(a.perchRole) || (a.clip === 'perch' && perchLies(a.role)) ? LIE_HALF * a.morph.size : 0;
+      let h: Anim | undefined, near = false;
+      for (let i = 0; i < nTaken && !h; i++) {
+        const o = taken[i]!, reach = CROWD * (a.morph.size + o.morph.size), laid = o.gFrame === frameNo;
+        if (Math.abs(a.ownY - (laid ? o.gy : o.ownY)) > reach * 2) continue;
+        let d: number;
+        if (laid) {
+          // A bough: the distance from the place to the stretch its members sit on.
+          const ex = a.ownX - o.gx, ez = a.ownZ - o.gz, cx = Math.cos(o.gyaw), cz = -Math.sin(o.gyaw);
+          const tc = clamp(ex * cx + ez * cz, o.gt0, o.gt1);
+          d = hyp2(ex - cx * tc, ez - cz * tc);
+        } else d = hyp2(a.ownX - o.ownX, a.ownZ - o.ownZ);
+        if (d < reach) h = o;
+        else if (d < reach + long) near = true;
+      }
+      if (h || near) { if (perchLies(a.perchRole)) a.perchRole = PERCH.hold; a.lies = false; }
       // A lying posture (as drawn: the clip and role of the last pose) takes a bough through its own seat and lies along it.
       // (Never the actor of a pairing: its role is its pairing's this frame, not the posture it was drawn in.)
-      a.lies = !a.paired && a.clip === 'perch' && perchLies(a.role);
+      else a.lies = !a.paired && a.clip === 'perch' && perchLies(a.role);
       if (a.lies && boughOf(a)) {
         const half = LIE_HALF * a.morph.size;
         a.seatHost = a.id; a.seatX = a.gx; a.seatY = a.gy; a.seatZ = a.gz; a.gt0 = -half; a.gt1 = half; a.gOn = true;
         a.seatFace = a.gyaw + Math.PI / 2; a.headingTarget = a.seatFace;
         taken[nTaken++] = a;
         continue;
-      }
-      if (!ownOf(a)) continue;
-      // Its own place, unless that is inside a body already seated: then beside it, on that animal's bough.
-      let h: Anim | undefined;
-      for (let i = 0; i < nTaken && !h; i++) {
-        const o = taken[i]!, reach = CROWD * (a.morph.size + o.morph.size), laid = o.gFrame === frameNo;
-        if (Math.abs(a.ownY - (laid ? o.gy : o.ownY)) > reach * 2) continue;
-        if (laid) {
-          // A bough: the distance from the place to the stretch its members sit on.
-          const ex = a.ownX - o.gx, ez = a.ownZ - o.gz, cx = Math.cos(o.gyaw), cz = -Math.sin(o.gyaw);
-          const tc = clamp(ex * cx + ez * cz, o.gt0, o.gt1);
-          if (hyp2(ex - cx * tc, ez - cz * tc) < reach) h = o;
-        } else if (hyp2(a.ownX - o.ownX, a.ownZ - o.ownZ) < reach) h = o;
       }
       if (h && boughOf(h)) {
         if (h.seatHost < 0) seatOn(h, h, 0);
