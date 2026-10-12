@@ -141,6 +141,24 @@ export function rw3Report(input: Rw3Input) {
 }
 export type Rw3Report = ReturnType<typeof rw3Report>;
 
+export const WITHHELD = 'withheld (S0)';
+/**
+ * What may be written to a file (amendment 14). Prereg §5: if S0 fails "nothing else is read and the fault is repaired
+ * without looking further". So the report of a development run that is not valid holds, for the Taï-taught adapters,
+ * only what a repair needs (the faults, the manifests' description of the trainings, the count of answers unlike the
+ * untuned model's): their scores, paired differences, agreement and cuts are withheld. The chance, bar, untuned and
+ * Ngogo-taught rows stay: they are stage RW2's known figures. The train part is a description of fit and is written as it is.
+ */
+export function forFile(R: Rw3Report): Rw3Report & { withheld: boolean; withheldSeeds: number[] } {
+  if (R.valid || R.part !== 'development') return { ...R, withheld: false, withheldSeeds: [] };
+  const none = (a: 'plain' | 'fan') => ({ seeds: R.paired[a].seeds.map(s => ({ seed: s.seed, untuned: null, bar: null, ngogo: null })), between: null, reference: R.paired[a].reference });
+  return { ...R, withheld: true, withheldSeeds: R.scores.seeds.filter(s => s.plain).map(s => s.seed), agreement: null,   // a seed with nothing on file is "not on file", not withheld
+    scores: { ...R.scores, seeds: R.scores.seeds.map(s => ({ ...s, plain: null, fan: null })) },
+    paired: { plain: none('plain'), fan: none('fan') },
+    statements: { ...R.statements, perSeed: R.statements.perSeed.map(p => ({ seed: p.seed, S1: 'not read' as Side, S2: 'not read' as Side, S3: 'not read' as Side })), fan: { S1: 'not read', S2: 'not read', S3: 'not read' }, S4: 'not read' },
+    cuts: R.cuts.map(c => ({ ...c, seeds: c.seeds.map(() => null) })) };
+}
+
 const MEANING: Record<'S1' | 'S2' | 'S3', Partial<Record<Verdict, string>>> = {
   S1: { met: 'teaching on 557 wild Taï choices raises top-1 on later and unseen Taï choices over the untuned model', 'not shown': 'not shown; with this record\'s power that is not "no effect"',
     'below on both seeds': 'the teaching made the model worse on this choice' },
@@ -151,8 +169,12 @@ const MEANING: Record<'S1' | 'S2' | 'S3', Partial<Record<Verdict, string>>> = {
 };
 
 /** The generated table (aggregates only: no key, no label of an individual). */
-export function markdown(R: Rw3Report, o: { reference?: boolean } = {}): string {
-  const L: string[] = [], t = (h: string[], rows: (string | number | null)[][]) => { L.push('', `| ${h.join(' | ')} |`, `| ${h.map(() => '---').join(' | ')} |`, ...rows.map(r => `| ${r.map(v => v ?? 'not on file').join(' | ')} |`), ''); };
+export function markdown(R: Rw3Report & { withheld?: boolean; withheldSeeds?: number[] }, o: { reference?: boolean } = {}): string {
+  // a row of a Taï-taught adapter whose figures a report withholds (forFile) says so instead of "not on file"
+  const held = new Set(R.withheld ? R.withheldSeeds ?? [] : []);
+  const mine = (label: unknown) => typeof label === 'string' && ([...held].some(seed => label.includes(`\`${RW3_ADAPTER}-s${seed}\``) || label.startsWith(`seed ${seed} `)) || (label.startsWith('seed against seed') && held.size > 0));
+  const L: string[] = [], t = (h: string[], rows: (string | number | null)[][]) => { L.push('', `| ${h.join(' | ')} |`, `| ${h.map(() => '---').join(' | ')} |`,
+    ...rows.map(r => `| ${r.map(v => mine(r[0]) && (v === null || v === 'not on file') ? WITHHELD : v ?? 'not on file').join(' | ')} |`), ''); };
   const iv = (m: { value: number | null; ci: (number | null)[] } | undefined) => !m || m.value === null ? 'not on file' : `${m.value} (${m.ci[0] ?? 'n/a'} to ${m.ci[1] ?? 'n/a'})`;
   const d = (p: Paired | null) => p ? `${p.difference} (${p.ci[0]} to ${p.ci[1]})` : 'not on file', yes = (p: Paired | null) => p ? (p.isDifference ? 'yes' : 'no') : 'not on file';
   const fit = R.part === 'train';
@@ -161,7 +183,8 @@ export function markdown(R: Rw3Report, o: { reference?: boolean } = {}): string 
     `Every figure for \`${RW3_ADAPTER}-s${RW3_SEEDS[0]}\` and \`-s${RW3_SEEDS[1]}\` is a result of a **${RW3_RESULT_NAME}** (label source: \`${RW3_LABEL_SOURCE}\`; two training seeds). `
     + 'Beside them: the untuned model, the Ngogo-taught adapter (`r4-field-groom`) and the simple rule `stack-own` (the bar). The sealed part is not opened.',
     ...(fit ? ['', '**This is the train part: a description of how closely the adapters fit the records they were taught. It is never a result.**'] : []), '',
-    `${R.records} records of ${R.animals} animals; own view; shuffle 0. Top-1 of the answered option, pooled over records (for chance and the bar: the expected top-1 with ties split). Intervals: 95%, a bootstrap over animals. A difference is called one only if its interval excludes 0.`);
+    `${R.records} records of ${R.animals} animals; own view; shuffle 0. Top-1 of the answered option, pooled over records (for chance and the bar: the expected top-1 with ties split). Intervals: 95%, a bootstrap over animals. A difference is called one only if its interval excludes 0.`,
+    ...(held.size ? ['', `**S0 failed: every figure of the Taï-taught adapters is withheld** (rw3-prereg.md §5: nothing else is read, and the fault is repaired without looking further). The faults are listed under "The statements".`] : []));
   L.push('', '## Scores');
   const kernelRow = (label: string, k: { plain: ReturnType<typeof summarize2> | null; fan: ReturnType<typeof summarize2> | null }) =>
     [label, iv(k.plain?.top1.pooled), iv(k.fan?.top1.pooled), iv(k.plain?.top1.equal), iv(k.plain?.top1MinusChance.pooled), k.plain ? k.plain.refused + (k.fan?.refused ?? 0) : null];
@@ -195,7 +218,7 @@ export function markdown(R: Rw3Report, o: { reference?: boolean } = {}): string 
       + 'No result here changes the main label source, enters the simulation\'s loop or says when or whether chimpanzees groom.');
   }
   L.push('', '## Cuts (descriptions; nothing is claimed on them)', '', 'One call a record. Female choice and wide menus rest on few records.');
-  t(['cut', 'records', 'animals', 'chance', 'the bar', 'the untuned model', 'the Ngogo-taught adapter', ...R.scores.seeds.map(s => `seed ${s.seed}`)], R.cuts.map(c => [c.cut, c.records, c.animals, c.chance, c.bar, c.untuned, c.ngogo, ...c.seeds]));
+  t(['cut', 'records', 'animals', 'chance', 'the bar', 'the untuned model', 'the Ngogo-taught adapter', ...R.scores.seeds.map(s => `seed ${s.seed}`)], R.cuts.map(c => [c.cut, c.records, c.animals, c.chance, c.bar, c.untuned, c.ngogo, ...c.seeds.map((v, i) => v ?? (held.has(R.scores.seeds[i].seed) ? WITHHELD : null))]));
   const fits = R.scores.seeds.filter(s => s.fit);
   if (fits.length) {
     L.push('## The trainings (from the adapters\' manifests; the training loss describes fit and is not a score)');
@@ -234,7 +257,7 @@ if (process.argv[1]?.endsWith('rw3-report.ts')) {
         seeds: RW3_SEEDS.map((seed, i) => ({ seed, scores: readKernel(bench, names[i], part), manifest: manifestOf(names[i]), scoredAdapterSha256: scoredWith(names[i]) })), records: loadRecords(dir, RW3_DATASET, part).eligible,
         trainFileSha256: existsSync(`${ft}/tai/data-manifest.json`) ? (JSON.parse(readFileSync(`${ft}/tai/data-manifest.json`, 'utf8')) as { trainFileSha256?: string }).trainFileSha256 ?? null : null,
         expect: part === 'development' && !has('no-reference') ? { chance: RW3_REFERENCE.chance, bar: RW3_REFERENCE.bar } : null };
-      const report = rw3Report(input), md = markdown(report, { reference: !has('no-reference') });
+      const report = forFile(rw3Report(input)), md = markdown(report, { reference: !has('no-reference') });   // a run that is not valid: the Taï-taught figures are withheld
       if (arg('md', '')) { mkdirSync(dirname(arg('md', '')), { recursive: true }); writeFileSync(arg('md', ''), md); }
       if (arg('json', '')) { mkdirSync(dirname(arg('json', '')), { recursive: true }); writeFileSync(arg('json', ''), JSON.stringify(report, null, 1) + '\n'); }
       console.log(md);

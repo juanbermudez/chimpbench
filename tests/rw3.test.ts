@@ -11,7 +11,7 @@ import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, wr
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { developmentKeys, keysHash, leakCheck, readTrain, RW3_ADAPTER, RW3_LABEL_SOURCE, RW3_RECIPE, RW3_SEEDS, rw3Counts, rw3Row, rw3Rows, sealedOnHand, teachable, underArtifacts, type Rw3Row, type TaiManifest } from '../scripts/rw3-assemble';
-import { markdown, rw3Report, type KernelScores, type Rw3Input } from '../scripts/rw3-report';
+import { forFile, markdown, rw3Report, WITHHELD, type KernelScores, type Rw3Input } from '../scripts/rw3-report';
 import { scoreRw2 } from '../scripts/rw2-score';
 import { mulberry32 } from '../src/compare/sampling';
 import { FAN_WIDTH } from '../src/kernel/fanout';
@@ -438,6 +438,27 @@ test('report: a run that is not valid is not read (S0)', () => {
   invalid({ ...base, seeds: seedsOf(both(scores(every(8)).slice(1)), good) }, /not the same records/);
   invalid({ ...base, expect: { chance: 0.244, bar: 0.353 }, seeds: seedsOf(good, good) }, /not stage RW2's development records/);
   invalid({ ...base, untuned: null, seeds: seedsOf(good, good) }, /untuned model has no scores/);
+  // amendment 14: what is written of a run that is not valid withholds every figure of the Taï-taught adapters, and keeps what a repair needs
+  const failed = rw3Report({ ...base, seeds: seedsOf(good, both(otherAnswers(8)), s => ({ ...goodManifest(s), train_sha256: s === 7 ? 'c'.repeat(64) : 'd'.repeat(64) })), trainFileSha256: 'c'.repeat(64) });
+  assert.equal(failed.valid, false); assert.equal(failed.scores.seeds[0].plain!.top1.pooled.value, 0.8, 'the report in memory holds the figure');
+  const written = forFile(failed), table = markdown(written, { reference: false });
+  assert.equal(written.withheld, true); assert.ok(written.scores.seeds.every(s => s.plain === null && s.fan === null)); assert.equal(written.agreement, null);
+  for (const a of ['plain', 'fan'] as const) { assert.ok(written.paired[a].seeds.every(s => s.untuned === null && s.bar === null && s.ngogo === null)); assert.equal(written.paired[a].between, null); assert.ok(written.paired[a].reference.untunedMinusBar, 'the reference rows stay'); }
+  assert.ok(written.cuts.length > 0 && written.cuts.every(c => c.seeds.every(v => v === null) && c.untuned !== null));
+  assert.deepEqual(written.faults, failed.faults); assert.equal(written.scores.seeds[1].answersUnlikeTheUntunedModel, failed.scores.seeds[1].answersUnlikeTheUntunedModel); assert.ok(written.scores.seeds[0].fit);
+  assert.equal(written.scores.untuned.plain!.top1.pooled.value, 0.3); assert.equal(written.statements.S4, 'not read'); assert.deepEqual(written.statements.perSeed.map(p => p.S1), ['not read', 'not read']);
+  assert.match(table, /S0 failed: every figure of the Taï-taught adapters is withheld/); assert.match(table, /\*\*NO\*\*: rw3-tai-groom-s11: it was not trained on the training file on hand/);
+  assert.ok(table.includes(`| the Taï-taught adapter \`rw3-tai-groom-s7\` | ${WITHHELD} | ${WITHHELD} |`) && table.includes(`| seed 7 minus the untuned model (S1) | ${WITHHELD} |`) && table.includes(`| seed against seed (S4) | ${WITHHELD} |`));
+  assert.doesNotMatch(table, /\b0\.8\b/, 'the top-1 of the Taï-taught adapters (0.8 in this made-up run) is nowhere in the table'); assert.doesNotMatch(JSON.stringify({ ...written, scores: { ...written.scores, seeds: written.scores.seeds.map(s => ({ ...s, fit: null })) } }), /\b0\.8\b/);
+  assert.match(table, /\| the untuned model \| 0\.3 /, 'the reference rows are written');
+  // a valid run and the train part (a description of fit) are written as they are
+  const fine = rw3Report({ ...base, seeds: seedsOf(good, both(otherAnswers(8))) });
+  assert.equal(forFile(fine).withheld, false); assert.equal(markdown(forFile(fine)), markdown(fine)); assert.doesNotMatch(markdown(forFile(fine)), /withheld/);
+  assert.equal(forFile({ ...failed, part: 'train' }).withheld, false);
+  // a seed with nothing on file is "not on file"; only what exists is withheld
+  const half = markdown(forFile(rw3Report({ ...base, seeds: seedsOf(good, null) })), { reference: false });
+  assert.ok(half.includes(`| the Taï-taught adapter \`rw3-tai-groom-s7\` | ${WITHHELD} |`) && half.includes('| the Taï-taught adapter `rw3-tai-groom-s11` | not on file |'));
+  assert.doesNotMatch(markdown(forFile(rw3Report({ ...base, seeds: seedsOf(null, null) })), { reference: false }), /\| withheld/, 'nothing on file: nothing to withhold');
   // amendment 10: the Ngogo-taught adapter answered as the untuned model does (the worker did not load it): S3 would be read against the untuned model
   invalid({ ...base, ngogo: base.untuned, seeds: seedsOf(good, good) }, /the Ngogo-taught adapter: every answer is the untuned model's/);
   assert.equal(rw3Report({ ...base, ngogo: null, seeds: seedsOf(good, good) }).valid, true, 'without the Ngogo-taught adapter on file S3 is not read; the run is not made invalid');
