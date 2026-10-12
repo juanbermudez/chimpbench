@@ -199,11 +199,13 @@ export interface Anim {
    * extent and end margin, eased; gr: the largest radius its tree lets it be drawn with. nursed: an infant on it is
    * suckling; holdsBack: an infant rides on its back (both by the carry state of the last frame, like `holds`).
    * ownFrame: the frame its own place in the crown was found (ownX/Y/Z), with the bearing of that place from the trunk
-   * (ownYaw), whether it is on a limb the environment draws (ownLimb) and the height nothing in the crown is drawn above. */
+   * (ownYaw), whether it is on a limb the environment draws (ownLimb) and the height nothing in the crown is drawn above.
+   * ownSrc: what the environment gave for that place (0 nothing, 1 the crown anchor, 2 a limb) and ownCut, the frame
+   * that last changed: the forest is drawn in a window round the camera, so a tree's limbs come and go with it. */
   up: boolean; seatHost: number; seatX: number; seatY: number; seatZ: number; seatFace: number; sx: number; sy: number; sz: number; seated: boolean;
   perchRole: number; lies: boolean; gFrame: number; gx: number; gy: number; gz: number; gyaw: number; gt0: number; gt1: number; gOn: boolean; wasHost: boolean; g0: number; g1: number; gm: number; gr: number;
   nursed: boolean; holdsBack: boolean;
-  ownFrame: number; ownX: number; ownY: number; ownZ: number; ownYaw: number; ownLimb: boolean; ownTop: number;
+  ownFrame: number; ownX: number; ownY: number; ownZ: number; ownYaw: number; ownLimb: boolean; ownTop: number; ownSrc: number; ownCut: number;
   deadCarried: boolean; deadDrop: boolean; dropX: number; dropZ: number; // a dead infant on its mother, then put down
   climbTree: number;               // tree whose trunk the animal is on this frame (−1 none)
   drumTree: number;                // tree a drummer faces and slaps (−1 none)
@@ -429,7 +431,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       pick, partnerId: -1, look: new Float32Array(3), hasLook: false, paired: false, pairClip: null, onBranch: false,
       up: false, seatHost: -1, seatX: 0, seatY: 0, seatZ: 0, seatFace: NaN, sx: 0, sy: 0, sz: 0, seated: false, perchRole: 0, lies: false,
       gFrame: -1, gx: 0, gy: 0, gz: 0, gyaw: 0, gt0: 0, gt1: 0, gOn: false, wasHost: false, g0: 0, g1: 0, gm: 0, gr: 0.1, nursed: false, holdsBack: false,
-      ownFrame: -1, ownX: 0, ownY: 0, ownZ: 0, ownYaw: 0, ownLimb: false, ownTop: Infinity,
+      ownFrame: -1, ownX: 0, ownY: 0, ownZ: 0, ownYaw: 0, ownLimb: false, ownTop: Infinity, ownSrc: -1, ownCut: -1,
       deadCarried: false, deadDrop: false, dropX: 0, dropZ: 0, climbTree: -1, drumTree: -1,
       drinkSimX: NaN, drinkSimZ: NaN, drinkOk: false, drinkX: 0, drinkZ: 0,
       pCode: 0, pSince: 0, pPub: 0, pPubAt: 0, pIndex: 0, pCount: 0, pAhead: -1, pBehind: -1, pVariant: Listen.wait, pSide: 1, patrolAt: -1e9, relBristle: 0,
@@ -698,6 +700,11 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       if (hasAnchor) y = clamp(y, anchor.y - 2.5, anchor.y + 0.4) + (hash01(a.id, 44) - 0.5) * 0.6;
     }
     a.ownX = x; a.ownY = Math.min(y, crownTop); a.ownZ = z; a.ownYaw = Math.atan2(x - tree.position[0], z - tree.position[2]); a.ownTop = crownTop; a.ownFrame = frameNo;
+    // What the environment answered. The field map draws its forest in a window round the camera: when the camera
+    // arrives at a far tree the limbs appear (and a place found without them is 3 to 17 m from the limb), and they go
+    // when it leaves. placeGrounded draws that change at once.
+    const src = a.ownLimb ? 2 : crownTop < Infinity ? 1 : 0;
+    if (src !== a.ownSrc) { a.ownSrc = src; a.ownCut = frameNo; }
   }
   /** The animal's own place in its crown as it stands before this frame's motion (the pair layout runs first). False
    * when it is in no tree. */
@@ -1889,10 +1896,14 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
           if (inNest) { x = a.nestX; y = a.nestY; z = a.nestZ; }
           // Stage W9: the drawn seat eases to its place (as partners slide into place on the ground, a little slower and
           // never faster than SEAT_MPS), so an animal joining a partner's bough or lying down along one moves there
-          // instead of jumping. A relocation, a first frame in the crown, or a place more than SEAT_GLIDE_M away is
-          // drawn at once. A seat that does not move (every animal resting or feeding alone on a limb) is exactly where
-          // it was before this stage.
-          if (!a.seated || a.track.jumped || hyp2(x - a.sx, z - a.sz) > SEAT_GLIDE_M) { a.sx = x; a.sy = y; a.sz = z; }
+          // instead of jumping. A relocation, a first frame in the crown, or a place more than SEAT_GLIDE_M away (in
+          // any direction: limbs of one crown are metres apart in height) is drawn at once. A seat that does not move
+          // (every animal resting or feeding alone on a limb) is exactly where it was before this stage.
+          // Drawn at once too, as before this stage: when the forest window gave or took this tree's limbs this frame
+          // (ownCut; eased, every animal of a crown rose 3 to 5 m through it for three seconds after the camera
+          // arrived), and in time-lapse (above ABOUT_MAX_RATE, stage W6's limit: at 10 min/s pairs form and part
+          // several times a second, and eased bodies were away from their seats 41% of the time, 80% at 1 h/s).
+          if (!a.seated || a.track.jumped || a.ownCut === frameNo || curSimRate > ABOUT_MAX_RATE || hyp2(hyp2(x - a.sx, z - a.sz), y - a.sy) > SEAT_GLIDE_M) { a.sx = x; a.sy = y; a.sz = z; }
           else if (a.sx !== x || a.sy !== y || a.sz !== z) {
             const ex = x - a.sx, ey = y - a.sy, ez = z - a.sz, el = hyp2(hyp2(ex, ez), ey);
             const k = Math.min(1 - Math.exp(-2.5 * curDt), el > 1e-6 ? SEAT_MPS * curDt / el : 1);
