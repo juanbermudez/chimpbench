@@ -27,6 +27,8 @@ export interface Rw3Input {
   chance: RecordScore[] | null; bar: RecordScore[] | null; untuned: KernelScores | null; ngogo: KernelScores | null; seeds: SeedRun[];
   /** The part's derived records, for the cut by the chooser's sex. */
   records: Rw2Record[];
+  /** The sha256 of the training file on hand (its data manifest's): every adapter must have been trained on it. Undefined: not compared. */
+  trainFileSha256?: string | null;
   /** What chance and the bar must read (S0). Null: not compared (tests on invented scores). */
   expect: { chance: number; bar: number } | null;
   reps?: number; bootSeed?: number;
@@ -78,6 +80,7 @@ export function rw3Report(input: Rw3Input) {
     if (m.label_source !== RW3_LABEL_SOURCE) faults.push(`${s.name}: the manifest does not carry the label source`);
     if (m.sealedPartRead !== false || (m.leakCheck as { ok?: unknown } | undefined)?.ok !== true) faults.push(`${s.name}: the manifest does not say that the leak checks passed and the sealed part was not read`);
     if (m.adapter !== s.name || h.seed !== s.seed) faults.push(`${s.name}: the manifest is another adapter's or another seed's`);
+    if (input.trainFileSha256 !== undefined && m.train_sha256 !== input.trainFileSha256) faults.push(`${s.name}: it was not trained on the training file on hand (the hashes differ)`);
     if (Object.entries(RW3_RECIPE).some(([k, v]) => h[k] !== v) || m.registered_recipe !== true || m.saved_epoch !== RW3_RECIPE.epochs) faults.push(`${s.name}: the hyperparameters are not the registered ones`);
   }
   for (const [name, k] of [['the untuned model', input.untuned], ['the Ngogo-taught adapter', input.ngogo], ...seeds.map(s => [s.name, s.scores] as [string, KernelScores | null])] as [string, KernelScores | null][]) {
@@ -216,6 +219,7 @@ if (process.argv[1]?.endsWith('rw3-report.ts')) {
       const manifestOf = (name: string) => { const f = `${ft}/adapters/${name}/manifest.json`; return existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) as Record<string, unknown> : null; };
       const input: Rw3Input = { part, chance: readRule(bench, folders, part, 'null'), bar: readRule(bench, folders, part, BAR_RULE), untuned: readKernel(bench, 'base', part), ngogo: readKernel(bench, NGOGO_ADAPTER, part),
         seeds: RW3_SEEDS.map((seed, i) => ({ seed, scores: readKernel(bench, names[i], part), manifest: manifestOf(names[i]) })), records: loadRecords(dir, RW3_DATASET, part).eligible,
+        trainFileSha256: existsSync(`${ft}/tai/data-manifest.json`) ? (JSON.parse(readFileSync(`${ft}/tai/data-manifest.json`, 'utf8')) as { trainFileSha256?: string }).trainFileSha256 ?? null : null,
         expect: part === 'development' && !has('no-reference') ? { chance: RW3_REFERENCE.chance, bar: RW3_REFERENCE.bar } : null };
       const report = rw3Report(input), md = markdown(report, { reference: !has('no-reference') });
       if (arg('md', '')) { mkdirSync(dirname(arg('md', '')), { recursive: true }); writeFileSync(arg('md', ''), md); }

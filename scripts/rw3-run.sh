@@ -10,12 +10,13 @@
 #   scripts/rw3-run.sh publish                copy the generated table into docs/staging, once, after the last model step; then commit it
 #   model (the integrator; never while another model process or a registered chain is running):
 #   scripts/rw3-run.sh train <7|11>           one adapter, rw3-tai-groom-s<seed>: the registered recipe, hard labels, the last epoch saved;
-#                                             refuses to train over an adapter (after a training cut short: delete its folder, then run again)
+#                                             an adapter trained to the end is never trained again (the step says so and ends with 0);
+#                                             after a training cut short: delete its folder, then run the step again
 #   scripts/rw3-run.sh eval <7|11|base|ngogo> [train]
 #                                             score one kernel on the Taï DEVELOPMENT part, one call a record and fanned out, beside chance and
 #                                             the simple rules: an adapter of this stage, the untuned model (base) or the Ngogo-taught adapter
 #                                             r4-field-groom (ngogo). `train` as a second word scores the train part instead: a description of
-#                                             fit, never a result. Scores on file are not made again.
+#                                             fit, never a result. Scores on file are not made again (the step says so and ends with 0).
 #
 # THE SEALED PART: no step takes it. Any argument that names it is refused, and so is a run beside an opened sealed file.
 # A model step first checks its arguments and what it needs on file (a wrong name is refused at once, before anything
@@ -154,7 +155,8 @@ run_step() {
     [ -z "$3" ] || refuse "train takes one word, the training seed"
     NAME="rw3-tai-groom-s$2"
     assembled || refuse "no training file under $FT/tai: run the dry step first"
-    have "$FT" "$NAME" && refuse "$FT/adapters/$NAME exists already; it is not trained over"
+    # a finished step does nothing when it is run again, so a chain can be launched again after a failure
+    have "$FT" "$NAME" && { say "ON FILE [$STEP] $FT/adapters/$NAME is trained to the end; it is not trained again"; exit 0; }
     cut_short "$FT" "$NAME" && refuse "$FT/adapters/$NAME holds a training cut short (weights, no manifest.json); delete the folder, then run this step again"
     # the chooser's own future (prereg section 7, check 5) is checked where the dates are: a file built without it does not teach
     grep -q '"historyCheck": "not run' "$FT/tai/data-manifest.json" && [ -z "$RW3_ALLOW_NO_HISTORY" ] && refuse "the training file was built without the history check: link data/raw and run the dry step again"
@@ -170,7 +172,7 @@ run_step() {
       cut_short "$AROOT" "$A" && refuse "$AROOT/adapters/$A is a training cut short (weights, no manifest.json); it is never scored"
       have "$AROOT" "$A" || refuse "no adapter $A under $AROOT/adapters (the scoring worker would answer with the untuned model)"
     fi
-    scored "$B" "$A" "$PART" && [ -z "$RW3_RERUN" ] && refuse "the $PART scores of $A are on file under $B/$A-own; they are not made again"
+    scored "$B" "$A" "$PART" && [ -z "$RW3_RERUN" ] && { say "ON FILE [$STEP] the $PART scores of $A are under $B/$A-own; they are not made again"; exit 0; }
     before_model "score $A on the $PART part"
     export MGOGO_FT_ROOT="$AROOT" MGOGO_FT_ADAPTERS="$A"
     mkdir -p "$B/$A-own"

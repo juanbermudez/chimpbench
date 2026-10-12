@@ -305,8 +305,13 @@ test('wrapper: refuses a sealed part, an unknown seed, a tracked folder, a run b
     assert.match(run(['eval', '7']).stdout, /training cut short/); assert.match(run(['train', '7']).stdout, /training cut short/);
     writeFileSync(join(ft, 'adapters', 'rw3-tai-groom-s7', 'manifest.json'), '{}');
     const again = run(['train', '7']);
-    assert.equal(again.status, 2); assert.match(again.stdout, /not trained over/);
+    assert.equal(again.status, 0); assert.match(again.stdout, /ON FILE \[train 7\].*not trained again/); assert.doesNotMatch(again.stdout, /STOPPED|MACHINE/, 'the step ended before any model check: nothing was started');
     assert.equal(run(['eval', '7']).status, 0, 'a finished adapter may be scored (the step stops before the model)');
+    // scores on file are not made again
+    mkdirSync(join(out, 'bench', 'base-own'), { recursive: true });
+    for (const k of ['gliner', 'gliner+fan2']) writeFileSync(join(out, 'bench', 'base-own', `tai-groom-development-${k}-records.jsonl`), '{}\n');
+    const onFile = run(['eval', 'base']);
+    assert.equal(onFile.status, 0); assert.match(onFile.stdout, /ON FILE \[eval base\].*not made again/); assert.doesNotMatch(onFile.stdout, /STOPPED|MACHINE/);
     // an opened sealed file beside the records stops every step, unread
     writeFileSync(join(rec, 'tai-groom', 'records-sealed.jsonl'), 'never read\n');
     for (const args of [['check'], ['dry'], ['train', '11'], ['eval', 'base'], ['report']]) { const r = run(args); assert.equal(r.status, 2, args.join(' ')); assert.match(r.stdout, /an opened sealed file/); }
@@ -323,7 +328,7 @@ function scores(hit: number[], index?: number[]): RecordScore[] {
 }
 const N = 120, every = (k: number) => Array.from({ length: N }, (_, i) => +(Math.floor(i / 6) % 10 < k));   // k of every ten records of each of the six animals: the same share in every animal
 const both = (s: RecordScore[]): KernelScores => ({ plain: s, fan: s });
-const goodManifest = (seed: number) => ({ adapter: `${RW3_ADAPTER}-s${seed}`, label_source: RW3_LABEL_SOURCE, sealedPartRead: false, leakCheck: { ok: true }, hyperparameters: { ...RW3_RECIPE, seed }, registered_recipe: true, saved_epoch: RW3_RECIPE.epochs, history: [{ train_loss: 1.4 }, { train_loss: 1.2 }], cost: { training_seconds: 900, seconds_per_example: 0.4, peak_footprint_gib: 5.4 } });
+const goodManifest = (seed: number) => ({ adapter: `${RW3_ADAPTER}-s${seed}`, label_source: RW3_LABEL_SOURCE, sealedPartRead: false, leakCheck: { ok: true }, train_sha256: 'c'.repeat(64), hyperparameters: { ...RW3_RECIPE, seed }, registered_recipe: true, saved_epoch: RW3_RECIPE.epochs, history: [{ train_loss: 1.4 }, { train_loss: 1.2 }], cost: { training_seconds: 900, seconds_per_example: 0.4, peak_footprint_gib: 5.4 } });
 const devRecords = Array.from({ length: N }, (_, i) => record(200 + i, 4, { key: `k${String(i).padStart(3, '0')}`, part: 'development', stratum: i % 2 ? 'seen' : 'unseen' }));
 const base: Omit<Rw3Input, 'seeds'> = { part: 'development', chance: scores(every(2)), bar: scores(every(4)), untuned: both(scores(every(3))), ngogo: both(scores(every(3))), records: devRecords, expect: null, reps: 300 };
 const seedsOf = (a: KernelScores | null, b: KernelScores | null, m: (s: number) => Record<string, unknown> | null = goodManifest) => [{ seed: 7, scores: a, manifest: m(7) }, { seed: 11, scores: b, manifest: m(11) }];
@@ -367,6 +372,8 @@ test('report: a run that is not valid is not read (S0)', () => {
   invalid({ ...base, seeds: seedsOf(good, good, s => ({ ...goodManifest(s), registered_recipe: false })) }, /not the registered ones/);
   invalid({ ...base, seeds: seedsOf(good, good, s => ({ ...goodManifest(s), leakCheck: { ok: false } })) }, /leak checks passed/);
   invalid({ ...base, seeds: seedsOf(good, good, s => ({ ...goodManifest(s), sealedPartRead: true })) }, /sealed part was not read/);
+  invalid({ ...base, trainFileSha256: 'd'.repeat(64), seeds: seedsOf(good, good) }, /not trained on the training file on hand/);
+  assert.equal(rw3Report({ ...base, trainFileSha256: 'c'.repeat(64), seeds: seedsOf(good, both(scores(every(7)))) }).valid, true);
   invalid({ ...base, seeds: seedsOf(good, good, s => ({ ...goodManifest(s), hyperparameters: { ...RW3_RECIPE, seed: 7 } })) }, /another seed/);
   invalid({ ...base, seeds: seedsOf(both(scores(every(8)).map((s, i) => i ? s : { ...s, refused: 'kernel-error', hit: 0 })), good) }, /refused/);
   invalid({ ...base, seeds: seedsOf(good, null) }, /no scores on file/);
