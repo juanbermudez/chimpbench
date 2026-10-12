@@ -8,6 +8,7 @@
 //           <dir>/parts/s21-*.jsonl              the sampler's records: every option's value without its jitter, the rules' reason, the context
 //           <dir>/adapters/<adapter>/progress.json   the development loss per epoch (the only development-file figure on file)
 //           docs/staging/r11-offline.md          the published table, to hold the recomputed figures against
+//           data/params.json and the parameter file each part's meta names   the values of the rules' constants the text quotes
 //   writes  --md (default artifacts/r14/tables/r14-decode-offline.md)
 //
 //   pnpm exec tsx scripts/r14-decode-offline.ts --dir <stage R11's artifacts/decide-ft/r11> [--adapters r11-p5b-s7,r11-p5b-s11] [--md docs/staging/r14-decode-offline.md]
@@ -138,6 +139,11 @@ if (process.argv[1]?.endsWith('r14-decode-offline.ts')) {
     probs.set(name, m);
   }
   const pOf = (name: string) => (a: Ask) => probs.get(name)!.get(a.r.id)!;
+  // the rules' constants the text quotes, as the held-out worlds ran them: the registry's value unless the world's parameter file sets another
+  const registry = new Map((JSON.parse(readFileSync(resolve('data/params.json'), 'utf8')) as { params: { id: string; value: number }[] }).params.map(e => [e.id, e.value]));
+  const bases = ['s21-W25', 's21-W50'].map(f => JSON.parse(readFileSync(resolve((JSON.parse(readFileSync(`${dir}/parts/${f}.meta.json`, 'utf8')) as { paramsFile: string }).paramsFile), 'utf8')) as Record<string, number>);
+  const param = (id: string): number => { const v = bases.map(b => b[id] ?? registry.get(id)); if (v.some(x => x === undefined || x !== v[0])) throw new Error(`the held-out worlds do not share one value of ${id}`); return v[0]!; };
+  const SPAN = param('candidateJitterSpan');
   const rulesOwn = (set: Ask[]) => readouts(set, a => a.q);
 
   const L: string[] = [], p = (s = '') => L.push(s);
@@ -391,7 +397,8 @@ if (process.argv[1]?.endsWith('r14-decode-offline.ts')) {
   split('By the hour', a => { const h = a.r.hour; return h < 5.5 ? 'before 05:30' : h < 6.5 ? '05:30 to 06:30' : h < 7.5 ? '06:30 to 07:30' : h < 10 ? '07:30 to 10:00' : h < 14 ? '10:00 to 14:00' : h < 18 ? '14:00 to 18:00' : h < 19.25 ? '18:00 to 19:15' : 'after 19:15'; }, 1, ['before 05:30', '05:30 to 06:30', '06:30 to 07:30', '07:30 to 10:00', '10:00 to 14:00', '14:00 to 18:00', '18:00 to 19:15', 'after 19:15']);
   split('By the size of the menu', a => `${a.r.options.length} options`, 1, [3, 4, 5, 6, 7, 8].map(k => `${k} options`));
   const margin = (a: Ask) => a.part!.raw[a.top] - Math.max(...a.part!.raw.filter((_, i) => i !== a.top));
-  split('By the rules\' margin: the value of their option less the best other option\'s, without the jitter (the jitter spans 0.24; two options further apart than that cannot swap)', a => { const m = margin(a); return m < 0.24 ? 'under 0.24 (inside the jitter\'s span)' : m < 0.36 ? '0.24 to 0.36' : m < 0.6 ? '0.36 to 0.6' : m < 1 ? '0.6 to 1' : '1 or more'; }, 1, ['under 0.24 (inside the jitter\'s span)', '0.24 to 0.36', '0.36 to 0.6', '0.6 to 1', '1 or more']);
+  const MARGINS = [`under 1 span (${f(SPAN, 2)})`, '1 to 1.5 spans', '1.5 to 2.5 spans', '2.5 spans to 1', '1 or more'];
+  split(`By the rules' margin: the value of their option less the best other option's, without the jitter. The jitter of an option spans ${f(SPAN, 2)} (\`candidateJitterSpan\`), so two options further apart than one span cannot swap; the continuation bonus of the act in progress is ${f(param('continueBonus'), 2)} (\`continueBonus\`)`, a => { const m = margin(a); return m < SPAN ? MARGINS[0] : m < 1.5 * SPAN ? MARGINS[1] : m < 2.5 * SPAN ? MARGINS[2] : m < 1 ? MARGINS[3] : MARGINS[4]; }, 1, MARGINS);
   split('By the rules\' own reason for their option (their sentence without names and figures; the adapters never see it)', a => reasonClass(a.part!.reason[a.top]), 8);
   // the packet's lines
   p();
@@ -423,7 +430,7 @@ if (process.argv[1]?.endsWith('r14-decode-offline.ts')) {
   p();
   p('## 6. Staying in the nest: what the rules value and what the packet lists');
   p();
-  p('Held-out fresh draws at which the animal is in its finished nest and staying is on the menu. The rules value staying at the rest score, plus 0.9 times felt sleepiness, plus the company of its best nest-mate of 12 years or more within the party link (9 m), who is "known without being seen" (`src/sim/candidates.ts` `nestCompanyValue`), less a stake of delay. The packet lists the animals the animal perceives (`nearby`) and puts sleepiness in words. Per time of day and by whether the packet\'s context lists a nest-mate of 12 or more in a nest: the value of staying without its jitter, the rules\' odds of staying and the adapter\'s. "Awake, no nest-mate listed, staying worth 0.6 or more": felt sleepiness under 0.1 in the context, no such animal listed, and yet a value of staying that the rest score alone (0.12 to about 0.6) does not reach.');
+  p(`Held-out fresh draws at which the animal is in its finished nest and staying is on the menu. On these worlds (\`rhythmCircadian\` ${param('rhythmCircadian')}, \`nestCompany\` ${param('nestCompany')}, \`choiceBelief\` ${param('choiceBelief')}, \`departRace\` ${param('departRace')}) the rules value staying at the rest score, plus ${f(param('rhythmSleepW'), 1)} times felt sleepiness (\`rhythmSleepW\`), plus the company of its best nest-mate of 12 years or more within the party link (${f(param('partyLinkM'), 0)} m, \`partyLinkM\`), who is "known without being seen" and who counts by day only if asleep (\`src/sim/candidates.ts\`, \`nestCompanyValue\` and the lines that call it), less a stake of delay. The packet lists the animals the animal perceives (\`nearby\`), calls any of them in a nest "in a nest" whether asleep or awake (\`src/kernel/packet-own.ts\`), and puts the animal's own sleepiness in words. Per time of day and by whether the packet\'s context lists a nest-mate of 12 or more in a nest: the value of staying without its jitter, the rules\' odds of staying and the adapter\'s. "Awake, no nest-mate listed, staying worth 0.6 or more": felt sleepiness under 0.1 in the context, no such animal listed, and yet a value of staying of 0.6 or more, where the rest score alone starts at 0.12 and gains 0.2 after a meal (\`src/sim/candidates.ts\`, \`restScore\`).`);
   p();
   const inNest = asks.filter(a => a.r.act.action === 'nest' && a.r.carryOn >= 0 && a.r.options[a.r.carryOn].action === 'nest');
   const mates = (a: Ask) => a.part!.social.filter(s => s.action === 'nest' && s.ageYears >= 12).length, stay = (a: Ask) => a.part!.raw[a.r.carryOn];
