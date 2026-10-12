@@ -13,7 +13,10 @@ const NEST_LIFE_HOURS = 24 * 45; // fades over ~45 ecological days
 
 /** grow: how far the nest has been built while its builder was drawn at it, 0..1 (stage W9); absent for a nest first
  * seen finished, which grows in by the clock as before. */
-interface Nest { key: string; treeId: number; x: number; y: number; z: number; built: number; lastUsed: number; seed: number; grow?: number; /** Its place as build() was given it, in half metres. */ kx?: number; kz?: number; }
+interface Nest { key: string; treeId: number; x: number; y: number; z: number; built: number; lastUsed: number; seed: number; grow?: number; /** Its place as build() was given it, in half metres. */ kx?: number; kz?: number;
+  /** Stage W11: the simulated place it was listed with and the id its place was drawn from (spotFor's `key`), so that
+   * its drawn place can be found again (place(), below). */
+  pos: Vec3; by: number; }
 /** Scale of a nest that has just been begun: a few bent branches (a share of the finished nest; stylization). */
 const NEST_BEGUN = 0.3;
 
@@ -119,6 +122,14 @@ export function createNests(parent: THREE.Object3D, ctx: CreatureContext) {
     return true;
   }
 
+  /**
+   * Stage W11: finds a listed nest's drawn place again. The place depends on what the environment draws: the field
+   * map's forest is a window round the camera, and a tree outside it has no crown to put the nest in (spotFor then
+   * uses the simulated height). A nest first listed while the camera was elsewhere kept that place for good, while the
+   * animal in it is placed every frame: once the camera came, the nest hung metres above or below its sleeper (filmed
+   * after a jump of the clock into the night: 4.8 m above one, 2.1 m below another). Called when the list is redrawn.
+   */
+  function place(n: Nest) { spotFor(n.treeId, n.pos, n.by, P); n.x = P.x; n.y = P.y; n.z = P.z; }
   /** Keeps the list within the mesh: the nest unused for longest goes. */
   function trim() { if (nests.size > MAX_NESTS) { let oldest: Nest | null = null; for (const v of nests.values()) if (!oldest || v.lastUsed < oldest.lastUsed) oldest = v; if (oldest) nests.delete(oldest.key); } }
   function update(world: World, frame: CreatureFrame, dt: number) {
@@ -129,7 +140,7 @@ export function createNests(parent: THREE.Object3D, ctx: CreatureContext) {
       let n = nests.get(key);
       if (!n) {
         spotFor(c.nest.treeId, c.nest.position, c.id, P);
-        n = { key, treeId: c.nest.treeId, x: P.x, y: P.y, z: P.z, built: world.time, lastUsed: world.time, seed: hash01(c.id, Math.round(world.time)) };
+        n = { key, treeId: c.nest.treeId, x: P.x, y: P.y, z: P.z, built: world.time, lastUsed: world.time, seed: hash01(c.id, Math.round(world.time)), pos: [c.nest.position[0], c.nest.position[1], c.nest.position[2]], by: c.id };
         nests.set(key, n);
         trim();
       }
@@ -142,6 +153,7 @@ export function createNests(parent: THREE.Object3D, ctx: CreatureContext) {
       const age = world.time - n.lastUsed;
       if (age > NEST_LIFE_HOURS) { nests.delete(n.key); continue; }
       const decay = smoothstep(0, NEST_LIFE_HOURS, age);
+      place(n);
       // Being built: grows in over the first few ecological minutes. Stage W9: a nest whose builder was drawn at work
       // grows with the building (build() below), from a few bent branches to the finished bowl.
       const grow = n.grow !== undefined ? NEST_BEGUN + (1 - NEST_BEGUN) * smoothstep(0, 1, n.grow) : clamp((world.time - n.built) / 0.1, 0.25, 1);
@@ -182,7 +194,7 @@ export function createNests(parent: THREE.Object3D, ctx: CreatureContext) {
       n = nests.get(key);
       if (!n) {
         spotFor(treeId, pos, builderId, P);
-        n = { key, treeId, x: P.x, y: P.y, z: P.z, built: time, lastUsed: time, seed: hash01(builderId, Math.round(time)), grow: 0 };
+        n = { key, treeId, x: P.x, y: P.y, z: P.z, built: time, lastUsed: time, seed: hash01(builderId, Math.round(time)), grow: 0, pos: [pos[0], pos[1], pos[2]], by: builderId };
         nests.set(key, n);
         trim();
       }

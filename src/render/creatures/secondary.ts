@@ -155,6 +155,21 @@ export function idleRate(simRate: number): number { const r = Math.sqrt(Math.max
 /** Ends the event under way (the animal moved off, or the clip no longer allows it) and waits a short gap. */
 export function idleCancel(s: Idle): void { if (s.kind !== IDLE.none) { s.kind = IDLE.none; s.t = 0; s.dur = 0; s.leanFrom = s.lean; s.next = s.clock + 2; } }
 /**
+ * An event that started and could not be drawn uses up its turn (stage W11): a glance with nobody near to glance at.
+ * The schedule waits as long as the event would have lasted (`rate` turns its real seconds into idle seconds) and then
+ * the ordinary gap, exactly as if it had run. Before this the turn was cancelled and drawn again after 2 idle seconds,
+ * so an animal with no neighbour within reach went through its turns three to five times as fast as one in company,
+ * and every turn that was not a glance came that much sooner (measured on the field map at Real time: 2.9 weight
+ * shifts a minute for an animal feeding alone in a crown against 1.5 for one with a neighbour). Pass the drives the
+ * step was given.
+ */
+export function idleSpend(s: Idle, id: number, rate: number, scratchK = 1, yawnK = 1, nodK = 0): void {
+  if (s.kind === IDLE.none) return;
+  const dur = s.dur;
+  s.kind = IDLE.none; s.t = 0; s.dur = 0; s.leanFrom = s.lean;
+  s.next = s.clock + dur * rate + idleGap(id, s.n, scratchK, yawnK, nodK);
+}
+/**
  * Advances one animal's schedule by `dt` real seconds at idle rate `rate`. `allow` is a mask of the kinds the pose
  * permits now (idleBit; 0 = the animal is not idle); `scratchK`, `yawnK` ≥ 0 multiply the baseline rate of those
  * kinds (bodystate.ts) and `nodK` > 0 lets a sleepy seated animal nod. Returns true on the call in which an event starts.
@@ -230,6 +245,17 @@ export function selectAttention(s: Attention, cands: AttnCand[], count: number, 
   s.key = idle ? -1 : bestKey; s.pri = idle ? 0 : bestPri;
   s.until = t + 1.5 + 4.5 * hashUnit(id, 97 + s.n);
   return true;
+}
+/**
+ * The weight with which the head is turned to the look point (stage W11). `clip`: the look weight the clip wrote
+ * (rig.ts PI.look), 0..1 for a clip that looks at its partner by itself, and negative for a clip that needs the head
+ * where it put it (−1: wholly; poses.ts crownFeed while a hand is at the mouth: the arm's angles there were solved for
+ * the head as the clip tips it, and a head turned away by a gaze met the hand with its cheek). `attention`: the look
+ * system's weight (creatures.ts updateAttention). The larger of the two, as before, unless the clip holds the head:
+ * then the look system's weight is scaled down by the hold.
+ */
+export function headLook(clip: number, attention: number): number {
+  return clip < 0 ? attention * (1 + (clip < -1 ? -1 : clip)) : clip > attention ? clip : attention;
 }
 /** Idle-scan direction for choice n: yaw offset from the heading (rad) and pitch (rad). */
 export function scanAngles(id: number, n: number, out: { yaw: number; pitch: number }): void {

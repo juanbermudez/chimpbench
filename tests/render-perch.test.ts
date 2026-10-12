@@ -2,8 +2,12 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { Chimp } from '../src/types';
 import { B, PI, computeMorph, createFK, createMorph, createPose, solveFK } from '../src/render/creatures/rig';
-import { CLIPS, GROOM_FRONT, GROOM_HIGH, PROP, Pw, feedCycle, feedHold, feedPicks, groomerRole, type PoseCtx } from '../src/render/creatures/poses';
-import { PERCH, SEAT_REACH_M, perchBout, perchLies, perchPeriod, perchPosture, seatAllowed, seatGroups, type SeatPairs } from '../src/render/creatures/perch';
+import { CLIPS, FEED_HOLD_INFANT, GROOM_FRONT, GROOM_HIGH, PROP, Pw, feedCycle, feedHold, feedPicks, groomerRole, type PoseCtx } from '../src/render/creatures/poses';
+import { LIMB_TIP, leafSprayGeometry } from '../src/render/creatures/props';
+import { headLook } from '../src/render/creatures/secondary';
+import { CLAMBER_MAX_RATE, CLAMBER_MPS, CLAMBER_OFF_M, CLAMBER_ON_M, CROWN_JUMP_M, NEST_TURNS, NEST_TURN_RAD, PAIR_HEIGHT_M, PAIR_REACH_M, PERCH, SEAT_REACH_M, STEM_REACH_M, boughStem, clamberSpeed, clambering, crownStep, nestTurn, pairReach, perchBout, perchLies, perchPeriod, perchPosture, seatAllowed, seatGroups, trunkBound, type SeatPairs } from '../src/render/creatures/perch';
+import { ABOUT_MAX_RATE, PATH_MOVING_MPS } from '../src/render/creatures/drawn';
+import { dampAngle } from '../src/render/creatures/util';
 
 // Stage W9 (docs/staging/w9b-tree-pairs.md): pairs and postures in trees. Everything drawn here is a stylization, so
 // these tests hold the rules, not field numbers: who sits where on a shared bough, which resting posture an individual
@@ -208,6 +212,42 @@ test('crown feeding: the hand reaches the mouth with the elbow below the shoulde
   assert.equal(pose.v[PI.ground], 1);
 });
 
+// Stage W11 (docs/staging/w11-polish.md), item 8. The arm's angles at the mouth were solved for the head as the clip
+// tips it; the look system could turn the head away meanwhile, and the hand then met the cheek.
+test('crown feeding: the head is held while a hand is at the mouth, whatever the look system wants', () => {
+  assert.equal(headLook(0.4, 0.9), 0.9); assert.equal(headLook(0.7, 0.2), 0.7); assert.equal(headLook(0, 0.5), 0.5);
+  assert.equal(headLook(-1, 0.9), 0); assert.ok(Math.abs(headLook(-0.5, 0.8) - 0.4) < 1e-12); assert.equal(headLook(-3, 1), 0);
+  const look = new Float32Array(3);
+  let worstHeld = 0, worstFree = 0;
+  for (const [age, sex] of [[24, 'male'], [8, 'male']] as const) {
+    const m = morphOf(age, sex), s = m.size;
+    for (const seed of [0.3, 0.7]) for (const side of [-1, 1]) {
+      const n = 4, L = feedCycle(seed), pick = feedHold(n, seed) ? 0 : 1;
+      for (let t = 0; t <= PICK; t += 0.03) {
+        const v = feed(seed, n * L + PULL + t, age);
+        const atMouth = v[PI.ik + pick * 5 + 3] < 1e-3;
+        // The clip's own request: nothing outside a pick's way to the mouth, the whole head at the mouth.
+        assert.ok(v[PI.look] <= 0 && v[PI.look] >= -1);
+        if (atMouth) assert.ok(v[PI.look] < -0.999, 'at the mouth the clip holds the head wholly');
+        if (!atMouth) continue;
+        // A look point far out to one side at eye height, at full weight: as the layer does it (headLook), then as it was (the larger of the two).
+        look[0] = side * 5 * s; look[1] = 0.8 * s; look[2] = 1 * s;
+        const clip = v[PI.look];
+        v[PI.look] = headLook(clip, 1); solveFK(pose, m, fk, look);
+        worstHeld = Math.max(worstHeld, dist(at(pick ? B.fingR : B.fingL, s), at(B.lipL, s)));
+        v[PI.look] = Math.max(clip, 1); solveFK(pose, m, fk, look);
+        worstFree = Math.max(worstFree, dist(at(pick ? B.fingR : B.fingL, s), at(B.lipL, s)));
+        v[PI.look] = clip;
+      }
+    }
+  }
+  assert.ok(worstHeld < 0.06, `held: fingers at most ${worstHeld.toFixed(3)} body lengths from the lower lip`);
+  assert.ok(worstFree > 2 * worstHeld, `as it was, a head turned by a gaze left them ${worstFree.toFixed(3)} away`);
+  // Chewing and reaching leave the head to the look system.
+  const chew = feed(0.3, 4 * feedCycle(0.3) + PULL + 3 * PICK + 1, 24);
+  assert.equal(chew[PI.look], 0);
+});
+
 // ---- A partner with an infant on its body (poses.ts groomerRole) ----
 test('a partner carrying an infant is groomed where the infant is not', () => {
   assert.equal(groomerRole(false, false, false), 0, 'one-way grooming is done from behind');
@@ -241,4 +281,138 @@ test('sheltering, alarm and nursing have crown variants; their ground poses are 
   // Alarm in a crown: a hand holds on overhead.
   w.bind(pose).reset(); CLIPS.alarm(w, ctx({ inTree: true }));
   assert.ok(pose.v[PI.ik + 1] > 1.2 && pose.v[PI.ik + 3] === 1 && pose.v[B.fingL * 3] > 0.6);
+});
+
+// Stage W11 (docs/staging/w11-polish.md), item 5. The nest builder's turns, and why one heading target matters.
+test('a nest builder faces five ways in turn, 1.9 rad apart, and one heading target does not depend on the frame time', () => {
+  assert.equal(NEST_TURNS, 5); assert.equal(NEST_TURN_RAD, 1.9);
+  const seen: number[] = [];
+  for (let k = 0; k < 1; k += 0.001) { const t = nestTurn(k); if (seen[seen.length - 1] !== t) seen.push(t); }
+  assert.equal(seen.length, 5, 'five headings');
+  for (let i = 1; i < seen.length; i++) assert.ok(Math.abs(seen[i] - seen[i - 1] - 1.9) < 1e-12, 'each 1.9 rad on from the last');
+  assert.equal(nestTurn(0), 0); assert.equal(nestTurn(1), 0, 'done: it lies down facing as it sat at first'); assert.equal(nestTurn(-0.1), 0);
+  // The two pulls on a nesting animal's heading, as the layer applies them each frame: the motion step toward its
+  // target at 4.5 a second of frame time, then the placement toward its own at 3 a second over a fixed thirtieth.
+  // With two targets (the simulated heading and the turn) the heading settles between them at a point that moves with
+  // the frame time, so uneven frames make it tremble and a turn of 1.9 rad comes out short. With one it sits still.
+  const settle = (motionTarget: number, placeTarget: number, frames: number[]) => {
+    let h = placeTarget, travel = 0, last = h;
+    for (let i = 0; i < 600; i++) { const dt = frames[i % frames.length]; h = dampAngle(h, motionTarget, 4.5, dt); h = dampAngle(h, placeTarget, 3, 1 / 30); if (i >= 300) travel += Math.abs(h - last); last = h; }
+    return { h, travel };
+  };
+  const even = [1 / 60], uneven = [1 / 60, 1 / 60, 1 / 60 + 0.035];
+  const sim = 0.4, turn = 0.4 + 1.9;
+  const two = settle(sim, turn, uneven), twoEven = settle(sim, turn, even), one = settle(turn, turn, uneven);
+  assert.ok(two.travel > 1, `two targets, uneven frames: ${two.travel.toFixed(2)} rad of travel in 300 frames`);
+  assert.ok(Math.abs(twoEven.h - turn) > 0.5, `two targets: it stops ${Math.abs(twoEven.h - turn).toFixed(2)} rad short of the turn`);
+  assert.ok(one.travel < 1e-9 && Math.abs(one.h - turn) < 1e-9, 'one target: at the turn, and still');
+});
+
+// Stage W11, item 2. A pair is a pair for as long as the two drawn bodies are within reach of each other.
+test('a pair is formed from the drawn bodies: a partner the simulation has already sent down its trunk is still within reach while its body sits there', () => {
+  assert.equal(PAIR_REACH_M, 4.5); assert.equal(PAIR_HEIGHT_M, 1.5);
+  // Two bodies on one bough, 1.2 m apart at one height.
+  assert.ok(pairReach(0, 15, 0, 1.2, 15, 0));
+  // The reach: 4.5 m in the plane whatever the height in between, 1.5 m in height.
+  assert.ok(pairReach(0, 15, 0, 4.5, 15, 0)); assert.ok(!pairReach(0, 15, 0, 4.6, 15, 0));
+  assert.ok(pairReach(0, 15, 0, 0.5, 13.5, 0)); assert.ok(!pairReach(0, 15, 0, 0.5, 13.4, 0)); assert.ok(pairReach(0, 13.6, 0, 0.5, 15, 0));
+  assert.ok(pairReach(3, 0, 3.3, 0, 0, 0)); assert.ok(!pairReach(3.3, 0, 3.3, 0, 0, 0));
+  // The case filmed: the leaving partner's simulated position is two ticks ahead of its drawn body, 3.8 m and then
+  // 7.6 m down the trunk, while its drawn path is still at the bough. Asked with the simulated positions the pair was
+  // gone; asked with the drawn paths it holds until the body itself has gone 1.5 m down.
+  const stays = [0, 15.1, 0], drawn = [1.2, 15.1, 0];
+  for (const simY of [11.3, 7.5]) assert.ok(!pairReach(stays[0], stays[1], stays[2], 1.2, simY, 0), 'by the simulated position: apart');
+  assert.ok(pairReach(stays[0], stays[1], stays[2], drawn[0], drawn[1], drawn[2]), 'by the drawn bodies: together');
+  assert.ok(!pairReach(stays[0], stays[1], stays[2], drawn[0], drawn[1] - 1.6, drawn[2]), 'and apart once the body is on its way down');
+});
+
+// Stage W11, item 1. A place in a tree that changes (a pairing ends, the body goes to the trunk) is reached at a
+// clamber's speed, never in one frame.
+test('a body in a tree goes to its place no faster than a clamber, plus what its own path moves', () => {
+  assert.equal(CLAMBER_MPS, 2.5); assert.ok(CLAMBER_OFF_M < CLAMBER_ON_M); assert.ok(CROWN_JUMP_M > SEAT_REACH_M);
+  assert.equal(clamberSpeed(1), 2.5); assert.equal(clamberSpeed(4), 2.5); assert.equal(clamberSpeed(60), 37.5);
+  /** Frames and the largest step of a body going `dist` metres to a place that stands still. */
+  const go = (dist: number, dts: number[], rate: number) => { let left = dist, frames = 0, worst = 0; while (left > 1e-9 && frames < 100000) { const dt = dts[frames % dts.length], k = crownStep(left, dt, rate, 0), step = left * k; worst = Math.max(worst, step); left -= step; frames++; } return { frames, worst }; };
+  // The filmed case: 7.8 m across a crown. At 60 frames a second it takes 3.1 s and no frame moves it more than 4.2 cm;
+  // with frames of a tenth of a second (the longest step the layer takes) no frame moves it more than 25 cm.
+  const a = go(7.8, [1 / 60], 4), b = go(7.8, [0.1], 1), c = go(7.8, [1 / 60, 1 / 60, 1 / 60 + 0.035], 4);
+  assert.ok(Math.abs(a.frames / 60 - 7.8 / 2.5) < 0.05 && a.worst < 0.042, `60 Hz: ${(a.frames / 60).toFixed(2)} s, largest step ${a.worst.toFixed(3)} m`);
+  assert.ok(b.worst <= 0.25 + 1e-12 && c.worst < 0.13);
+  // A place within one frame's reach is taken exactly: a body at its seat is exactly there.
+  assert.equal(crownStep(0.03, 1 / 60, 1, 0), 1); assert.equal(crownStep(0, 1 / 60, 1, 0), 1);
+  // What its own drawn path moved in the frame comes on top: a body is never held back from its path. Going down a
+  // trunk at 1 min/s (half a metre a frame) with the bark 5 m from its seat, it gains on the bark every frame.
+  assert.ok(Math.abs(crownStep(5, 1 / 60, 4, 0.5) * 5 - (2.5 / 60 + 0.5)) < 1e-12);
+  assert.ok(crownStep(5, 1 / 60, 60, 0.5) * 5 > 0.5 + 0.6);
+  // At 1 min/s the move takes the simulated time it takes at Watch 4x (15 times fewer real seconds).
+  assert.ok(Math.abs(go(7.8, [1 / 60], 60).frames * 15 - a.frames) <= 15);
+  // Clambering starts beyond a metre and ends within 30 cm, so a body does not flicker in and out of the clip.
+  assert.ok(!clambering(false, 0.9)); assert.ok(clambering(false, 1.1)); assert.ok(clambering(true, 0.5)); assert.ok(!clambering(true, 0.25));
+  // Second reading of stage W11: never above 2 min/s, where every place is drawn at once (the limit of the "about to"
+  // tags, drawn.ts). At 1 min/s it still clambers.
+  assert.equal(CLAMBER_MAX_RATE, ABOUT_MAX_RATE);
+  assert.ok(clambering(false, 5, 60)); assert.ok(clambering(true, 0.5, CLAMBER_MAX_RATE));
+  assert.ok(!clambering(false, 5, CLAMBER_MAX_RATE + 1)); assert.ok(!clambering(true, 5, 600));
+});
+
+// Second reading of stage W11. Whether a drawn path is on its trunk is asked twice a frame: by the crown layout (who
+// sits in a crown) and by the placement (where the body is drawn). Asked of the same frame's path, the two agree. The
+// layout used to read the placement's answer of the frame before, and a partner that had just set off down its trunk
+// was a seated body for one more frame: the animal it left was sent to its bough and drawn clambering.
+test('a path is on its trunk by one rule: faster than a shuffle up or down, and until it is much slower', () => {
+  const M = PATH_MOVING_MPS;
+  assert.ok(!trunkBound(0, false, M)); assert.ok(!trunkBound(M, false, M)); assert.ok(trunkBound(M * 1.01, false, M));
+  // Once on the trunk it stays on it down to 0.4 of that speed: a climb that slows does not flicker off the bark.
+  assert.ok(trunkBound(M * 0.5, true, M)); assert.ok(!trunkBound(M * 0.4, true, M)); assert.ok(!trunkBound(M * 0.5, false, M));
+  // The filmed case: a partner that sets off down its trunk at 0.2 m a simulated second is on it from that frame.
+  assert.ok(trunkBound(0.2, false, M));
+});
+
+// Stage W11, item 7. The bough reads as a limb of its tree, and the cluster as a spray held clear of an infant.
+test('a bough is joined to its tree: its fork lies in a drawn limb, or a stem comes from the nearest limb, or from the bark', () => {
+  const out = new Float64Array(4), r = 0.1;
+  // The fork lies in the host's own limb (its axis 8 cm away, the limb 12 cm thick): the halves grow out of it, no stem.
+  assert.equal(boughStem(3, 15, 0, r, true, 3, 14.92, 0, 0.12, 0, 0, 0.5, out), 0);
+  // A limb half a metre below the fork: the stem begins on its axis, no thicker than the limb.
+  assert.equal(boughStem(3, 15, 0, r, true, 3, 14.5, 0.1, 0.12, 0, 0, 0.5, out), 1);
+  assert.deepEqual([out[0], out[1], out[2]], [3, 14.5, 0.1]); assert.ok(out[3] <= 0.12 && out[3] >= r);
+  // No limb in reach (the nearest is further than STEM_REACH_M), or none drawn at all: the stem leaves the bark, on the
+  // fork's side of the trunk, lower than the fork, and never from inside the trunk's axis or outside its bark.
+  for (const limb of [true, false]) {
+    assert.equal(boughStem(3, 15, 0, r, limb, 3, 15 - STEM_REACH_M - 0.5, 0, 0.12, 0, 0, 0.5, out), 2);
+    const fromAxis = Math.hypot(out[0], out[2]);
+    assert.ok(fromAxis > 0.3 && fromAxis <= 0.5, `it begins in the bark (${fromAxis.toFixed(2)} m from the axis of a trunk 0.5 m thick)`);
+    assert.ok(out[0] > 0 && Math.abs(out[2]) < 1e-9, 'on the side the fork is on');
+    assert.ok(out[1] < 15 && out[1] >= 15 - 1.2, 'and rises to the fork');
+    assert.ok(out[3] <= 0.3, 'no thicker than the trunk allows');
+  }
+  // A fork on the trunk's axis (never laid, but it must not divide by nothing).
+  assert.equal(boughStem(0, 15, 0, r, false, 0, 0, 0, 0, 0, 0, 0.5, out), 2); assert.ok([...out].every(Number.isFinite));
+  assert.ok(LIMB_TIP > 0.4 && LIMB_TIP < 0.8, 'the branch prop tapers');
+});
+
+test('the cluster is a small leafy spray, and an animal with an infant on its belly holds it beside the infant', () => {
+  // The spray: within 16 by 16 by 16 cm for a body length of 1 m (the block it replaces was 26 by 16 by 20 cm and solid),
+  // a twig with five two-sided blades.
+  const g = leafSprayGeometry(); g.computeBoundingBox();
+  const b = g.boundingBox!, size = [b.max.x - b.min.x, b.max.y - b.min.y, b.max.z - b.min.z];
+  assert.ok(size.every(d => d > 0.08 && d <= 0.16), `spray ${size.map(d => d.toFixed(3)).join(' x ')} m`);
+  assert.ok(size[0] * size[1] * size[2] < 0.5 * 0.26 * 0.16 * 0.2, 'under half the block\'s box');
+  assert.equal(g.getAttribute('position').count, (3 + 5 * 8) * 3, 'a three-sided twig and five blades of four facets, both faces');
+  assert.ok(b.max.y > 0 && b.min.y < -0.1, 'the hand holds it near the top of the twig');
+  g.dispose();
+  // The holding hand: 0.11 body lengths from the mid-line without an infant (in front of the chest), 0.3 with one.
+  for (const seed of [0.3, 0.7]) for (const n of [4, 5]) {
+    const L = feedCycle(seed), hold = feedHold(n, seed), m = morphOf(21, 'female');
+    for (let u = PULL; u < PULL + 2; u += 0.1) {
+      for (const bears of [0, 1, 2]) {
+        w.bind(pose).reset(); CLIPS.forage(w, ctx({ seed, time: n * L + u, t: n * L + u, age: 21, male: false, bears }));
+        solveFK(pose, m, fk, null);
+        const hand = at(hold ? B.handR : B.handL, m.size), side = hold ? -1 : 1;
+        if (bears & 1) { assert.ok(hand[0] * side > 0.27, `beside the infant: ${(hand[0] * side).toFixed(2)} from the mid-line`); assert.ok(hand[1] > 0.45, 'and no lower than its back'); }
+        else assert.ok(Math.abs(hand[0] * side - 0.11) < 0.03, `in front of the chest: ${(hand[0] * side).toFixed(2)}`);
+      }
+    }
+  }
+  assert.deepEqual([...FEED_HOLD_INFANT], [0.3, 0.5, 0.36]);
 });

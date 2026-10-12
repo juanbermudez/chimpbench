@@ -26,8 +26,12 @@ export interface IdleCtx {
   kind: number; t: number; dur: number; site: number; side: 0 | 1;
   /** Weight shift held now, −1 .. 1 (secondary.ts idleLean). */
   lean: number;
+  /** Stage W11: a scratch that was cut short and is letting go (scratchRelease): its reach now, 0 when none, and the
+   * seconds since that scratch began (its raking goes on while the arm comes away). Its place and side stay in `site`
+   * and `side`. Read only while `kind` is not a scratch. */
+  letGo: number; letT: number;
 }
-export function createIdleCtx(): IdleCtx { return { breath: 0, breathAmp: 1, kind: 0, t: 0, dur: 0, site: 0, side: 0, lean: 0 }; }
+export function createIdleCtx(): IdleCtx { return { breath: 0, breathAmp: 1, kind: 0, t: 0, dur: 0, site: 0, side: 0, lean: 0, letGo: 0, letT: 0 }; }
 
 /** How a lying body lies, read from the pose (intention.ts postureOf says that it lies): on a side, on its back, on its belly. */
 export const Lie = { side: 1, supine: 2, prone: 3 } as const;
@@ -76,6 +80,15 @@ export function handHolds(v: Float32Array, side: number): boolean {
 /** Reach of a scratch 0..1: in over SCRATCH_IN seconds, out over SCRATCH_OUT at the end. */
 const SCRATCH_IN = 0.45, SCRATCH_OUT = 0.5;
 export function scratchReach(t: number, dur: number): number { return smooth(t / SCRATCH_IN) * (1 - smooth((t - (dur - SCRATCH_OUT)) / SCRATCH_OUT)); }
+/**
+ * Stage W11: the reach of a scratch that was cut short (a call arrived, a new act was announced, the animal moved
+ * off), `t` seconds after the cut, from the reach it had then (`from`). It lets go along the curve a finished scratch
+ * ends on, over `over` seconds: no speed at the cut, never rising, 0 at the end. (Before, the reach was pulled to 0 at
+ * a fixed rate of 14 a second: a fifth of it gone in the first frame, the wrist back 55 cm in a fifth of a second.
+ * It read as a flinch.) A stylization.
+ */
+export const SCRATCH_CUT_S = 0.5, SCRATCH_CUT_MOVING_S = 0.25;
+export function scratchRelease(from: number, t: number, over: number = SCRATCH_CUT_S): number { return from * (1 - smooth(t / over)); }
 /** Strokes a second, and half their length in body lengths (about 3 cm either way on an adult): a look, not a measurement. */
 export const SCRATCH_HZ = 3.3, SCRATCH_STROKE = 0.03;
 /** A fourth place, for an animal on its back: the front of the belly (the layer picks it; the schedule draws 0..2). */
@@ -154,6 +167,10 @@ export function idleOverlay(w: Pw, posture: number, idle: IdleCtx): void {
     v[PI.root] += 0.038 * l * k;
     w.a(B.hips, 0, 0.06 * l * k, 0.12 * l * k).a(B.spine, 0, 0, -0.06 * l * k).a(B.chest, 0, -0.08 * l * k, -0.045 * l * k).a(B.neck, 0, 0, -0.015 * l * k);
   }
+  // The body's part in a scratch: while one runs, and while one that was cut short lets go (stage W11: it stopped in
+  // the frame of the cut, the head and the fingers back in one step).
+  const reach = idle.kind === IDLE.scratch ? scratchReach(idle.t, idle.dur) : idle.letGo;
+  if (reach > 0.02) scratchBody(w, lying, reach, idle.kind === IDLE.scratch ? idle.t : idle.letT, idle.site, idle.side);
   switch (idle.kind) {
     case IDLE.yawn: {
       // Jaw wide, lips drawn back off the teeth, head tipped back, eyes closing at the peak.
@@ -171,26 +188,26 @@ export function idleOverlay(w: Pw, posture: number, idle: IdleCtx): void {
       v[PI.eyes] = Math.max(v[PI.eyes], nodLids(idle.t, idle.dur));
       break;
     }
-    case IDLE.scratch: {
-      const k = scratchReach(idle.t, idle.dur), side = idle.side, sx = side ? -1 : 1, limb = side ? LIMB.armR : LIMB.armL;
-      if (k <= 0.02) break;
-      // The hand leaves the ground (the layer's contact lock lets go) and the fingers rake.
-      v[PI.contact + limb] = 0;
-      const rake = 0.55 + 0.3 * Math.max(0, Math.sin(idle.t * SCRATCH_HZ * TAU));
-      const f1 = (side ? B.fingR : B.fingL) * 3, f2 = (side ? B.fingR2 : B.fingL2) * 3, h = (side ? B.handR : B.handL) * 3;
-      v[f1] += (0.7 * rake - v[f1]) * k; v[f2] += (1.3 * rake - v[f2]) * k;
-      // The body gives to the hand: the head tilts into a scratch of the crown (the hand is laid over it: HEAD_HAND,
-      // which the layer's end lock reads as a body-space orientation); the trunk bends toward a scratch of the flank or
-      // thigh and the head turns down to look.
-      if (idle.site === SCRATCH.head) {
-        v[h] += (HEAD_HAND[0] - v[h]) * k; v[h + 1] += (sx * HEAD_HAND[1] - v[h + 1]) * k; v[h + 2] += (sx * HEAD_HAND[2] - v[h + 2]) * k;
-        w.a(B.head, 0.08 * k, 0, -sx * 0.2 * k).a(B.neck, 0, 0, -sx * 0.08 * k);
-      } else {
-        v[h] += (0.45 - v[h]) * k; v[h + 1] *= 1 - k; v[h + 2] *= 1 - k;
-        if (!lying) w.a(B.chest, 0, sx * 0.07 * k, sx * 0.05 * k).a(B.head, 0.1 * k, sx * 0.25 * k, 0);
-      }
-      break;
-    }
     default: break;
+  }
+}
+/** The body's part in a scratch at reach k (0..1), `t` seconds into it: the hand off the ground, the fingers raking,
+ * the head and trunk giving to the hand. */
+function scratchBody(w: Pw, lying: boolean, k: number, t: number, site: number, side: 0 | 1): void {
+  const v = w.v, sx = side ? -1 : 1, limb = side ? LIMB.armR : LIMB.armL;
+  // The hand leaves the ground (the layer's contact lock lets go) and the fingers rake.
+  v[PI.contact + limb] = 0;
+  const rake = 0.55 + 0.3 * Math.max(0, Math.sin(t * SCRATCH_HZ * TAU));
+  const f1 = (side ? B.fingR : B.fingL) * 3, f2 = (side ? B.fingR2 : B.fingL2) * 3, h = (side ? B.handR : B.handL) * 3;
+  v[f1] += (0.7 * rake - v[f1]) * k; v[f2] += (1.3 * rake - v[f2]) * k;
+  // The body gives to the hand: the head tilts into a scratch of the crown (the hand is laid over it: HEAD_HAND,
+  // which the layer's end lock reads as a body-space orientation); the trunk bends toward a scratch of the flank or
+  // thigh and the head turns down to look.
+  if (site === SCRATCH.head) {
+    v[h] += (HEAD_HAND[0] - v[h]) * k; v[h + 1] += (sx * HEAD_HAND[1] - v[h + 1]) * k; v[h + 2] += (sx * HEAD_HAND[2] - v[h + 2]) * k;
+    w.a(B.head, 0.08 * k, 0, -sx * 0.2 * k).a(B.neck, 0, 0, -sx * 0.08 * k);
+  } else {
+    v[h] += (0.45 - v[h]) * k; v[h + 1] *= 1 - k; v[h + 2] *= 1 - k;
+    if (!lying) w.a(B.chest, 0, sx * 0.07 * k, sx * 0.05 * k).a(B.head, 0.1 * k, sx * 0.25 * k, 0);
   }
 }

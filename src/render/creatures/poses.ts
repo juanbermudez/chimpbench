@@ -42,6 +42,9 @@ export interface PoseCtx {
   pairT: number;
   /** ±1: the side a clip turns toward (patrol 'listen' back-look: toward the animal behind). */
   side: number;
+  /** Optional (stage W11): what rides on this animal, as bits: 1 an infant on the belly, 2 one on the back
+   * (creatures.ts Anim.bears). Crown feeding holds its cluster out to the side of an infant on the belly. */
+  bears?: number;
 }
 export type Clip = (w: Pw, c: PoseCtx) => void;
 
@@ -298,6 +301,8 @@ export const MOUTH_HEAD = 0.5;
 // cycle is chewing, so 3 to 10 s. The holding hand changes every cycle, the cluster comes from another place each
 // time, and every 40 to 75 s the animal shifts a hand's width or two along its limb.
 const FEED_PULL_S = 1.6, FEED_PICK_S = 2.1;
+/** Where the cluster is held by an animal with an infant on its belly: out to the holding side (x, mirrored), up, forward (body lengths). */
+export const FEED_HOLD_INFANT = [0.3, 0.5, 0.36] as const;
 /** Seconds one crown-feeding cycle lasts for an individual (seed 0..1), and how many picks cycle n has (1 to 3). */
 export function feedCycle(seed: number): number { return 11 + 3 * seed; }
 export function feedPicks(n: number, seed: number): number { return 1 + Math.floor(cyc01(n, seed, 1) * 3); }
@@ -314,7 +319,10 @@ function crownFeed(w: Pw, c: PoseCtx) {
   const picking = tPick >= 0 && j < picks, tChew = tPick - picks * FEED_PICK_S;
   // Where the cluster is taken (in the leaves, up and out to the holding side) and held (in front of the chest).
   const fx = hx * (0.3 + 0.1 * cyc01(n, c.seed, 2)), fy = 0.9 + 0.16 * cyc01(n, c.seed, 3), fz = 0.24 + 0.1 * cyc01(n, c.seed, 4);
-  const cx = hx * 0.11, cy = 0.4, cz = 0.33;
+  // (Stage W11: with an infant on the belly the cluster is held out to the holding side and higher, beside the
+  // infant, not in front of the chest, where it lay over the infant's back. A stylization.)
+  const inf = ((c.bears ?? 0) & 1) !== 0;
+  const cx = hx * (inf ? FEED_HOLD_INFANT[0] : 0.11), cy = inf ? FEED_HOLD_INFANT[1] : 0.4, cz = inf ? FEED_HOLD_INFANT[2] : 0.33;
   // The holding hand: knee → leaves (0.6 s) → chest (by 1.5 s); it lets the stripped cluster go a second into the chewing.
   const out = smooth(u / 0.6), back = smooth((u - 0.75) / 0.75), drop = smooth(tChew / 1.0);
   const reachK = out * (1 - back);
@@ -360,6 +368,11 @@ function crownFeed(w: Pw, c: PoseCtx) {
   w.a(B.spine, 0, hx * 0.1 * reachK * free, 0).a(B.chest, -0.08 * reachK * free, hx * 0.22 * reachK * free, -hx * 0.07 * reachK * free);
   w.a(B.neck, MOUTH_HEAD * 0.4 * mouthK - 0.12 * reachK * free + 0.1 * look * free, hx * 0.2 * reachK * free, 0);
   w.a(B.head, MOUTH_HEAD * 0.6 * mouthK - 0.3 * reachK * free + 0.28 * look * free, hx * (0.35 * reachK + 0.12 * look) * free, 0);
+  // Stage W11: the head stays where the clip tips it while the hand is at the mouth. A negative look weight holds it
+  // against the look system (secondary.ts headLook; it follows the hand up and back down, so nothing snaps). Before,
+  // a gaze could turn the head 0.5 rad away at that moment and the hand met the cheek (filmed: 13 to 14 cm from the
+  // lip against 7 to 10 with the head free of a gaze).
+  if (mouthK > 0) w.set('look', -mouthK);
   // Now and then a shift along the limb (the animal faces along it): the whole body moves 0.1 body lengths at most,
   // with a small lift, over 1.6 s.
   {
@@ -572,6 +585,16 @@ export const CLIPS: Record<string, Clip> = {
   },
   bipedWalk(w, c) { bipedGait(w, c, 0.2); },
   climb(w, c) { climbCycle(w, c, clamp(c.speedU * 3 + 0.25, 0, 1)); },
+  // Stage W11 (stylization, no source for the movement): clambering through a crown to a seat more than a metre away.
+  // On all fours along the line of travel (the creature layer turns and pitches the body along it and advances the
+  // cycle by the distance moved), a little crouched, with hands and feet closed round what they step on instead of
+  // the walk's knuckles and flat soles, and the head up to look where it goes.
+  clamber(w, c) {
+    quadGait(w, c, false, false, 0.8, 1.25);
+    grip(w, 0, 0.85); grip(w, 1, 0.85); toeGrip(w);
+    w.v[PI.root + 1] -= 0.03;
+    w.a(B.neck, -0.14).a(B.head, -0.08);
+  },
   clingTrunk(w, c) { climbCycle(w, c, 0); idleHead(w, c, 0.6); },
 
   rest(w, c) {
