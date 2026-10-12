@@ -1349,8 +1349,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     //   2. The last part of the decision beat, the intention movement (committing above): the body is already turning
     //      to its goal, so the head stays on the goal. This is also all of the beat that is left at 1 min/s, where a
     //      community gives a long call every few real seconds: there a call never takes a beat. A look at a call that
-    //      is under way when this part begins is ended for good (heard.ts endHeard); a call whose arc arrives during
-    //      it is looked at once the body has started, for what is left of its 2.4 s.
+    //      is under way when this part begins, or whose arc arrives during it, is ended for good (heard.ts endHeard):
+    //      it does not come back once the body has started.
     //   3. A long call just heard (W10: 2.4 s from the moment its arc arrives, at most once in 10 s per animal). It
     //      takes the head from the earlier parts of the beat (the glance at the runner-up, the look at the goal), from
     //      a waiting initiator and from the looks back; the beat's countdown runs on meanwhile, so the call never
