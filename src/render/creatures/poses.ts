@@ -42,6 +42,9 @@ export interface PoseCtx {
   pairT: number;
   /** ±1: the side a clip turns toward (patrol 'listen' back-look: toward the animal behind). */
   side: number;
+  /** Optional (stage W11): what rides on this animal, as bits: 1 an infant on the belly, 2 one on the back
+   * (creatures.ts Anim.bears). Crown feeding holds its cluster out to the side of an infant on the belly. */
+  bears?: number;
 }
 export type Clip = (w: Pw, c: PoseCtx) => void;
 
@@ -298,6 +301,8 @@ export const MOUTH_HEAD = 0.5;
 // cycle is chewing, so 3 to 10 s. The holding hand changes every cycle, the cluster comes from another place each
 // time, and every 40 to 75 s the animal shifts a hand's width or two along its limb.
 const FEED_PULL_S = 1.6, FEED_PICK_S = 2.1;
+/** Where the cluster is held by an animal with an infant on its belly: out to the holding side (x, mirrored), up, forward (body lengths). */
+export const FEED_HOLD_INFANT = [0.3, 0.5, 0.36] as const;
 /** Seconds one crown-feeding cycle lasts for an individual (seed 0..1), and how many picks cycle n has (1 to 3). */
 export function feedCycle(seed: number): number { return 11 + 3 * seed; }
 export function feedPicks(n: number, seed: number): number { return 1 + Math.floor(cyc01(n, seed, 1) * 3); }
@@ -314,7 +319,10 @@ function crownFeed(w: Pw, c: PoseCtx) {
   const picking = tPick >= 0 && j < picks, tChew = tPick - picks * FEED_PICK_S;
   // Where the cluster is taken (in the leaves, up and out to the holding side) and held (in front of the chest).
   const fx = hx * (0.3 + 0.1 * cyc01(n, c.seed, 2)), fy = 0.9 + 0.16 * cyc01(n, c.seed, 3), fz = 0.24 + 0.1 * cyc01(n, c.seed, 4);
-  const cx = hx * 0.11, cy = 0.4, cz = 0.33;
+  // (Stage W11: with an infant on the belly the cluster is held out to the holding side and higher, beside the
+  // infant, not in front of the chest, where it lay over the infant's back. A stylization.)
+  const inf = ((c.bears ?? 0) & 1) !== 0;
+  const cx = hx * (inf ? FEED_HOLD_INFANT[0] : 0.11), cy = inf ? FEED_HOLD_INFANT[1] : 0.4, cz = inf ? FEED_HOLD_INFANT[2] : 0.33;
   // The holding hand: knee → leaves (0.6 s) → chest (by 1.5 s); it lets the stripped cluster go a second into the chewing.
   const out = smooth(u / 0.6), back = smooth((u - 0.75) / 0.75), drop = smooth(tChew / 1.0);
   const reachK = out * (1 - back);

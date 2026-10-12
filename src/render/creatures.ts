@@ -14,7 +14,7 @@ import {
 } from './creatures/rig';
 import { CLIPS, GROOMEE, GROOM_FRONT, GROOM_LAP, PROP, Pw, cradle, cradleFor, gaitFrequency, groomeePosture, groomerRole, vocalOverlay, type Gait, type PoseCtx } from './creatures/poses';
 import { clamp, damp, dampAngle, hash01, linearRGB, mixRGB, pixelSize, preToneMapped, smoothstep, vividColor } from './creatures/util';
-import { createProps } from './creatures/props';
+import { LIMB_TIP, createProps } from './creatures/props';
 import { createSelection } from './creatures/selection';
 import { createSocial } from './creatures/social';
 import { createLabels } from './creatures/labels';
@@ -45,7 +45,7 @@ import {
 } from './creatures/secondary';
 import type { KeepCandidate } from './env/occluders';
 import { createTreeIndex, type TreeIndex } from './creatures/tree-index';
-import { CROWN_JUMP_M, PERCH, clamberSpeed, clambering, crownStep, nestTurn, pairReach, perchBout, perchLies, perchPosture, seatAllowed, seatGroups, type SeatPairs } from './creatures/perch';
+import { CROWN_JUMP_M, PERCH, boughStem, clamberSpeed, clambering, crownStep, nestTurn, pairReach, perchBout, perchLies, perchPosture, seatAllowed, seatGroups, type SeatPairs } from './creatures/perch';
 import { endHeard, heardTakesHead, holding, listening } from './creatures/heard';
 import {
   Listen, PatrolCode, RELEASE_BRISTLE_TAU, RELEASE_DRUM_REACH, RELEASE_WINDOW_H, backSide, createFileCue, createPatrolLook, fileCue, listenVariant,
@@ -61,6 +61,11 @@ export interface CreatureContext {
   branchAnchor?(treeId: number, seed: number, out: THREE.Vector3): boolean;
   /** Optional: trunk axis (x, z) and bark radius (w) at height y. Falls back to a radius from the tree height. */
   trunkAt?(treeId: number, y: number, out: THREE.Vector4): boolean;
+  /** Optional (stage W11): the point on the axis of the tree's drawn crown limbs nearest (x, y, z), with the limb's
+   * radius there in out.w, so that a pair's bough can be joined to the tree. False when the tree has no drawn limbs. */
+  limbNear?(treeId: number, x: number, y: number, z: number, out: THREE.Vector4): boolean;
+  /** Optional (stage W11): the colour the tree's limbs read as, linear RGB, for the bough and the perch stick. */
+  barkColor?(treeId: number, out: THREE.Color): boolean;
   /** Optional: nearest waterline point (drinkers lean over the water instead of drinking ~2 m from it). */
   waterEdge?(x: number, z: number, out: THREE.Vector3): boolean;
   /** Optional: a ripple source on the water surface (drinking lips, wading limbs); strength 0..1. */
@@ -212,6 +217,9 @@ export interface Anim {
    * the ground and when the seat is drawn at once): no idle event starts on a body that is sliding to its seat. */
   up: boolean; seatHost: number; seatX: number; seatY: number; seatZ: number; seatFace: number; sx: number; sy: number; sz: number; seated: boolean; glide: number;
   perchRole: number; lies: boolean; gFrame: number; gx: number; gy: number; gz: number; gyaw: number; gt0: number; gt1: number; gOn: boolean; wasHost: boolean; g0: number; g1: number; gm: number; gr: number;
+  /** Stage W11: how the bough it hosts was joined to its tree when last drawn (perch.ts boughStem: 0 its fork lies in a
+   * drawn limb, 1 a stem from a drawn limb, 2 a stem from the bark; −1 no tree). For probes. */
+  gJoin: number;
   nursed: boolean; holdsBack: boolean;
   /** Stage W11 (creatures/perch.ts crownStep; placeGrounded): where its body was drawn in a tree in frame cFrame
    * (cx/cy/cz) and where its own drawn path was then (qx/qy/qz), so that the placement never moves it further in one
@@ -469,7 +477,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       px: 0, visible: true, lod: 2, lodFrom: 2, lodT: 99, poseAccum: 99, lastSkinFrame: -1, head: new THREE.Vector3(), top: 1, troopColor: '#cccccc',
       pick, partnerId: -1, look: new Float32Array(3), hasLook: false, paired: false, pairClip: null, onBranch: false,
       up: false, seatHost: -1, seatX: 0, seatY: 0, seatZ: 0, seatFace: NaN, sx: 0, sy: 0, sz: 0, seated: false, glide: 0, perchRole: 0, lies: false,
-      gFrame: -1, gx: 0, gy: 0, gz: 0, gyaw: 0, gt0: 0, gt1: 0, gOn: false, wasHost: false, g0: 0, g1: 0, gm: 0, gr: 0.1, nursed: false, holdsBack: false,
+      gFrame: -1, gx: 0, gy: 0, gz: 0, gyaw: 0, gt0: 0, gt1: 0, gOn: false, wasHost: false, g0: 0, g1: 0, gm: 0, gr: 0.1, gJoin: -1, nursed: false, holdsBack: false,
       ownFrame: -1, ownX: 0, ownY: 0, ownZ: 0, ownYaw: 0, ownLimb: false, ownTop: Infinity, ownSrc: -1, ownCut: -1,
       cx: 0, cy: 0, cz: 0, cFrame: -9, qx: 0, qy: 0, qz: 0, clamber: false, clamberK: 0, clamberV: 0, clamberD: 0, clamberYaw: 0, clamberPitch: 0,
       deadCarried: false, deadDrop: false, dropX: 0, dropZ: 0, climbTree: -1, drumTree: -1,
@@ -810,7 +818,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     let clear = NaN, tx = NaN, tz = NaN;
     if (tree) { trunkPoint(tree, a.by + 0.4 * a.morph.size, T4b); clear = hyp2(a.bx - T4b.x, a.bz - T4b.z) - T4b.w; tx = T4b.x; tz = T4b.z; }
     return { up: a.up, trunk: [tx, tz], nestK: a.nestK, tree: tree?.id ?? -1, treeHeight: tree?.height ?? 0, seatHost: a.seatHost, lies: a.lies, perchRole: a.perchRole, onLimb: a.ownLimb, own: [a.ownX, a.ownY, a.ownZ], seat: [a.sx, a.sy, a.sz],
-      offsetM: hyp2(a.bx - c.position[0], a.bz - c.position[2]), ownOffsetM: hyp2(a.ownX - c.position[0], a.ownZ - c.position[2]), trunkClearM: clear, bough: a.gm > 0.02 ? [a.g0 - a.gm, a.g1 + a.gm] : null };
+      offsetM: hyp2(a.bx - c.position[0], a.bz - c.position[2]), ownOffsetM: hyp2(a.ownX - c.position[0], a.ownZ - c.position[2]), trunkClearM: clear, bough: a.gm > 0.02 ? [a.g0 - a.gm, a.g1 + a.gm] : null, join: a.gm > 0.02 ? a.gJoin : null };
   };
   const SP: SeatPairs = { a: new Int32Array(64), b: new Int32Array(64), sep: new Float32Array(64), n: 0 };
   const seatHostOf = new Int32Array(CAPACITY), seatAt = new Float32Array(CAPACITY), seatDone = new Uint8Array(CAPACITY), seatId = new Int32Array(CAPACITY), seatRank = new Float64Array(CAPACITY);
@@ -1426,7 +1434,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     pctx.stride = gait ? a.gs.stride : 0; pctx.lapse = a.lapse; pctx.settle = a.settle; pctx.lp = limbPhase(hash01(a.id, 19), a.strides + a.phase);
     pctx.seed = hash01(a.id, 17); pctx.stage = c.stage; pctx.male = c.sex === 'male'; pctx.age = c.age;
     pctx.injury = c.injury ?? 0; pctx.mood = c.mood ?? 'calm'; pctx.energy = c.energy ?? 1; pctx.vocal = c.vocal && (c.vocalUntil ?? 0) >= world.time ? c.vocal : null;
-    pctx.role = role; pctx.inTree = a.elevated > 0.5; pctx.wet = 0; pctx.side = a.pSide;
+    pctx.role = role; pctx.inTree = a.elevated > 0.5; pctx.wet = 0; pctx.side = a.pSide; pctx.bears = a.bears;
     const partner = a.partnerId >= 0 ? anims.get(a.partnerId) : undefined;
     if (partner) {
       // Partner root in this animal's body space (unit scale). Stage W9: an animal on a branch is drawn at its seat, not
@@ -2336,19 +2344,42 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     if (pose.propR) put(B.fingR, pose.propR);
     if (pose.propL) put(B.fingL, pose.propL);
     if (a.chimp.carryingMeat > 0.05 && !pose.propR && a.clip !== 'sleep') put(B.fingR, PROP.meat);
-    if (a.elevated > 0.5 && !a.onBranch && a.carry === 0 && a.clip !== 'climb' && a.clip !== 'clingTrunk' && a.clip !== 'sleep' && a.clip !== 'nestBuild') {
-      // Branch runs radially from the trunk under the animal.
-      const tree = treeFor(a);
-      const yaw = tree ? Math.atan2(a.bx - tree.position[0], a.bz - tree.position[2]) : a.heading;
-      const cx = a.bx - Math.sin(yaw) * 0.5 * s, cz = a.bz - Math.cos(yaw) * 0.5 * s;
-      props.perch(cx, a.by - 0.03 * s, cz, yaw - Math.PI / 2, 2.2 * s, 0.06 * s);
+    const stick = a.elevated > 0.5 && !a.onBranch && a.carry === 0 && a.clip !== 'climb' && a.clip !== 'clingTrunk' && a.clip !== 'sleep' && a.clip !== 'nestBuild';
+    if (!stick && !(a.gm > 0.02)) return;
+    // Stage W11: the branch prop is drawn as a limb of its tree: tapered, in the colour the tree's limbs read as (the
+    // environment's, when it draws this tree), and joined to it. It was a level log of one thickness, near black
+    // beside the mossy limbs, ending in the air at both ends.
+    const tree = treeFor(a);
+    if (!(tree && ctx.barkColor && ctx.barkColor(tree.id, BARK))) BARK.copy(BARK_FAR);
+    if (stick) {
+      // Under an animal in a tree with no drawn limbs: a branch from the bark out under it and 0.6 body lengths on,
+      // thick end at the trunk (it was 2.2 body lengths of log centred near the animal, touching nothing).
+      const yaw = tree ? Math.atan2(a.bx - tree.position[0], a.bz - tree.position[2]) : a.heading, y = a.by - 0.03 * s;
+      const ux = Math.sin(yaw), uz = Math.cos(yaw);
+      let from = 1.6 * s;
+      if (tree) { trunkPoint(tree, y, T4b); from = Math.max(0.3 * s, hyp2(a.bx - T4b.x, a.bz - T4b.z) - T4b.w * 0.85); }
+      // (0.06 body lengths thick under the animal, as the log was.)
+      const len = from + 0.6 * s, r0 = 0.06 * s / (1 - (1 - LIMB_TIP) * from / len);
+      props.limb(a.bx - ux * from, y, a.bz - uz * from, a.bx + ux * 0.6 * s, y, a.bz + uz * 0.6 * s, r0, BARK);
     }
-    // Stage W9: the bough this animal hosts (a pair, a chain, or its own lying body), along its eased extent.
+    // Stage W9: the bough this animal hosts (a pair, a chain, or its own lying body), along its eased extent. Stage
+    // W11: two tapered halves that fork at the host's seat, their tops level with it, and where the fork does not lie
+    // in a limb the environment draws, a stem from the nearest such limb or from the bark (perch.ts boughStem).
     if (a.gm > 0.02) {
-      const r = Math.min(a.gr, (a.lies ? BOUGH_R_LIE : BOUGH_R) * s), mid = (a.g0 + a.g1) * 0.5;
-      props.perch(a.gx + Math.cos(a.gyaw) * mid, a.gy - 0.8 * r, a.gz - Math.sin(a.gyaw) * mid, a.gyaw, a.g1 - a.g0 + 2 * a.gm, r);
+      const r = Math.min(a.gr, (a.lies ? BOUGH_R_LIE : BOUGH_R) * s), fy = a.gy - 0.8 * r, ux = Math.cos(a.gyaw), uz = -Math.sin(a.gyaw);
+      const e0 = a.g0 - a.gm, e1 = a.g1 + a.gm, lift = (1 - LIMB_TIP) * r;
+      props.limb(a.gx, fy, a.gz, a.gx + ux * e1, fy + lift, a.gz + uz * e1, r, BARK);
+      props.limb(a.gx, fy, a.gz, a.gx + ux * e0, fy + lift, a.gz + uz * e0, r, BARK);
+      if (tree) {
+        const limb = !!ctx.limbNear && ctx.limbNear(tree.id, a.gx, fy, a.gz, T4);
+        trunkPoint(tree, fy, T4b);
+        a.gJoin = boughStem(a.gx, fy, a.gz, r, limb, T4.x, T4.y, T4.z, T4.w, T4b.x, T4b.z, T4b.w, STEM);
+        // (The stem grows in with the bough: its base radius follows the eased end margin.)
+        if (a.gJoin !== 0) props.limb(STEM[0], STEM[1], STEM[2], a.gx, fy, a.gz, STEM[3] * Math.min(1, a.gm / (BOUGH_MARGIN * s)), BARK);
+      } else a.gJoin = -1;
     }
   }
+  const BARK = new THREE.Color(), BARK_FAR = new THREE.Color('#5f6442'), STEM = new Float64Array(4);
 
   const actorIds = new Set<number>(), placedIds = new Set<number>();
   const order: Anim[] = [];

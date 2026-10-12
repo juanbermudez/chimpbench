@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { Chimp } from '../src/types';
 import { B, PI, computeMorph, createFK, createMorph, createPose, solveFK } from '../src/render/creatures/rig';
-import { CLIPS, GROOM_FRONT, GROOM_HIGH, PROP, Pw, feedCycle, feedHold, feedPicks, groomerRole, type PoseCtx } from '../src/render/creatures/poses';
+import { CLIPS, FEED_HOLD_INFANT, GROOM_FRONT, GROOM_HIGH, PROP, Pw, feedCycle, feedHold, feedPicks, groomerRole, type PoseCtx } from '../src/render/creatures/poses';
+import { LIMB_TIP, leafSprayGeometry } from '../src/render/creatures/props';
 import { headLook } from '../src/render/creatures/secondary';
-import { CLAMBER_MPS, CLAMBER_OFF_M, CLAMBER_ON_M, CROWN_JUMP_M, NEST_TURNS, NEST_TURN_RAD, PAIR_HEIGHT_M, PAIR_REACH_M, PERCH, SEAT_REACH_M, clamberSpeed, clambering, crownStep, nestTurn, pairReach, perchBout, perchLies, perchPeriod, perchPosture, seatAllowed, seatGroups, type SeatPairs } from '../src/render/creatures/perch';
+import { CLAMBER_MPS, CLAMBER_OFF_M, CLAMBER_ON_M, CROWN_JUMP_M, NEST_TURNS, NEST_TURN_RAD, PAIR_HEIGHT_M, PAIR_REACH_M, PERCH, SEAT_REACH_M, STEM_REACH_M, boughStem, clamberSpeed, clambering, crownStep, nestTurn, pairReach, perchBout, perchLies, perchPeriod, perchPosture, seatAllowed, seatGroups, type SeatPairs } from '../src/render/creatures/perch';
 import { dampAngle } from '../src/render/creatures/util';
 
 // Stage W9 (docs/staging/w9b-tree-pairs.md): pairs and postures in trees. Everything drawn here is a stylization, so
@@ -346,4 +347,53 @@ test('a body in a tree goes to its place no faster than a clamber, plus what its
   assert.ok(Math.abs(go(7.8, [1 / 60], 60).frames * 15 - a.frames) <= 15);
   // Clambering starts beyond a metre and ends within 30 cm, so a body does not flicker in and out of the clip.
   assert.ok(!clambering(false, 0.9)); assert.ok(clambering(false, 1.1)); assert.ok(clambering(true, 0.5)); assert.ok(!clambering(true, 0.25));
+});
+
+// Stage W11, item 7. The bough reads as a limb of its tree, and the cluster as a spray held clear of an infant.
+test('a bough is joined to its tree: its fork lies in a drawn limb, or a stem comes from the nearest limb, or from the bark', () => {
+  const out = new Float64Array(4), r = 0.1;
+  // The fork lies in the host's own limb (its axis 8 cm away, the limb 12 cm thick): the halves grow out of it, no stem.
+  assert.equal(boughStem(3, 15, 0, r, true, 3, 14.92, 0, 0.12, 0, 0, 0.5, out), 0);
+  // A limb half a metre below the fork: the stem begins on its axis, no thicker than the limb.
+  assert.equal(boughStem(3, 15, 0, r, true, 3, 14.5, 0.1, 0.12, 0, 0, 0.5, out), 1);
+  assert.deepEqual([out[0], out[1], out[2]], [3, 14.5, 0.1]); assert.ok(out[3] <= 0.12 && out[3] >= r);
+  // No limb in reach (the nearest is further than STEM_REACH_M), or none drawn at all: the stem leaves the bark, on the
+  // fork's side of the trunk, lower than the fork, and never from inside the trunk's axis or outside its bark.
+  for (const limb of [true, false]) {
+    assert.equal(boughStem(3, 15, 0, r, limb, 3, 15 - STEM_REACH_M - 0.5, 0, 0.12, 0, 0, 0.5, out), 2);
+    const fromAxis = Math.hypot(out[0], out[2]);
+    assert.ok(fromAxis > 0.3 && fromAxis <= 0.5, `it begins in the bark (${fromAxis.toFixed(2)} m from the axis of a trunk 0.5 m thick)`);
+    assert.ok(out[0] > 0 && Math.abs(out[2]) < 1e-9, 'on the side the fork is on');
+    assert.ok(out[1] < 15 && out[1] >= 15 - 1.2, 'and rises to the fork');
+    assert.ok(out[3] <= 0.3, 'no thicker than the trunk allows');
+  }
+  // A fork on the trunk's axis (never laid, but it must not divide by nothing).
+  assert.equal(boughStem(0, 15, 0, r, false, 0, 0, 0, 0, 0, 0, 0.5, out), 2); assert.ok([...out].every(Number.isFinite));
+  assert.ok(LIMB_TIP > 0.4 && LIMB_TIP < 0.8, 'the branch prop tapers');
+});
+
+test('the cluster is a small leafy spray, and an animal with an infant on its belly holds it beside the infant', () => {
+  // The spray: within 16 by 16 by 16 cm for a body length of 1 m (the block it replaces was 26 by 16 by 20 cm and solid),
+  // a twig with five two-sided blades.
+  const g = leafSprayGeometry(); g.computeBoundingBox();
+  const b = g.boundingBox!, size = [b.max.x - b.min.x, b.max.y - b.min.y, b.max.z - b.min.z];
+  assert.ok(size.every(d => d > 0.08 && d <= 0.16), `spray ${size.map(d => d.toFixed(3)).join(' x ')} m`);
+  assert.ok(size[0] * size[1] * size[2] < 0.5 * 0.26 * 0.16 * 0.2, 'under half the block\'s box');
+  assert.equal(g.getAttribute('position').count, (3 + 5 * 8) * 3, 'a three-sided twig and five blades of four facets, both faces');
+  assert.ok(b.max.y > 0 && b.min.y < -0.1, 'the hand holds it near the top of the twig');
+  g.dispose();
+  // The holding hand: 0.11 body lengths from the mid-line without an infant (in front of the chest), 0.3 with one.
+  for (const seed of [0.3, 0.7]) for (const n of [4, 5]) {
+    const L = feedCycle(seed), hold = feedHold(n, seed), m = morphOf(21, 'female');
+    for (let u = PULL; u < PULL + 2; u += 0.1) {
+      for (const bears of [0, 1, 2]) {
+        w.bind(pose).reset(); CLIPS.forage(w, ctx({ seed, time: n * L + u, t: n * L + u, age: 21, male: false, bears }));
+        solveFK(pose, m, fk, null);
+        const hand = at(hold ? B.handR : B.handL, m.size), side = hold ? -1 : 1;
+        if (bears & 1) { assert.ok(hand[0] * side > 0.27, `beside the infant: ${(hand[0] * side).toFixed(2)} from the mid-line`); assert.ok(hand[1] > 0.45, 'and no lower than its back'); }
+        else assert.ok(Math.abs(hand[0] * side - 0.11) < 0.03, `in front of the chest: ${(hand[0] * side).toFixed(2)}`);
+      }
+    }
+  }
+  assert.deepEqual([...FEED_HOLD_INFANT], [0.3, 0.5, 0.36]);
 });

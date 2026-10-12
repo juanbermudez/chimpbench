@@ -43,6 +43,9 @@ const ARCH: [RegExp, Architecture][] = [
   [/mimusops/i, { form: 'dome', depth: 0.52, width: 1.0, lobes: 5, trunk: 1.1, buttress: 0.6, aerial: 0, leaf: 1, tint: '#5f8a48', flush: null, cauliflory: false }],
   [/celtis/i, { form: 'column', depth: 0.5, width: 0.95, lobes: 4, trunk: 1.0, buttress: 0.5, aerial: 0, leaf: 1, tint: '#86b15c', flush: null, cauliflory: false }],
 ];
+/** Stage W11 (barkColor): the bark texture's mean colour and the moss tint of the bark material, as linear RGB, and
+ * the share of moss a limb seen from the side and above reads with (matched by eye; a stylization). */
+const BARK_MEAN = new THREE.Color('#857b6b'), BARK_MOSS = new THREE.Color().setRGB(0.15, 0.225, 0.066), BARK_MOSS_SHARE = 0.45;
 const DEFAULT_ARCH: Architecture = { form: 'dome', depth: 0.5, width: 1, lobes: 5, trunk: 1, buttress: 0.3, aerial: 0, leaf: 1, tint: '#7ea657', flush: null, cauliflory: false };
 // Non-food trees that fill the stand (midstory and canopy) around the simulated food trees.
 const FILLER: Architecture[] = [
@@ -160,6 +163,12 @@ export interface Vegetation {
   branchAnchor(treeId: number, seed: number, out: THREE.Vector3): boolean;
   /** Trunk axis at height y (out.x, out.z) and bark radius there (out.w; out.y = y), for climbing contact. */
   trunkAt(treeId: number, y: number, out: THREE.Vector4): boolean;
+  /** Stage W11: the point on the axis of the tree's crown limbs nearest (x, y, z), with that limb's radius there in
+   * out.w. False for a tree this forest does not draw, or one with no limbs. */
+  limbNear(treeId: number, x: number, y: number, z: number, out: THREE.Vector4): boolean;
+  /** Stage W11: the colour the tree's limbs read as (linear RGB), for a prop drawn as one of them. False for a tree
+   * this forest does not draw. */
+  barkColor(treeId: number, out: THREE.Color): boolean;
   /** Crown lobes (x, y, z, radius, vertical flattening) of every tree, for camera obstruction tests. */
   lobes: Float32Array;
   /** Every rendered trunk as (x, z, base radius, crown-base height), for camera collision and occlusion. */
@@ -431,7 +440,7 @@ export function* vegetationSteps(world: World, terrain: Terrain, uniforms: Share
   const allTrunks: number[] = [];
   const limbsByTree = new Map<number, { a: THREE.Vector3; b: THREE.Vector3; r: number }[]>();
   // Trunk of each simulated tree: two tapered segments (base → mid, mid → crown base) as drawn below.
-  const trunkByTree = new Map<number, { x: number; z: number; g: number; lx: number; lz: number; midY: number; topY: number; girth: number }>();
+  const trunkByTree = new Map<number, { x: number; z: number; g: number; lx: number; lz: number; midY: number; topY: number; girth: number; cr: number; cg: number; cb: number }>();
   const trunks: Inst[] = []; const limbs: Inst[] = []; const fins: Inst[] = [];
   const crowns: Inst[][] = [[], []]; const shrubs: Inst[] = []; const fronds: Inst[] = []; const herbs: Inst[] = [];
   const dummy = new THREE.Object3D();
@@ -474,7 +483,7 @@ export function* vegetationSteps(world: World, terrain: Terrain, uniforms: Share
     const trunkTop = new THREE.Vector3(x + lx, crownBase + (top - crownBase) * 0.25, z + lz);
     color.setHSL(0.09 + rand() * 0.03, 0.08 + rand() * 0.1, 0.5 + rand() * 0.2, THREE.SRGBColorSpace);
     const midY = g + (trunkTop.y - g) * 0.55;
-    if (simTree) trunkByTree.set(simTree.id, { x, z, g, lx, lz, midY, topY: trunkTop.y, girth });
+    if (simTree) trunkByTree.set(simTree.id, { x, z, g, lx, lz, midY, topY: trunkTop.y, girth, cr: color.r, cg: color.g, cb: color.b });
     allTrunks.push(x, z, girth, trunkTop.y);
 
     // Crown lobes by form.
@@ -1055,6 +1064,28 @@ export function* vegetationSteps(world: World, terrain: Terrain, uniforms: Share
       if (y < t.midY) { const u = THREE.MathUtils.clamp((y - (t.g - 0.5)) / Math.max(0.1, t.midY - t.g + 0.5), 0, 1); k = 0.45 * u; r = t.girth * (1 - 0.3 * u); }
       else { const u = THREE.MathUtils.clamp((y - t.midY) / Math.max(0.1, t.topY - t.midY), 0, 1); k = 0.45 + 0.55 * u; r = t.girth * 0.7 * (1 - 0.3 * u); }
       out.set(t.x + t.lx * k, y, t.z + t.lz * k, r);
+      return true;
+    },
+    limbNear(treeId, x, y, z, out) {
+      const list = limbsByTree.get(treeId);
+      if (!list || !list.length) return false;
+      let best = Infinity;
+      for (const limb of list) {
+        const ax = limb.a.x, ay = limb.a.y, az = limb.a.z, ex = limb.b.x - ax, ey = limb.b.y - ay, ez = limb.b.z - az;
+        const t = THREE.MathUtils.clamp(((x - ax) * ex + (y - ay) * ey + (z - az) * ez) / (ex * ex + ey * ey + ez * ez || 1), 0, 1);
+        const px = ax + ex * t, py = ay + ey * t, pz = az + ez * t, d = (px - x) ** 2 + (py - y) ** 2 + (pz - z) ** 2;
+        // (The limb tapers to 0.55 of its radius at the lobe: limbGeometry.)
+        if (d < best) { best = d; out.set(px, py, pz, limb.r * (1 - 0.45 * t)); }
+      }
+      return true;
+    },
+    barkColor(treeId, out) {
+      const t = trunkByTree.get(treeId);
+      if (!t) return false;
+      // The limbs' tint (the trunk's, a little darker) over the bark texture's mean colour, with the moss the bark
+      // material lays on up-facing wood. A look matched by eye to the drawn limbs (BARK_MEAN, BARK_MOSS), not a
+      // reading of the shader: a prop has none of the forest material's shading.
+      out.setRGB(t.cr * 0.92 * BARK_MEAN.r, t.cg * 0.92 * BARK_MEAN.g, t.cb * 0.92 * BARK_MEAN.b).lerp(BARK_MOSS, BARK_MOSS_SHARE);
       return true;
     },
     lobes: lobeData,

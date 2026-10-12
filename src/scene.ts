@@ -150,6 +150,8 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
     treeAnchor: (id: number, out: THREE.Vector3) => vegetation.treeAnchor(id, out),
     branchAnchor: (id: number, seed: number, out: THREE.Vector3) => vegetation.branchAnchor(id, seed, out),
     trunkAt: (id: number, y: number, out: THREE.Vector4) => vegetation.trunkAt(id, y, out),
+    limbNear: (id: number, x: number, y: number, z: number, out: THREE.Vector4) => vegetation.limbNear(id, x, y, z, out),
+    barkColor: (id: number, out: THREE.Color) => vegetation.barkColor(id, out),
     waterEdge: (x: number, z: number, out: THREE.Vector3) => terrain.waterEdge(x, z, out),
     ripple: (x: number, z: number, strength: number) => water.ripple(x, z, strength, uniforms.uTime.value) };
   try {

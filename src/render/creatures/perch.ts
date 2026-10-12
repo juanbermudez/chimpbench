@@ -171,3 +171,28 @@ export function crownStep(dist: number, dt: number, simRate: number, pathStep: n
 }
 /** Whether a body `left` metres from its place is drawn clambering, given whether it was in the frame before. */
 export function clambering(was: boolean, left: number): boolean { return left > (was ? CLAMBER_OFF_M : CLAMBER_ON_M); }
+
+// ---- The bough as a limb of its tree (stage W11) ----
+/** A stem is drawn to a limb the environment draws when one is within this distance of the fork (m); else to the bark. */
+export const STEM_REACH_M = 3;
+/**
+ * Where the stem that joins a bough to its tree begins (stage W11; a stylization). The bough forks at its host's seat
+ * (fx, fy, fz) and is `r` thick there. `limb`: the environment draws limbs in this tree, and the point of their axes
+ * nearest the fork is (lx, ly, lz), `lr` thick. (tx, tz, tr): the trunk's axis and radius at the fork's height.
+ * Returns 0 when the fork already lies in that limb (no stem: the two halves of the bough grow out of it), 1 for a
+ * stem from the limb's axis, 2 for one from the bark (no limb within STEM_REACH_M): it leaves the trunk lower than the
+ * fork, by half its length in the plane and at most 1.2 m, as the tree's own limbs rise from the bole. The point is
+ * written to out[0..2] and the radius the stem has there to out[3].
+ */
+export function boughStem(fx: number, fy: number, fz: number, r: number, limb: boolean, lx: number, ly: number, lz: number, lr: number, tx: number, tz: number, tr: number, out: Float64Array): number {
+  if (limb) {
+    const d = Math.hypot(lx - fx, ly - fy, lz - fz);
+    if (d <= lr + 0.5 * r) return 0;
+    if (d <= STEM_REACH_M) { out[0] = lx; out[1] = ly; out[2] = lz; out[3] = Math.min(1.6 * r, lr); return 1; }
+  }
+  let dx = fx - tx, dz = fz - tz, d = Math.hypot(dx, dz);
+  if (d < 1e-6) { dx = 1; dz = 0; d = 1; }
+  const run = Math.max(0, d - tr);
+  out[0] = tx + dx / d * tr * 0.85; out[2] = tz + dz / d * tr * 0.85; out[1] = fy - Math.min(1.2, 0.5 * run); out[3] = Math.min(1.6 * r, 0.6 * tr);
+  return 2;
+}

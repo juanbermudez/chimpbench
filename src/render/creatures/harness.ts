@@ -9,6 +9,7 @@
 // the tile with every animal of the tile that many metres up in it (pairs, chains and resting animals in a crown; the
 // camera follows the first animal; &posture=0..4 forces the resting posture, creatures/perch.ts PERCH; &third=1 adds a
 // second groomer on the receiver; &view=x,y,z places the camera that far from the first animal).
+// single with &action=forage&infant=<age> (stage W11): a mother feeding with her infant on her.
 // &idle=0 switches idle life and breathing off; &w8=0 every channel of stage W8 as well (the picture of the build
 // before it, but for the taller coat of a clip that raises it).
 // Other params: zoom=close|mid|far|rts, rain=0..1, night=1, sel=<id>, labels=1,
@@ -209,6 +210,8 @@ function setupAction(action: Action, x: number, z: number, moving: boolean) {
     case 'shelter': female({}); break;
     case 'forage': {
       if (q.has('perch')) { const t = tree(x + 0.1, z, 12); male({ y: 7, x: t.position[0], z: t.position[2] }); female({ y: 8.5, x: t.position[0] + 0.2, z: t.position[2], action: 'rest' }); break; }
+      // &infant=<age> (stage W11): a mother feeding with her infant on her (with &up= it is on her belly: the cluster is held beside it).
+      if (q.has('infant')) { const m = female({ age: 24 }); chimp({ age: Number(q.get('infant')), sex: 'male', x: x + 0.1, z, action: 'rest', mother: m.id }); break; }
       male({}); break;
     }
     default: male({}); break;
@@ -523,7 +526,9 @@ function trunkAt(id: number, y: number, out: THREE.Vector4) {
   out.set(t.position[0], y, t.position[2], r * (1 - 0.3 * Math.min(1, Math.max(0, (y - g) / t.height))));
   return true;
 }
-const layer = createCreatures({ scene, world, container: stage, groundHeight, treeAnchor, trunkAt }) as ReturnType<typeof createCreatures> & { debug: { clip: string | null } };
+/** Stage W11: the harness's trees are one brown; a bough or perch stick drawn in one takes that colour. */
+function barkColor(_id: number, out: THREE.Color) { out.copy(bark.color); return true; }
+const layer = createCreatures({ scene, world, container: stage, groundHeight, treeAnchor, trunkAt, barkColor }) as ReturnType<typeof createCreatures> & { debug: { clip: string | null } };
 const dbg = layer.debug as { clip: string | null; attention: boolean; lodFade: boolean; blink: boolean; groomee?: number; anim?: (id: number) => { lod: number } | undefined };
 if (q.get('clip')) dbg.clip = q.get('clip');
 // &groomee=0|2|3|4: forces the receiver's posture in grooming pairs (poses.ts GROOMEE: sit, prone, side, present).
