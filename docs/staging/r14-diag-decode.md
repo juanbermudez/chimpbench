@@ -560,23 +560,27 @@ Every figure below came out the same by the second route.
 8. **"The trip rate is under the rules' on the run's states" is about half the size it reads.** The rules' single
    pick leaves out the belief draw of a trip to a crown out of sight. On the held-out draws that pick is a trip at
    0.242 of trip menus where the rules took the trip at 0.220. So the run's 0.273 for the pick, against 0.225 for
-   the draw, overstates the rules' rate by about that much. Carrying on has no such gap (the pick 0.519, the rules
+   the draw, overstates the rules' rate, by about that much if the pick errs alike on the run's states (not on
+   file). Carrying on has no such gap (the pick 0.519, the rules
    0.522), so "the rules' pick carries on at 0.385 where the draw carried on at 0.623" stands as it reads (S §R6).
 
 ### 7.3 Where the reserves and the nights went (not read above; stage R13 §14.3 item 4 asked for it)
 
-**The reserves fall on the days with a long stay in the nest, and nowhere else.** By the timing card's count the
+**The reserves fall on the days with a stay in the nest beyond the rules' range, most of it on the longest; on the
+ordinary days they rise.** By the timing card's count the
 model arm is in a finished nest outside the dark hours 139 minutes a day against 84 for the rules arm (55 more on
 the same animal and day, 44 to 66). Split by that count (S §R8):
 
 | Model arm, minutes in a nest outside the dark | Animal-days | Reserves, % of the usual store a day | Rules arm, same animal-days | Energy eaten, kcal | Rules arm |
 | --- | --- | --- | --- | --- | --- |
 | within the rules arm's range (to 132) | 547 | +0.091 | +0.022 | 1,727 | 1,638 |
+| beyond it by up to an hour | 80 | -0.085 | -0.033 | 1,547 | 1,575 |
+| beyond it by one to three hours | 64 | -0.206 | -0.063 | 1,397 | 1,547 |
 | beyond it by three hours or more | 69 | -1.022 | +0.007 | 746 | 1,565 |
 | all | 760 | -0.054 | +0.008 | 1,591 | 1,617 |
 
 On the 547 ordinary days the model arm gains more than the rules arm and eats more. The registered figure of -0.054
-is made by 69 animal-days, one in eleven. The same animal on its days with an hour or more in the nest by day
+is made by the 213 days beyond the rules' range, and most of it by 69 animal-days, one in eleven. The same animal on its days with an hour or more in the nest by day
 loses 0.652% a day more than on its other days and eats 559 kcal less (37 animals). This is the same animal-days
 read two ways, with a plain mechanism (an animal in a nest does not feed); it is not a controlled test, and the two
 arms are different worlds after the first decision.
@@ -697,8 +701,8 @@ records could not show.
   readings changed. (1) On the population's own states the adapter fails both ways: more hedged than on the held-out
   draws where the rules are sure (0.552 on their option against 0.700), and too sure of staying in a nest by day
   when a companion of 12 or more is listed in one (0.939; 0.160 with no companion of any age listed in a nest). (2) The two registered failures have two
-  origins. The reserves fall only on the 69 animal-days with a stay of three hours or more in the nest beyond the
-  rules arm's range (-1.022% a day; +0.091 on the 547 ordinary days). All 21 short nights begin at asks alone in the
+  origins. The reserves fall on the days with a stay in the nest beyond the rules arm's range, most of it on 69
+  animal-days with three hours or more beyond it (-1.022% a day; +0.091 on the 547 ordinary days). All 21 short nights begin at asks alone in the
   dark where the adapter gives the nest about a half (0.501), not at the nests it gives 0.9. (3) First order, the
   top pick would turn 40 of the 62 asks behind the short nights and add stays by day; a mild setting changes
   neither. Nothing here says what the world would then do.
