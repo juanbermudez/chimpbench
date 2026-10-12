@@ -12,7 +12,7 @@ import { armPacket, PACKET_VERSION, packetOf } from '../scripts/lib/r11-packets'
 import { decodeRule, isRegisteredArm, PLAIN_RULES, populationSeedRefusal, R13, registeredRunRefusal, REGISTERED_SHA256, resumeBudget } from '../scripts/lib/r13';
 import { checkPackets, r7Tap, resultName } from '../scripts/r10-night';
 import { DRY_SEED, engineArm, engineKernel, engineSpec, LOOP_SWITCHES, packetOf as loopPacketOf, SEALED_SEEDS, workerRefusal } from '../scripts/r11-loop';
-import { fieldRow, instrumentOk, LEVEL, MOVEMENT, outcome, paired, side, viability, type Side } from '../scripts/r13-report';
+import { fieldRow, guardsFailed, instrumentOk, instrumentReads, LEVEL, MOVEMENT, outcome, paired, sameReading, side, stopEnded, viability, type Side } from '../scripts/r13-report';
 import { armWorld } from '../scripts/r5-pilot';
 import { ARMS as CONTROL_ARMS, runArm as controlRun, type ArmFile } from '../scripts/r7-card';
 import { realization, spreadOf } from '../scripts/r7-report';
@@ -371,4 +371,18 @@ test('the registered reading: told from the rules, viability, the outcome each r
   assert.equal(fieldRow({ lo: 0.12, hi: 0.25 }, fam(0.10, 0.11), 0.004, 0.118).word, 'nearer on this run (description)'); assert.equal(fieldRow({ lo: 0.12, hi: 0.25 }, fam(0.10, 0.11), 0.004, 0.108).word, 'not nearer');
   assert.equal(fieldRow({ lo: 0.12, hi: 0.25 }, fam(0.10, 0.11), 0.004, 0.08).word, 'further out'); assert.equal(fieldRow({ lo: 0.12, hi: 0.25 }, fam(0.10, 0.125), 0.004, 0.13).word, 'not nearer', 'an arm of the family is already inside: no room');
   assert.equal(fieldRow({ lo: 0.12, hi: 0.25 }, fam(0.10, 0.11), null, 0.13).word, 'no value'); assert.equal(fieldRow({ lo: 0.12, hi: 0.25 }, fam(0.10, 0.11), 0.004, null).word, 'no value');
+  // the review (prereg §13, A2): a row is nearer only with stage R7's five guards held. Stage R10's sedentary population carried the
+  // grooming share into its band (0.101 against the rules' 0.073; band 0.08 to 0.18) while it walked a third less: that is not listed
+  assert.equal(fieldRow({ lo: 0.08, hi: 0.18 }, fam(0.073, 0.074), 0.003, 0.101, true).word, 'nearer on this run (description)');
+  assert.equal(fieldRow({ lo: 0.08, hi: 0.18 }, fam(0.073, 0.074), 0.003, 0.101, false).word, 'nearer by value with a guard failed (not listed)');
+  assert.equal(fieldRow({ lo: 1.5, hi: 3.5 }, fam(2.4, 2.9), 0.4, 0.89, false).word, 'left the band', 'the guards change no other word'); assert.equal(fieldRow({ lo: 0.12, hi: 0.25 }, fam(0.10, 0.11), 0.004, 0.08, false).word, 'further out');
+  const sp: Record<string, ReturnType<typeof spreadOf>> = { reservePctPerDay: eight(-0.05, 0.01), kmFixPerDay: eight(2.5, 0.05), nightsInNest: eight(0.99, 0.002), actChanges: eight(40, 1), tripsDone: eight(2, 0.1) }, held = { reservePctPerDay: -0.06, kmFixPerDay: 2.4, nightsInNest: 0.99, actChanges: 42, tripsDone: 2.1 };
+  assert.deepEqual(guardsFailed(k => sp[k], held), []); assert.deepEqual(guardsFailed(k => sp[k], { ...held, kmFixPerDay: 1.63, tripsDone: 0.74, actChanges: 31.1 }), ['kmFixPerDay', 'actChanges', 'tripsDone'], 'stage R10\'s first run would fail three');
+  assert.deepEqual(guardsFailed(k => sp[k], { ...held, reservePctPerDay: 0.5, nightsInNest: 1 }), [], 'more reserves and more nights are no failure'); assert.deepEqual(guardsFailed(k => sp[k], { ...held, kmFixPerDay: 3.5 }), ['kmFixPerDay'], 'more distance is');
+  assert.deepEqual(guardsFailed(k => sp[k], { ...held, nightsInNest: null }), ['nightsInNest'], 'a guard without a value fails');
+  // V0 (A5): the stop check's own verdict, whatever the state says after a resume
+  assert.equal(stopEnded({ stopCheck: null }), false); assert.equal(stopEnded({ stopCheck: { stop: false } as never }), false); assert.equal(stopEnded({ stopCheck: { stop: true } as never }), true);
+  // the exact check of the instrument (A1): one world read twice gives the same numbers; one differing readout is caught; with it on file it decides
+  assert.deepEqual(sameReading({ a: 1, b: null, c: 0.1 + 0.2 }, { a: 1, b: null, c: 0.1 + 0.2 }), { same: 3, of: 3, differ: [] }); assert.deepEqual(sameReading({ a: 1, b: 2 }, { a: 1, b: 2.0000001, c: 3 }).differ, ['b', 'c']);
+  assert.deepEqual([instrumentReads(true, false), instrumentReads(true, true), instrumentReads(false, true), instrumentReads(null, false), instrumentReads(null, true), instrumentReads(null, null)], [true, true, false, false, true, true]);
 });

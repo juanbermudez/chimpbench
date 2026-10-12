@@ -13,12 +13,12 @@
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { decodeRule, R13 } from './lib/r13';
-import { dayName, readLines, readRegistry, type DaySummary, type Row } from './lib/r10-run';
+import { decodeRule, PLAIN_RULES, R13 } from './lib/r13';
+import { dayName, readLines, readRegistry, type DaySummary, type Registry, type Row } from './lib/r10-run';
 import { SHORT_ROWS } from './lib/r7-readers';
-import { CARD_LABELS } from './lib/timing-card';
+import { CARD_LABELS, GUARD_ROWS } from './lib/timing-card';
 import { ARMS as CONTROL_ARMS, type ArmFile } from './r7-card';
-import { familyRoom, outside, realization, spreadOf, type Band, type Spread } from './r7-report';
+import { familyRoom, outside, realization, spreadOf, told, type Band, type Spread } from './r7-report';
 
 /** The four movement rows the outcome is named on (prereg §8.2), and energy eaten beside them. */
 export const MOVEMENT = ['kmFixPerDay', 'tripsBegun', 'tripsDone', 'actChanges'] as const;
@@ -46,6 +46,38 @@ export function viability(x: { stopped: boolean | null; starved: number; starved
   const all = [v0, v1, v2, v3];
   return { v0, v1, v2, v3, viable: all.some(v => v === false) ? false : all.some(v => v === null) ? null : true, nightsLine, reserveLine, starvedMost: most };
 }
+
+/**
+ * V0 (prereg §8.1; the review's amendment A5, §13): the stop check ended the run when it said STOP, whatever the registry's
+ * state says afterwards. Before the amendment V0 read the state, so a run resumed past its stop check and finished would
+ * have held V0.
+ */
+export const stopEnded = (reg: Pick<Registry, 'stopCheck'>): boolean => !!reg.stopCheck?.stop;
+
+/**
+ * Stage R7's five guards for one arm run once (r7-prereg.md §8 as amended in §13a; scripts/r7-report.ts): the keys of those
+ * that fail. Reserves and nights in a nest fail below the rules' mean by more than D; distance, act changes and trips
+ * completed fail outside the rules' mean ± D. A guard without a value fails.
+ */
+export function guardsFailed(spread: (k: string) => Spread, vals: Record<string, number | null | undefined>): string[] {
+  return GUARD_ROWS.filter(k => { const s = spread(k), v = vals[k]; if (v === null || v === undefined || !Number.isFinite(v) || s.mean === null || s.D === null) return true; return k === 'reservePctPerDay' || k === 'nightsInNest' ? v < s.mean - s.D : Math.abs(v - s.mean) > s.D; });
+}
+
+/**
+ * The exact check of the instrument (the review's amendment A1, §13): the paired rules arm read through the replay of the
+ * night script against stage R7's own code on the same unsalted rules world, readout by readout. The two are one world
+ * read by one set of readers, so every readout must be the same number.
+ */
+export function sameReading(a: Record<string, number | null>, b: Record<string, number | null>): { same: number; of: number; differ: string[] } {
+  const keys = [...new Set([...Object.keys(a), ...Object.keys(b)])].sort(), differ = keys.filter(k => !((a[k] ?? null) === (b[k] ?? null)));
+  return { same: keys.length - differ.length, of: keys.length, differ };
+}
+/**
+ * Whether the statements may be read (prereg §8 as amended by A1): with the exact check on file it decides (the paths read
+ * alike or they do not; a paired rules arm told from the eight re-draws on a row is then chance, about one run in six, and
+ * is printed); without it the registered check stands (told on a level row: nothing is read).
+ */
+export const instrumentReads = (exact: boolean | null, statistical: boolean | null): boolean => exact !== null ? exact : statistical !== false;
 
 export type Outcome = 'not read' | 'not viable' | 'at the rules\' level' | 'sedentary' | 'restless' | 'mixed';
 /**
@@ -93,7 +125,7 @@ export function paired(model: Row[], rules: Row[], of: (r: Row) => number | null
   return { model: both.reduce((s, k) => s + a.get(k)!, 0) / n, rules: both.reduce((s, k) => s + b.get(k)!, 0) / n, diff: m, lo: m - h, hi: m + h, animals: n };
 }
 
-export type FieldWord = 'no value' | 'not worse' | 'outside by less than D' | 'left the band' | 'nearer on this run (description)' | 'not nearer' | 'further out';
+export type FieldWord = 'no value' | 'not worse' | 'outside by less than D' | 'left the band' | 'nearer on this run (description)' | 'nearer by value with a guard failed (not listed)' | 'not nearer' | 'further out';
 export interface FieldRow { out: number | null; rulesOut: number | null; best: { name: string; out: number } | null; word: FieldWord }
 /**
  * One row of prereg §8.3, by stage R7's amendment A1 (the distance outside the band, 0 anywhere inside): where the rules'
@@ -101,12 +133,16 @@ export interface FieldRow { out: number | null; rulesOut: number | null; best: {
  * than D (outside by less than D is said as such: not told from inside); where the rules are outside, it is "nearer on this run" only with a distance smaller than the best arm of the
  * rules-plus-random family by more than D, "further out" when its distance exceeds the rules' own by more than D. Never
  * "closer to wild chimpanzees": one training, one world seed, one run.
+ * `guardsHold` (the review's amendment A2, §13): stage R7's rule counts a smaller distance only with its five guards held
+ * (scripts/r7-report.ts verdictA1). Without them a population that does less than the rules (walks less, sets out less)
+ * can carry a row into its band, as stage R10's first run did with the grooming share and party size; such a row is not
+ * listed as nearer and is no candidate for a later test.
  */
-export function fieldRow(band: Band, family: { name: string; mean: number | null }[], D: number | null, value: number | null): FieldRow {
+export function fieldRow(band: Band, family: { name: string; mean: number | null }[], D: number | null, value: number | null, guardsHold = true): FieldRow {
   const out = outside(band, value), room = D === null ? null : familyRoom(band, family, D);
   if (out === null || !room || D === null) return { out, rulesOut: room?.arms[0]?.out ?? null, best: room ? { name: room.best.name, out: room.best.out } : null, word: 'no value' };
   const rulesOut = room.arms[0].out, best = { name: room.best.name, out: room.best.out };
-  const word: FieldWord = room.rulesInside ? (out > D ? 'left the band' : out > 0 ? 'outside by less than D' : 'not worse') : room.room > 0 && out < room.room ? 'nearer on this run (description)' : out > rulesOut + D ? 'further out' : 'not nearer';
+  const word: FieldWord = room.rulesInside ? (out > D ? 'left the band' : out > 0 ? 'outside by less than D' : 'not worse') : room.room > 0 && out < room.room ? (guardsHold ? 'nearer on this run (description)' : 'nearer by value with a guard failed (not listed)') : out > rulesOut + D ? 'further out' : 'not nearer';
   return { out, rulesOut, best, word };
 }
 
@@ -153,11 +189,17 @@ if (process.argv[1]?.endsWith('r13-report.ts')) {
   // the instrument
   const rulesSides: Record<string, Side> = Object.fromEntries(LEVEL.map(k => [k, side(spread(k), rules[k])])), inst = instrumentOk(rulesSides);
   p(); p('## 0. The check of the instrument'); p();
-  p(`The paired rules arm is read through the replay like the model arm; it must not be told from the eight re-draws on any level row. ${inst === null ? '**Not read** (a value is missing).' : inst ? '**It is not**: the two paths read alike.' : `**IT IS, on ${LEVEL.filter(k => rulesSides[k]).map(label).join('; ')}: the two paths do not read alike, and nothing below is read until that is explained.**`}`);
+  // the exact check (amendment A1): stage R7's own code on the same unsalted rules world, written by `controls` as rules-plain.json
+  const plainFile = resolve(dir, 'P', `s${seed}`, `${PLAIN_RULES}.json`), plain = existsSync(plainFile) ? JSON.parse(readFileSync(plainFile, 'utf8')) as ArmFile : null;
+  const sameWorld = plain ? plain.burnInHash === files[rulesLabel].burnInHash && plain.days === days && plain.endHash === files[rulesLabel].endHash : null, reading = plain ? sameReading(rules, realization('P', [plain])) : null;
+  const exact = plain ? !!sameWorld && reading!.differ.length === 0 : null, reads = instrumentReads(exact, inst);
+  p(`**Exact** (amendment A1, r13-prereg.md §13): the paired rules arm continues the rules world with no salt; stage R7's own code on that world (\`${PLAIN_RULES}\`, written with the control arms) must end on the same world and give the same number on every readout. ${exact === null ? '**Not on file**: the check below stands alone, as first registered.' : exact ? `**It does**: the same end world (${plain!.endHash}) and ${reading!.same} of ${reading!.of} readouts equal. The two paths read alike.` : `**IT DOES NOT** (${sameWorld ? 'the same end world' : `end world ${files[rulesLabel].endHash} against ${plain!.endHash}`}; ${reading!.differ.length} of ${reading!.of} readouts differ: ${reading!.differ.slice(0, 8).join(', ')}): the two paths do not read alike and **nothing below is read**.`}`);
+  p();
+  p(`**Against the eight re-draws** (as first registered): the paired rules arm must not be told from them on any level row. ${inst === null ? '**Not read** (a value is missing).' : inst ? '**It is not.**' : `**It is, on ${LEVEL.filter(k => rulesSides[k]).map(label).join('; ')}.** ${exact ? 'With the exact check held this is chance (one more draw of the rules lies outside the mean ± D on a given row about once in twenty, on one of five rows about once in six): it is printed, and the statements are read.' : '**The two paths do not read alike, and nothing below is read until that is explained.**'}`}`);
 
   // 8.1 viability
   const starved = (x: ArmFile) => x.deaths.filter(d => d.cause === 'starvation').length;
-  const V = viability({ stopped: reg ? reg.state === 'stopped' && !!reg.stopCheck?.stop : null, starved: starved(files[modelLabel]), starvedRules: rulesArms.map(a => starved(files[a])), nights: model.nightsInNest ?? null, nightsRules: spread('nightsInNest'), reserve: model.reservePctPerDay ?? null, reserveRules: spread('reservePctPerDay') });
+  const V = viability({ stopped: reg ? stopEnded(reg) : null, starved: starved(files[modelLabel]), starvedRules: rulesArms.map(a => starved(files[a])), nights: model.nightsInNest ?? null, nightsRules: spread('nightsInNest'), reserve: model.reservePctPerDay ?? null, reserveRules: spread('reservePctPerDay') });
   const causes = (x: ArmFile) => { const c: Record<string, number> = {}; for (const d of x.deaths) c[d.cause ?? 'unknown'] = (c[d.cause ?? 'unknown'] ?? 0) + 1; return Object.keys(c).length ? Object.entries(c).map(([k, v]) => `${k} ${v}`).join(', ') : 'none'; };
   p(); p('## 1. Viability (read first)'); p();
   p('| # | Readout | The model arm | The paired rules arm | The eight rules re-draws | It holds when | |'); p('| --- | --- | --- | --- | --- | --- | --- |');
@@ -169,10 +211,13 @@ if (process.argv[1]?.endsWith('r13-report.ts')) {
   p(`**Viable: ${V.viable === null ? 'not read' : V.viable ? 'yes' : 'NO'}.** Deaths in the other control arms: ${groups.map(([name, g]) => `${name} ${g.map(a => files[a].deaths.length).join(' and ')}`).join('; ')}.`);
 
   // 8.2 level
-  const sides: Record<string, Side> = Object.fromEntries(LEVEL.map(k => [k, side(spread(k), model[k])])), O = inst === false ? 'not read' : outcome(V.viable, days, sides);
+  const sides: Record<string, Side> = Object.fromEntries(LEVEL.map(k => [k, side(spread(k), model[k])])), O = !reads ? 'not read' : outcome(V.viable, days, sides);
   p(); p('## 2. Level against the same animals on the rules, per animal and day'); p();
-  p(`| Readout | The model arm | The paired rules arm | The rules: mean ± SD | D | Told from the rules | ${groups.map(([n]) => n).join(' | ')} |`); p(`| --- | --- | --- | --- | --- | --- |${groups.map(() => ' --- |').join('')}`);
-  for (const k of LEVEL) { const s = spread(k), d = digits(k); p(`| ${label(k)}${k === 'kcalEatenPerDay' ? '' : ' (movement row)'} | ${f(model[k], d)} | ${f(rules[k], d)} | ${f(s.mean, d)} ± ${f(s.sd, d)} | ${f(s.D, d)} | ${sideWord(sides[k])} | ${groups.map(([, g]) => g.map(a => f(vals[a][k], d)).join(' / ')).join(' | ')} |`); }
+  p(`| Readout | The model arm | The paired rules arm | The rules: mean ± SD | D | D, % of the mean | Told from the rules | ${groups.map(([n]) => n).join(' | ')} |`); p(`| --- | --- | --- | --- | --- | --- | --- |${groups.map(() => ' --- |').join('')}`);
+  for (const k of LEVEL) { const s = spread(k), d = digits(k); p(`| ${label(k)}${k === 'kcalEatenPerDay' ? '' : ' (movement row)'} | ${f(model[k], d)} | ${f(rules[k], d)} | ${f(s.mean, d)} ± ${f(s.sd, d)} | ${f(s.D, d)} | ${s.mean && s.D !== null ? f(100 * s.D / Math.abs(s.mean), 0) : 'no value'} | ${sideWord(sides[k])} | ${groups.map(([, g]) => g.map(a => f(vals[a][k], d)).join(' / ')).join(' | ')} |`); }
+  p();
+  // what "not told" can mean on these days (description; amendment A6): the smaller D is beside the mean, the more a row can tell
+  p(`What this window can tell (description): a value is told only beyond D, so "not told from the rules" says "within D of the rules' mean", no more. Of the control arms, both realizations are told from the rules on: ${groups.map(([name, g]) => `${name}: ${MOVEMENT.filter(k => told(spread(k), g.map(a => vals[a][k] ?? null)) === true).map(label).join('; ') || 'no movement row'}`).join('. ')}.`);
   p();
   p(`**Outcome: ${O}.** ${OUTCOME_MEANS[O]}${days < R13.minDays ? ` (${days} whole days; the level is read from ${R13.minDays}.)` : ''}`);
   if (modelRun && rulesRun) {
@@ -191,7 +236,8 @@ if (process.argv[1]?.endsWith('r13-report.ts')) {
   p('Stage R7\'s rule as amended (r7-prereg.md §13a): the distance outside the field band, 0 anywhere inside. **No row is reported as closer to wild chimpanzees**: a row marked "nearer on this run" is one adapter, one world seed and one run, a candidate for a registered test with both trainings. "Left the band": the rules\' mean is inside the band and the model arm is outside it by more than D. Field numbers are yardsticks and enter nothing. Per row; no sum and no count.');
   p(); p('| Row | Band or anchor | The model arm | The rules: mean | D | Outside the band: the model arm | the rules | best of the rules-plus-random family | Reading |'); p('| --- | --- | --- | --- | --- | --- | --- | --- | --- |');
   const fo = (v: number | null | undefined, d: number) => (v === null || v === undefined ? 'no value' : v === 0 ? 'inside' : +v.toFixed(d) === 0 ? v.toPrecision(1) : f(v, d));
-  const fieldLine = (name: string, k: string, b: Band, d: number, bandText: string) => { const s = spread(k), r = fieldRow(b, family(k), s.D, model[k] ?? null); p(`| ${name} | ${bandText} | ${f(model[k], d)} | ${f(s.mean, d)} | ${f(s.D, d)} | ${fo(r.out, d)} | ${fo(r.rulesOut, d)} | ${r.best ? `${r.best.name}, ${fo(r.best.out, d)}` : 'no value'} | ${r.word} |`); return r.word; };
+  const failed = guardsFailed(spread, model), guardsHold = failed.length === 0;
+  const fieldLine = (name: string, k: string, b: Band, d: number, bandText: string) => { const s = spread(k), r = fieldRow(b, family(k), s.D, model[k] ?? null, guardsHold); p(`| ${name} | ${bandText} | ${f(model[k], d)} | ${f(s.mean, d)} | ${f(s.D, d)} | ${fo(r.out, d)} | ${fo(r.rulesOut, d)} | ${r.best ? `${r.best.name}, ${fo(r.best.out, d)}` : 'no value'} | ${r.word} |`); return r.word; };
   const words: [string, FieldWord][] = [];
   for (const id of SHORT_ROWS) { const t = T(id), w = (t.accept.hi ?? 1) - (t.accept.lo ?? 0), d = w >= 100 ? 0 : w >= 10 ? 1 : w >= 1 ? 2 : 3; words.push([id, fieldLine(`${id} ${t.metric} (${t.role})`, id, { lo: t.accept.lo, hi: t.accept.hi }, d, `${t.accept.lo ?? ''} to ${t.accept.hi ?? ''} ${t.accept.units}`)]); }
   words.push(['patch residency', fieldLine(label('visitMean'), 'visitMean', { lo: 27.0, hi: 46.2 }, 2, '27.0 to 46.2 min (the two Kibale site means, potts2011)')]);
@@ -200,7 +246,9 @@ if (process.argv[1]?.endsWith('r13-report.ts')) {
   if (tai !== null) words.push(['the half-hour share', fieldLine(`${label('sameHalfHour')} (animals adult by the Taï paper's rule)`, 'sameHalfHour', { lo: tai, hi: tai }, 3, `${f(tai, 3)} (the Taï value, lemoine2023; western subspecies: a direction, not a rate)`)]);
   p();
   const list = (w: FieldWord) => words.filter(x => x[1] === w).map(x => x[0]).join(', ') || 'none';
-  p(`Left the band the rules are inside: ${list('left the band')}. Further out than the rules where both are outside: ${list('further out')}. Nearer on this run (description only): ${list('nearer on this run (description)')}. The whole card is in stage R7's report on the same files (\`scripts/r7-report.ts --units P --engine\`); party size, the grooming share and the greeting direction by value are in the run's own replay report.`);
+  p(`Stage R7's five guards for the model arm (reserves and nights in a nest not below the rules' mean by more than D; distance, act changes and trips completed inside the rules' mean ± D): ${guardsHold ? 'all five hold' : `**${failed.map(label).join('; ')} ${failed.length === 1 ? 'fails' : 'fail'}**`}. A row is listed as nearer only with all five held (amendment A2, r13-prereg.md §13): a population that does less than the rules can carry a row into its band, and that is not nearer to wild chimpanzees.`);
+  p();
+  p(`Left the band the rules are inside: ${list('left the band')}. Further out than the rules where both are outside: ${list('further out')}. Nearer on this run (description only): ${list('nearer on this run (description)')}. A smaller distance by value with a guard failed (not listed as nearer, no candidate for a later test): ${list('nearer by value with a guard failed (not listed)')}. The whole card is in stage R7's report on the same files (\`scripts/r7-report.ts --units P --engine\`); party size, the grooming share and the greeting direction by value are in the run's own replay report.`);
 
   // 8.4 beside
   if (reg) {
