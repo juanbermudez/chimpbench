@@ -612,6 +612,64 @@ world, sent the kernel the state-only packet and wrote the packet 5 version and 
 The suite ran on 925018b, which holds every line of code of this branch. The two commits after it add these rows,
 two sentences and the section's end time to this document (written 06:46 EDT) and touches nothing else; no test reads this file.
 
+## 14. Results (the integrator, 12 October 2026, written 15:13 EDT; frozen checkout `bench-r13` at fcbd612)
+
+Tables, generated, no number typed: [r13-numbers.md](r13-numbers.md) (the statements), [r13-card.md](r13-card.md),
+[r13-model-replay.md](r13-model-replay.md), [r13-rules-replay.md](r13-rules-replay.md). **Every number of the model
+arm is a rules-taught model on a rules menu** (stage R11's first adapter on the whole packet 5, one training of the
+recipe, a draw from its odds; animals under 8 on the rules). One training, one world seed, one run: a level. Nothing
+here is about wild chimpanzees.
+
+### 14.1 The run
+
+- The decode, by the rule of §3, read by the script from stage R11's final table: N1 met for the recipe P5b, so a
+  draw (`p5b-s7-draw-1`). The chain ran in the model queue behind stage RW3: check and dry step from 10:41, the model
+  arm 10:43 to 15:01 EDT, the paired rules arm, the seventeen control files and the report by 15:11.
+- **20 simulated days in 4.23 hours**: 48,034 asks (2,402 a day; 63.2 per animal on the kernel and day), 0.31 s a
+  call, **no timeout**, the kernel's choice settled 97.9% of asks, the warm-up took 186 s. The stop check after day 5
+  did not end the run. This session ran no heavy process beside the registered asks.
+- **The check of the instrument holds both ways** (amendment A1): the paired rules arm ends on the same world as
+  stage R7's own reading of it with 66 of 66 readouts equal, and is not told from the eight re-draws on any level row.
+
+### 14.2 The registered reading
+
+**Viable: no.** V0 holds (the stop check did not end the run); V1 holds (no death in 20 days, in any arm). **V2
+fails**: 0.972 of animal-nights in a nest against a floor of 0.982 (the eight rules re-draws 0.997 ± 0.006, the
+paired rules arm 1.000). **V3 fails**: reserves change by −0.054% of the usual store a day against a floor of −0.011
+(the re-draws +0.005 ± 0.006, the paired rules arm +0.008).
+
+**In the registered words** (§8.1): the draw costs nests at the population unit although it did not at ten animals;
+the draw does not become a decode for population runs. And, for V3: not viable; the level is printed and not named.
+
+**The level, printed and not named** (per animal and day; the rules' mean ± D on this world): distance 2.37 km
+against 2.10 ± 0.22 (**told, above**); trips to food begun 7.33 against 7.13 ± 0.64 (not told); completed 2.07
+against 2.00 ± 0.26 (not told); act changes 44.4 against 44.1 ± 3.6 (not told); energy eaten 1,591 kcal against
+1,627 ± 20 (**told, below**; not a guard). Paired per animal against the rules arm: +0.47 km (0.35 to 0.59), −26 kcal
+(−48 to −3), reserves −0.061% a day (−0.080 to −0.042), and the share of the dark hours in a nest −0.001 (−0.006 to
+0.004).
+
+**The field rows** (§8.3): no row left its band; none is listed as nearer (three of stage R7's five guards fail:
+reserves, distance, nights in a nest); the half-hour share is further out than the rules'.
+
+### 14.3 Beside the registered reading (description; no statement rests on it)
+
+1. **The sedentary population of stage R10 is gone.** That run (the first adapter, the state-only packet, the top
+   pick) read 1.63 against 2.50 km, 2.4 against 7.6 trips begun and 31.1 against 40.2 act changes. This one sets
+   out, completes trips and changes act as often as the rules do, and walks about an eighth further.
+2. **What fails is narrow and is not survival**: about one animal-night in 36 falls short of nine tenths of the dark
+   hours in a nest while the share of dark hours in a nest is the rules' (0.981 against 0.982), and the store falls
+   by about a twentieth of a percent a day while nobody dies. Whether the short nights are late nests, nests left
+   for a while or nights with no nest was not read here; it is in the run's receipts.
+3. **The two decodes now fail on opposite sides.** The top pick of this recipe is told from the rules downward at
+   ten animals (lock-in, stage R11's S2); a draw from the same odds is at the rules' level on three of four movement
+   rows at the population unit and fails two viability readouts. Stage R11's offline table says where a draw goes
+   wrong: at asks where the rules put 0.99 or more on one option the adapter puts 0.72 on it, 0.90 for a nest at
+   dusk or night, so one draw in ten leaves it.
+4. **By this stage's own rule the next population run is on the top pick.** The integrator does not launch it
+   without a registration of its own: what it would show is known from ten animals. The folder
+   `bench-r13/artifacts/r13` (the receipts of 48,034 asks, each with its odds) is kept; reading where the nights and the
+   reserves go is the next step and needs no model.
+
 ## For the integrator
 
 **Changed by the review of 12 October 2026 (§13); read this before the launch order.**
