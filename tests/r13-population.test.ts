@@ -7,8 +7,9 @@ import test, { after } from 'node:test';
 import { newDecoder, type HarnessDecode } from '../scripts/lib/decoder';
 import { replayRun, runPacket } from '../scripts/lib/r10-read';
 import { comparable, DayFiles, decodeKey, keyOf, meterStart, MIN_AGE, readCkpt, readLines, RECEIPT_SCHEMA, RECEIPT_SCHEMA_PACKET, RunStopped, runDay, sha16, writeCkpt, writeRegistry, type Arrival, type AskLine, type DaySummary, type Engine, type Line, type Registry, type RunPacket } from '../scripts/lib/r10-run';
-import { PACKET_VERSION, packetOf } from '../scripts/lib/r11-packets';
-import { decodeRule, isRegisteredArm, populationSeedRefusal, R13, REGISTERED_SHA256 } from '../scripts/lib/r13';
+import { glinerKernel } from '../scripts/lib/kernels';
+import { armPacket, PACKET_VERSION, packetOf } from '../scripts/lib/r11-packets';
+import { decodeRule, isRegisteredArm, PLAIN_RULES, populationSeedRefusal, R13, registeredRunRefusal, REGISTERED_SHA256, resumeBudget } from '../scripts/lib/r13';
 import { checkPackets, r7Tap, resultName } from '../scripts/r10-night';
 import { DRY_SEED, engineArm, engineKernel, engineSpec, LOOP_SWITCHES, packetOf as loopPacketOf, SEALED_SEEDS, workerRefusal } from '../scripts/r11-loop';
 import { fieldRow, instrumentOk, LEVEL, MOVEMENT, outcome, paired, side, viability, type Side } from '../scripts/r13-report';
@@ -130,6 +131,11 @@ test('the packet sent is the packet stage R11\'s loop sends for the same decisio
   assert.equal(loopPacketOf, packetOf, 'one builder: the loop of stage R11 exports the function the population script uses');
   for (const l of reached) await loopKernel.decide({ context: byKey.get(keyOf(l.t, l.id, l.v))!, options: [], rulesIndex: -1 }, { random: () => 0 });
   assert.deepEqual(spy.sent, w.sent, 'byte for byte');
+  // (the review, prereg §13) and not only through the functions this stage added: stage R11's kernel written out as its frozen
+  // checkout has it (scripts/r11-loop.ts at 5b5a506: glinerKernel(scorer, adapter, { packet: r => armPacket(r.context, arm) }))
+  const frozen = fakeScorer(), frozenKernel = glinerKernel(frozen.scorer, 'fake', { packet: r => armPacket(r.context, 'p5b') });
+  for (const l of reached) await frozenKernel.decide({ context: byKey.get(keyOf(l.t, l.id, l.v))!, options: [], rulesIndex: -1 }, { random: () => 0 });
+  assert.deepEqual(frozen.sent, w.sent, 'byte for byte against the kernel of stage R11\'s frozen checkout');
   // what it is: packet 5 as stage R11 trained on it (its own lines, neutral options, none of the rules' wording)
   const first = (JSON.parse(w.sent[0]) as { adapter: string; packet: LocalPacket });
   assert.equal(first.adapter, 'fake');
@@ -219,11 +225,51 @@ test('the script: the model path against the fake worker runs, replays and passe
   refused(cli({ MGOGO_DECIDE_PYTHON: process.execPath }, 'run', '--seed', '48', '--arm', 'wire-p5b-draw-1', ...common, '--out', resolve(tmp, 'x8')), /answers from scripts\/lib\/fake-worker\.mjs/, 'x8');
   // the adapter: weights without a manifest are a training cut short; registered weights with other bytes are refused. (Both come before the
   // check for another model process and before any world is built: nothing runs on the fresh seed here, and no worker is started.)
-  const ft = resolve(tmp, 'ft'), folder = resolve(ft, 'adapters', R13.adapter), model = { MGOGO_GHN_ROOT: tmp, MGOGO_DECIDE_PYTHON: fake, HF_HOME: tmp, HF_HUB_CACHE: tmp, MGOGO_FT_ROOT: ft, MGOGO_FT_ADAPTERS: R13.adapter };
+  // The registered arm starts only as registered (the review, prereg §13): the decode rule on hand and naming it, the registered world and length.
+  const n1Table = (said: string) => { const f = resolve(tmp, `r11-${said.split(' ')[0].replace(/\W/g, '')}.md`); writeFileSync(f, `# Stage R11 in the loop (numbers)\n\n- **N1 for the recipe P5b: ${said}.**\n`); return f; };
+  const notMet = n1Table('NOT MET: the draw still costs nests'), met = n1Table('MET: for a model taught the rules\' own odds the draw no longer costs nests on these worlds');
+  const dryTable = resolve(tmp, 'r11-dry.md'); writeFileSync(dryTable, `# Stage R11 in the loop (numbers) — DRY RUN\n\n- **N1 for the recipe P5b: MET: a fake worker.**\n`);
+  const registered = ['--days', '20', '--hours', '9', '--allow-dirty', '--burnin-dir', resolve(tmp, 'burnin')];
+  const ft = resolve(tmp, 'ft'), folder = resolve(ft, 'adapters', R13.adapter), model = { MGOGO_GHN_ROOT: tmp, MGOGO_DECIDE_PYTHON: fake, HF_HOME: tmp, HF_HUB_CACHE: tmp, MGOGO_FT_ROOT: ft, MGOGO_FT_ADAPTERS: R13.adapter, R13_R11_NUMBERS: notMet };
   mkdirSync(folder, { recursive: true }); writeFileSync(resolve(folder, 'adapter_model.safetensors'), 'not the registered weights');
-  refused(cli(model, 'run', '--seed', '3613', '--arm', 'p5b-s7-top', ...common, '--out', resolve(tmp, 'x9')), /holds weights and no manifest\.json: a training cut short/, 'x9');
+  refused(cli(model, 'run', '--seed', '3613', '--arm', 'p5b-s7-top', ...registered, '--out', resolve(tmp, 'x9')), /holds weights and no manifest\.json: a training cut short/, 'x9');
   writeFileSync(resolve(folder, 'manifest.json'), '{}');
-  refused(cli(model, 'run', '--seed', '3613', '--arm', 'p5b-s7-top', ...common, '--out', resolve(tmp, 'x10')), /the registration names 582e409abd2e/, 'x10');
+  refused(cli(model, 'run', '--seed', '3613', '--arm', 'p5b-s7-top', ...registered, '--out', resolve(tmp, 'x10')), /the registration names 582e409abd2e/, 'x10');
+  // the decode is read, never chosen: no table, a table that names the other arm, a dry run's table that says MET
+  refused(cli({ ...model, R13_R11_NUMBERS: '' }, 'run', '--seed', '3613', '--arm', 'p5b-s7-top', ...registered, '--out', resolve(tmp, 'x16')), /the decode is read from stage R11's table, never chosen/, 'x16');
+  refused(cli({ ...model, R13_R11_NUMBERS: resolve(tmp, 'no-such-table.md') }, 'run', '--seed', '3613', '--arm', 'p5b-s7-draw-1', ...registered, '--out', resolve(tmp, 'x17')), /the decode is read from stage R11's table, never chosen/, 'x17');
+  refused(cli(model, 'run', '--seed', '3613', '--arm', 'p5b-s7-draw-1', ...registered, '--out', resolve(tmp, 'x18')), /the decode rule names arm p5b-s7-top \(N1 is not met for the recipe P5b: the top pick\); arm p5b-s7-draw-1 is not the registered run/, 'x18');
+  refused(cli({ ...model, R13_R11_NUMBERS: met }, 'run', '--seed', '3613', '--arm', 'p5b-s7-top', ...registered, '--out', resolve(tmp, 'x19')), /the decode rule names arm p5b-s7-draw-1/, 'x19');
+  refused(cli({ ...model, R13_R11_NUMBERS: dryTable }, 'run', '--seed', '3613', '--arm', 'p5b-s7-draw-1', ...registered, '--out', resolve(tmp, 'x20')), /the decode rule names arm p5b-s7-top \(the file is the table of a dry run/, 'x20');
+  // the registered world and length: each of these would be a run nobody registered, on the fresh seed
+  for (const [i, extra, why] of [[21, ['--days', '30'], /this call differs: --days 30/], [22, ['--hours', '12'], /this call differs: --hours 12/], [23, ['--profile', 'compressed'], /this call differs: --profile compressed/], [24, ['--burn-in', '5'], /this call differs: --burn-in 5/],
+    [25, ['--no-stop-check'], /this call differs: --no-stop-check/], [26, ['--params-file', 'docs/staging/integrator-kit/params/M6-S39.json'], /this call differs: --params-file/]] as [number, string[], RegExp][]) {
+    const args = [...registered]; for (let k = 0; k + 1 < extra.length; k += 2) { const at = args.indexOf(extra[k]); if (at >= 0) args.splice(at, 2); }
+    refused(cli(model, 'run', '--seed', '3613', '--arm', 'p5b-s7-top', ...args, ...extra, '--out', resolve(tmp, `x${i}`)), why, `x${i}`);
+  }
+  refused(cli(model, 'run', '--seed', '3613', '--arm', 'p5b-s7-top', '--days', '20', '--allow-dirty', '--out', resolve(tmp, 'x27')), /this call differs: no --hours/, 'x27');
+  // with a real adapter only the two registered arms run on a population: no other adapter, packet or decode may spend the fresh seed
+  for (const [i, arm] of [[28, 'old-top'], [29, 'p5a-s7-top'], [30, 'p5b-s11-draw-1'], [31, 'p5b-s7-draw-2'], [32, 'p5b-s7-held-1']] as [number, string][])
+    refused(cli(model, 'run', '--seed', '3613', '--arm', arm, ...registered, '--out', resolve(tmp, `x${i}`)), /is not registered for a population run/, `x${i}`);
+  // a model arm that is not stage R11's is sent the state-only packet: a packet 5 may not be named for it
+  refused(cli(model, 'run', '--seed', '48', '--arm', 'trained-gate', '--packet', 'p5b', ...common, '--out', resolve(tmp, 'x33')), /arm trained-gate is sent the state-only packet of stage R4: --packet p5b/, 'x33');
+  // a resume of the registered run: never past a stop check that ended it, never with more than is left of its nine hours. (Made-up
+  // run folders: both answers come before a checkpoint is read, before anything is moved and before any worker is thought of.)
+  const head = spawnSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).stdout.trim(), eng = engineArm('p5b-s7-top')!;
+  const made = (name: string, over: Partial<Registry>) => { const d = resolve(tmp, name); mkdirSync(d, { recursive: true });
+    writeFileSync(resolve(d, 'run.json'), JSON.stringify({ ...registry('x', [], { label: 'p5b-s7-top-s3613', seed: 3613, profile: 'field', burnInDays: 30, daysAsked: 20, hours: 9, arm: eng.name, adapter: eng.adapter, decodeSpec: eng.decode, commit: head, dirty: true, state: 'interrupted',
+      engine: { name: eng.name, key: eng.key, adapter: eng.adapter, packet: eng.packet, decodeName: eng.decodeName, what: eng.what, registered: true } }), ...over })); return d; };
+  const dayOf = (day: number, wallSeconds: number) => ({ day, wallSeconds }) as DaySummary;
+  const stopped = made('r-stopped', { state: 'stopped', days: [1, 2, 3, 4, 5].map(d => dayOf(d, 900)), stopCheck: { day: 5, stop: true, reasons: ['S3: 100 of 190 driven animal-nights in a nest'], starved: 0, reservePctDay: 0, nights: [100, 190], nightShare: 0.53, fallbackShare: 0, timeoutShare: 0 } });
+  const past = cli(model, 'run', '--resume', stopped, '--allow-dirty');
+  assert.equal(past.status, 2, `${past.stdout}${past.stderr}`); assert.match(past.stderr, /the stop check after day 5 ended this run \(S3: 100 of 190[^)]*\): the registered run is read for viability alone and is not continued/);
+  assert.equal((JSON.parse(readFileSync(resolve(stopped, 'run.json'), 'utf8')) as Registry).state, 'stopped', 'the registry is not touched');
+  const longer = cli(model, 'run', '--resume', made('r-days', { days: [dayOf(1, 900)] }), '--days', '30', '--allow-dirty');
+  assert.equal(longer.status, 2); assert.match(longer.stderr, /the registered run is asked 20 days[^:]*: --days 30 is refused/);
+  const spent = made('r-spent', { days: Array.from({ length: 15 }, (_, i) => dayOf(i + 1, 2100)) }), over = cli(model, 'run', '--resume', spent, '--allow-dirty');   // 8.75 h in 15 days: a sixteenth would not fit
+  assert.equal(over.status, 0, `${over.stdout}${over.stderr}`); assert.match(over.stdout, /the 9 hours of the registered run are used \(8\.75 h in 15 whole days on file\): another day would not fit, and the run is not continued/);
+  const closed = JSON.parse(readFileSync(resolve(spent, 'run.json'), 'utf8')) as Registry;
+  assert.deepEqual([closed.state, closed.days.length, existsSync(resolve(spent, 'ckpt')), existsSync(resolve(spent, 'orphans'))], ['done', 15, false, false], 'closed as it stands: 15 whole days, nothing made or moved');
   // the control arms and the reader refuse what they cannot stand beside
   refused(cli({}, 'controls', '--seed', '4333', '--days', '2', '--allow-dirty', '--out', resolve(tmp, 'x13')), /seed 4333 stays sealed/, 'x13');
   const r7 = cli({}, 'replay', dir, '--r7', resolve(tmp, 'x15'));
@@ -240,6 +286,22 @@ test('what the registration fixes: the seed, the adapter, the arms, the decode r
   for (const s of SEALED_SEEDS) for (const arm of [null, engineArm(R13.arms.draw), WIRE]) assert.match(populationSeedRefusal(s, arm), /stays sealed/);
   assert.equal(populationSeedRefusal(3613, engineArm(R13.arms.draw)), ''); assert.equal(populationSeedRefusal(3613, null), ''); assert.equal(populationSeedRefusal(48, null), ''); assert.equal(populationSeedRefusal(48, WIRE), '');
   for (const s of [48, 7, 21, 5, 11, 4111, 4222]) assert.match(populationSeedRefusal(s, engineArm(R13.arms.top)), /only on the registered seed 3613/);
+  // with a real adapter, only the two registered arms: every other arm of stage R11's loop would be another adapter, packet or decode on the fresh seed
+  for (const other of ['old-top', 'old-draw-1', 'p5a-s7-top', 'p5a-s7-draw-1', 'p5b-s11-top', 'p5b-s11-draw-1', 'p5b-s7-draw-2', 'p5b-s7-held-1']) for (const s of [3613, 48]) assert.match(populationSeedRefusal(s, engineArm(other)), /is not registered for a population run/, `${other} on seed ${s}`);
+  // the registered run starts only as registered: the rule on hand and naming the arm, the registered world and length
+  const asked = { arm: R13.arms.top, profile: 'field', burnInDays: 30, paramsFile: 'docs/staging/integrator-kit/params/M6-W50.json', days: 20, hours: 9, stopCheck: true };
+  assert.deepEqual([R13.profile, R13.burnIn, R13.paramsFile], ['field', 30, asked.paramsFile]);
+  assert.equal(registeredRunRefusal(asked, decodeRule('- **N1 for the recipe P5b: NOT MET: x.**')), ''); assert.equal(registeredRunRefusal({ ...asked, hours: 4.5 }, decodeRule('')), '', 'fewer hours are allowed: a resume has what is left');
+  assert.equal(registeredRunRefusal({ ...asked, arm: R13.arms.draw }, decodeRule('- **N1 for the recipe P5b: MET: x.**')), '');
+  assert.match(registeredRunRefusal(asked, null), /never chosen/); assert.match(registeredRunRefusal(asked, decodeRule('- **N1 for the recipe P5b: MET: x.**')), /names arm p5b-s7-draw-1/); assert.match(registeredRunRefusal({ ...asked, arm: R13.arms.draw }, decodeRule('')), /names arm p5b-s7-top/);
+  for (const [bad, why] of [[{ days: 19 }, /--days 19/], [{ days: 21 }, /--days 21/], [{ hours: null }, /no --hours/], [{ hours: 9.5 }, /--hours 9\.5/], [{ profile: 'compressed' }, /--profile compressed/], [{ burnInDays: 0 }, /--burn-in 0/], [{ paramsFile: 'x.json' }, /--params-file x\.json/], [{ stopCheck: false }, /--no-stop-check/]] as [Record<string, unknown>, RegExp][])
+    assert.match(registeredRunRefusal({ ...asked, ...bad } as Parameters<typeof registeredRunRefusal>[0], decodeRule('')), why);
+  // the nine hours are the run's, not each segment's
+  const d = (n: number, sec: number) => Array.from({ length: n }, () => ({ wallSeconds: sec }));
+  assert.deepEqual(resumeBudget([], null), { usedHours: 0, hours: 9, fits: true }); assert.deepEqual(resumeBudget(d(12, 1500), null), { usedHours: 5, hours: 4, fits: true });
+  assert.equal(resumeBudget(d(12, 1500), 2).hours, 2, 'fewer hours may be asked'); assert.equal(resumeBudget(d(12, 1500), 9).hours, 4, 'never more than is left');
+  assert.deepEqual([resumeBudget(d(15, 2100), null).fits, resumeBudget(d(15, 2100), null).usedHours], [false, 8.75], 'a day of 35 minutes with a tenth to spare does not fit the last quarter hour');
+  assert.equal(resumeBudget(d(14, 2100), null).fits, true); assert.deepEqual([resumeBudget(d(20, 1700), null).fits, resumeBudget(d(20, 1700), null).hours], [false, 0], 'nothing is left: no negative hours');
   assert.match(populationSeedRefusal(3613, WIRE), /runs on seed 48 only/, 'no kernel, not even a fake worker, decides on the fresh seed before the registered run');
   // the decode rule: a draw only when stage R11's table says N1 is MET for the recipe P5b
   const table = (n1: string, s0top = 'no', s0draw = 'no') => ['# Stage R11', '### Decode `top` (read first)', '', `- **S0, training-seed spread swamps everything: ${s0top}.** The two P5b trainings differ by more than 2 D on: no timing row.`, '### Decode `draw` (the second line)', '',
@@ -251,6 +313,10 @@ test('what the registration fixes: the seed, the adapter, the arms, the decode r
   const unread = decodeRule(table('not read (a draw arm and the top-pick arm of both trainings are needed)', 'not read (one training seed on file)'));
   assert.deepEqual([unread.decode, unread.n1, unread.s0], ['top', 'not read', 'not read']);
   assert.deepEqual([decodeRule(null).decode, decodeRule('').decode, decodeRule('- N1 for P5a (printed beside it): MET').decode], ['top', 'top', 'top'], 'no table, an empty one, or P5a\'s line alone: the top pick');
+  // a dry run's table (a fake worker's arms under the recipe's names) is not read, whatever it says
+  const dryRun = decodeRule(table('MET: for a model taught the rules\' own odds the draw no longer costs nests on these worlds', 'YES', 'YES').replace('# Stage R11', '# Stage R11 in the loop (numbers) — DRY RUN'));
+  assert.deepEqual([dryRun.decode, dryRun.arm, dryRun.n1, dryRun.s0], ['top', 'p5b-s7-top', 'not read', 'not read']); assert.match(dryRun.why, /the table of a dry run/);
+  assert.equal(PLAIN_RULES, 'rules-plain'); assert.ok(!(PLAIN_RULES in CONTROL_ARMS), 'the exact check\'s arm is not one of the eight re-draws');
   // the names (IMPLEMENTATION_PLAN.md, "Names every result must use from now on")
   assert.match(resultName('gliner', 'r11-p5b-s7'), /^rules-taught model on a rules menu \(taught the rules' own odds on fresh draws; packet 5; one training of the recipe\)$/);
   assert.equal(resultName('gliner', 'r4-rules-state'), 'rules-taught model on a rules menu'); assert.equal(resultName('gliner', 'base'), 'untuned model on a rules menu'); assert.equal(resultName('rules', null), 'the rules');

@@ -47,7 +47,12 @@
 // observeV5 1 on the world from the first tick, sends the kernel that packet, and writes receipts of schema r10-receipt-3
 // (each ask line and journal line carries the packet's version; the journal also the decode setting). Refused on top of
 // the old path's refusals: a sealed seed (4333, 4444); an adapter folder with weights and no manifest.json (a training cut
-// short); registered weights with another hash; an arm of stage R11 on any seed but 3613 (its dry arms: 48).
+// short); registered weights with another hash; an arm of stage R11 on any seed but 3613 (its dry arms: 48). Added by the
+// stage's review (docs/staging/r13-prereg.md §13): with a real adapter only the two registered arms run on a population,
+// and only the one the decode rule names, read from the table R13_R11_NUMBERS points at; the registered world and length
+// (the field map, 30 days of burn-in on M6-W50, --days 20, --hours 9 or less, the stop check on); --packet p5b or p5a with
+// a model arm that is not stage R11's; and at a resume of the registered run: not past a stop check that ended it, and
+// with no more hours than are left of the nine.
 import { spawn, type ChildProcess } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
@@ -76,10 +81,10 @@ import { replayReport, replayRun, runPacket } from './lib/r10-read';
 import { DAY, DayFiles, dayName, diskRefusal, keyOf, meterStart, MIN_AGE, newestCkpt, pruneCkpts, readCkpt, readLines, readRegistry, RECEIPT_SCHEMA, RECEIPT_SCHEMA_PACKET, RunStopped, runDay, runningModelProcesses, setAside, sha16, STOP, stopCheck, swapUsedMB, warmedWorker,
   UNDER_AGE, writeCkpt, writeRegistry, type Arrival, type AskLine, type DaySummary, type Engine, type Line, type Registry, type Row, type Tap } from './lib/r10-run';
 import { PACKET_NAMES, PACKET_VERSION, packetOf, type PacketName } from './lib/r11-packets';
-import { decodeRule, isRegisteredArm, populationSeedRefusal, R13, REGISTERED_SHA256 } from './lib/r13';
+import { decodeRule, isRegisteredArm, PLAIN_RULES, populationSeedRefusal, R13, registeredRunRefusal, REGISTERED_SHA256, resumeBudget } from './lib/r13';
 import { ARMS, armWorld, GuardedScorer, type ArmSpec } from './r5-pilot';
 import { engineArm, engineKernel, engineSpec, LOOP_SWITCHES, warmUpPacket, workerRefusal, type EngineArm } from './r11-loop';
-import { ARMS as CONTROL_ARMS, armReaders, runArm as controlRun, type ArmFile } from './r7-card';
+import { ARMS as CONTROL_ARMS, armReaders, runArm as controlRun, type ArmFile, type ArmSpec as ControlSpec } from './r7-card';
 import { hashWithoutOwn } from './r8-contexts';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -183,6 +188,21 @@ async function run(a: Args): Promise<number> {
     const days = a.has('days') ? +a.flag('days') : reg.daysAsked, hours = a.has('hours') ? +a.flag('hours') : null;
     if (!Number.isInteger(days) || days < 1 || (hours !== null && !(hours > 0))) throw new Refused('--days is a whole number of days; --hours is positive');
     reg.daysAsked = days; reg.hours = hours;
+    if (reg.engine?.registered) {
+      // the registered run of stage R13 (docs/staging/r13-prereg.md §5, §6; the review's amendments A4 and A5 in §13): it is
+      // not continued past a stop check that ended it, its length stays the registered one, and its nine hours are the
+      // run's, not each segment's. All of this comes before anything is moved, loaded or started.
+      if (reg.stopCheck?.stop && reg.stopCheckOn) throw new Refused(`the stop check after day ${STOP.day} ended this run (${reg.stopCheck.reasons.join('; ')}): the registered run is read for viability alone and is not continued (docs/staging/r13-prereg.md §5, §6)`);
+      if (days !== R13.days) throw new Refused(`the registered run is asked ${R13.days} days (docs/staging/r13-prereg.md §5): --days ${days} is refused`);
+      const b = resumeBudget(reg.days, hours);
+      if (!b.fits) {
+        reg.state = 'done'; reg.ended = `the ${R13.hours} hours of the registered run are used (${b.usedHours.toFixed(2)} h in ${reg.days.length} whole days on file): another day would not fit, and the run is not continued`;
+        reg.events.push({ t: now(), msg: reg.ended }); log(reg.ended); writeRegistry(out, reg);
+        return 0;
+      }
+      reg.hours = +b.hours.toFixed(3);
+      log(`the registered run has used ${b.usedHours.toFixed(2)} of its ${R13.hours} hours in ${reg.days.length} whole days: this segment gets ${reg.hours} h at most`);
+    }
   } else {
     const arm = a.flag('arm', 'rules'), { spec, eng } = armOf(arm), seed = +a.flag('seed', 'NaN'), profile = a.flag('profile', 'field'), decode = a.flag('decode', eng ? eng.decode.mode : 'top');
     if (!spec) throw new Refused(`unknown arm "${arm}"; known: ${Object.keys(ARMS).filter(k => !ARMS[k].redraw).join(', ')}, and the arms of stage R11's loop by their own names (${R13.arms.draw}, ${R13.arms.top}, …: scripts/r11-loop.ts engineArm)`);
@@ -197,6 +217,8 @@ async function run(a: Args): Promise<number> {
     if (packetFlag && !(PACKET_NAMES as readonly string[]).includes(packetFlag)) throw new Refused(`--packet ${PACKET_NAMES.join(' | ')}`);
     if (eng && packetFlag && packetFlag !== eng.packet) throw new Refused(`arm ${arm} is sent packet "${eng.packet}" (its name fixes it): --packet ${packetFlag} contradicts it`);
     const packetName: PacketName = eng ? eng.packet : (packetFlag || 'state') as PacketName, v5 = !!eng || packetName !== 'state';
+    // a model arm that is not stage R11's is sent the state-only packet (its kernel is made so below): a packet 5 named for it would put another packet's version and hash on its receipts
+    if (!eng && spec.kernel === 'gliner' && packetName !== 'state') throw new Refused(`arm ${arm} is sent the state-only packet of stage R4: --packet ${packetName} is for the rules arm, the no-model arms and the arms of stage R11 (which fix their own)`);
     if (eng && ((a.has('decode') && decode !== eng.decode.mode) || (a.has('decode-salt') && +a.flag('decode-salt') !== eng.decode.salt) || (a.has('hold') && a.flag('hold') !== eng.decode.hold)))
       throw new Refused(`arm ${arm} decodes by ${decodeWords(eng.decode)} (its name fixes it): the --decode, --decode-salt or --hold given contradicts it`);
     if (g.dirty.length && !a.has('allow-dirty')) throw new Refused(`the tree is not clean (${g.dirty.length} entries, e.g. ${g.dirty.slice(0, 3).join('; ')}): commit first (--allow-dirty is for smoke checks of a script under edit, and the registry says so)`);
@@ -207,6 +229,14 @@ async function run(a: Args): Promise<number> {
     const days = +a.flag('days', '5'), burnInDays = +a.flag('burn-in', '30'), hours = a.has('hours') ? +a.flag('hours') : null;
     if (!Number.isInteger(days) || days < 1 || !Number.isInteger(burnInDays) || burnInDays < 0 || (hours !== null && !(hours > 0))) throw new Refused('--days and --burn-in are whole numbers of days; --hours is positive');
     const paramsFile = a.flag('params-file', 'docs/staging/integrator-kit/params/M6-W50.json'), text = readFileSync(resolve(ROOT, paramsFile), 'utf8');
+    // an arm of stage R11 with a real adapter is the registered run: the decode rule must be on hand and name it, and the world and the length are the registered ones
+    let ruleRead: Registry['decodeRule'];
+    if (eng && eng.adapter !== 'fake') {
+      const file = process.env.R13_R11_NUMBERS ? resolve(process.env.R13_R11_NUMBERS) : '', table = file && existsSync(file) ? readFileSync(file, 'utf8') : null, rule = table === null ? null : decodeRule(table);
+      const why = registeredRunRefusal({ arm, profile, burnInDays, paramsFile, days, hours, stopCheck: !a.has('no-stop-check') }, rule);
+      if (why) throw new Refused(why);
+      ruleRead = { arm: rule!.arm, n1: rule!.n1, s0: rule!.s0, why: rule!.why, file, sha256: createHash('sha256').update(table!).digest('hex') };
+    }
     // a packet 5 world carries the switches of stage R11's loop (observeV5 1 from the first tick); the old path's world is unchanged
     const params: Record<string, number> = { ...JSON.parse(text) as Record<string, number>, ...(v5 ? LOOP_SWITCHES : { observeV4: 1, menuParity: 1 }) };
     // the decode (stage R9's step of the loop): a model arm always has one; a no-model kernel arm only when --decode is given
@@ -221,7 +251,7 @@ async function run(a: Args): Promise<number> {
       seed, seedRole: seedRole(seed), profile, burnInDays, daysAsked: days, hours, paramsFile, paramsSha256: createHash('sha256').update(text).digest('hex'), params,
       switches: { observeV4: 1, menuParity: 1, kernelGate: spec.gate ?? 0, kernelNoRulesPick: spec.noPick ?? 0, ...(v5 ? { observeV5: 1 } : {}) },
       arm, kernel: spec.kernel, adapter: spec.adapter ?? null, decode: decodeWords(decodeSpec), decodeSpec, packet: PACKET_VERSION[packetName], ...(packetName !== 'state' ? { packetName } : {}),
-      ...(eng ? { engine: { name: eng.name, key: eng.key, adapter: eng.adapter, packet: eng.packet, decodeName: eng.decodeName, what: eng.what, registered: isRegisteredArm(eng.name) && seed === R13.seed } } : {}), ...(v5 ? { stage: 'R13' } : {}),
+      ...(eng ? { engine: { name: eng.name, key: eng.key, adapter: eng.adapter, packet: eng.packet, decodeName: eng.decodeName, what: eng.what, registered: isRegisteredArm(eng.name) && seed === R13.seed } } : {}), ...(ruleRead ? { decodeRule: ruleRead } : {}), ...(v5 ? { stage: 'R13' } : {}),
       name: resultName(spec.kernel, spec.adapter ?? null),
       minAge: MIN_AGE, under: spec.kernel === 'rules' ? 'the rules decide for every animal' : UNDER_AGE, burnInHash: '', startHash: '', worker: null, env: Object.fromEntries(ENV_KEYS.map(k => [k, process.env[k] ?? null])),
       machine: { load: loadavg(), swapUsedMB: swapUsedMB(), freeGB: 0, freeWhere: '' }, contexts: !a.has('no-contexts') && spec.kernel !== 'rules', timeoutS: +a.flag('timeout-s', '120'), stopCheckOn: !a.has('no-stop-check'),
@@ -435,7 +465,7 @@ async function replay(a: Args): Promise<number> {
     const dir = resolve(ROOT, a.flag('r7')), file = resolve(dir, 'P', `s${reg.seed}`, `${reg.label}.json`), days = reg.days.length;
     if (!a.flag('r7') || a.flag('r7').startsWith('--')) throw new Refused('replay <out> --r7 <the folder of the control arms>');
     if (reg.profile !== 'field') throw new Refused('--r7 reads a run of the field map (stage R7\'s population unit)');
-    if (reg.label in CONTROL_ARMS) throw new Refused(`the run's label "${reg.label}" is a control arm's name`);
+    if (reg.label in CONTROL_ARMS || reg.label === PLAIN_RULES) throw new Refused(`the run's label "${reg.label}" is a control arm's name`);
     const r = await replayRun(out, { taps: [r7Tap(reg, days)], field: false, log: s => console.log(s) });
     if (!r.ok) { console.log(`THE RECEIPTS DO NOT REPRODUCE THE RUN (${r.hashes.filter(h => h.run === h.replay).length} of ${r.hashes.length} day hashes equal, ${r.missing} missing, ${r.linesDiffer} lines differ): no arm file is written`); return 1; }
     const got = r.taps.r7 as Pick<ArmFile, 'focal' | 'focalTroop' | 'rgMinAge' | 'living' | 'card' | 'rows' | 'counts'>, g = gitState(ROOT);
@@ -508,7 +538,8 @@ function plain(a: Args): number {
  * Stage R13 (docs/staging/r13-prereg.md §8): stage R7's sixteen no-model control arms at the population unit (eight rules
  * re-draws, random choice twice, the rules with 10, 20 and 30% of choices random twice each), by stage R7's own code
  * (scripts/r7-card.ts runArm), on the burned-in world a run of this script with the same seed and packet starts from, for
- * `--days` days. The files are stage R7's arm files (<out>/P/s<seed>/<arm>.json). An arm on file is not run again.
+ * `--days` days. The files are stage R7's arm files (<out>/P/s<seed>/<arm>.json). An arm on file is not run again. With
+ * them, as `rules-plain.json`: the same code on the rules world with no salt (the exact check of the instrument).
  */
 function controls(a: Args): number {
   const log = (s: string) => console.log(`[${clock(new Date())}] ${s}`), g = gitState(ROOT);
@@ -530,7 +561,10 @@ function controls(a: Args): number {
   const focal = focalSet(base), focalTroop = index(base).byId.get(focal[0].id)!.troopId;
   log(`control arms of stage R7 at the population unit: seed ${seed}, ${days} days after ${burnInDays}; burn-in hash ${burnInHash}${plainHash ? ` (without the animals' own record: the burn-in without observeV5, ${plainHash})` : ''}`);
   mkdirSync(dir, { recursive: true });
-  for (const name of names) {
+  // beside the sixteen (unless --arms names some): stage R7's own code on the rules world with no salt, the world the paired
+  // rules arm continues; scripts/r13-report.ts reads the two against each other, readout by readout (the exact check of the instrument)
+  const specs: [string, ControlSpec][] = [...names.map(n => [n, CONTROL_ARMS[n]] as [string, ControlSpec]), ...(a.has('arms') ? [] : [[PLAIN_RULES, { share: null, salt: 0 }] as [string, ControlSpec]])];
+  for (const [name, spec] of specs) {
     const file = resolve(dir, `${name}.json`);
     if (existsSync(file)) {
       const was = JSON.parse(readFileSync(file, 'utf8')) as ArmFile;
@@ -538,8 +572,8 @@ function controls(a: Args): number {
       log(`${name}: on file; not run again`);
       continue;
     }
-    const r = controlRun(base, CONTROL_ARMS[name], 'P', days, focal, params, s => log(`  ${name} ${s}`));
-    const arm: ArmFile = { stage: 'r7-card', unit: 'P', seed, arm: name, spec: CONTROL_ARMS[name], burnIn: burnInDays, days, paramsFile, head: g.commit.slice(0, 7), dirty: g.dirty.length > 0, burnInHash, focal, focalTroop, ...r };
+    const r = controlRun(base, spec, 'P', days, focal, params, s => log(`  ${name} ${s}`));
+    const arm: ArmFile = { stage: 'r7-card', unit: 'P', seed, arm: name, spec, burnIn: burnInDays, days, paramsFile, head: g.commit.slice(0, 7), dirty: g.dirty.length > 0, burnInHash, focal, focalTroop, ...r };
     writeAtomic(file, JSON.stringify(arm) + '\n');
     log(`wrote ${rel(file)}: end hash ${r.endHash}, ${r.seconds} s, deaths ${r.deaths.length}`);
   }

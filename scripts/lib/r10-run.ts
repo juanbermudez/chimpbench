@@ -735,6 +735,8 @@ export interface Registry {
   /** The version of the packet the kernel is sent; `packetName` (stage R13) names it for the builder (scripts/lib/r11-packets.ts packetOf; absent: the state-only packet). */ packet: string; packetName?: 'state' | 'p5b' | 'p5a';
   /** Stage R13: the arm of stage R11's loop this run is (scripts/r11-loop.ts engineArm: the name fixes the adapter, the packet and the decode), and whether it is the arm docs/staging/r13-prereg.md registers. */
   engine?: { name: string; key: string; adapter: string; packet: string; decodeName: string; what: string; registered: boolean };
+  /** Stage R13, a registered arm: the decode rule as it was read at the launch (scripts/lib/r13.ts decodeRule) and the table it was read from (R13_R11_NUMBERS), with the table's sha256. */
+  decodeRule?: { arm: string; n1: string; s0: string; why: string; file: string; sha256: string };
   /** Stage R13, a packet 5 run: the hash of the same burn-in built without observeV5; the script stopped unless it is this run's burned-in world with the animals' own record removed. */ plainBurnInHash?: string;
   /** The stage whose registration the run belongs to (absent: stage R10). */ stage?: string;
   /** The name a result of this run must carry (IMPLEMENTATION_PLAN.md, "Names every result must use"). */ name: string;

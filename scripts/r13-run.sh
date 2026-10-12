@@ -9,7 +9,8 @@
 #   scripts/r13-run.sh dry          no model, about four minutes, seed 48, two days: the model path against a fake worker, the rules arm, the control arms,
 #                                   the replays and both reports, into $R13_OUT/dry (never a result, never published)
 #   scripts/r13-run.sh model        THE MODEL ARM (seed 3613, at most 20 days in 9 hours). Needs R13_ARM set to the arm `decode` names. Run again after an
-#                                   interruption: it resumes (R13_HOURS: the hours left)
+#                                   interruption: it resumes, with what is left of the nine hours (the night script counts the whole days on file;
+#                                   R13_HOURS can only lower it). A run the stop check ended is not resumed: it is read for viability alone
 #   scripts/r13-run.sh rules        the paired rules arm, the same seed, the days the model arm completed
 #   scripts/r13-run.sh controls     stage R7's sixteen control arms at the population unit on the same burned-in world, the same days
 #   scripts/r13-run.sh replay       both runs replayed from their receipts (the field observer and the card; then stage R7's readers), and the packet check
@@ -44,6 +45,8 @@ arm_named() { rule | head -1 | cut -d' ' -f2; }
 days_done() { /usr/bin/python3 -c "import json,sys; print(len(json.load(open(sys.argv[1]))['days']))" "$1/run.json"; }
 state_of() { /usr/bin/python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['state'])" "$1/run.json"; }
 label_of() { /usr/bin/python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['label'])" "$1/run.json"; }
+# yes when the stop check after day 5 said STOP (prereg §6): such a run is ended, whatever its state says
+stop_said() { /usr/bin/python3 -c "import json,sys; print('yes' if (json.load(open(sys.argv[1])).get('stopCheck') or {}).get('stop') else 'no')" "$1/run.json"; }
 need_model_run() { [ -f "$MODEL/run.json" ] || { echo "R13: no model run under $MODEL yet ('$0 model')"; exit 2; }; N="$(days_done "$MODEL")"; [ "$N" -ge 1 ] || { echo "R13: the model run has no whole day yet"; exit 2; }; }
 # both runs replayed, read by stage R7's readers beside the control arms, and both reports; <card dir> <model run> <rules run> <tables dir> <prefix> <seed> [dry]
 reading() {
@@ -106,7 +109,9 @@ case "$1" in
     mkdir -p "$OUT"
     if [ -f "$MODEL/run.json" ]; then
       [ "$(state_of "$MODEL")" = done ] && { echo "R13: the model arm is on file ($(days_done "$MODEL") days, done); it is not run again"; exit 0; }
-      echo "R13: resuming the model arm after day $(days_done "$MODEL") (state $(state_of "$MODEL")), $HOURS more hours at most"
+      # a run the stop check ended is read for viability alone (prereg §5, §6): never resumed past it (the night script refuses it too)
+      [ "$(stop_said "$MODEL")" = yes ] && { echo "R13: the stop check ended the model arm after day $(days_done "$MODEL"); it is not resumed, and the reading goes on with these days"; exit 0; }
+      echo "R13: resuming the model arm after day $(days_done "$MODEL") (state $(state_of "$MODEL")); the night script gives it what is left of the $HOURS hours"
       $KEEP $NIGHT run --resume "$MODEL" --hours "$HOURS"; rc=$?
     else
       $KEEP $NIGHT run --seed "$SEED" --arm "$ARM" --days "$DAYS" --hours "$HOURS" --out "$MODEL"; rc=$?
