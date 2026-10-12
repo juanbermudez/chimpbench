@@ -4,7 +4,8 @@ import type { Chimp } from '../src/types';
 import { B, PI, computeMorph, createFK, createMorph, createPose, solveFK } from '../src/render/creatures/rig';
 import { CLIPS, GROOM_FRONT, GROOM_HIGH, PROP, Pw, feedCycle, feedHold, feedPicks, groomerRole, type PoseCtx } from '../src/render/creatures/poses';
 import { headLook } from '../src/render/creatures/secondary';
-import { PERCH, SEAT_REACH_M, perchBout, perchLies, perchPeriod, perchPosture, seatAllowed, seatGroups, type SeatPairs } from '../src/render/creatures/perch';
+import { NEST_TURNS, NEST_TURN_RAD, PERCH, SEAT_REACH_M, nestTurn, perchBout, perchLies, perchPeriod, perchPosture, seatAllowed, seatGroups, type SeatPairs } from '../src/render/creatures/perch';
+import { dampAngle } from '../src/render/creatures/util';
 
 // Stage W9 (docs/staging/w9b-tree-pairs.md): pairs and postures in trees. Everything drawn here is a stylization, so
 // these tests hold the rules, not field numbers: who sits where on a shared bough, which resting posture an individual
@@ -278,4 +279,29 @@ test('sheltering, alarm and nursing have crown variants; their ground poses are 
   // Alarm in a crown: a hand holds on overhead.
   w.bind(pose).reset(); CLIPS.alarm(w, ctx({ inTree: true }));
   assert.ok(pose.v[PI.ik + 1] > 1.2 && pose.v[PI.ik + 3] === 1 && pose.v[B.fingL * 3] > 0.6);
+});
+
+// Stage W11 (docs/staging/w11-polish.md), item 5. The nest builder's turns, and why one heading target matters.
+test('a nest builder faces five ways in turn, 1.9 rad apart, and one heading target does not depend on the frame time', () => {
+  assert.equal(NEST_TURNS, 5); assert.equal(NEST_TURN_RAD, 1.9);
+  const seen: number[] = [];
+  for (let k = 0; k < 1; k += 0.001) { const t = nestTurn(k); if (seen[seen.length - 1] !== t) seen.push(t); }
+  assert.equal(seen.length, 5, 'five headings');
+  for (let i = 1; i < seen.length; i++) assert.ok(Math.abs(seen[i] - seen[i - 1] - 1.9) < 1e-12, 'each 1.9 rad on from the last');
+  assert.equal(nestTurn(0), 0); assert.equal(nestTurn(1), 0, 'done: it lies down facing as it sat at first'); assert.equal(nestTurn(-0.1), 0);
+  // The two pulls on a nesting animal's heading, as the layer applies them each frame: the motion step toward its
+  // target at 4.5 a second of frame time, then the placement toward its own at 3 a second over a fixed thirtieth.
+  // With two targets (the simulated heading and the turn) the heading settles between them at a point that moves with
+  // the frame time, so uneven frames make it tremble and a turn of 1.9 rad comes out short. With one it sits still.
+  const settle = (motionTarget: number, placeTarget: number, frames: number[]) => {
+    let h = placeTarget, travel = 0, last = h;
+    for (let i = 0; i < 600; i++) { const dt = frames[i % frames.length]; h = dampAngle(h, motionTarget, 4.5, dt); h = dampAngle(h, placeTarget, 3, 1 / 30); if (i >= 300) travel += Math.abs(h - last); last = h; }
+    return { h, travel };
+  };
+  const even = [1 / 60], uneven = [1 / 60, 1 / 60, 1 / 60 + 0.035];
+  const sim = 0.4, turn = 0.4 + 1.9;
+  const two = settle(sim, turn, uneven), twoEven = settle(sim, turn, even), one = settle(turn, turn, uneven);
+  assert.ok(two.travel > 1, `two targets, uneven frames: ${two.travel.toFixed(2)} rad of travel in 300 frames`);
+  assert.ok(Math.abs(twoEven.h - turn) > 0.5, `two targets: it stops ${Math.abs(twoEven.h - turn).toFixed(2)} rad short of the turn`);
+  assert.ok(one.travel < 1e-9 && Math.abs(one.h - turn) < 1e-9, 'one target: at the turn, and still');
 });

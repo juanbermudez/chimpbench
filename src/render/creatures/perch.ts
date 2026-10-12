@@ -115,3 +115,14 @@ export const SEAT_REACH_M = 9;
 /** True when a seat `offset` metres from the animal's simulated position is allowed, given how far (`own`) its own
  * branch already is from it. */
 export function seatAllowed(offset: number, own: number): boolean { return offset <= Math.max(SEAT_REACH_M, own); }
+
+/**
+ * The nest builder's turns (stage W9; a stylization): while it builds it faces NEST_TURNS headings in turn,
+ * NEST_TURN_RAD apart, pulling branches in from all round; `k` is how far the building has come, 0..1. The turn is 0
+ * again once the nest is done (k = 1): the animal lies down facing as it sat at first. Stage W11: this is added to the
+ * ONE heading an animal in its nest is turned to (creatures.ts layoutCrowns). Before, the motion step pulled a nesting
+ * animal toward its simulated heading at a rate that follows the frame time while the placement pulled it to the turn
+ * at a fixed rate: the turns came out at 1.0 rad, not 1.9, and the body trembled whenever frame times were uneven.
+ */
+export const NEST_TURNS = 5, NEST_TURN_RAD = 1.9;
+export function nestTurn(k: number): number { return k < 1 ? Math.floor((k > 0 ? k : 0) * NEST_TURNS) * NEST_TURN_RAD : 0; }

@@ -45,7 +45,7 @@ import {
 } from './creatures/secondary';
 import type { KeepCandidate } from './env/occluders';
 import { createTreeIndex, type TreeIndex } from './creatures/tree-index';
-import { PERCH, perchBout, perchLies, perchPosture, seatAllowed, seatGroups, type SeatPairs } from './creatures/perch';
+import { PERCH, nestTurn, perchBout, perchLies, perchPosture, seatAllowed, seatGroups, type SeatPairs } from './creatures/perch';
 import { endHeard, heardTakesHead, holding, listening } from './creatures/heard';
 import {
   Listen, PatrolCode, RELEASE_BRISTLE_TAU, RELEASE_DRUM_REACH, RELEASE_WINDOW_H, backSide, createFileCue, createPatrolLook, fileCue, listenVariant,
@@ -852,7 +852,20 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     let nTaken = 0;
     for (const a of animList) if (a.gOn) taken[nTaken++] = a;
     for (const a of animList) {
-      if (!a.up) { a.lies = false; continue; }
+      if (!a.up) {
+        a.lies = false;
+        // Stage W11: an animal in its nest (building or asleep; `up` leaves the nest act out) is turned by ONE heading
+        // too: the bearing of its place from the trunk with its own offset, and while it builds the turn of the moment
+        // (perch.ts nestTurn). The motion step's target and the placement's are this same value, as for an animal on
+        // its limb below. Before, the motion step pulled it toward the simulated heading (at a rate that follows the
+        // frame time) and the placement pulled it back (at a fixed rate): with every third frame 35 ms longer a
+        // builder's heading travelled 98 rad in 80 s, a sleeper's 9 rad in 10 s, and the builder's four turns came out
+        // at 1.0 rad instead of 1.9. Not while its decision beat turns it to what it chose (as below).
+        if (a.act === 'nest' && a.carry === 0 && a.chimp.alive && a.track.y > 0.3 && !a.onTrunk && a.chimp.action !== 'climb' && !(a.way === Way.soon && a.beat.phase >= Phase.look) && ownOf(a)) {
+          a.seatFace = a.ownYaw + (hash01(a.id, 45) - 0.5) * 1.2 + nestTurn(a.nestK); a.headingTarget = a.seatFace;
+        }
+        continue;
+      }
       // Its resting posture of this bout (perch.ts), from those its tree offers.
       const tree = treeFor(a), th = tree ? tree.height ?? 0 : 0;
       // (Never prone for an infant, nor for an animal with an infant on its body: it would lie on it.)
@@ -949,8 +962,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   const NEUTRAL: [string, number, Gait | null] = ['stand', 0, null];
   /** Simulated seconds the building clip plays from the drawn body's arrival at its nest place (stage W6's four
    * minutes; the simulation builds for 3 to 5 [H, nestBuildMinS and nestBuildSpanS]). Stage W9: the nest grows over
-   * them, and the builder faces NEST_TURNS ways in turn as it pulls branches in from all round (stylization). */
-  const NEST_BUILD_S = 240, NEST_TURNS = 5, NEST_TURN_RAD = 1.9;
+   * them, and the builder faces five ways in turn as it pulls branches in from all round (perch.ts nestTurn; stylization). */
+  const NEST_BUILD_S = 240;
   function chooseClip(a: Anim, moving: boolean, fast: number): [string, number, Gait | null] {
     const c = a.chimp;
     if (debug.clip) return [debug.clip, 0, null];
@@ -2186,8 +2199,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         // (W9: paired or lying on a bough it faces its partner, or along the bough: seatFace, set by layoutCrowns.)
         else if (!climbAct && a.speed < 0.3 * a.morph.size) {
           const turned = a.way === Way.soon && a.beat.phase >= Phase.look && beatGoal(a, Gaze.goal);
-          // (W9: building a nest it turns a step at a time, pulling branches in from all round; it settles as it lies down.)
-          const turn = a.act === 'nest' && a.nestK < 1 ? Math.floor(a.nestK * NEST_TURNS) * NEST_TURN_RAD : 0;
+          // (W9: building a nest it turns a step at a time, pulling branches in from all round; it settles as it lies
+          // down. W11: that turn is in seatFace, set by layoutCrowns; the last term only serves a frame without one.)
+          const turn = a.act === 'nest' ? nestTurn(a.nestK) : 0;
           a.heading = dampAngle(a.heading, turned ? Math.atan2(GOAL[0] - x, GOAL[2] - z) : Number.isFinite(a.seatFace) ? a.seatFace : perchYaw + (hash01(a.id, 45) - 0.5) * 1.2 + turn, 3, 1 / 30);
         }
       } else { a.seated = false; if (inNest) { x = a.nestX; y = a.nestY; z = a.nestZ; } }
