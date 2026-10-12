@@ -239,3 +239,30 @@ Run on this branch's final code, 12 October 2026, 06:58 to 07:07 EDT (the commit
 5. **The bough's colour and the spray's size**, both set by eye. Recommended: keep, and look again when the environment can seat two on a limb.
 6. **The simulation keeps a groomer grooming while its partner climbs down** (it measures the pair's distance in the plane). Recommended: a small simulation stage of its own, registered, since it moves the golden hashes.
 7. **The restart of the clamber clip on a paired actor** (section 6). Recommended: make the one-line change at integration and film `join-28-26` once more.
+
+## 8. Second reading (12 October 2026)
+
+A second reader went through this stage from 07:08 EDT on 12 October 2026: the whole difference from 9be7d44, every claim of sections 1 to 3 measured again with a probe of its own, and a look for what the eight fixes broke. Scripts, readouts and pictures: `/Volumes/Drive/chimpbench/shots/watch-2026-10-12/w11-polish/review/` (`rv.mjs` is the probe; `after/` holds the builder's head 50c6d00, `before/` the export of 9be7d44, `repaired/` the head of this section). One model-free server at a time, port 5198. No model process was started and no graphics probe was run.
+
+### 8.0 Registered before the repaired code was served or filmed
+
+Written at 08:13 EDT, after the builder's head had been read and filmed and before any line below was changed in a build that was served. (The two pure rules of repairs R1 and R4 were written first and their unit tests run once; nothing else of the changed code ran before this commit.) Four repairs, all in the renderer, no switch, nothing under `src/sim`. One run of the repaired build against the statements Q1 to Q6; every reading is reported, whichever way it reads.
+
+**How it is measured.** The probe wraps the creature layer's own update in the page and reads every living animal right after it, with the frame time the layer was given, so a speed is the layer's own. Field map and 160 m map, seed 48, the model policy off from the first frame; a before and an after reading are compared only when the world hashes at the starting tick are equal.
+
+**R1. The animal that stays drops onto all fours for a third of a second when its partner leaves.** Filmed at Watch 4x (`part-watch-1142`, animals 35 and 30): in the frame animal 30 set off down its trunk it was still counted as seated at its own place, that place crowded animal 35 onto its bough 1.04 m away, and animal 35 was flagged clambering for that one frame. The clip then held for its shortest time: 21 frames in the clamber clip while the body moved 0.2 m, and one frame tagged "going to groom". Cause: the crown layout reads whether a body is on its trunk from the placement of the frame before. Repair: the layout and the placement ask one rule of the same frame's path (`perch.ts` `trunkBound`).
+
+**R2. A paired animal's clamber clip is restarted about three times a second** (section 6, second point; the builder's own finding). It shows: `join-watch-1187`, animal 26: 9 restarts in 3.5 s, and because each restart resets the clip's clock, the animal stayed on all fours for 18 frames (0.32 s) after it had reached its partner. Repair: the clip is returned with the role the pairing writes.
+
+**R3. A body that clambers during its decision beat, or onto its trunk, trembles when frame times are uneven.** `nest-14-2812` (animal 14, Watch 4x, frames made 0 to 45 ms longer at random): 55 reversals of the heading in 223 frames of the clamber clip, 11.4 rad of travel on a straight way of 8 m. Cause: the fault of item 5 again. A clambering body is turned along its way, and the placement also turns it to what it chose (stage W6) or to the trunk. Repair: while it clambers, neither of those two turns.
+
+**R4. The clamber clip plays above 2 min/s, and its flag stays on a carried infant.** Section 0.3 keeps "everything above 2 min/s" drawn at once, and the place is. But the bark a body is bound for and the blend it is drawn at are apart for half a second, which sets the clip going: at 10 min/s 133 clamber episodes in 30 s on the field map (61 of them under a tenth of a second) and 329 on the 160 m map (161). An infant picked up while clambering keeps the flag while it is carried (up to 2.2 s filmed; nothing reads it then, but nothing clears it either). Repair: no clambering above 2 min/s (`perch.ts` `clambering`), none on a carried body.
+
+Statements, read on the repaired build:
+
+- Q1 (R1). `part-watch-1142`, animal 35, the two seconds after animal 30 is first on its trunk: no frame in the clamber clip and none tagged "going to" (builder's head: 21 and 1).
+- Q2 (R2). `join-watch-1187`, animal 26: no restart of the clip while it clambers, and at most 3 frames in the clip after it has arrived (builder's head: 9 restarts, 18 frames). It is still tagged "going to groom" for more than 3 s.
+- Q3 (R3). `nest-14-2812`, animal 14, the same uneven frames: fewer than 10 reversals of the heading while the clamber clip plays (builder's head: 55).
+- Q4 (R4). `lapse-10x-field-1300` and `lapse-10x-small-700`: no clamber episode (builder's head: 133 and 329). At 1 min/s the clamber still plays: `steps-1x-field-1575` has its three episodes.
+- Q5 (nothing else moved). `steps-rt-field-1585`: largest step of the placement alone under 0.1 m, none over 25 cm, three clamber episodes, as on the builder's head. `part-rt-853`: no second with a plain "grooming" tag and no grooming pose. The nest builder's four turns are still 1.9 rad within 0.1.
+- Q6. `tsc --noEmit`, the whole suite once and `pnpm build` on the final head.
