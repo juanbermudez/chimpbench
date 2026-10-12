@@ -1,4 +1,4 @@
-# ChimpBench: handoff (Monday 12 October 2026, 10:10 New York time)
+# ChimpBench: handoff (Monday 12 October 2026, 10:15 New York time)
 
 This file is the entry point for whoever opens this repository next, a person or an agent. Read it first. Then read
 [AGENTS.md](AGENTS.md) (binding conventions, commands, gotchas), [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
@@ -95,7 +95,7 @@ record's own, and each adapter is named by what taught it.
   scenes measured, except about 1 ms in 29 in the widest daytime strategy view of the 160 m map. None of W6 to W10
   was seen with a model. Plan, "Stages W6 to W10"; AGENTS.md, "Open issues".
 
-### 2.2 Running or queued (true at 10:10 EDT on 12 October 2026; this part goes stale within the hour)
+### 2.2 Running or queued (true at 10:15 EDT on 12 October 2026; this part goes stale within the hour)
 
 **A model queue is running: stage RW3, then stage R13.** It was started at 09:30 EDT on 12 October in a detached
 `screen` session named `modelqueue`; each stage runs from its own frozen checkout, one model process at a time, and a
@@ -104,16 +104,16 @@ failure of the first does not stop the second. No result of either has been read
 
 - **Stage RW3** (`docs/staging/rw3-prereg.md`): two small adapters taught 557 wild Taï first-grooming-partner
   choices, then scored on the 329 development records; about an hour; frozen checkout `.claude/worktrees/bench-rw3`
-  (c6024c7). Its chain started at 09:31. At 10:10 the check and the dry step had ended with exit code 0; the two
+  (c6024c7). Its chain started at 09:31. At 10:15 the check and the dry step had ended with exit code 0; the two
   reference scorings had read stage RW2's figures again (0.301 for the untuned model, 0.319 for the Ngogo-taught
   adapter), the check `rw3-prereg.md` §14.4 asks for before the trainings; the first training had run from 09:41 to
-  10:03 (exit code 0, its manifest written) and the second had begun at 10:03. No Taï-taught adapter had been
-  scored. Steps: `00-check`, `01-dry`, `10-eval-base`, `11-eval-ngogo`, `20-train-7`, `21-train-11`, `30-eval-7`,
-  `31-eval-11`, `40-report`.
+  10:03 (exit code 0, its manifest written) and the second, begun at 10:03, was in its first epoch (its model load
+  ended at 10:12). No Taï-taught adapter had been scored. Steps: `00-check`, `01-dry`, `10-eval-base`,
+  `11-eval-ngogo`, `20-train-7`, `21-train-11`, `30-eval-7`, `31-eval-11`, `40-report`.
 - **Stage R13** (`docs/staging/r13-prereg.md`): every animal aged 8 and over on stage R11's first adapter with a draw
   from its odds (the arm `p5b-s7-draw-1`, which the registered rule names because N1 is met), on the fresh seed 3613:
   at most 20 simulated days in 9 hours, then the rules arm, the control arms and the report; frozen checkout
-  `.claude/worktrees/bench-r13` (fcbd612). At 10:10 its chain had not begun. Steps: `00-check`, `01-dry`, `10-model`,
+  `.claude/worktrees/bench-r13` (fcbd612). At 10:15 its chain had not begun. Steps: `00-check`, `01-dry`, `10-model`,
   `11-rules`, `12-controls`, `20-report`.
 - **To check, only read.** `cat` the `state` and `status.log` of the queue (`bench-r13/artifacts/queue/`), of RW3
   (`bench-rw3/artifacts/rw3-chain/`; a step's output is `<step>.log` beside them) and, once it has begun, of R13
@@ -135,12 +135,11 @@ failure of the first does not stop the second. No result of either has been read
   checkpoint with what is left of its nine hours, and never past a stop check that ended the run (`r13-prereg.md`,
   "For the integrator").
 
-**Stage W11 (viewer polish) is under its second reading and is not merged** (true at 10:10 EDT on 12 October). It is
+**Stage W11 (viewer polish) is under its second reading and is not merged** (true at 10:15 EDT on 12 October). It is
 built on branch `w11-polish` on top of 9be7d44 (the builder's head 50c6d00; the second reader's commits follow, the
-last of them bc513ba at 09:38): no
-jump across a crown, a pair picture that agrees with its tag, an eased cut-off scratch, a lone animal no busier, a
-steady nest heading, nests under sleepers, the bough as a limb of its tree with a leafy spray, a hand that meets the
-mouth. Its document is `docs/staging/w11-polish.md` on that branch; its plan block arrives with its merge.
+last of them bc513ba at 09:38): no jump across a crown, a pair picture that agrees with its tag, an eased cut-off
+scratch, a lone animal no busier, a steady nest heading, nests under sleepers, the bough as a limb of its tree with
+a leafy spray, a hand that meets the mouth. Its document is `docs/staging/w11-polish.md` on that branch; its plan block arrives with its merge.
 
 ## 3. Set-up on this computer
 
@@ -155,8 +154,10 @@ of the first clone macOS had evicted 14,230 of 18,704 files (the git pack among 
    57718b5 plus changes to three documents no test reads): **1,420 tests, 1,419 passing, none failing, 1 skipped**
    (the guide's scorecard check, whose data file is not on this computer). That is the viewer branch's 1,402 with
    the 8 of stage R13 and the 10 of stage RW3; it was the first run with the three merges of 12 October together.
-   It ran beside a training of stage RW3 and held the 1-minute load at 8 to 10. Do not run one beside a scoring,
-   loop or population step (§2.2), and never two at once.
+   It ran beside a training of stage RW3 and held the 1-minute load at 8 to 10; the second training's model load,
+   which began a minute into it, took nearly nine minutes against about three for the first (AGENTS.md, "Gotchas").
+   Do not run one beside a scoring, loop or population step (§2.2), and never two at once. `tsc --noEmit`,
+   `gen-params --check`, `decision-guide --check` and `pnpm build` pass on this branch's head (12 October).
    **To run the app with no model at all** (the way to look at it while the queue of §2.2 runs): `MGOGO_NO_MODEL=1 fnm
    exec --using=22.22.3 -- pnpm exec vite --host 127.0.0.1 --port 5181 --strictPort`, then open
    `http://127.0.0.1:5181/?provider=server` (another free port if that one is taken). `MGOGO_NO_MODEL=1` starts no
