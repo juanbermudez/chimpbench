@@ -126,7 +126,7 @@ test('the halves, the fitted temperature, the interval and the reason class are 
 });
 
 test('a transform at a run\'s ask takes the run\'s own uniform draw; the plain draw gives back the option applied', () => {
-  const a = (u: number): RunAsk => ({ day: 1, id: 3, phase: 'day', hour: 12, fam: ['rest', 'feed', 'food-trip', 'greet'], p: P, u, top: 0, drawn: drawAt(P, u), rules: 0, carry: -1, stay: -1, trip: [2], mates: 0 });
+  const a = (u: number): RunAsk => ({ day: 1, id: 3, phase: 'day', hour: 12, fam: ['rest', 'feed', 'food-trip', 'greet'], p: P, u, top: 0, drawn: drawAt(P, u), rules: 0, carry: -1, stay: -1, trip: [2], mates: 0, minutes: 5, thirst: 0 });
   for (const u of [0.01, 0.49, 0.51, 0.79, 0.81, 0.94, 0.96, 0.999]) {
     assert.equal(applied(DRAW, a(u)), a(u).drawn);
     assert.equal(applied(TOP, a(u)), 0);

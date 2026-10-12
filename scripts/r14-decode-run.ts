@@ -34,12 +34,14 @@ interface Receipt {
   trig: { why: string; intr: string; gate: string }; p: number[] | null; by: string; refusal: string; picked: number;
   dec?: { mode: string; salt: number; open: string; also?: string; prev: number | null; kernel: number; index: number; u?: number };
 }
-interface Ctx { doing: string | null; form: string | null; hour: number; mates: number }
+interface Ctx { doing: string | null; form: string | null; minutes: number; hour: number; mates: number; thirst: number }
 /** One ask of the run that the kernel's choice settled. */
 export interface RunAsk {
   day: number; id: number; phase: string; hour: number; fam: string[]; p: number[]; u: number; top: number; drawn: number; rules: number;
   /** The option that carries on the act in progress (-1: none), the option that stays in the animal's own finished nest (-1: not in it), the trips to food on the menu. */
   carry: number; stay: number; trip: number[]; mates: number;
+  /** Minutes in the act in progress (the packet's `doing` line) and the animal's thirst (0 to 1), from the saved context. */
+  minutes: number; thirst: number;
 }
 /** The option a transform applies at an ask with the run's own uniform draw (the top pick takes no draw). */
 export function applied(t: Transform, a: RunAsk): number { if (t === TOP) return a.top; const i = drawAt(t.apply(a.p), a.u); return i < 0 ? a.top : i; }
@@ -56,8 +58,8 @@ if (process.argv[1]?.endsWith('r14-decode-run.ts')) {
     const ctx = new Map<string, Ctx>(), cfile = `${run}/contexts/${f}.gz`;
     if (existsSync(cfile)) for (const l of gunzipSync(readFileSync(cfile)).toString('utf8').split('\n')) {
       if (!l) continue;
-      const c = JSON.parse(l) as { t: number; id: number; v: number; context: { environment: { hour: number }; social: { action: string; ageYears: number }[]; own?: { doing?: { action: string; about?: { form?: string } } } } };
-      ctx.set(`${c.t.toFixed(6)}:${c.id}:${c.v}`, { doing: c.context.own?.doing?.action ?? null, form: c.context.own?.doing?.about?.form ?? null, hour: c.context.environment.hour, mates: c.context.social.filter(s => s.action === 'nest' && s.ageYears >= 12).length });
+      const c = JSON.parse(l) as { t: number; id: number; v: number; context: { focal: { thirst: number }; environment: { hour: number }; social: { action: string; ageYears: number }[]; own?: { doing?: { action: string; minutes?: number; about?: { form?: string } } } } };
+      ctx.set(`${c.t.toFixed(6)}:${c.id}:${c.v}`, { doing: c.context.own?.doing?.action ?? null, form: c.context.own?.doing?.about?.form ?? null, minutes: c.context.own?.doing?.minutes ?? NaN, hour: c.context.environment.hour, mates: c.context.social.filter(s => s.action === 'nest' && s.ageYears >= 12).length, thirst: c.context.focal.thirst });
     }
     for (const l of readFileSync(`${run}/receipts/${f}`, 'utf8').split('\n')) {
       if (!l) continue;
@@ -77,7 +79,7 @@ if (process.argv[1]?.endsWith('r14-decode-run.ts')) {
       if (carry >= 0 && c.doing !== null && r.opts[carry][0] !== c.doing) carryOther++;
       const nestAt = r.opts.findIndex(o => o[0] === 'nest');
       asks.push({ day: r.day, id: r.id, phase: r.phase, hour: c.hour, fam: r.fam, p, u: d.u!, top, drawn: d.index, rules: r.rulesIndex, carry, stay: c.doing === 'nest' && c.form === 'stay' && nestAt >= 0 ? nestAt : -1,
-        trip: r.fam.map((x, i) => (x === 'food-trip' ? i : -1)).filter(i => i >= 0), mates: c.mates });
+        trip: r.fam.map((x, i) => (x === 'food-trip' ? i : -1)).filter(i => i >= 0), mates: c.mates, minutes: c.minutes, thirst: c.thirst });
     }
   }
   if (!asks.length) throw new Error(`${run}: no ask the kernel settled`);
@@ -207,7 +209,7 @@ if (process.argv[1]?.endsWith('r14-decode-run.ts')) {
     for (const a of late) { const k = `${a.day}:${a.id}`; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k)!.push(a.hour); }
     const spans = [...byDay.values()].map(h => Math.max(...h) - Math.min(...h)), counts = [...byDay.values()].map(h => h.length), lastHour = [...byDay.values()].map(h => Math.max(...h));
     p();
-    p(`**By day in the nest although the rules' pick is to leave it** (07:30 to 18:00): ${n(late.length)} asks of ${n(new Set(late.map(a => a.id)).size)} animals on ${n(byDay.size)} animal-days, of the ${n(allDays.size)} animal-days with an ask (${n(new Set(asks.map(a => a.id)).size)} animals). On such an animal-day: ${f(quant(counts, 0.5), 0)} such asks at the median (${f(quant(counts, 0.9), 0)} at the 90th percentile), the last of them at ${f(quant(lastHour, 0.5), 1)} h at the median (${f(quant(lastHour, 0.9), 1)} h at the 90th percentile), and ${f(quant(spans, 0.5), 2)} hours between the first and the last at the median (${f(quant(spans, 0.9), 2)} at the 90th percentile; ${n(spans.filter(x => x >= 1).length)} animal-days with an hour or more, ${n(spans.filter(x => x >= 3).length)} with three or more). The span is read from the asks alone: it does not say the animal was in the nest the whole time between them. The adapter's mean probability of staying at these asks: ${f(mean(late.map(a => a.p[a.stay])))}; the run's draw stayed at ${f(share(late, a => a.drawn === a.stay))}; the top pick would stay at ${f(share(late, a => a.top === a.stay))}.`);
+    p(`**By day in the nest although the rules' pick is to leave it** (07:30 to 18:00): ${n(late.length)} asks of ${n(new Set(late.map(a => a.id)).size)} animals on ${n(byDay.size)} animal-days, of the ${n(allDays.size)} animal-days with an ask (${n(new Set(asks.map(a => a.id)).size)} animals). On such an animal-day: ${f(quant(counts, 0.5), 0)} such asks at the median (${f(quant(counts, 0.9), 0)} at the 90th percentile), the last of them at ${f(quant(lastHour, 0.5), 1)} h at the median (${f(quant(lastHour, 0.9), 1)} h at the 90th percentile), and ${f(quant(spans, 0.5), 2)} hours between the first and the last at the median (${f(quant(spans, 0.9), 2)} at the 90th percentile; ${n(spans.filter(x => x >= 1).length)} animal-days with an hour or more, ${n(spans.filter(x => x >= 3).length)} with three or more). The span is read from the asks alone; how long the animal had been in the nest is in the next sentence but one. The adapter's mean probability of staying at these asks: ${f(mean(late.map(a => a.p[a.stay])))}; the run's draw stayed at ${f(share(late, a => a.drawn === a.stay))}; the top pick would stay at ${f(share(late, a => a.top === a.stay))}. What the saved context said at these asks (the packet's \`doing\` line is written from it): in the nest for ${n(quant(late.map(a => a.minutes), 0.5))} minutes without a break at the median (${n(quant(late.map(a => a.minutes), 0.9))} at the 90th percentile, ${n(Math.max(...late.map(a => a.minutes)))} at the most; a night in a nest is about 720), with thirst (0 to 1) at ${f(mean(late.map(a => a.thirst)), 2)} on average and at 0.9 or more at ${f(share(late, a => a.thirst >= 0.9))} of them. What the rules' pick was instead: ${(() => { const t = new Map<string, number>(); for (const a of late) { const k = kindOf(a.fam[a.rules]); t.set(k, (t.get(k) ?? 0) + 1); } return [...t].sort((x, y) => y[1] - x[1]).map(([k, v]) => `${k} ${n(v)}`).join(', '); })()}.`);
   }
   if (heldOut.length) {
     const hn = heldOut.filter(h => h.stay >= 0);
