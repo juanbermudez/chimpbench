@@ -628,6 +628,16 @@ if A.tap:
     table(['Per animal (mean over its daylight ticks out of a nest)', 'The model arm', 'The paired rules arm', 'Difference (95% interval)'], [rpair('social need (1 less the social state)', 'needSum', 'visTicks', 3), rpair('share of the allies\' bond weight not located', 'unlocSum', 'visTicks', 3),
         rpair('the two multiplied (the gain of a call before staleness)', 'gainSum', 'visTicks', 3), rpair('share of the stretches of crown feeding that begin with a pant-hoot of the animal', 'runsCalled', 'runs', 3),
         pair('grooming, share of the night script\'s daylight minutes (rows)', per_animal(mRows, share('groom')), per_animal(rRows, share('groom')), 3), pair('other social acts, share of daylight minutes (rows)', per_animal(mRows, share('social')), per_animal(rRows, share('social')), 3)])
+    # is it the late mornings? the same two readings on the model arm's animal-days with and without a late-morning nest minute
+    PD = TM['perDay']; lt_ = PD['nestLate']
+    def split(a_, b_, keep): return sum(PD[a_][a][d] for a in range(N) for d in range(DAYS) if keep(lt_[a][d])) / sum(PD[b_][a][d] for a in range(N) for d in range(DAYS) if keep(lt_[a][d]))
+    def splitd(k, keep): x = [PD[k][a][d] for a in range(N) for d in range(DAYS) if keep(lt_[a][d])]; return sum(x) / len(x)
+    on_, la_ = (lambda v: v == 0), (lambda v: v > 0)
+    table(['Model arm, by the animal\'s own morning', 'Animal-days', 'Social need', 'Share of allies not located', 'Stretches of crown feeding that begin with a pant-hoot', 'Pant-hoots given a day', 'Calls heard a day', 'Metres toward a caller a day'],
+          [[nm_, sum(1 for a in range(N) for d in range(DAYS) if keep(lt_[a][d])), num(split('needSum', 'visTicks', keep), 3), num(split('unlocSum', 'visTicks', keep), 3), num(split('runsCalled', 'runs', keep), 3), num(splitd('phGiven', keep), 2), num(splitd('heard', keep), 1), num(splitd('m_to a call', keep), 0)]
+           for nm_, keep in [('no late-morning nest minute', on_), ('some', la_)]]
+          + [['the rules arm, all animal-days', AD, num(sum(map(sum, TR['perDay']['needSum'])) / sum(map(sum, TR['perDay']['visTicks'])), 3), num(sum(map(sum, TR['perDay']['unlocSum'])) / sum(map(sum, TR['perDay']['visTicks'])), 3),
+              num(sum(map(sum, TR['perDay']['runsCalled'])) / sum(map(sum, TR['perDay']['runs'])), 3), num(sum(map(sum, TR['perDay']['phGiven'])) / AD, 2), num(sum(map(sum, TR['perDay']['heard'])) / AD, 1), num(sum(map(sum, TR['perDay']['m_to a call'])) / AD, 0)]])
     # the model arm's asks beside the rules arm's own draws
     prog = {'on': 0, 'cont': 0, 'top': 0, 'rules': 0}
     for i_, ls in by_animal.items():
