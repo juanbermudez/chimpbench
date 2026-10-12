@@ -990,6 +990,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         case 'console': if (pairA) return ['embrace', 1, null]; break;
         case 'beg': if (pairA) return ['beg', 0, null]; break;
         case 'share': if (pairA) return ['share', 0, null]; break;
+        // Guarding a mate it stays up: one of the seated postures, never lying along a bough.
+        case 'guard': return ['perch', perchLies(rest) ? PERCH.hold : rest, null];
         default: break;
       }
       return a.nursed ? ['nurse', 0, null] : ['perch', rest, null];
