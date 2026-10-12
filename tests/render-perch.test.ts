@@ -131,6 +131,9 @@ test('in every resting posture a hand or a foot is on a support', () => {
     const overhead = [B.handL, B.handR].some(b => at(b, s)[1] > 0.9) && (pose.v[B.fingL * 3] > 0.6 || pose.v[B.fingR * 3] > 0.6);
     assert.ok(onSupport || overhead, `posture ${role}, seed ${seed}: a hand or foot holds on`);
     if (role === PERCH.overhead) assert.ok(overhead, 'a hand grips overhead');
+    // The plain seat by name: the holding hand (the left one for a seed of 0.5 or less) is on the limb with the fingers
+    // closed; the other hand rests on its knee, off the limb.
+    if (role === PERCH.hold) { const h = at(seed > 0.5 ? B.handR : B.handL, s); assert.ok(Math.abs(h[0]) <= 0.12 && h[1] > -0.03 && h[1] < 0.12 && pose.v[(seed > 0.5 ? B.fingR : B.fingL) * 3] > 0.6, `the holding hand is on the limb (${h.map(v => v.toFixed(2))})`); }
     if (role === PERCH.foot) assert.ok([B.footL, B.footR].some(b => at(b, s)[1] < -0.1) && (pose.v[B.toeL * 3] > 0.8 || pose.v[B.toeR * 3] > 0.8), 'a leg hangs with the toes curled round a branch below');
     // The lying postures lie: the trunk is level (hips pitched a quarter turn), the seated ones sit.
     const pitch = Math.abs(pose.v[B.hips * 3]);
