@@ -594,6 +594,8 @@ world, sent the kernel the state-only packet and wrote the packet 5 version and 
   the user's to change before the run.
 - A resume that follows a death between a day's checkpoint and its registry entry counts one day too few towards
   the nine hours (at most one day's wall time).
+- `scripts/r13-run.sh report` asks for the sixteen control arms and not for `rules-plain.json`; without that file
+  the report says so in its §0 and falls back to the check as first registered.
 - Not checked by this review: real token counts (the tokenizer belongs to the model's environment); the swap hold;
   stage R7's report at the population unit, beyond its running on the dry files.
 
@@ -604,7 +606,11 @@ world, sent the kernel the state-only packet and wrote the packet 5 version and 
 | `tests/r13-population.test.ts` (8 tests; one starts the script as a child process about forty times, none with a model) | 17c616c | 8 of 8 |
 | the stage's scripts and tests under the project's strict options (a temporary configuration; a planted error is caught) | 17c616c | clean |
 | the whole reading, dry (`scripts/r13-run.sh dry`, seed 48, a fake worker; 06:32 to 06:35 EDT) | 17c616c | the stand-in's day hashes 4789054307f31932 and 119e075380e536ca, 6,606 lines, 4,539 packets; the seventeen control files; the exact check holds (66 of 66 readouts); "not viable", as arbitrary odds should read; no row listed as nearer |
-| `tsc --noEmit` and the whole suite, once | @SUITE@ |
+| `tsc --noEmit`; `scripts/gen-params.ts --check` | 925018b | clean; valid, 1,050 entries, none added |
+| the whole suite, once (`tsx --test`, four files at a time; 06:37 to 06:45 EDT) | 925018b | **1,313 tests: 1,312 pass, 0 fail, 1 skipped** (the guide's scorecard check, whose data file is not on this computer); 8 min 1 s. The goldens' test and the field pin are in it; `tests/r10-night.test.ts`, `tests/r10-wiring.test.ts` and `tests/r11.test.ts` are unedited |
+
+The suite ran on 925018b, which holds every line of code of this branch. The one commit after it adds these rows and
+two sentences to this document (written 06:46 EDT) and touches nothing else; no test reads this file.
 
 ## For the integrator
 
@@ -621,7 +627,8 @@ world, sent the kernel the state-only packet and wrote the packet 5 version and 
   stop check has ended the run the same call does not resume it**; the chain goes on to the rules arm, the control
   arms and the report with the five days.
 - **The control arms write seventeen files**: stage R7's sixteen and `rules-plain.json`. In `r13-numbers.md` read §0
-  first: "Exact: it does" says the two paths read alike.
+  first: "Exact: it does" says the two paths read alike. If it says "not on file" (the control arms were cut short
+  after the sixteenth), run `scripts/r13-run.sh controls` again, which adds what is missing, then `report`.
 - **For the `IMPLEMENTATION_PLAN.md` block below**, add to its *Status*: "Reviewed by a second agent on 12 October
   (`r13-prereg.md` §13): six amendments before any run (an exact check of the instrument; a row is 'nearer' only
   with stage R7's guards held; only the arm the decode rule names, read by the script itself; the registered world
