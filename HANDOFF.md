@@ -99,7 +99,9 @@ record's own, and each adapter is named by what taught it.
 
 **A model queue is running: stage RW3, then stage R13.** It was started at 09:30 EDT on 12 October in a detached
 `screen` session named `modelqueue`; each stage runs from its own frozen checkout, one model process at a time, and a
-failure of the first does not stop the second. No result of either has been read. **Read the `state` files first
+failure of the first does not stop the second. **Stage RW3 ended at 10:41 and is read** (`rw3-prereg.md` §15: a valid
+run; 0.307 and 0.353 against the simple rule's 0.353 and the untuned model's 0.301; every statement "not shown"; the
+Taï record stays a test, not a teacher, at this size). Stage R13's chain began at 10:41; no result of it has been read. **Read the `state` files first
 (third item). If the queue's no longer says `running`, the rest of this paragraph is history: go to §5, task 1.**
 
 - **Stage RW3** (`docs/staging/rw3-prereg.md`): two small adapters taught 557 wild Taï first-grooming-partner

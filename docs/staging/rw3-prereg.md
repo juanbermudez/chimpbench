@@ -423,6 +423,27 @@ Found and left as they are, declared here:
 - **`AGENTS.md`**, added to the line of section 13: "eval 7 and eval 11 refuse until both adapters are trained to the end, and train refuses once a score of a Taï-taught adapter is on file; the scoring step writes adapter.sha256 beside the scores, which the report's S0 holds against the adapter's manifest; a run that fails S0 is written without the Taï-taught adapters' figures; RW3_ALLOW_OTHER_MODEL, RW3_ALLOW_DIRTY and RW3_RERUN each leave an OVERRIDE line in the status log".
 - **Checked at the end:** `tsc --noEmit` and the whole suite were run once on the head that holds this section, after it was committed. Their output is kept, outside git, in `artifacts/rw3/logs/whole-suite-second-reader.out`, and their result is in the second reader's report to the integrator.
 
+## 15. Results (the integrator, 12 October 2026, written 10:45 EDT; frozen checkout `bench-rw3` at c6024c7)
+
+Table, generated: [rw3-numbers.md](rw3-numbers.md) (aggregates only; the sealed part not opened). The chain ran from
+09:31 to 10:41 EDT with every step at exit code 0: the two reference scorings read stage RW2's figures again (0.301
+and 0.319) before any training; the trainings took 18.6 and 15.1 minutes; both adapters were trained before either
+was scored.
+
+- **S0, the run is valid: yes.**
+- **Top-1 on the 329 development records, one call a record** (chance 0.244; the bar, the simple rule, 0.353; the
+  untuned model 0.301; the Ngogo-taught adapter 0.319): training seed 7 **0.307**, training seed 11 **0.353**.
+- **S1 (taught something), S2 (reaches the simple rule), S3 (beats the Ngogo-taught adapter): not shown**, each on
+  both seeds (every paired interval includes 0; fanned out, seed 11 alone lies above the untuned model, which the
+  registration writes "seed-dependent: not shown"). **S4**: no difference between the seeds is shown (−0.046, −0.070
+  to 0.000; the same option on 0.802 of records).
+- **The whole, in the registered words: 557 choices did not teach the model anything this record can show; the Taï
+  record stays a test, not a teacher, at this size.** With this record's power (no paired difference under about 0.04
+  to 0.06) that is not "no effect".
+- Nothing follows for the simulation: neither adapter enters a loop, the main label source is unchanged, the sealed
+  part stays sealed (its opening was tied to "beats the simple rule on both seeds", which did not happen). The
+  adapters stay under `bench-rw3/artifacts/decide-ft/rw3` (not in git).
+
 ## Privacy
 
 Nothing derived from a raw row goes into git except aggregate counts, rates and hashes. The training file, the derived records, the per-record scores and the adapters stay under `artifacts/` (git-ignored). A training row holds invented names, a hashed record key and no animal code, date, clock time or value of the source. The raw file is read only through `scripts/rw2/rw2_ingest.py` and its own functions, as `/usr/bin/python3 -I`. Tests use invented fixtures only.
