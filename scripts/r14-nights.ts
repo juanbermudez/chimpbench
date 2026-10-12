@@ -7,6 +7,7 @@
 //   pnpm exec tsx scripts/r14-nights.ts trace model|rules      the arm replayed with no model and read tick by tick (scripts/lib/r14-trace.ts) → artifacts/r14/nights/<arm>.trace.json
 //   pnpm exec tsx scripts/r14-nights.ts classify               every dark stretch out of a nest, by kind, in both arms; the short nights one by one; evening leaves of a finished nest
 //   pnpm exec tsx scripts/r14-nights.ts asks                   the asks behind the short nights; the model's odds on the nest at every ask of dusk and night beside the rules' own draws; why an animal in a nest is asked
+//   pnpm exec tsx scripts/r14-nights.ts nights                 the short nights one by one: the evening stretch, the early rise, the ask at which the nest was left (after `odds model`: with the rules' own odds)
 //   pnpm exec tsx scripts/r14-nights.ts state                  the animal's state at the dusk asks in a nest (the saved contexts: hunger, the rules' own scores), and how hungry both arms are as the light goes
 //   pnpm exec tsx scripts/r14-nights.ts spread                 a few animals or everyone, by day, and whether one animal's leaving draws another
 //   pnpm exec tsx scripts/r14-nights.ts odds model|rules [--every N]   the rules' own odds at those asks, by stage R11's label machinery (scripts/r11-contexts.ts labelData) inside a replay → artifacts/r14/nights/odds.<arm>.json
@@ -305,6 +306,43 @@ function asksCmd(): void {
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
+// nights: the short nights one by one (the appendix tables of the document)
+// ---------------------------------------------------------------------------------------------------------------------
+
+function nightsCmd(): void {
+  const M = animalNights('model'), T = readTrace('model'), { asks } = modelAsks(), rows = new Map(nightsOf(rowsOf('model')).map(x => [`${x.id}:${x.day}`, x]));
+  const oddsFile = resolve(OUT, 'odds.model.json'), label = new Map<string, number[]>();
+  if (existsSync(oddsFile)) for (const r of (JSON.parse(readFileSync(oddsFile, 'utf8')) as { recs: OddsRec[] }).recs) if (r.q) label.set(`${r.id}:${r.i}:${r.v}`, r.q);
+  const q = (a: Ask) => { const l = label.get(`${a.id}:${a.i}:${a.v}`); return l && a.nestIdx >= 0 && l.length === a.opts.length ? f(l[a.nestIdx]) : 'no label'; };
+  const byAnimal = new Map<number, Ask[]>();
+  for (const a of asks) (byAnimal.get(a.id) ?? byAnimal.set(a.id, []).get(a.id)!).push(a);
+  const S = M.filter(x => x.short).sort((a, b) => a.day - b.day || a.id - b.id);
+  p('## The short nights, one by one'); p();
+  p('### Each night: the evening stretch and the early rise'); p();
+  p('| Day | Animal | Class | Age | Community | Dark minutes out of a nest | Evening: what happened | left the nest | in a nest again | dark minutes | what it did in them (minutes) | Early rise: left the nest | dark minutes |'); p('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+  for (const x of S) {
+    const r = rows.get(`${x.id}:${x.day}`)!, e = x.runs.find(k => k.kind !== 'early-rise'), m = x.runs.filter(k => k.kind === 'early-rise');
+    p(`| ${x.day} | ${x.name} (${x.id}) | ${r.cls} | ${r.age.toFixed(1)} | ${x.troop} | ${f(x.outMin, 1)} | ${e ? KIND_WORDS[e.kind] : 'none'} | ${e && e.leftAt >= 0 ? clock(hourAt(T, e.leftAt)) : 'had none'} | ${e && e.backAt >= 0 ? clock(hourAt(T, e.backAt)) : 'none'} | ${e ? f(e.darkMin, 1) : '0'} | ${e ? actsText(e.acts) : ''} | ${m.length ? m.map(k => clock(hourAt(T, k.leftAt))).join(', ') : 'no early rise'} | ${m.length ? f(m.reduce((t, k) => t + k.darkMin, 0), 1) : '0'} |`);
+  }
+  const leaveAsk = (x: AnimalNight, r: Run) => (byAnimal.get(x.id) ?? []).filter(k => (k.i === r.leftAt || k.i === r.leftAt - 1) && k.inNest).pop();
+  p(); p('### The evening: the ask at which the finished nest was left, and the asks while out'); p();
+  p('The odds are the model\'s, in menu order. "The rules\' own odds on the nest": stage R11\'s label computed at that ask (`odds model`). "While out": the asks from the leave to the next finished nest (for a late first nest: from 66 minutes before dark).'); p();
+  p('| Day | Animal | Clock | Why it was asked | Menu with the model\'s odds | Drawn | Top pick | The rules\' top option | The rules\' own odds on the nest | While out: asks (the last one took the nest) | with a nest on the menu | the model\'s odds on the nest, mean | the top pick was the nest |'); p('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+  for (const x of S) {
+    const e = x.runs.find(k => k.kind !== 'early-rise'); if (!e) continue;
+    const a = e.leftAt >= 0 ? leaveAsk(x, e) : undefined, from = e.leftAt >= 0 ? e.leftAt + 1 : x.n0 - Math.round(1.1 / T.tickH), to = e.backAt >= 0 ? e.backAt : e.to;
+    const out = (byAnimal.get(x.id) ?? []).filter(k => k.i >= from && k.i <= to && !k.inNest), n = out.filter(k => k.nestIdx >= 0 && k.p);
+    p(`| ${x.day} | ${x.name} (${x.id}) | ${a ? `${clock(a.hour)} (${a.phase})` : 'no nest was left'} | ${a ? reasonText(a) : ''} | ${a ? menuText(a) : ''} | ${a ? (a.picked >= 0 ? optText(a, a.picked) : `the rules (${a.refusal})`) : ''} | ${a && a.index !== null ? optText(a, a.index) : ''} | ${a && a.rulesIndex >= 0 ? optText(a, a.rulesIndex) : ''} | ${a ? q(a) : ''} | ${out.length} | ${n.length} | ${f(mean(n.map(k => k.p![k.nestIdx])))} | ${n.filter(k => k.index === k.nestIdx).length} |`);
+  }
+  p(); p('### The morning: the waking ask at which the nest was left before first light'); p();
+  p('| Day | Animal | Clock | Why it was asked | Menu with the model\'s odds | Drawn | Top pick | The rules\' top option | The rules\' own odds on the nest |'); p('| --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+  for (const x of S) for (const r of x.runs.filter(k => k.kind === 'early-rise')) {
+    const a = leaveAsk(x, r); if (!a) continue;
+    p(`| ${x.day} | ${x.name} (${x.id}) | ${clock(a.hour)} | ${reasonText(a)} | ${menuText(a)} | ${a.picked >= 0 ? optText(a, a.picked) : `the rules (${a.refusal})`} | ${a.index !== null ? optText(a, a.index) : ''} | ${a.rulesIndex >= 0 ? optText(a, a.rulesIndex) : ''} | ${q(a)} |`);
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
 // state: what the animal was in at the late-dusk asks (the saved contexts), and how hungry the two arms go to bed
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -568,8 +606,8 @@ function offline(): void {
 if (process.argv[1]?.endsWith('r14-nights.ts')) {
   const cmd = argv[0];
   (async () => {
-    if (cmd === 'figure') figure(); else if (cmd === 'trace') await trace(argv[1]); else if (cmd === 'classify') classify(); else if (cmd === 'asks') asksCmd(); else if (cmd === 'state') state(); else if (cmd === 'spread') spread();
+    if (cmd === 'figure') figure(); else if (cmd === 'trace') await trace(argv[1]); else if (cmd === 'classify') classify(); else if (cmd === 'asks') asksCmd(); else if (cmd === 'state') state(); else if (cmd === 'nights') nightsCmd(); else if (cmd === 'spread') spread();
     else if (cmd === 'odds') await odds(argv[1]); else if (cmd === 'odds-report') oddsReport(); else if (cmd === 'ten') ten(); else if (cmd === 'offline') offline();
-    else { console.error('usage: r14-nights.ts figure | trace model|rules | classify | asks | state | spread | odds model|rules [--every N] | odds-report | ten | offline'); process.exit(2); }
+    else { console.error('usage: r14-nights.ts figure | trace model|rules | classify | asks | nights | state | spread | odds model|rules [--every N] | odds-report | ten | offline'); process.exit(2); }
   })().catch(error => { console.error(error instanceof Error ? error.stack ?? error.message : error); process.exit(1); });
 }
