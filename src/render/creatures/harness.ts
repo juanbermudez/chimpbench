@@ -5,7 +5,10 @@
 // &patrol=out|listen|incursion|return runs the course as a two-animal patrol on that leg).
 // patrol (&phase=out|listen|incursion|return|release|heard|cycle|none, &n=6: a border patrol in single file with a
 // published Party.patrolPhase; docs/realism-design.md §5.3.1 P4b; the camera follows the middle animal).
-// single also takes &age=, &sex=male|female and &swelling=0..1 for its first animal.
+// single also takes &age=, &sex=male|female and &swelling=0..1 for its first animal, and &up=<m> (stage W9): a tree at
+// the tile with every animal of the tile that many metres up in it (pairs, chains and resting animals in a crown; the
+// camera follows the first animal; &posture=0..4 forces the resting posture, creatures/perch.ts PERCH; &third=1 adds a
+// second groomer on the receiver; &view=x,y,z places the camera that far from the first animal).
 // Other params: zoom=close|mid|far|rts, rain=0..1, night=1, sel=<id>, labels=1,
 // social=1, perception=1, hl=<troopId>, rate=<eco s per s>, moving=1.
 import * as THREE from 'three';
@@ -172,6 +175,7 @@ function setupAction(action: Action, x: number, z: number, moving: boolean) {
       if (q.has('heldinfant')) chimp({ age: Number(q.get('heldinfant')), sex: 'male', x: x + 0.9, z: z + 0.3, action: 'rest', mother: b.id });
       if (q.has('begs')) { const t = chimp({ age: 19, sex: 'female', x: x + 1.9, z: z + 0.7, action: 'rest', heading, meat: 0.5 }); b.action = 'beg'; b.targetId = t.id; }
       if (q.has('chain')) { const t = chimp({ age: 19, sex: 'female', x: x + 1.9, z: z + 0.7, action: 'rest', heading }); b.action = 'groom'; b.targetId = t.id; interaction('groom', b, t); }
+      if (q.has('third')) { const t = chimp({ age: 15, sex: 'male', x: x + 1.5, z: z - 0.6, action: 'groom', heading, target: b.id }); interaction('groom', t, b); }
       break;
     }
     case 'play': { const a = chimp({ age: 6, sex: 'male', x, z, action: 'play', heading, vocal: 'laugh', mood: 'playful' }); const b = chimp({ age: 5, sex: 'female', x: x + 0.6, z, action: 'play', target: a.id, mood: 'playful' }); a.targetId = b.id; interaction('play', a, b); break; }
@@ -284,6 +288,14 @@ if (mode === 'sheet') {
   if (first && q.has('sex')) first.sex = q.get('sex') === 'female' ? 'female' : 'male';
   if (first && q.has('swelling')) first.swelling = Number(q.get('swelling'));
   camTarget.set(0.4, 0.6, 0); camPos.set(2.8, 2.0, 4.6);
+  if (q.has('up')) {
+    // Stage W9: the tile's animals in a crown. No environment limbs here: the layer's fallback seats and stick props.
+    const up = Number(q.get('up')) || 7;
+    if (!world.trees.length) tree(0.3, -0.5, up + 4);
+    for (const c of world.chimps) c.position[1] = up;
+    const [vx, vy, vz] = (q.get('view') ?? '3.2,1.3,4.4').split(',').map(Number);
+    camTarget.set(0, 0, 0); camPos.set(vx, vy, vz);
+  }
   if (act === 'nest' || act === 'climb') { camTarget.set(0.5, 5, 0); camPos.set(6, 7, 10); }
 } else if (mode === 'scene' || mode === 'perf') {
   const n = Number(q.get('n') ?? 60);
@@ -514,6 +526,8 @@ const dbg = layer.debug as { clip: string | null; attention: boolean; lodFade: b
 if (q.get('clip')) dbg.clip = q.get('clip');
 // &groomee=0|2|3|4: forces the receiver's posture in grooming pairs (poses.ts GROOMEE: sit, prone, side, present).
 if (q.has('groomee')) dbg.groomee = Number(q.get('groomee'));
+// &posture=0..4: forces the resting posture of animals in a crown (creatures/perch.ts PERCH; stage W9).
+if (q.has('posture')) (dbg as { perch?: number }).perch = Number(q.get('posture'));
 // Face tiles: seated facing the camera, gaze held forward (&attn=1 lets the attention system move the heads) and
 // eyes held open (&blink=1 lets them blink: two of the twelve were caught mid-blink at the usual 11 s capture).
 if (mode === 'faces') { dbg.clip = q.get('clip') ?? 'portrait'; dbg.attention = q.has('attn'); dbg.blink = q.has('blink'); }
@@ -522,7 +536,7 @@ if (tiles.length) { for (const t of tiles) captions.push({ x: t.x, y: 0, z: t.z,
 // advance, and every tile would be drawn on the level chosen for the camera of the tile before it.
 if (tiles.length) dbg.lodFade = false;
 const tileCam = new THREE.PerspectiveCamera(30, 1, 0.05, 400);
-const followId = q.get('follow') != null ? Number(q.get('follow')) : patrolRig ? patrolRig.file[Math.floor(patrolRig.file.length / 2)].id : null;
+const followId = q.get('follow') != null ? Number(q.get('follow')) : patrolRig ? patrolRig.file[Math.floor(patrolRig.file.length / 2)].id : mode === 'single' && q.has('up') ? world.chimps[0]?.id ?? null : null;
 const followTmp = new THREE.Vector3();
 const faceTmp = new THREE.Vector3();
 /** Head height of the animal nearest a tile (portrait framing). */
