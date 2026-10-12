@@ -813,7 +813,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       if (!a.up) { a.lies = false; continue; }
       // Its resting posture of this bout (perch.ts), from those its tree offers.
       const tree = treeFor(a), th = tree ? tree.height ?? 0 : 0;
-      a.perchRole = perchPosture(a.id, perchBout(a.id, animClock), th >= LARGE_LIMB_TREE_M && a.chimp.age >= 4 ? 2 : th >= RECLINE_TREE_M ? 1 : 0, debug.perch);
+      // (Never prone for an infant, nor for an animal with an infant on its body: it would lie on it.)
+      a.perchRole = perchPosture(a.id, perchBout(a.id, animClock), th >= LARGE_LIMB_TREE_M && a.chimp.age >= 4 && !a.holds ? 2 : th >= RECLINE_TREE_M ? 1 : 0, debug.perch);
       if (a.seatHost >= 0) { a.lies = false; continue; }
       // A lying posture (as drawn: the clip and role of the last pose) takes a bough through its own seat and lies along it.
       a.lies = a.clip === 'perch' && perchLies(a.role);
@@ -979,7 +980,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       const rest = about && (a.beat.up || (a.beat.phase !== Phase.none && a.posture === Posture.lying)) ? (a.beat.up = true, PERCH.hold) : a.perchRole;
       switch (act) {
         case 'forage': return ['forage', 0, null];
-        case 'groom': return pairA ? ['groom', a.role, null] : ['perch', rest, null];
+        case 'groom': if (pairA) return ['groom', a.role, null]; break;
         case 'call': return ['pantHoot', 0, null];
         case 'play': return ['play', 0, null];
         case 'shelter': return ['shelter', 0, null];
@@ -990,11 +991,12 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         case 'console': if (pairA) return ['embrace', 1, null]; break;
         case 'beg': if (pairA) return ['beg', 0, null]; break;
         case 'share': if (pairA) return ['share', 0, null]; break;
-        // Guarding a mate it stays up: one of the seated postures, never lying along a bough.
-        case 'guard': return ['perch', perchLies(rest) ? PERCH.hold : rest, null];
         default: break;
       }
-      return a.nursed ? ['nurse', 0, null] : ['perch', rest, null];
+      if (a.nursed) return ['nurse', 0, null];
+      // Only an animal that rests, or keeps a resting companion company (follow), lies down along a bough; in any other
+      // act (guarding a mate, a pause in a trip, a partner out of reach) it keeps to the seated postures.
+      return ['perch', act !== 'rest' && act !== 'follow' && perchLies(rest) ? PERCH.hold : rest, null];
     }
     switch (act) {
       // While the body waits for its next act the resting posture it is in stays (the decision that ends the rest also
