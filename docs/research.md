@@ -4863,3 +4863,41 @@ opened and are not cited. No behavioural constant, parameter or simulation code 
   read; Deschner et al. 2003, 2004 are named elsewhere in this file as not verified); the tuft's size and the age it
   is lost; eye or iris size by age; ear dimensions; the finger-joint angle and the standing posture of the
   knuckle-walking hand (not in what was opened).
+
+## Addendum: W6 decision beat (11 October 2026)
+
+Stage W6 (`docs/staging/w6-decision-beat.md`) draws a decision on the body: the head turns to what the animal chose,
+a small intention movement plays, then the act starts; animals that leave together set off one after another. No new
+source was opened for it. This addendum says which statement rests on a source already in this file and which do not.
+
+**Sourced (already cited above).**
+- **Initiators of a joint trip wait and check back** [gruberZuberbuhler2013] (full text) [H], the lines under "Joint
+  travel, Budongo Sonso": of 166 travel initiations, the initiator stood motionless for 5 s or more in 58.4% of vocal
+  and 53.9% of silent ones, and gazed 90 to 180 degrees behind toward others in 39.0% and 25.8%.
+  - Use in W6 (`src/render/creatures/beat.ts`): the first mover of a drawn departure looks back at a follower, and an
+    initiator the simulation keeps waiting (the simulation's own check for company, `departPersist` and
+    `departCheckMin`, `src/sim/execution.ts`) is drawn standing and looking between its goal and its companions.
+  - What W6 does NOT take from it: the drawn first mover looks back at EVERY departure that has followers, more often
+    than the 26 to 39% of initiations in the field, so that a viewer can read who leads. That is a stylization, and
+    the rate should not be read off the screen.
+
+**Stylizations with no source** (labelled so in code):
+- the beat itself (a glance at the runner-up option, then the head and eyes to the chosen target, then an intention
+  movement) and its durations (0.8, 1.6 and 1.0 real seconds);
+- which runner-up counts as close (within 0.1 of the chosen option's score, or above it);
+- the intention movements (a half rise, a sit-up, a weight shift: `src/render/creatures/intention.ts`) and that a
+  lying animal sits up first;
+- the spacing of a departure (4 ecological seconds, or 1.5 real seconds if that is longer), the limit of one and a
+  half ticks a follower is drawn behind its own path, the 15% by which it catches up, and that a held follower
+  watches the first mover;
+- when and for how long the first mover looks back (1.0 s after it sets off, for 1.8 s), and the cycle of a waiting
+  initiator's looks back (1.8 s of every 5 s);
+- that an animal going down a tree is drawn in the climb cycle run backwards, feet first: this is the project's
+  drawing rule since the climb cycle was built (the cycle's own gait figures are from Neufuss et al. 2018, §14, and
+  describe climbing up); no source in this file says how chimpanzees come down a trunk;
+- that a model-driven animal waiting for an answer keeps scanning (quicker changes of gaze).
+
+**Not found in this file, and not searched for on the web for this stage:** a source on orienting to a goal before
+moving toward it, on intention movements, or on the manner of descending a trunk in chimpanzees. The review of 10
+October named these as general ethology without a source; they stay unsourced, which is why everything above is
+labelled a stylization and nothing in the code states them as facts.

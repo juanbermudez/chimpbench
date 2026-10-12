@@ -2,7 +2,7 @@ import type { Ctx } from './app';
 import type { Action, Chimp, MemoryDigest, Relationship, World } from '../types';
 import type { DrawnActView, InspectorTab } from './contracts';
 import { icon } from './icons';
-import { actionLabel, actionSoon, actionVerb, ageText, ago, cap, duration, esc, feedCat, hhmm, interactionCat, nameOf, pct, RELATION_LABEL, relationClass, stamp, timeParts, troopOf, troopShort } from './format';
+import { actionLabel, actionOnWay, actionVerb, ageText, ago, cap, duration, esc, feedCat, hhmm, interactionCat, nameOf, pct, RELATION_LABEL, relationClass, stamp, timeParts, troopOf, troopShort } from './format';
 import { alphaBadge, bar, chip, empty, meter, radar, troopChip } from './parts';
 import { mindHtml, mindKey } from './mind';
 import { egoTreeSvg } from './family-tree';
@@ -50,12 +50,13 @@ export function renderInto(el: HTMLElement, html: string) {
 }
 
 /**
- * The strip's one-line state: "Traveling · 17 min", or when and how the animal died. about (stage W4): the simulation
- * has begun the act and the drawn body has not started it, so the line reads "About to travel" until the body does.
+ * The strip's one-line state: "Traveling · 17 min", or when and how the animal died. way (stages W4 and W6; the
+ * renderer's code, contracts.ts DrawnActView): the simulation has begun the act and the drawn body has not, so the line
+ * reads "About to travel" until the body sets off, and "Walking to drink · 4 min" for as long as it is on its way.
  */
-export function nowLine(w: World, c: Chimp, about = false): string {
+export function nowLine(w: World, c: Chimp, way = 0): string {
   if (!c.alive) return `Died ${c.deathTime !== null ? stamp(w, c.deathTime) : ''}${c.causeOfDeath ? ` · ${c.causeOfDeath}` : ''}`.trim();
-  if (about) return actionSoon(c.action);
+  if (way > 0) return `${actionOnWay(c.action, way)}${way >= 2 && (c.actionTime ?? 0) >= 60 ? ` · ${duration((c.actionTime ?? 0) / 3600)}` : ''}`;
   const t = c.actionTime ?? 0;
   return `${actionVerb(c.action)} · ${t < 60 ? 'just started' : duration(t / 3600)}`;
 }
@@ -284,7 +285,7 @@ export function createChimpPanel(root: HTMLElement, ctx: Ctx) {
   });
   const photo = q<HTMLCanvasElement>('.ch-photo');
   // What the renderer reports about the selected animal's drawn body (one record, reused at every refresh).
-  const drawn: DrawnActView = { action: 'rest', targetId: -1, about: false };
+  const drawn: DrawnActView = { action: 'rest', targetId: -1, about: false, way: 0 };
   // What the selected animal has been seen doing (decision-log.ts): looked at on every refresh, also while the panel is
   // collapsed or shows another tab, so the Log tab has a line to show when it is opened.
   const seen = createDecisionLog();
@@ -325,8 +326,8 @@ export function createChimpPanel(root: HTMLElement, ctx: Ctx) {
       watchDecisions(seen, w, c);
       // The act as the drawn body shows it ("About to …" while the body trails the simulation) and, in plain sight,
       // the simulation's own reason sentence for it (Chimp.reason), also on the collapsed strip.
-      const about = c.alive && !!ctx.deps.getScene()?.drawnAct?.(c.id, drawn) && drawn.about;
-      const t = troopOf(w, c.troopId), now = nowLine(w, c, about), why = c.alive ? c.reason ?? '' : '';
+      const way = c.alive && ctx.deps.getScene()?.drawnAct?.(c.id, drawn) && drawn.about ? drawn.way || 1 : 0, about = way > 0;
+      const t = troopOf(w, c.troopId), now = nowLine(w, c, way), why = c.alive ? c.reason ?? '' : '';
       const hk = [c.id, c.name, c.alive, c.stage, ageText(c), c.troopId, c.natalTroopId, t?.alphaId, t?.color, rankLine(w, c), now, c.action, about, why].join('|');
       if (force || hk !== headKey) {
         headKey = hk;

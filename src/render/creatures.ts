@@ -4,7 +4,7 @@
 // perception, social links, labels, vocal and interaction FX, nests, prey).
 // Reads World; never writes it.
 import * as THREE from 'three';
-import type { Chimp, Quality, World } from '../types';
+import type { Action, Chimp, Quality, World } from '../types';
 import { buildChimpGeometry } from './creatures/body';
 import { createChimpMaterials, createSilhouetteMaterial } from './creatures/material';
 import { PORTRAIT_LAYER, type PortraitSubject } from './creatures/portrait';
@@ -24,8 +24,14 @@ import { createNests } from './creatures/nests';
 import { createRemains } from './creatures/remains';
 import { createPrey } from './creatures/prey';
 import { perfEnd, perfNow } from '../perf';
-import { advancePlayback, createPlayback, createTrack, pushSample, relocationJump2, type Track } from './creatures/playback';
-import { actChanged, createActTrack, pushAct, readBody, readDrawn, type ActTrack, type BodyState, type DrawnAct } from './creatures/drawn';
+import { TICK_HOURS, advancePlayback, createPlayback, createTrack, pushSample, relocationJump2, type Track } from './creatures/playback';
+import { ABOUT_MAX_RATE, BODY_SIGN, PATH_MOVING_MPS, Way, actChanged, movingMps, createActTrack, pushAct, readBody, readDrawn, startUnseen, type ActTrack, type BodyState, type DrawnAct } from './creatures/drawn';
+import {
+  DEPART_RADIUS_M, DEPART_WINDOW_TICKS, GONE_EPS, Gaze, Phase, THINK_SCAN_S, beatPhase, createBeat, deliberating, departFirst, departFollowers, departNearestFollower, departRank, firstMove,
+  LATE_MAX_TICKS, gazeFor, lateTarget, ownsStep, staggerGap,
+  realSeconds, restedBefore, runnerUp, startTime, stepLate, type Beat,
+} from './creatures/beat';
+import { Posture, intention, postureOf } from './creatures/intention';
 import { paramsOf } from '../sim/params';
 import { sampleSmooth } from './creatures/motion';
 import { GAITS, Regime, advancePhase, createLock, limbPhase, resetLock, solveClimb, solveGait, stepLock, type ContactLock, type GaitSolve } from './creatures/gait';
@@ -140,6 +146,18 @@ export interface Anim {
   settle: number;
   track: Track;                    // sim position history; track.x/y/z is the smooth sim path at render time
   acts: ActTrack;                  // act and target of the last few tick states (creatures/drawn.ts): which act the drawn body is in
+  /** Stage W6: the act and target the drawn body is in (drawn.ts readDrawn, once a frame: the simulation's act, or the
+   * one before it while the body has not begun the new one) and how it stands to the new one (drawn.ts Way; 0 none).
+   * Poses, pairings and name tags all read these, so a pose never runs ahead of its tag. */
+  act: Action; actTarget: number; way: number;
+  /** Stage W6 (creatures/beat.ts): the decision beat of the newest act; how far behind its own path the body is drawn
+   * so that a departure sets off in the order chosen (ecological hours); the intention movement, eased 0..1; the
+   * posture of the last evaluated pose (intention.ts Posture). */
+  beat: Beat; late: number; intent: number; posture: number;
+  /** Stage W6: going up or down its tree's trunk whatever its act (onTrunk), eased 0..1 between its branch and the bark. */
+  trunkK: number; onTrunk: boolean;
+  /** Stage W6: where its body lies in its nest, kept while the drawn body is still in the nest act. */
+  nestOk: boolean; nestX: number; nestY: number; nestZ: number;
   ox: number; oz: number;          // eased layout offset (pairing, separation) added to the interpolated point
   // Gait and contacts (gait.ts), transitions (secondary.ts).
   moving: boolean; stillT: number; fastGait: boolean; turnRate: number; climbDy: number; dist: number; strides: number; poseDt: number;
@@ -328,6 +346,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   const chimpById = new Map<number, Chimp>();
   const treeById = new Map<number, World['trees'][number]>();
   let treesRef: World['trees'] | null = null;
+  const waterById = new Map<number, World['water'][number]>();   // stage W6: where an animal going to drink looks
+  let waterRef: World['water'] | null = null;
   const troopColor = new Map<number, string>();
   let disposed = false;
   let frameNo = 0;
@@ -374,6 +394,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       clip: '', clipT: 0, role: 0, gait: null, phase: hash01(chimp.id, 3),
       x: chimp.position[0], y: 0, z: chimp.position[2], heading: chimp.heading ?? 0, speed: 0, vel: 0, inited: false,
       track: createTrack(chimp.position[0], Math.max(0, chimp.position[1] ?? 0), chimp.position[2]), acts: createActTrack(), ox: 0, oz: 0,
+      act: chimp.action, actTarget: chimp.targetId, way: Way.none, beat: createBeat(), late: 0, intent: 0, posture: Posture.other, trunkK: 0, onTrunk: false, nestOk: false, nestX: 0, nestY: 0, nestZ: 0,
       refSpeed: 0, moveSpeed: 0, settle: 0, moving: false, stillT: 0, fastGait: false, turnRate: 0, climbDy: 0, dist: 0, strides: 0, poseDt: 0,
       gs: { f: 0, stride: 0, regime: Regime.natural }, lapse: 0, locks: [createLock(), createLock(), createLock(), createLock()], drop: 0, planted: false, bank: 0,
       inert: createInertia(POSE_SIZE), prevOut: new Float32Array(POSE_SIZE), prevCur: new Float32Array(POSE_SIZE), outVel: new Float32Array(POSE_SIZE), skip: new Uint8Array(POSE_SIZE), hold: new Float32Array(12), holdMask: 0,
@@ -446,6 +467,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       treesRef = world.trees; treeById.clear();
       for (const t of world.trees) treeById.set(t.id, t);
     }
+    if (waterRef !== world.water || waterById.size !== world.water.length) {
+      waterRef = world.water; waterById.clear();
+      for (const x of world.water) waterById.set(x.id, x);
+    }
     troopColor.clear();
     for (const t of world.troops) troopColor.set(t.id, t.color);
   }
@@ -458,24 +483,26 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   /** True when the animal is itself grooming a third animal it can be paired with (the reach and partner tests of pairingFor). */
   function groomsThird(b: Anim, a: Anim): boolean {
     const bc = b.chimp;
-    if (bc.action !== 'groom' || bc.targetId == null || bc.targetId < 0 || bc.targetId === a.id) return false;
-    const t = anims.get(bc.targetId);
-    if (!t || t === b || !t.chimp.alive || !PASSIVE.has(t.chimp.action)) return false;
+    if (b.act !== 'groom' || b.actTarget < 0 || b.actTarget === a.id) return false;
+    const t = anims.get(b.actTarget);
+    if (!t || t === b || !t.chimp.alive || !PASSIVE.has(t.act)) return false;
     const tc = t.chimp;
     return hyp2(tc.position[0] - bc.position[0], tc.position[2] - bc.position[2]) <= 4.5 && Math.abs((tc.position[1] ?? 0) - (bc.position[1] ?? 0)) <= 1.5;
   }
+  // Stage W6: pairings follow the act each drawn body is in (a.act, a.actTarget: drawn.ts), not the simulation's: a
+  // groomer still walking up is not paired until its body is there, and its partner keeps its own pose until then.
   function pairingFor(a: Anim): void {
-    const c = a.chimp;
-    if (!c.alive || c.targetId == null || c.targetId < 0) return;
-    const b = anims.get(c.targetId);
+    const c = a.chimp, act = a.act;
+    if (!c.alive || a.actTarget < 0) return;
+    const b = anims.get(a.actTarget);
     if (!b || b === a || !b.chimp.alive) return;
     const bc = b.chimp;
     const dx = bc.position[0] - c.position[0], dz = bc.position[2] - c.position[2];
     const d = hyp2(dx, dz);
     if (d > 4.5 || Math.abs((bc.position[1] ?? 0) - (c.position[1] ?? 0)) > 1.5) return;
     let kind = '', sep = 0, bHeading = 0, clipA: string | null = null, clipB: string | null = null, roleA = 0, roleB = 0;
-    const mutual = bc.targetId === c.id && bc.action === c.action;
-    if (c.action === 'groom') {
+    const mutual = b.actTarget === c.id && b.act === act;
+    if (act === 'groom') {
       // Mother-and-infant grooming (stage W5; stylization, no source): an animal grooming the infant it holds works on it
       // where it clings (carryMode keeps it on the belly, poses.ts GROOM_LAP). The infant keeps its carry clip and nobody
       // is laid out: before this the groomer's hands chased a partner drawn on its own body.
@@ -490,10 +517,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     }
     // Mutual pairs are laid out once; a mating pair always from the male (he mounts from behind).
     if (mutual) {
-      if (c.action === 'mate' && c.sex !== bc.sex) { if (c.sex !== 'male') return; }
+      if (act === 'mate' && c.sex !== bc.sex) { if (c.sex !== 'male') return; }
       else if (b.id < a.id) return;
     }
-    switch (c.action) {
+    switch (act) {
       case 'groom':
         // Groomer sits behind the groomee (or face to face when mutual) with a clear gap between bodies.
         kind = 'groom'; sep = mutual ? 0.44 : 0.4;
@@ -501,7 +528,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         // A receiver that is itself grooming a third animal keeps its own grooming clip and place (stage W5; a drawing
         // rule, not a source): no receiver clip or posture for it; this groomer works on it where it sits.
         else if (groomsThird(b, a)) clipB = null;
-        else if (PASSIVE.has(bc.action)) {
+        else if (PASSIVE.has(b.act)) {
           clipB = 'groomee'; bHeading = hash01(a.id, 21) > 0.35 ? 0 : 0.6 * (hash01(b.id, 5) > 0.5 ? 1 : -1);
           // Groomee posture (grooming v2; stylization, no source): one per pair and bout of 40–70 s. Lying postures
           // only on the ground; a prone receiver lies across the groomer's front, one on its side turns its back.
@@ -518,28 +545,28 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         else return;
         break;
       case 'play':
-        if (bc.action !== 'play') return;
+        if (b.act !== 'play') return;
         kind = 'play'; sep = 0.22;
         { const swap = Math.floor((animClock + hash01(a.id + b.id, 1) * 10) / 3) % 2; const tickle = hash01(a.id * 7 + b.id, 2) > 0.7;
           if (tickle) { clipA = 'tickle'; clipB = 'play'; roleA = 0; roleB = 1; kind = 'tickle'; sep = 0.3; bHeading = Math.PI; }
           else { clipA = 'wrestle'; clipB = 'wrestle'; roleA = swap; roleB = 1 - swap; bHeading = Math.PI / 2; } }
         break;
       case 'attack':
-        if (!DEFEND_OK.has(bc.action)) return;
-        kind = 'attack'; sep = 0.2; clipB = bc.action === 'attack' ? 'attack' : 'defend'; bHeading = Math.PI / 2;
+        if (!DEFEND_OK.has(b.act)) return;
+        kind = 'attack'; sep = 0.2; clipB = b.act === 'attack' ? 'attack' : 'defend'; bHeading = Math.PI / 2;
         break;
       case 'mate':
         kind = 'mate'; sep = 0.26; clipB = 'mate'; roleA = c.sex === 'male' ? 0 : 1; roleB = 1 - roleA; bHeading = 0;
         break;
       case 'reconcile': case 'console':
-        if (!PASSIVE.has(bc.action) && bc.action !== 'submit' && bc.action !== 'reconcile' && bc.action !== 'console') return;
-        kind = 'embrace'; sep = 0.26; clipB = 'embrace'; roleA = c.action === 'console' ? 1 : 0; roleB = 0; bHeading = Math.PI;
+        if (!PASSIVE.has(b.act) && b.act !== 'submit' && b.act !== 'reconcile' && b.act !== 'console') return;
+        kind = 'embrace'; sep = 0.26; clipB = 'embrace'; roleA = act === 'console' ? 1 : 0; roleB = 0; bHeading = Math.PI;
         break;
       case 'beg':
-        kind = 'beg'; sep = 0.42; clipB = (bc.carryingMeat ?? 0) > 0 || bc.action === 'share' ? 'share' : null; bHeading = Math.PI;
+        kind = 'beg'; sep = 0.42; clipB = (bc.carryingMeat ?? 0) > 0 || b.act === 'share' ? 'share' : null; bHeading = Math.PI;
         break;
       case 'share':
-        kind = 'share'; sep = 0.45; clipB = bc.action === 'beg' ? 'beg' : null; bHeading = Math.PI;
+        kind = 'share'; sep = 0.45; clipB = b.act === 'beg' ? 'beg' : null; bHeading = Math.PI;
         break;
       case 'pant-grunt':
         kind = 'pant-grunt'; sep = 0.55; clipB = null; bHeading = Math.PI;
@@ -585,12 +612,25 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   function nearestTree(x: number, z: number, maxD: number) { return treeIndex.nearest(x, z, maxD); }
   const treeCache = new Map<number, number>(); // chimp id → tree id for elevated animals
   let perchYaw = 0;
+  /** A tree or nest place kept from an act the simulation has left is used only within this distance (m) of the drawn
+   * body (a design assumption: wider than a crown). A safety net: a body that has set off is read as on the move
+   * (update) and uses no remembered tree at all, so this only bounds what a wrong note in the record could do. */
+  const REMEMBERED_TREE_M = 30;
   function treeFor(a: Anim): World['trees'][number] | null {
     const c = a.chimp;
-    if (c.action === 'climb' || c.action === 'nest') { const t = treeById.get(c.action === 'nest' && c.nest ? c.nest.treeId : c.targetId); if (t) return t; }
+    // (W6: the tree the drawn body is in. The simulation's position is two ticks ahead: an animal still coming down
+    // its trunk on screen is already walking away there, out of reach of the tree, and lost its trunk half way down.)
+    const px = a.track.n > 0 ? a.track.x : c.position[0], pz = a.track.n > 0 ? a.track.z : c.position[2];
+    // Stage W6: by the act the drawn body is in. An animal on its way to a nest tree is still in the crown it is leaving.
+    // The tree of an act the simulation has already left (the drawn act is a remembered one) counts only while the
+    // drawn body is near it (REMEMBERED_TREE_M): a remembered target must never carry a body across the map.
+    if (a.act === 'climb' || a.act === 'nest') {
+      const t = treeById.get(a.act === 'nest' && c.nest && c.action === 'nest' ? c.nest.treeId : a.actTarget);
+      if (t && (a.act === c.action || hyp2(t.position[0] - px, t.position[2] - pz) < REMEMBERED_TREE_M)) return t;
+    }
     const cached = treeCache.get(a.id);
-    if (cached !== undefined) { const t = treeById.get(cached); if (t && hyp2(t.position[0] - c.position[0], t.position[2] - c.position[2]) < 6) return t; }
-    const t = nearestTree(c.position[0], c.position[2], 6);
+    if (cached !== undefined) { const t = treeById.get(cached); if (t && hyp2(t.position[0] - px, t.position[2] - pz) < 6) return t; }
+    const t = nearestTree(px, pz, 6);
     if (t) treeCache.set(a.id, t.id);
     return t;
   }
@@ -621,14 +661,23 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
 
   function quickGait(a: Anim, fast: number, enter: number) { return (a.fastGait = a.fastGait ? fast > enter * 0.8 : fast > enter); }
   // --- Clip choice from action, motion, pairing, carrying and height.
+  // Stage W6: the act is the one the drawn body is in (a.act, drawn.ts): while its tag still reads "about to" or
+  // "walking to", the body keeps the pose of the act before, sits up or rises in the last moments (the decision beat,
+  // creatures/beat.ts), walks or climbs when its path does, and stands neutral when it pauses on the way; the pose of
+  // the new act comes at the moment the tag turns plain. The timings and substitutions are stylizations.
+  const NEUTRAL: [string, number, Gait | null] = ['stand', 0, null];
   function chooseClip(a: Anim, moving: boolean, fast: number): [string, number, Gait | null] {
     const c = a.chimp;
     if (debug.clip) return [debug.clip, 0, null];
     if (a.carry === 1) return [c.alive ? 'carryVentral' : 'deadCarried', 0, null];
     if (a.carry === 2) return ['carryDorsal', 0, null];
     if (!c.alive || c.action === 'dead') return ['dead', 0, null];
-    const act = c.action;
+    const about = a.way !== Way.none, onWay = a.way >= Way.going;
+    const act = a.act;
     const high = a.elevated > 0.5;
+    // Stage W6: on its tree's trunk, going up or down, whatever its act (placeGrounded): the climb cycle. The creature
+    // layer drives its phase by height, so going down runs it backwards (feet first: the project's drawing rule).
+    if (a.trunkK > 0.5 && a.y > 0.25 && act !== 'climb') return [Math.abs(a.track.vy) * pbRate > 0.02 || a.vel > 0.02 ? 'climb' : 'clingTrunk', 0, 'climb'];
     // W1: an animal above 0.3 m is drawn at its place on a branch whatever its sim position does there (placeGrounded
     // uses the same height), so sideways movement at height takes no locomotion clip: it would walk or gallop on the
     // spot (players at 12 m were drawn galloping). It keeps the clip of what it is doing; climbing keeps its own. A
@@ -640,8 +689,15 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     const pairA = a.paired;
     if (act === 'climb' && (c.position[1] ?? 0) > 0.25) return [moving || a.vel > 0.02 ? 'climb' : 'clingTrunk', 0, 'climb'];
     if (act === 'nest' && (high || c.nest)) {
-      // actionTime counts ecological seconds in the current action: the first minutes are construction.
-      const building = (c.actionTime ?? 9999) < 240;
+      // The first minutes in the nest tree are construction: four simulated minutes from the moment the drawn body
+      // arrived there (stage W6: the act's own clock also counts the walk and the climb to the tree, so a long way
+      // left no building to see), or of the act when the arrival was not seen. An animal about to leave its nest
+      // (the drawn act is still the night's) sleeps on, then sits up.
+      // (Not after skipped states: the moment the body was first seen in the nest is then not its arrival, and every
+      // sleeper would build for four minutes after a fast-forward.)
+      const seen = a.acts.shown === a.acts.since && Number.isFinite(a.acts.shownAt) && !startUnseen(a.acts);
+      const building = !about && (seen ? (playback.renderT - a.late - a.acts.shownAt) * 3600 < 240 : (c.actionTime ?? 9999) < 240);
+      if (about && still && (a.beat.up || a.beat.phase !== Phase.none)) { a.beat.up = true; return ['perch', 0, null]; }
       return [building ? 'nestBuild' : 'sleep', 0, null];
     }
     if (a.pCode !== PatrolCode.none && !high) {
@@ -656,7 +712,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     }
     if (!still) {
       // Walk ↔ gallop with hysteresis (exit 20% below entry) so speed noise cannot flicker the gait.
-      switch (act) {
+      // (W6: a body still finishing the act before moves in that act's gait; one on its way to the new act in the new one's.)
+      switch (about && !onWay ? act : c.action) {
         case 'charge': return ['gallop', 1, 'gallop'];
         case 'flee': case 'hunt': return ['gallop', 0, 'gallop'];
         case 'play': return quickGait(a, fast, 1.2) ? ['gallop', 0, 'gallop'] : ['walk', 0, 'walk'];
@@ -666,6 +723,18 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       }
     }
     a.fastGait = false;
+    if (about) {
+      // Paused on the way to the act (a ford, the foot of the tree): a neutral pose, never the pose of the act it has
+      // not reached and not the one it left.
+      if (onWay) return high ? ['perch', 0, null] : NEUTRAL;
+      // Not set off yet. On the ground a lying animal sits up as its beat begins (lying, its eyes are half shut and its
+      // head barely turns: the glance and the look would not show), and stays up (beat.up); once
+      // the body's own time has reached a trip the simulation has not started moving, it stands and waits for company.
+      if (!high) {
+        if (a.beat.waiting) return NEUTRAL;
+        if (a.beat.up || (a.beat.phase !== Phase.none && a.posture === Posture.lying)) { a.beat.up = true; return ['sitIdle', 0, null]; }
+      }
+    }
     if (high) {
       switch (act) {
         case 'forage': return ['forage', 0, null];
@@ -676,7 +745,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       }
     }
     switch (act) {
-      case 'rest': return ['rest', Math.floor(hash01(a.id, c.decisionVersion ?? 0) * 3), null];
+      // While the body waits for its next act the resting posture it is in stays (the decision that ends the rest also
+      // re-rolls the hash the posture is drawn from: without this it would lie down or sit up at that moment).
+      // An animal that comes out of another pose (it was being groomed) while it waits does not lie down for a moment: it sits.
+      case 'rest': return about ? (a.clip === 'rest' ? ['rest', a.role, null] : ['sitIdle', 0, null]) : ['rest', Math.floor(hash01(a.id, c.decisionVersion ?? 0) * 3), null];
       case 'forage': return ['forage', 0, null];
       case 'drink': return ['drink', 0, null];
       case 'travel': case 'follow': case 'consort': return ['stand', 0, null];
@@ -765,19 +837,141 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   const refMode = !smallMapPace(paramsOf(world)), refK = referenceRate(paramsOf(world)) / 3600;
   let pbRate = 0;          // ecological hours of render time per real second (smoothed)
   let lastRenderT = NaN;
+  // --- Stage W6: the decision beat (creatures/beat.ts). When an animal's act changes, the renderer notes where the
+  // chosen target and a close runner-up are; while the drawn body has not begun the act it plays glance, look and
+  // intention movement in the real seconds before the body starts; animals leaving together are drawn setting off in
+  // the order they chose. Reads the World (act, target, candidates, positions); writes only renderer state.
+  const GP = new Float64Array(3);
+  const MOVE_MPS = movingMps(paramsOf(world).walkMps);   // a step faster than this (m per ecological second) is the animal setting off (drawn.ts: by this world's walking speed)
+  const KEY_ANIMAL = 500000;          // departure keys: a tree's id, or this plus the id of the animal followed
+  /** Where an option's target is: 0 not found, 1 a place (written to out), 2 an animal that is drawn (its head is read each frame). */
+  function placeKind(id: number, self: Anim, out: Float64Array): number {
+    if (id < 0) return 0;
+    if (id < 100000) return id !== self.id && anims.has(id) ? 2 : 0;
+    const t = treeById.get(id);
+    if (t) { out[0] = t.position[0]; out[2] = t.position[2]; out[1] = ctx.groundHeight(out[0], out[2]) + (t.height ?? 20) * 0.7; return 1; }
+    const wt = waterById.get(id);
+    if (wt) { out[0] = wt.position[0]; out[2] = wt.position[2]; out[1] = ctx.groundHeight(out[0], out[2]); return 1; }
+    for (const call of world.calls) if (call.id === id) { out[0] = call.position[0]; out[2] = call.position[2]; out[1] = ctx.groundHeight(out[0], out[2]) + 0.8; return 1; }
+    return 0;
+  }
+  let beatSelf: Anim | null = null;
+  const placed = (id: number) => beatSelf !== null && placeKind(id, beatSelf, GP) !== 0;
+  /** A new act: where its target and the runner-up are, and what departure it may be part of. */
+  function startBeat(a: Anim) {
+    const c = a.chimp, b = a.beat, sign = BODY_SIGN[c.action];
+    b.since = a.acts.since; b.phase = Phase.none; b.gaze = Gaze.none; b.moveT = Infinity; b.own = ownsStep(c.actionTime, a.track, b.since, MOVE_MPS); b.fromRest = true; b.up = false; b.looked = false;
+    b.key = -1; b.rank = 0; b.first = -1; b.followers = 0; b.backId = -1; b.goneFor = NaN; b.waiting = false; b.goalKind = 0; b.altKind = 0;
+    // Urgent and pose-only acts (a charge, a call) are never waited for: no beat. Nor is an act whose start was not
+    // seen (states were skipped, drawn.ts SKIP_TICKS): the animal decided at some time before, and is already in it.
+    if (!(b.since > -Infinity) || sign === 'any' || !c.alive || startUnseen(a.acts)) { b.since = -Infinity; return; }
+    b.goalId = c.targetId; b.goalKind = placeKind(c.targetId, a, GP);
+    if (b.goalKind === 1) { b.gx = GP[0]; b.gy = GP[1]; b.gz = GP[2]; }
+    beatSelf = a;
+    const r = runnerUp(c.candidates, c.action, c.targetId, placed);
+    beatSelf = null;
+    if (r >= 0) { b.altId = c.candidates[r].targetId; b.altKind = placeKind(b.altId, a, GP); if (b.altKind === 1) { b.ax = GP[0]; b.ay = GP[1]; b.az = GP[2]; } }
+    if (sign === 'go' && a.carry === 0) {
+      const L = c.action === 'follow' && c.targetId >= 0 && c.targetId < 100000 ? anims.get(c.targetId) : undefined;
+      b.key = c.action === 'travel' && treeById.has(c.targetId) ? c.targetId : L ? (L.beat.since > -Infinity && L.beat.key >= 0 ? L.beat.key : KEY_ANIMAL + L.id) : KEY_ANIMAL + a.id;
+    }
+  }
+  const DKEY = new Int32Array(CAPACITY), DSINCE = new Float64Array(CAPACITY), DX = new Float32Array(CAPACITY), DZ = new Float32Array(CAPACITY);
+  /** How long a beat is kept after its act was first seen, in drawn ticks (the wait of a trip, the look back). */
+  const BEAT_KEEP_TICKS = 8;
   function interpolateAll(subTick: number, dt: number) {
     const fresh = advancePlayback(playback, world.time, subTick, PLAYBACK_LAG_TICKS);
     const rt = playback.renderT;
     const step = Number.isFinite(lastRenderT) && Number.isFinite(rt) ? Math.max(0, rt - lastRenderT) : 0;
     lastRenderT = rt;
     if (dt > 0) pbRate = step > 0.5 ? 0 : damp(pbRate, step / dt, 10, dt); // a rewind or long gap resets
+    // The beat runs on real seconds: the rate is that of the drawn time itself (smoothed; the clock's own figure
+    // saw-tooths with the ticks). Off above the rate at which tags stop announcing (drawn.ts), and for carried animals.
+    const rate = pbRate * 3600, live = rate > 0 && curSimRate <= ABOUT_MAX_RATE && step < 0.5;
+    let departures = false;
     for (const a of animList) {
       const c = a.chimp;
       if (fresh || a.track.n === 0) pushSample(a.track, world.time, c.position[0], Math.max(0, c.position[1] ?? 0), c.position[2]);
       // The act of each tick state (drawn.ts), and at once when a decision applied between ticks changes it.
-      if (fresh || actChanged(a.acts, c.action, c.targetId)) pushAct(a.acts, world.time, c.action, c.targetId);
-      sampleSmooth(a.track, rt, jump2);
+      const changed = actChanged(a.acts, c.action, c.targetId);
+      if (fresh || changed) pushAct(a.acts, world.time, c.action, c.targetId);
+      if (changed) startBeat(a);
+      const b = a.beat;
+      if (!(b.since > -Infinity)) continue;
+      if (!live || !c.alive || a.carry !== 0 || rt - a.late > b.since + BEAT_KEEP_TICKS * TICK_HOURS) { b.since = -Infinity; b.key = -1; continue; }
+      if (!(b.moveT < Infinity)) {
+        b.moveT = firstMove(a.track, b.since, MOVE_MPS, b.own);
+        if (b.moveT < Infinity) {
+          b.fromRest = restedBefore(a.track, b.moveT, MOVE_MPS);
+          // No target to look at (a trip home, a rest somewhere else): it looks where its first step goes.
+          if (b.goalKind === 0) { const h = a.track.hist, o = a.track.head * 4; if (hyp2(h[o + 1] - a.track.x, h[o + 3] - a.track.z) > 1) { b.goalKind = 1; b.gx = h[o + 1]; b.gz = h[o + 3]; b.gy = ctx.groundHeight(b.gx, b.gz) + h[o + 2] + 0.6 * a.morph.size; } }
+        }
+      }
+      if (b.key >= 0) departures = true;
     }
+    // Leaving together: place in the departure, the first mover, and whom it looks back at.
+    if (departures) {
+      const n = Math.min(animList.length, CAPACITY), win = DEPART_WINDOW_TICKS * TICK_HOURS;
+      for (let i = 0; i < n; i++) { const a = animList[i], b = a.beat; DKEY[i] = b.since > -Infinity ? b.key : -1; DSINCE[i] = b.since; DX[i] = a.track.x; DZ[i] = a.track.z; }
+      for (let i = 0; i < n; i++) {
+        if (DKEY[i] < 0) continue;
+        const b = animList[i].beat;
+        b.rank = departRank(i, n, DKEY, DSINCE, DX, DZ, win, DEPART_RADIUS_M);
+        b.followers = departFollowers(i, n, DKEY, DSINCE, DX, DZ, win, DEPART_RADIUS_M);
+        b.first = b.rank > 0 ? animList[departFirst(i, n, DKEY, DSINCE, DX, DZ, win, DEPART_RADIUS_M)].id : -1;
+        const f = b.followers > 0 ? departNearestFollower(i, n, DKEY, DSINCE, DX, DZ, win, DEPART_RADIUS_M) : -1;
+        b.backId = f >= 0 ? animList[f].id : -1;
+      }
+    }
+    for (const a of animList) {
+      const b = a.beat;
+      // A follower is drawn a little behind its own path so that the first mover is seen to go first (beat.ts lateTarget).
+      let target = 0;
+      if (b.since > -Infinity && b.rank > 0 && b.first >= 0) { const f = anims.get(b.first); if (f && f.beat.since > -Infinity) target = lateTarget(b.rank, b.moveT, f.beat.moveT, rt, rate, b.fromRest); }
+      // (Set off: by its own drawn time of the frame before. A follower held at its own start is caught in the frame
+      // its time first passes that start, a fraction of a frame late, and must not count as gone.)
+      a.late = step < 0.5 ? stepLate(a.late, target, step, b.since > -Infinity && b.moveT < Infinity && rt - step - a.late > b.moveT + GONE_EPS) : 0;
+      sampleSmooth(a.track, rt - a.late, jump2);
+      if (b.since > -Infinity) updateBeat(a, rt, rt - a.late, rate, dt); else { b.phase = Phase.none; b.gaze = Gaze.none; b.waiting = false; }
+    }
+  }
+  /** The part of the beat playing now and where the gaze goes for it (stylizations: beat.ts). */
+  function updateBeat(a: Anim, rt: number, rtA: number, rate: number, dt: number) {
+    const b = a.beat, c = a.chimp, go = BODY_SIGN[c.action] === 'go';
+    // The countdown runs to the moment the body starts. For a follower of a departure that is its place in the order
+    // after the first mover's start (at the latest when its lateness runs out), on the common drawn time: its own
+    // time stands still while it is held, and a countdown on that would hold it in its intention movement for as long.
+    let start = startTime(b.since, b.moveT, b.fromRest), clock = rtA;
+    if (b.rank > 0 && b.first >= 0 && b.moveT < Infinity && b.fromRest) {   // (one already on the move is not held: lateTarget)
+      const f = anims.get(b.first);
+      if (f && f.beat.since > -Infinity) { const turn = Math.min(f.beat.moveT + b.rank * staggerGap(rate), b.moveT + LATE_MAX_TICKS * TICK_HOURS); if (turn > start) { start = turn; clock = rt; } }
+    }
+    // The runner-up is glanced at once per act: an animal that then waits and counts down again goes straight to its goal.
+    b.phase = beatPhase(realSeconds(start - clock, rate), b.altKind !== 0 && !b.looked);
+    if (b.phase >= Phase.look) b.looked = true;
+    // A trip the simulation has not started moving, once the body's own time has reached it: it stands and waits
+    // (the simulation's initiator waits up to a minute for company before it goes or gives up).
+    const waiting = go && !(b.moveT < Infinity) && rtA >= b.since, gone = b.moveT < Infinity && rtA >= b.moveT;
+    if (waiting !== b.waiting) b.goneFor = NaN;
+    b.waiting = waiting;
+    b.goneFor = waiting || gone ? (Number.isNaN(b.goneFor) ? 0 : b.goneFor + dt) : NaN;
+    // Waiting, it looks back at the nearest companion of its party; gone first, at the nearest of those who follow.
+    if (waiting && (b.backId < 0 || !anims.has(b.backId))) b.backId = nearestMate(a);
+    b.gaze = gazeFor(b.phase, b.goalKind !== 0, waiting, gone, go && b.rank === 0 && b.followers > 0, b.backId >= 0, b.goneFor);
+    // A follower held back for the order watches the first mover until that one has set off, then turns to the goal.
+    if (b.rank > 0 && a.late > 1e-5 && !gone && b.first >= 0 && b.phase === Phase.none) { const f = anims.get(b.first); if (f && !(f.beat.moveT < Infinity && rt >= f.beat.moveT)) { b.backId = b.first; b.gaze = Gaze.back; } }
+  }
+  /** The nearest animal of its own party within 25 m (a waiting initiator's companions), or -1. */
+  function nearestMate(a: Anim): number {
+    const c = a.chimp;
+    let best = -1, bestD = 625;
+    if (c.partyId < 0) return best;
+    for (const o of animList) {
+      if (o === a || !o.chimp.alive || o.carry !== 0 || o.chimp.troopId !== c.troopId || o.chimp.partyId !== c.partyId) continue;
+      const d = (o.track.x - a.track.x) ** 2 + (o.track.z - a.track.z) ** 2;
+      if (d < bestD) { bestD = d; best = o.id; }
+    }
+    return best;
   }
 
   // --- Main per-animal update (ground animals first, carried infants after their mothers).
@@ -816,6 +1010,11 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     // Heading: travel direction when moving (from the C1 path, so it turns smoothly), else the pairing/sim heading.
     const c = a.chimp;
     let target = a.headingTarget ?? c.heading ?? a.heading;
+    // Stage W6: the simulation turns an animal to its new goal in the tick it decides. The drawn body, which has not
+    // set off, keeps facing as it did and turns in its intention movement (or once it stands waiting), not two ticks early.
+    if (a.way === Way.soon && a.headingTarget == null && !(a.beat.phase === Phase.intent || a.beat.waiting)) target = a.heading;
+    // An initiator standing and waiting for company faces where it means to go (the simulation turns it only with its first step).
+    else if (a.beat.waiting && a.headingTarget == null && a.elevated < 0.5 && beatGoal(a, Gaze.goal)) target = Math.atan2(GOAL[0] - a.x, GOAL[2] - a.z);
     if (turnSpeed > 0.25 * a.morph.size && pathSpeed > 0.05 * a.morph.size) target = Math.atan2(tr.vx, tr.vz);
     const before = a.heading;
     // The path is C1, so a moving animal can follow its direction closely (less body-vs-path lag in curves).
@@ -911,6 +1110,21 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     } else { pctx.hasTarget = false; pctx.hasBones = false; pctx.tdist = 99; pctx.tsize = 1; pctx.tx = pctx.ty = pctx.tz = 0; pctx.pairT = pctx.time; }
     pw.bind(a.cur).reset();
     (CLIPS[clip] ?? CLIPS.stand)(pw, pctx);
+    // Stage W6: the intention movement of the decision beat (creatures/intention.ts; stylization), laid over the clip
+    // in the last second before the body starts the act: a half rise before walking off, a sit-up or a weight shift.
+    a.posture = postureOf(a.cur.v);
+    {
+      // Once in, it holds until the body sets off (the drawn path leaves a rest with zero velocity: without the hold the
+      // body sank back into its old pose for the instant between the end of the countdown and its first step).
+      const bt = a.beat, on = (bt.phase === Phase.intent || (a.intent > 0.5 && bt.since > -Infinity && !bt.waiting)) && a.way === Way.soon && !a.moving && a.carry === 0 && c.alive;
+      a.intent = on || a.intent > 1e-3 ? damp(a.intent, on ? 1 : 0, on ? 5 : 9, dtReal) : 0;
+      if (a.intent > 0.01 && !LOCOMOTION.has(clip) && gait !== 'climb') {
+        let yaw = 0;
+        if (beatGoal(a, Gaze.goal)) { const dx = GOAL[0] - a.x, dz = GOAL[2] - a.z, ch = Math.cos(-a.heading), sh = Math.sin(-a.heading); yaw = Math.atan2(dx * ch + dz * sh, -dx * sh + dz * ch); }
+        const leaves = a.elevated < 0.5 && (BODY_SIGN[c.action] === 'go' || bt.moveT < Infinity);
+        intention(pw, a.posture, smoothstep(0, 1, a.intent), yaw, leaves);
+      }
+    }
     if ((c.carryingDeadId ?? -1) >= 0 && anims.get(c.carryingDeadId!)?.carry) { const k = cradleFor(clip); if (k) cradle(pw, k === 1); }
     vocalOverlay(pw, pctx.vocal, animClock + pctx.seed * 10, pctx.mood);
     if (a.pCode !== PatrolCode.none) {
@@ -1067,9 +1281,36 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     for (let k = 0; k < 3; k++) springStep(a.lk[k], GOAL[k], hl, dt);
     return w;
   }
+  /**
+   * Stage W6: where the decision beat has the animal look (GOAL): the runner-up option, the chosen target, or back at a
+   * companion. A place more than 12 m away is looked at as a direction, 8 m out at about eye level (the look point
+   * springs: a point hundreds of metres off would make it jump). False when there is nothing to look at.
+   */
+  function beatGoal(a: Anim, gaze: number): boolean {
+    const b = a.beat;
+    if (!(b.since > -Infinity) || gaze === Gaze.none) return false;
+    const kind = gaze === Gaze.alt ? b.altKind : gaze === Gaze.goal ? b.goalKind : 2, id = gaze === Gaze.alt ? b.altId : gaze === Gaze.goal ? b.goalId : b.backId;
+    if (kind === 0) return false;
+    if (kind === 2) { const o = anims.get(id); if (!o || o === a) return false; GOAL[0] = o.head.x; GOAL[1] = o.head.y; GOAL[2] = o.head.z; }
+    else if (gaze === Gaze.alt) { GOAL[0] = b.ax; GOAL[1] = b.ay; GOAL[2] = b.az; }
+    else { GOAL[0] = b.gx; GOAL[1] = b.gy; GOAL[2] = b.gz; }
+    const dx = GOAL[0] - a.head.x, dz = GOAL[2] - a.head.z, d = hyp2(dx, dz);
+    if (d > 12) { GOAL[0] = a.head.x + dx / d * 8; GOAL[2] = a.head.z + dz / d * 8; GOAL[1] = a.head.y + 0.4; }
+    return true;
+  }
   function updateAttention(a: Anim, partner: Anim | undefined, dt: number): number {
     const c = a.chimp;
     if (a.pCode !== PatrolCode.none && a.pCode !== PatrolCode.return) return patrolAttention(a, dt);
+    // Stage W6, the decision beat: the gaze goes to the runner-up, then to what was chosen, before the body starts;
+    // the first mover of a departure looks back. A deliberate turn (a slower spring than the idle glances).
+    // (Not past a snake model: an alarming thing within 15 m keeps the eyes, as it does over every other target.)
+    let alarmed = false;
+    if (a.beat.gaze !== Gaze.none) for (const st of world.stimuli) if (st.kind === 'snake-model' && (st.position[0] - a.x) ** 2 + (st.position[2] - a.z) ** 2 < 225) { alarmed = true; break; }
+    if (a.beat.gaze !== Gaze.none && !alarmed && beatGoal(a, a.beat.gaze)) {
+      if (a.lastSkinFrame < 0 || !Number.isFinite(a.lk[0].x) || Math.abs(a.lk[0].x - GOAL[0]) > 40) for (let k = 0; k < 3; k++) { a.lk[k].x = GOAL[k]; a.lk[k].v = 0; }
+      for (let k = 0; k < 3; k++) springStep(a.lk[k], GOAL[k], 0.14, dt);
+      return 0.95;
+    }
     candN = 0;
     if (partner) addCand(4, partner.id);
     for (const call of world.calls) {
@@ -1082,10 +1323,16 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       if (al && (al.x - a.x) ** 2 + (al.z - a.z) ** 2 < 36) addCand(1, al.id);
     }
     selectAttention(a.attn, cands, candN, animClock, a.id);
+    // Stage W6: while a model's answer is in flight for this animal (beat.ts deliberating; a stylization, not seen with
+    // a model) an idle scan is not held for its usual 1.5 to 6 s: it moves on after THINK_SCAN_S, so an animal with
+    // nothing to look at keeps looking about. A partner, a caller, a snake model and the alpha keep the eyes as always:
+    // a wait can fall in the middle of a grooming bout, and the head must not leave the partner each time one does.
+    const thinking = a.attn.pri === 0 && deliberating(c.controller, c.awaitingDecisionSince, world.modelPolicy.mode);
+    if (thinking && a.attn.until > animClock + THINK_SCAN_S) a.attn.until = animClock + THINK_SCAN_S;
     if (!goalOf(a, a.attn.key, GOAL)) { a.attn.until = -1; return 0; }
     if (a.lastSkinFrame < 0 || !Number.isFinite(a.lk[0].x) || Math.abs(a.lk[0].x - GOAL[0]) > 40) for (let k = 0; k < 3; k++) { a.lk[k].x = GOAL[k]; a.lk[k].v = 0; }
     for (let k = 0; k < 3; k++) springStep(a.lk[k], GOAL[k], 0.09, dt);
-    return a.attn.pri >= 3 ? 0.9 : a.attn.pri >= 1 ? 0.7 : 0.5;
+    return thinking ? 0.7 : a.attn.pri >= 3 ? 0.9 : a.attn.pri >= 1 ? 0.7 : 0.5;
   }
   const HQ = new Float32Array(4), HV = new Float32Array(3);
   function aimEyes(a: Anim, dt: number) {
@@ -1138,11 +1385,13 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
    */
   const EDGE = new THREE.Vector3();
   function drinkSpot(a: Anim) {
-    const c = a.chimp;
     if (!ctx.waterEdge) return;
-    if (hyp2(c.position[0] - a.drinkSimX, c.position[2] - a.drinkSimZ) > 0.3) {
-      a.drinkSimX = c.position[0]; a.drinkSimZ = c.position[2];
-      a.drinkOk = ctx.waterEdge(c.position[0], c.position[2], EDGE) && hyp2(EDGE.x - c.position[0], EDGE.z - c.position[2]) < 3.2;
+    // (W6: from where the drawn body is. A drinker whose next act has begun in the simulation stays at the waterline
+    // until its body leaves; the simulation's position is by then metres away.)
+    const px = a.track.x, pz = a.track.z;
+    if (hyp2(px - a.drinkSimX, pz - a.drinkSimZ) > 0.3) {
+      a.drinkSimX = px; a.drinkSimZ = pz;
+      a.drinkOk = ctx.waterEdge(px, pz, EDGE) && hyp2(EDGE.x - px, EDGE.z - pz) < 3.2;
       if (a.drinkOk) { a.drinkX = EDGE.x; a.drinkZ = EDGE.z; }
     }
     if (!a.drinkOk) return;
@@ -1250,12 +1499,20 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     const h = a.y;
     let x = a.x, z = a.z;
     a.climbTree = -1;
+    const wasUp = a.elevated > 0.5;
     a.elevated = damp(a.elevated, h > 0.3 ? 1 : 0, 4, 1 / 30);
     a.onBranch = false;
     if (h > 0.3) {
       const tree = treeFor(a);
       const g = tree ? ctx.groundHeight(tree.position[0], tree.position[2]) : ctx.groundHeight(x, z);
       let y = g + h;
+      // Stage W6, a real climb down (and up): whenever the drawn path of an animal in a tree goes up or down faster
+      // than a shuffle, whatever its act, it is on the trunk in the climb cycle (chooseClip), not seated on its branch
+      // until it drops to the ground. trunkK eases the body between its branch and the bark (a short clamber; the
+      // rate is a stylization); an animal coming up from the ground is on the bark at once.
+      const climbAct = c.action === 'climb', vy = Math.abs(a.track.vy) / 3600;
+      a.onTrunk = !!tree && !climbAct && a.carry === 0 && vy > (a.onTrunk ? 0.4 : 1) * PATH_MOVING_MPS;
+      a.trunkK = a.onTrunk && !wasUp && a.trunkK < 0.5 ? 1 : damp(a.trunkK, a.onTrunk ? 1 : 0, 5, curDt);
       if (tree) {
         const r0 = trunkRadius(tree);
         let dx = x - tree.position[0], dz = z - tree.position[2];
@@ -1263,7 +1520,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         if (dl < 0.05) { const ang = hash01(a.id, 41) * Math.PI * 2; dx = Math.sin(ang); dz = Math.cos(ang); dl = 1; }
         let crownTop = Infinity;
         if (tree && ctx.treeAnchor(tree.id, anchor)) crownTop = anchor.y + 1.5;
-        if (c.action === 'climb') {
+        if (climbAct) {
           // Hug the trunk, facing it; the rig climbs toward +Z. The rendered trunk (vegetation.trunkAt) gives the
           // axis and bark radius at the chest, so the hands sit on the bark instead of beside it.
           const hasTrunk = trunkPoint(tree, y + 0.8 * a.morph.size, T4);
@@ -1291,14 +1548,38 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
           perchYaw = Math.atan2(x - tree.position[0], z - tree.position[2]);
         }
         y = Math.min(y, crownTop);
+        if (a.trunkK > 1e-3 && !climbAct) {
+          // The point on the bark at the height the simulation has the animal (the same placement as the climb act),
+          // meeting the ground point over the last metre so the landing is not a jump.
+          const yT = Math.min(g + h, crownTop), hasTrunk = trunkPoint(tree, yT + 0.8 * a.morph.size, T4);
+          const r = (hasTrunk ? T4.w : r0) + 0.15 * a.morph.size, low = 1 - smoothstep(0.3, 1.0, h);
+          const tx = (hasTrunk ? T4.x : tree.position[0]) + dx / dl * r, tz = (hasTrunk ? T4.z : tree.position[2]) + dz / dl * r;
+          const px = tx + (a.x - tx) * low, pz = tz + (a.z - tz) * low, py = yT + (ctx.groundHeight(a.x, a.z) + h - yT) * low;
+          const k = smoothstep(0, 1, a.trunkK);
+          x += (px - x) * k; z += (pz - z) * k; y += (py - y) * k;
+          if (k > 0.5) { a.onBranch = false; a.climbTree = tree.id; a.heading = dampAngle(a.heading, Math.atan2(-dx, -dz), 8, curDt); }
+        }
         // Perched animals face roughly outward along their branch.
-        if (c.action !== 'climb' && a.speed < 0.3 * a.morph.size) a.heading = dampAngle(a.heading, perchYaw + (hash01(a.id, 45) - 0.5) * 1.2, 3, 1 / 30);
+        // (W6: in the decision beat it turns on its branch toward what it chose, so the head can reach it.)
+        else if (!climbAct && a.speed < 0.3 * a.morph.size) {
+          const turned = a.way === Way.soon && a.beat.phase >= Phase.look && beatGoal(a, Gaze.goal);
+          a.heading = dampAngle(a.heading, turned ? Math.atan2(GOAL[0] - x, GOAL[2] - z) : perchYaw + (hash01(a.id, 45) - 0.5) * 1.2, 3, 1 / 30);
+        }
       }
       // Branch placement is render-only: a.x/a.z keep tracking the sim so speed estimates stay clean.
-      if (c.action === 'nest' && c.nest) { const spot = nests.spotFor(c.nest.treeId, c.nest.position, a.id, V2); if (spot) { x = V2.x; z = V2.z; y = V2.y + 0.12 * a.morph.size; } }
+      // (W6: in the nest once the drawn body is in the nest act, not while it is still on its way to the nest tree.)
+      // The place is remembered: the simulation clears Chimp.nest the moment the animal decides to leave, two ticks
+      // before its drawn body does, and it would be lifted out of its nest onto a branch for that long.
+      if (a.act === 'nest' && a.trunkK < 0.5) {
+        if (c.action === 'nest') { const spot = c.nest ? nests.spotFor(c.nest.treeId, c.nest.position, a.id, V2) : null; a.nestOk = !!spot; if (spot) { a.nestX = V2.x; a.nestY = V2.y + 0.12 * a.morph.size; a.nestZ = V2.z; } }
+        // (The remembered place only while the drawn body is at it: REMEMBERED_TREE_M.)
+        if (a.nestOk && (c.action === 'nest' || hyp2(a.nestX - a.x, a.nestZ - a.z) < REMEMBERED_TREE_M)) { x = a.nestX; y = a.nestY; z = a.nestZ; }
+      } else if (a.act !== 'nest') a.nestOk = false;
       bodyFrame(a, x, z, y, 0);
       return;
     }
+    a.onTrunk = false;
+    if (a.trunkK > 0) a.trunkK = a.trunkK < 1e-3 ? 0 : damp(a.trunkK, 0, 8, curDt);
     const g = ctx.groundHeight(x, z);
     const clip = a.clip;
     // A receiver lying down to be groomed (stage W5) follows the slope as the other lying clips do: at the seated
@@ -1426,6 +1707,17 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     for (const p of pairings) pairPool.push(p);
     pairings.length = 0; receiver.clear();
     interpolateAll(frame.subTick ?? 0, dt);
+    // Stage W6: which act each drawn body is in, read once a frame (drawn.ts); pairings, poses and tags all use it.
+    for (const a of animList) {
+      readDrawn(a.acts, playback.renderT - a.late, bodyOf(a), curSimRate, DRAWN);
+      // A body that has set off for an act it has not reached (walking, climbing, paused on the way) is in no act: it
+      // is on the move, as after a change of mind (drawn.ts pushAct). Kept in the act before, an animal that left its
+      // nest to feed 20 m away was drawn climbing its nest tree's trunk, and jumped to the feeding tree at the top.
+      const onWay = DRAWN.way >= Way.going;
+      a.act = onWay ? 'travel' : DRAWN.action; a.actTarget = onWay ? -1 : DRAWN.targetId;
+      // "Walking to" is said of a body drawn in a walk; one that runs up to its partner is "going to".
+      a.way = DRAWN.way === Way.walking && a.fastGait ? Way.going : DRAWN.way;
+    }
     for (const a of animList) { a.paired = false; a.pairClip = null; a.partnerId = -1; a.headingTarget = null; a.holds = false; a.tx = a.deadDrop ? a.dropX : a.track.x; a.tz = a.deadDrop ? a.dropZ : a.track.z; }
     for (const a of animList) if (a.carry !== 0 && a.carrierId >= 0) { const m = anims.get(a.carrierId); if (m) m.holds = true; }
     for (const a of animList) pairingFor(a);
@@ -1475,11 +1767,14 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       const rel = c.alive && releasing(a);
       const drummer = c.alive && c.vocal === 'drum' && a.elevated < 0.5 && (c.action === 'call' || (rel && c.action === 'display' && hyp2(a.track.vx, a.track.vz) * pbRate < 0.1 * a.morph.size));
       a.drumTree = drummer ? drumTree(a, rel ? RELEASE_DRUM_REACH * a.morph.size : 0) : -1;
-      if (a.chimp.alive && a.chimp.action === 'drink' && a.carry === 0 && a.elevated < 0.5) drinkSpot(a);
+      // W6: while its body is at the water, and over the last metres of its walk there, so it arrives at the waterline
+      // instead of sliding to it afterwards (drinkSpot does nothing until the drawn body is within reach of the edge).
+      if (a.chimp.alive && (a.act === 'drink' || (a.chimp.action === 'drink' && a.way >= Way.going)) && a.carry === 0 && a.elevated < 0.5) drinkSpot(a);
     }
-    // Look targets for everyone with a chimp target (not only pairs).
-    for (const a of animList) if (a.partnerId < 0 && a.chimp.targetId >= 0 && anims.has(a.chimp.targetId) && a.chimp.targetId !== a.id) {
-      const b = anims.get(a.chimp.targetId)!;
+    // Look targets for everyone with a chimp target (not only pairs). W6: the target of the act the body is in; the
+    // target of an act it has not begun is looked at in the decision beat (updateAttention).
+    for (const a of animList) if (a.partnerId < 0 && a.actTarget >= 0 && anims.has(a.actTarget) && a.actTarget !== a.id) {
+      const b = anims.get(a.actTarget)!;
       if (hyp2(b.x - a.x, b.z - a.z) < 14) a.partnerId = b.id;
     }
 
@@ -1631,7 +1926,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     selection.update(frame, anims, world, dt);
     perfEnd('overlays', o0);
     const l0 = perfNow();
-    labels.update(frame, animList, anims, world, cam, social.parties, social.pulse, aboutOf);
+    labels.update(frame, animList, anims, world, cam, social.parties, social.pulse, wayOf);
     perfEnd('labels', l0);
   }
 
@@ -1644,7 +1939,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   function getScale(id: number) { return anims.get(id)?.morph.size ?? 1; }
   // Stage W4: which act the drawn body is in (creatures/drawn.ts). One scratch record and one body reading for the
   // name tags; the interface passes its own record. Nothing is allocated per call and nothing is written to the World.
-  const DRAWN: DrawnAct = { action: 'rest', targetId: -1, about: false };
+  const DRAWN: DrawnAct = { action: 'rest', targetId: -1, about: false, way: 0 };
   const BODY: BodyState = { moving: false, climbing: false, gap: 0, shuffling: false, passive: false };
   // This world's walking speed, for telling a feeding shuffle from a walk to a place (read once, as jump2 above: the
   // layer is rebuilt when a simulation is swapped in).
@@ -1655,13 +1950,15 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     const c = a.chimp;
     return readBody(BODY, a.track, c.position[0], Math.max(0, c.position[1] ?? 0), c.position[2], a.moving, a.carry !== 0 || !c.alive, walkMps);
   }
+  // Stage W6: the reading is taken once a frame in update() (the poses use it too); the tags and the interface get that
+  // same reading, so a tag and its body change at the same moment.
   function drawnAct(id: number, out: DrawnAct): boolean {
     const a = anims.get(id);
     if (!a) return false;
-    readDrawn(a.acts, playback.renderT, bodyOf(a), curSimRate, out);
+    out.action = a.act; out.targetId = a.actTarget; out.way = a.way; out.about = a.way !== Way.none;
     return true;
   }
-  const aboutOf = (a: Anim): boolean => readDrawn(a.acts, playback.renderT, bodyOf(a), curSimRate, DRAWN).about;
+  const wayOf = (a: Anim): number => a.way;
   // --- Portrait (creatures/portrait.ts): one instance of the finest body mesh loaded so far, on its own layer and
   // outside the creature group (which hides in the field overview). A wrapper geometry shares the LOD's vertex
   // buffers (never disposed here: they belong to the LOD) and adds a one-instance slot, so the body material's

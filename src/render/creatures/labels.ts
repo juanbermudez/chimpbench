@@ -8,11 +8,14 @@
 // (Chimp.reason; the other labels stay one line). An act the simulation has begun and the drawn body has not
 // (creatures/drawn.ts: bodies are drawn two ticks behind) reads "about to travel" in its own style until the body
 // starts it. The wording and the style are interface conventions, not observations.
+// Stage W6: an animal on its way to a stationary act is named for what its body does until it is there ("walking to
+// drink", "climbing to feed", "coming down to drink", "going to groom" when it pauses on the way), in the same style.
 import * as THREE from 'three';
 import type { Action, CallKind, World } from '../../types';
 import type { Anim, CreatureFrame } from '../creatures';
 import type { PartyView } from './social';
 import { inLabelBox } from './pick';
+import { WAY_WORDS, Way, wayVerb } from './drawn';
 
 const MAX_LABELS = 40;
 const MAX_BANNERS = 12;
@@ -90,7 +93,8 @@ interface Slot {
   used: boolean; visible: boolean; pulseAt: number; width: number; h: number; hov: boolean;
   // Last written content and style, so unchanged labels cost no DOM writes (and no style invalidation).
   id: number; name$: string; color: string; rank$: string; act$: string; vocal: string; sel: boolean; model: boolean; tx: number; ty: number; op: number;
-  soon: boolean;
+  /** drawn.ts Way of the act shown (0: the plain verb). */
+  way: number;
 }
 interface Banner { el: HTMLDivElement; key: string; visible: boolean; width: number; tx: number; ty: number; op: number; }
 type Rect = { x0: number; y0: number; x1: number; y1: number };
@@ -123,7 +127,7 @@ export function createLabels(container: HTMLElement) {
     el.append(chip, name, rank, act, voc);
     root.appendChild(el);
     slots.push({ el, chip, name, rank, act, voc, used: false, visible: false, pulseAt: -99, width: 0, h: 20, hov: false,
-      id: -1, name$: '', color: '', rank$: '', act$: '', vocal: '', sel: false, model: false, tx: NaN, ty: NaN, op: -1, soon: false });
+      id: -1, name$: '', color: '', rank$: '', act$: '', vocal: '', sel: false, model: false, tx: NaN, ty: NaN, op: -1, way: 0 });
   }
   // The selected animal's reason line (stage W4): one element for the whole overlay, attached to whichever label is the
   // selected animal's, so the other labels keep their six children and their per-frame style cost. Its text is
@@ -214,8 +218,9 @@ export function createLabels(container: HTMLElement) {
     if (op !== t.op) { t.op = op; t.el.style.opacity = String(op); }
   }
 
-  /** about (stage W4, optional): true while the simulation has begun an act the animal's drawn body has not started. */
-  function update(frame: CreatureFrame, animList: Anim[], anims: Map<number, Anim>, world: World, camera: THREE.Camera, parties: PartyView[], pulse: (id: number, t: number) => number, about?: (a: Anim) => boolean) {
+  /** way (stages W4 and W6, optional): how an animal's drawn body stands to an act the simulation has begun and the body
+   * has not (drawn.ts Way: 0 it is in the act, 1 not set off, 2 to 5 on its way). */
+  function update(frame: CreatureFrame, animList: Anim[], anims: Map<number, Anim>, world: World, camera: THREE.Camera, parties: PartyView[], pulse: (id: number, t: number) => number, way?: (a: Anim) => number) {
     // No layout reads in the frame: the viewport size comes with the frame, widths from the ResizeObserver.
     const w = frame.viewW ?? 1440, h = frame.viewH ?? 800;
     readOccluders(frame.elapsed);
@@ -317,7 +322,7 @@ export function createLabels(container: HTMLElement) {
       const act = c.detail ? chimp.action : '';
       // The spark marks an animal the decision loop asks about: none while the rules decide for everyone (policy off).
       const sel = a === focal, model = chimp.controller === 'model' && world.modelPolicy.mode !== 'off';
-      const soon = c.detail && !!about && about(a);
+      const wy = c.detail && way ? way(a) : Way.none, soon = wy !== Way.none;
       const why = sel && chimp.alive ? chimp.reason ?? '' : '';
       if (why) {
         whySeen = true;
@@ -325,14 +330,14 @@ export function createLabels(container: HTMLElement) {
         if (whyOwner !== s) { whyOwner?.el.classList.remove('why'); s.el.appendChild(whyEl); s.el.classList.add('why'); whyOwner = s; }
         if (why$ !== why && (moved || frame.elapsed - whyAt >= WHY_EVERY)) { why$ = why; whyAt = frame.elapsed; whyEl.textContent = why; }
       }
-      if (s.id !== chimp.id || s.name$ !== chimp.name || s.color !== a.troopColor || s.rank$ !== rank || s.act$ !== act || s.vocal !== vocal || s.sel !== sel || s.model !== model || s.soon !== soon) {
-        s.id = chimp.id; s.name$ = chimp.name; s.color = a.troopColor; s.rank$ = rank; s.act$ = act; s.vocal = vocal; s.sel = sel; s.model = model; s.soon = soon;
+      if (s.id !== chimp.id || s.name$ !== chimp.name || s.color !== a.troopColor || s.rank$ !== rank || s.act$ !== act || s.vocal !== vocal || s.sel !== sel || s.model !== model || s.way !== wy) {
+        s.id = chimp.id; s.name$ = chimp.name; s.color = a.troopColor; s.rank$ = rank; s.act$ = act; s.vocal = vocal; s.sel = sel; s.model = model; s.way = wy;
         s.chip.style.background = a.troopColor;
         s.name.textContent = chimp.name;
         s.rank.textContent = rank;
         s.rank.className = isAlpha ? 'crl-rank alpha' : 'crl-rank';
         s.rank.style.display = rank ? '' : 'none';
-        s.act.innerHTML = c.detail ? `<svg viewBox="0 0 12 12">${CAT_ICON[cat]}</svg><span>${soon ? `<i>about to</i> ${toVerb}` : verb}</span>` : '';
+        s.act.innerHTML = c.detail ? `<svg viewBox="0 0 12 12">${CAT_ICON[cat]}</svg><span>${soon ? `<i>${WAY_WORDS[wy]}</i> ${wayVerb(chimp.action, wy, toVerb)}` : verb}</span>` : '';
         s.act.className = soon ? 'crl-act soon' : 'crl-act';
         s.voc.innerHTML = vocal ? `<svg viewBox="0 0 12 12" fill="none" stroke-width="1.3" stroke-linecap="round"><path d="M3 4.5v3M5.5 3v6M8 2v8M10.5 4v4"/></svg>${CALL_TEXT[vocal as CallKind]}` : '';
         s.el.classList.toggle('sel', sel);

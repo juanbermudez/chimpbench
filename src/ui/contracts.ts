@@ -51,7 +51,12 @@ export interface PortraitView { request(id: number, canvas: HTMLCanvasElement, r
 /** Optional scene extra (stage W4): what the renderer reports about one drawn animal. Bodies are drawn two ticks behind
  * the simulation, so for a moment after an act changes the body is still in the act before it. action/targetId: the act
  * the drawn body is in; about: the simulation has begun a newer one (the animal's own action) the body has not started. */
-export interface DrawnActView { action: Action; targetId: number; about: boolean }
+export interface DrawnActView {
+  action: Action; targetId: number; about: boolean;
+  /** Stage W6: how the body stands to the act it has not begun (render/creatures/drawn.ts Way): 0 it is in the act, 1 it has
+   * not set off ("About to drink"), 2 paused on the way ("Going to"), 3 walking to it, 4 climbing to it, 5 coming down to it. */
+  way: number;
+}
 
 /** Everything the UI needs from the outside world, injected by main.ts (or the preview). */
 export interface UiDeps {
