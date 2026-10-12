@@ -214,7 +214,11 @@ export function createBeliefMarkers(world0: World, owner: Owner, container: HTML
   const mesh = new THREE.Mesh(quad, material);
   mesh.name = 'belief-markers';
   mesh.frustumCulled = false;
-  mesh.renderOrder = 10;   // above the fruit layer and the party markers
+  // Above the fruit layer (7.5) and the parties' trails, goal lines and call arcs (8); under the party markers (9).
+  // (Merge with stage W10. This stage drew the outlines over the markers, which were plain discs then; a marker now
+  // says what its party is doing, and on the map the outline of the tree the selected animal feeds in lay on its own
+  // party's marker and hid the pictogram and the size. Under it, the outline shows as corners around the disc.)
+  mesh.renderOrder = 8.5;
   mesh.visible = false;
 
   // One line of text at the tree the act goes to (DOM; moved with CSS variables, written only when they change).
