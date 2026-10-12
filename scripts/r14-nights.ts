@@ -22,9 +22,10 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { optionKey } from '../src/kernel/decode';
 import { computeCandidates } from '../src/sim/candidates';
+import { resolveParams, type Overrides } from '../src/sim/params';
 import { rgMenu } from '../src/sim/rg';
 import type { Candidate, Chimp, World } from '../src/types';
-import { DAY, dayName, NIGHT_IN_NEST, readLines, TICK_MIN, type AskLine, type HeldLine, type Line, type Row } from './lib/r10-run';
+import { DAY, dayName, NIGHT_IN_NEST, readLines, readRegistry, TICK_MIN, type AskLine, type HeldLine, type Line, type Row } from './lib/r10-run';
 import { atMost, exactInterval, fisherTwoSided, KIND_WORDS, runsOfDay, SIT_WORDS, sitOf, SITS, timelineOf, type Run, type RunKind, type Sit, type Timeline } from './lib/r14-nights';
 import { traceRun, type RulesPoint, type Trace } from './lib/r14-trace';
 import { cardSummary, type CardResult } from './lib/timing-card';
@@ -58,6 +59,9 @@ function rowsOf(arm: Arm): Row[] {
 }
 interface ArmCard { arm: string; days: number; card: CardResult }
 const cardOf = (arm: Arm): ArmCard => JSON.parse(readFileSync(resolve(R13, 'card', 'P', `s${SEED}`, `${CARD[arm]}.json`), 'utf8')) as ArmCard;
+
+/** The parameters the model arm ran on (its registry's overrides on the profile's defaults). */
+function runParams(): Record<string, number> { const reg = readRegistry(resolve(R13, ARMS.model)); return resolveParams(reg.profile, reg.params as Overrides) as unknown as Record<string, number>; }
 
 /** The animal-nights of a run's rows that the card reads: animals aged 8 and over, alive, with dark ticks. `out`: minutes of dark not in a finished nest. */
 interface Night { day: number; id: number; name: string; sex: string; age: number; cls: string; troop: number; nightMin: number; share: number; out: number; short: boolean }
@@ -156,7 +160,7 @@ function leavesOf(arm: Arm): Leave[] {
 function classify(): void {
   const M = animalNights('model'), R = animalNights('rules'), TM = readTrace('model');
   p('## The nights, tick by tick'); p();
-  p(`From the two replays (\`scripts/r14-nights.ts trace model\`, \`trace rules\`): every tick of ${TM.animals.length} animals and ${TM.days} days in each arm. Dark is the card's (daylight at or under 0.03): about ${clock(hourAt(TM, M[0].n0))} to ${clock(hourAt(TM, M[0].n1))} on day 1.`);
+  p(`From the two replays (\`scripts/r14-nights.ts trace model\`, \`trace rules\`): every tick of ${TM.animals.length} animals and ${TM.days} days in each arm. Dark is the card's (daylight at or under 0.03): about ${clock(hourAt(TM, M[0].n0))} to ${clock(hourAt(TM, M[0].n1))} on day 1 (${f((M[0].n1 - M[0].n0 + 1) * TICK_MIN, 2)} minutes); the light phase turns to dusk at ${clock(hourAt(TM, (TM.phase.find(x => x[1] === 'dusk') ?? [0])[0]))} that day.`);
   p(`Check against the rows: the model arm ${M.filter(x => x.short).length} short nights and ${f(M.reduce((s, x) => s + x.outMin, 0), 0)} dark minutes out of a nest in all (the rows: ${nightsOf(rowsOf('model')).filter(x => x.short).length} and ${f(nightsOf(rowsOf('model')).reduce((s, x) => s + x.out, 0), 0)}); the rules arm ${R.filter(x => x.short).length} and ${f(R.reduce((s, x) => s + x.outMin, 0), 0)} (the rows: ${nightsOf(rowsOf('rules')).filter(x => x.short).length} and ${f(nightsOf(rowsOf('rules')).reduce((s, x) => s + x.out, 0), 0)}).`); p();
   { // when the sleep latch closes and opens (the trace carries it per tick)
     const turns = (arm: Arm, to: 0 | 1) => { const T = readTrace(arm), h: number[] = []; for (const a of T.animals) { const tl = tlOf(arm, a.id); for (let i = 1; i < T.ticks; i++) if (tl.asl[i] === to && tl.asl[i - 1] !== to) h.push(hourAt(T, i)); } return h; };
@@ -249,6 +253,8 @@ function asksCmd(): void {
     p(`| all | ${v.length} | 1.000 | ${v.filter(a => a.picked !== a.nestIdx).length} | ${f(v.reduce((t, a) => t + 1 - a.p![a.nestIdx], 0), 1)} | ${v.filter(a => a.rulesIndex !== a.nestIdx).length} |`); }
 
   p(); p('### Why an animal in a finished nest is asked at all'); p();
+  { const P = runParams();
+    p(`The run's parameters that set it: a nest bout lasts ${P.boutNestMin} to ${P.boutNestMax} minutes in the dark, ${P.boutNestMorningMin} to ${P.boutNestMorningMax} while the light changes and ${P.boutNestDayMin} to ${P.boutNestDayMax} in full light; the gate lets a choice stand for ${P.rgMaxAgeH * 60} minutes at most (rgMaxAgeH ${P.rgMaxAgeH}); rhythmFreeNight ${P.rhythmFreeNight}, nestLightDecide ${P.nestLightDecide}, rhythmCircadian ${P.rhythmCircadian}, the loop's gate ${readRegistry(resolve(R13, ARMS.model)).switches.kernelGate ? 'on' : 'off'} (the arm's own switch), redecideValue ${P.redecideValue}, urgencyPersist ${P.urgencyPersist}, choiceBelief ${P.choiceBelief}.`); p(); }
   p(`Per animal-night (${nights} in each arm). An ask of the model arm is an open decision point of a driven animal; "the gate held" is a decision point at which the loop's gate kept the nest without asking. The rules arm: every decision point of the rules for the same animals, a fresh draw or an act their gate kept.`); p();
   p('| Situation, in a finished nest | the model arm: asks | per animal-night | the gate held the nest | Reason of the asks (count) | the rules arm: fresh draws | per animal-night | the gate kept the nest | Reason of the draws (count) |'); p('| --- | --- | --- | --- | --- | --- | --- | --- | --- |');
   const why = (a: Ask) => a.trig.why === 'interrupt' ? `interrupt (${intrKind(a.trig.intr)})` : `bout end, ${a.trig.gate}`, whyR = (q: Point) => q.why === 'interrupt' ? `interrupt (${intrKind(q.intr)})` : q.why;
@@ -358,16 +364,17 @@ const BUCKETS: [string, number, number][] = [['none (under 0.4)', -1, 0.4], ['mi
 function state(): void {
   const { asks } = modelAsks(), want = new Map(asks.filter(a => (a.sit === 'dusk-late' || a.sit === 'dusk-early') && a.inNest && a.nestIdx >= 0 && a.p).map(a => [`${a.t.toFixed(6)}:${a.id}:${a.v}`, a])), got: { a: Ask; c: Ctx['context'] }[] = [];
   for (let d = 1; d <= DAYS; d++) for (const c of readLines<Ctx>(resolve(R13, ARMS.model, 'contexts', `${dayName(d)}.jsonl`))) { const a = want.get(`${c.t.toFixed(6)}:${c.id}:${c.v}`); if (a) got.push({ a, c: c.context }); }
+  const SPAN = runParams().candidateJitterSpan;
   p('## What the animal was in at those asks'); p();
-  p(`The saved context of every ask of the model arm in a finished nest at dusk with a nest on the menu: ${got.length} of ${want.size} found. The context carries the animal's needs and, per option, the rules' own published score (never in the packet). "The rules' margin": the nest's score less the best other option's on the menu; the rules' evaluation noise on a score is at most 0.12 either way (\`candidateJitterSpan\` 0.24), so at a margin over 0.24 no redraw of the jitter turns the order (a belief draw on a trip can still add to a score).`); p();
+  p(`The saved context of every ask of the model arm in a finished nest at dusk with a nest on the menu: ${got.length} of ${want.size} found. The context carries the animal's needs and, per option, the rules' own published score (never in the packet). "The rules' margin": the nest's score less the best other option's on the menu; the rules' evaluation noise on a score is at most ${SPAN / 2} either way (\`candidateJitterSpan\` ${SPAN}), so at a margin over ${SPAN} no redraw of the jitter turns the order (a belief draw on a trip can still add to a score).`); p();
   const marginOf = (x: { a: Ask; c: Ctx['context'] }) => { const k = x.c.candidates, nest = k[x.a.nestIdx]?.score ?? NaN; let other = -Infinity; k.forEach((o, i) => { if (i !== x.a.nestIdx && o.score > other) other = o.score; }); return nest - other; };
   for (const sit of ['dusk-late', 'dusk-early'] as const) {
     const v = got.filter(x => x.a.sit === sit);
     p(`### ${sit === 'dusk-late' ? 'Dusk, from 18:45 to dark' : 'Dusk, before 18:45'}, in a finished nest, by the animal's hunger (the gate's own buckets)`); p();
-    p('| Hunger | Asks | the model\'s odds on the nest: mean | under 0.9, share | a draw left the nest, per 100 | the rules\' margin for the nest: mean | smallest | asks with a margin over 0.24 | the rules\' top option was not the nest |'); p('| --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+    p('| Hunger | Asks | the model\'s odds on the nest: mean | under 0.9, share | a draw left the nest, per 100 | the rules\' margin for the nest: mean | smallest | asks with a margin over the jitter span | the rules\' top option was not the nest |'); p('| --- | --- | --- | --- | --- | --- | --- | --- | --- |');
     for (const [label, lo, hi] of [...BUCKETS, ['all', -1, 9] as [string, number, number]]) {
       const u = v.filter(x => x.c.focal.hunger >= lo && x.c.focal.hunger < hi), pn = u.map(x => x.a.p![x.a.nestIdx]), m = u.map(marginOf);
-      p(`| ${label} | ${u.length} | ${f(mean(pn))} | ${u.length ? f(pn.filter(x => x < 0.9).length / pn.length) : 'none'} | ${per100(u.filter(x => x.a.picked !== x.a.nestIdx).length, u.length)} | ${f(mean(m), 2)} | ${u.length ? f(Math.min(...m), 2) : 'none'} | ${u.filter(x => marginOf(x) > 0.24).length} | ${u.filter(x => x.a.rulesIndex !== x.a.nestIdx).length} |`);
+      p(`| ${label} | ${u.length} | ${f(mean(pn))} | ${u.length ? f(pn.filter(x => x < 0.9).length / pn.length) : 'none'} | ${per100(u.filter(x => x.a.picked !== x.a.nestIdx).length, u.length)} | ${f(mean(m), 2)} | ${u.length ? f(Math.min(...m), 2) : 'none'} | ${u.filter(x => marginOf(x) > SPAN).length} | ${u.filter(x => x.a.rulesIndex !== x.a.nestIdx).length} |`);
     }
     p();
   }

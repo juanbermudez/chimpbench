@@ -1,6 +1,6 @@
 # Stage R14 diagnosis: where the short nights of stage R13's model arm come from
 
-A reading of finished runs, made on 12 October 2026 between 15:28 and 16:24 EDT on branch `r14-diag-nights`.
+A reading of finished runs, made on 12 October 2026 between 15:28 and 16:26 EDT on branch `r14-diag-nights`.
 **It is a description.** It registers nothing, ran no model, changed nothing under `src`, `server`, `training`,
 `data` or `tests/fixtures`, and proposes no setting chosen to reach a behavioural rate or a field number (§9 lists
 candidates, each with what would refute it). Field numbers enter nothing.
@@ -60,7 +60,7 @@ to the dark, a reading aid only. **The sleep latch**: the simulation's own switc
    community, in the numbers equal risk would give; 10 short nights in days 1 to 10 and 11 in days 11 to 20; of
    the 111 leaves of a finished nest at dusk, 4 were opened by another animal moving off or calling, and none of
    the 27 costly ones. No animal asleep in its nest was asked anything in 760 animal-nights.
-8. **Ten animals showed the same thing at the same rate; 50 nights could not see it.** At ten animals the same
+8. **At ten animals the same asks carry the same odds; 50 nights could not see what they cost.** There the same
    asks come as often (1.49 late-dusk asks in the nest act per animal-night against 1.35), with the same odds
    (0.966 against 0.964), and a draw left the nest at 2.2 per 100 against 3.7 (Fisher's exact test p = 0.32). The
    recipe's three draw arms lost 2 nights of 150; at the population's rate (2.76%) an arm of 50 nights shows no
@@ -113,6 +113,8 @@ the early rise of §2, and it matters for how the model arm's nights go short.
 `scripts/r14-nights.ts trace model`, `trace rules`, then `classify`. Each arm is replayed from its start world
 through its own receipts with no model, every tick of the 38 animals is read, and the replay must land on all 20
 day hashes with no receipt line and no row file differing (it does, in both arms).
+
+From the two replays (`scripts/r14-nights.ts trace model`, `trace rules`): every tick of 38 animals and 20 days in each arm. Dark is the card's (daylight at or under 0.03): about 19:06 to 06:18 on day 1 (672.00 minutes); the light phase turns to dusk at 18:01 that day.
 
 Check against the rows: the model arm 21 short nights and 9526 dark minutes out of a nest in all (the rows: 21 and 9526); the rules arm 0 and 9081 (the rows: 0 and 9081).
 
@@ -265,7 +267,7 @@ asks account for 34 of the 38 leaves.
 
 Was it hunger? No (`scripts/r14-nights.ts state`, from the saved context of each ask):
 
-| Hunger | Asks | the model's odds on the nest: mean | under 0.9, share | a draw left the nest, per 100 | the rules' margin for the nest: mean | smallest | asks with a margin over 0.24 | the rules' top option was not the nest |
+| Hunger | Asks | the model's odds on the nest: mean | under 0.9, share | a draw left the nest, per 100 | the rules' margin for the nest: mean | smallest | asks with a margin over the jitter span | the rules' top option was not the nest |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | none (under 0.4) | 182 | 0.977 | 0.066 | 6 (3.3) | 1.26 | -0.21 | 181 | 1 |
 | mild (0.4 to 0.55) | 315 | 0.955 | 0.108 | 12 (3.8) | 1.17 | 0.10 | 312 | 0 |
@@ -279,9 +281,9 @@ At the 38 late-dusk asks at which the draw left the nest: hunger mean 0.51 (all 
 Rank correlation of the model's odds on the nest over the 1020 late-dusk asks: with hunger -0.11; with thirst -0.12; with felt sleepiness 0.12; with the rules' margin for the nest 0.49; with the number of options 0.15.
 
 The leaves come at every level of hunger at about the same rate, and the animals of the two arms are equally
-hungry as the light goes (hunger 0.270 and 0.270 when dusk begins; 0.542 and 0.531 when the dark falls). At 1,007
-of the 1,020 asks the rules score the nest more than 0.24 above every other option, beyond what their own
-evaluation noise can turn. The model's odds do follow that margin (rank correlation 0.49), but not far enough.
+hungry as the light goes (hunger 0.270 and 0.270 when dusk begins; 0.542 and 0.531 when the dark falls;
+`state`, its last table). At 1,007 of the 1,020 asks the rules score the nest more than 0.24 above every other
+option, beyond what their own evaluation noise can turn (`candidateJitterSpan` 0.24). The model's odds do follow that margin (rank correlation 0.49), but not far enough.
 
 ## 5. The rules' own odds at those asks
 
@@ -371,15 +373,16 @@ almost never in that state.
 
 From the code, then the counts (`scripts/r14-nights.ts asks`).
 
-- A nest bout lasts 60 to 100 minutes in the dark, 4 to 9 minutes while the light is changing and 12 to 20 in
-  full light (`src/sim/execution.ts` `boutHours`; `boutNestMin`, `boutNestMorningMin`, `boutNestDayMin` and their
-  maxima). Each bout end is a decision point.
+The run's parameters that set it: a nest bout lasts 60 to 100 minutes in the dark, 4 to 9 while the light changes and 12 to 20 in full light; the gate lets a choice stand for 30 minutes at most (rgMaxAgeH 0.5); rhythmFreeNight 1, nestLightDecide 1, rhythmCircadian 1, the loop's gate on (the arm's own switch), redecideValue 0, urgencyPersist 0, choiceBelief 2.
+
+- A nest bout's length depends on the light alone (`src/sim/execution.ts` `boutHours`; `boutNestMin`,
+  `boutNestMorningMin`, `boutNestDayMin` and their maxima). Each bout end is a decision point.
 - At a decision point the gate decides whether anything is asked (`src/sim/rg.ts` `gate`, which the rules use
   for themselves and the loop uses for a model, `src/sim/decide.ts` `loopGate`). It keeps the act unless: the light
   is rising on an animal in its nest (`light`); an interrupt arrived (`interrupt`); hunger, thirst, felt
   sleepiness or loneliness crossed into another bucket (`need-bucket`; the buckets of `src/decide/facts.ts`); the
-  gate's period of the day changed (`period`); the choice is more than 30 minutes old (`max-age`, `rgMaxAgeH`
-  0.5); or the act ended (`ended`).
+  gate's period of the day changed (`period`); the choice is older than the gate lets it stand (`max-age`); or
+  the act ended (`ended`).
 - With the sleep latch on, an animal in its nest reaches no decision point: its bout is held a tick ahead, every
   tick. Waking is a decision point (`src/sim/circadian.ts` `circadianTick`).
 - The menu at night is the day's menu (`rhythmFreeNight` 1, `src/sim/rg.ts` `rgMenuParts`): feeding and trips are
@@ -502,9 +505,10 @@ The candidates the question named, one by one:
 | companions that are also drawing | No sign: 4 of 111 dusk leaves were opened by another animal's leaving, none of the costly ones (§7) |
 | chance | Enough by itself: 2 of 150 at ten animals and 21 of 760 here are not told apart (p = 0.40), and the per-ask leave rates are not either (p = 0.32) |
 
-The plain reading: the draw cost nests at ten animals as it does here, and the test was too small to see it.
-Stage R11's registration said so in advance ("cannot tell one lost night from none"); what it could not say was
-how large a rate 50 nights can hide. A rate of 2.8% is hidden one time in four by one arm.
+The plain reading: nothing found here separates the two units. The same asks arise as often, carry the same odds
+and are left at rates chance does not tell apart, and the ten-animal test was too small to see a rate of this
+size. Stage R11's registration said so in advance ("cannot tell one lost night from none"); what it could not say
+was how large a rate 50 nights can hide. A rate of 2.8% is hidden one time in four by one arm.
 
 ## 9. What this reading supports
 
