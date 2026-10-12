@@ -45,7 +45,7 @@ import {
 } from './creatures/secondary';
 import type { KeepCandidate } from './env/occluders';
 import { createTreeIndex, type TreeIndex } from './creatures/tree-index';
-import { PERCH, nestTurn, pairReach, perchBout, perchLies, perchPosture, seatAllowed, seatGroups, type SeatPairs } from './creatures/perch';
+import { CROWN_JUMP_M, PERCH, clamberSpeed, clambering, crownStep, nestTurn, pairReach, perchBout, perchLies, perchPosture, seatAllowed, seatGroups, type SeatPairs } from './creatures/perch';
 import { endHeard, heardTakesHead, holding, listening } from './creatures/heard';
 import {
   Listen, PatrolCode, RELEASE_BRISTLE_TAU, RELEASE_DRUM_REACH, RELEASE_WINDOW_H, backSide, createFileCue, createPatrolLook, fileCue, listenVariant,
@@ -122,7 +122,7 @@ const PLAYBACK_LAG_TICKS = 2;    // motion.ts needs a known sim sample on both s
 // Moving-state hysteresis in body lengths per second, and the shortest a clip plays before another replaces it.
 const MOVE_ENTER = 0.3, MOVE_EXIT = 0.18, CLIP_DWELL = 0.35;
 const URGENT = new Set(['dead', 'carryVentral', 'carryDorsal', 'deadCarried']);
-const LOCOMOTION = new Set(['walk', 'gallop', 'sneak', 'swagger', 'bipedWalk']);
+const LOCOMOTION = new Set(['walk', 'gallop', 'sneak', 'swagger', 'bipedWalk', 'clamber']);
 const LYING = new Set(['sleep', 'dead', 'rest', 'defend', 'wrestle']);
 const LOCOMOTION_FAST = new Set(['gallop', 'swagger']);
 // Attention off (eyes shut or no control of the head) or damped (eyes half closed, clinging, building).
@@ -213,6 +213,13 @@ export interface Anim {
   up: boolean; seatHost: number; seatX: number; seatY: number; seatZ: number; seatFace: number; sx: number; sy: number; sz: number; seated: boolean; glide: number;
   perchRole: number; lies: boolean; gFrame: number; gx: number; gy: number; gz: number; gyaw: number; gt0: number; gt1: number; gOn: boolean; wasHost: boolean; g0: number; g1: number; gm: number; gr: number;
   nursed: boolean; holdsBack: boolean;
+  /** Stage W11 (creatures/perch.ts crownStep; placeGrounded): where its body was drawn in a tree in frame cFrame
+   * (cx/cy/cz) and where its own drawn path was then (qx/qy/qz), so that the placement never moves it further in one
+   * frame than a clamber does. clamber: it is more than a metre from its place and drawn in the clambering clip, with
+   * the eased share of that (clamberK), its speed along the way in metres a second (clamberV), the distance covered
+   * since the last pose (clamberD), and the heading and pitch of its line of travel. */
+  cx: number; cy: number; cz: number; cFrame: number; qx: number; qy: number; qz: number;
+  clamber: boolean; clamberK: number; clamberV: number; clamberD: number; clamberYaw: number; clamberPitch: number;
   ownFrame: number; ownX: number; ownY: number; ownZ: number; ownYaw: number; ownLimb: boolean; ownTop: number; ownSrc: number; ownCut: number;
   deadCarried: boolean; deadDrop: boolean; dropX: number; dropZ: number; // a dead infant on its mother, then put down
   climbTree: number;               // tree whose trunk the animal is on this frame (−1 none)
@@ -464,6 +471,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       up: false, seatHost: -1, seatX: 0, seatY: 0, seatZ: 0, seatFace: NaN, sx: 0, sy: 0, sz: 0, seated: false, glide: 0, perchRole: 0, lies: false,
       gFrame: -1, gx: 0, gy: 0, gz: 0, gyaw: 0, gt0: 0, gt1: 0, gOn: false, wasHost: false, g0: 0, g1: 0, gm: 0, gr: 0.1, nursed: false, holdsBack: false,
       ownFrame: -1, ownX: 0, ownY: 0, ownZ: 0, ownYaw: 0, ownLimb: false, ownTop: Infinity, ownSrc: -1, ownCut: -1,
+      cx: 0, cy: 0, cz: 0, cFrame: -9, qx: 0, qy: 0, qz: 0, clamber: false, clamberK: 0, clamberV: 0, clamberD: 0, clamberYaw: 0, clamberPitch: 0,
       deadCarried: false, deadDrop: false, dropX: 0, dropZ: 0, climbTree: -1, drumTree: -1,
       drinkSimX: NaN, drinkSimZ: NaN, drinkOk: false, drinkX: 0, drinkZ: 0,
       pCode: 0, pSince: 0, pPub: 0, pPubAt: 0, pIndex: 0, pCount: 0, pAhead: -1, pBehind: -1, pVariant: Listen.wait, pSide: 1, patrolAt: -1e9, relBristle: 0,
@@ -768,9 +776,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   /** Two seats nearer than this share of the two body sizes are in each other's bodies, and the gap a neighbour joining
    * a bough is given (design assumptions; the ground's separation uses 0.36). */
   const CROWD = 0.42, NEIGHBOUR_GAP = 0.44;
-  /** Furthest a seat's place may jump and still be moved to; beyond it the animal is drawn there at once (m). And the
-   * fastest a body moves to its seat, in real metres a second (design assumptions: a hurried clamber). */
-  const SEAT_GLIDE_M = 6, SEAT_MPS = 2.5;
+  /** (Stage W11: the rule that a seat more than 6 m away is drawn at once is gone; the fastest a body moves to its
+   * seat is perch.ts clamberSpeed, 2.5 m a second of real time up to Watch 4x, and a long move is drawn clambering.) */
   /** Lays host h's bough for this frame (once): origin, axis and an empty extent. False when it is in no tree. */
   function boughOf(h: Anim): boolean {
     if (h.gFrame === frameNo) return true;
@@ -922,6 +929,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         if (!(a.way === Way.soon && a.beat.phase >= Phase.look)) { a.seatFace = a.ownYaw + (hash01(a.id, 45) - 0.5) * 1.2; a.headingTarget = a.seatFace; }
       }
     }
+    // Stage W11: a body clambering to its place faces along its line of travel (placeGrounded), by the same single turn.
+    for (const a of animList) if (a.clamber) { a.seatFace = a.clamberYaw; a.headingTarget = a.clamberYaw; }
     // The drawn boughs ease out to their members and back in when they leave.
     for (const a of animList) if (a.gOn || a.gm > 0) {
       a.g0 = damp(a.g0, a.gOn ? a.gt0 : 0, 6, dt); a.g1 = damp(a.g1, a.gOn ? a.gt1 : 0, 6, dt);
@@ -971,6 +980,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     if (a.carry === 1) return [c.alive ? 'carryVentral' : 'deadCarried', 0, null];
     if (a.carry === 2) return ['carryDorsal', 0, null];
     if (!c.alive || c.action === 'dead') return ['dead', 0, null];
+    // Stage W11: more than a metre from its place in a tree (a pair's bough, its own limb, the bark), it clambers there
+    // on all fours, whatever its act (placeGrounded sets it; perch.ts clambering). Before, it slid there seated, or
+    // was put there in one frame.
+    if (a.clamber) return ['clamber', 0, 'walk'];
     const about = a.way !== Way.none, onWay = a.way >= Way.going;
     const act = a.act;
     const high = a.elevated > 0.5;
@@ -1354,7 +1367,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   const W = new Float64Array(3), OUT = new Float64Array(3);
   function evaluatePose(a: Anim, dtAnim: number, dtReal: number, cam: THREE.Camera, plant: boolean) {
     const c = a.chimp, s = a.morph.size;
-    const u = a.speed / s;
+    // (Stage W11: a body clambering through a crown moves by the placement, not by its path: its gait reads that speed.)
+    const u = (a.clamber ? a.clamberV : a.speed) / s;
     const wasMoving = a.moving;
     // Moving state with hysteresis; a walker must also be still for 0.8 s before it stands (it pauses mid-stride:
     // foragers stop and go every few ticks).
@@ -1385,7 +1399,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     a.clipT += dtAnim;
     // Gait: phase advances by distance ÷ stride (natural and warped), or cadence × time in time-lapse.
     let freq = 0;
-    const dist = a.dist / s; a.dist = 0;
+    const dist = (a.clamber ? a.clamberD : a.dist) / s; a.dist = 0; a.clamberD = 0;
     if (gait === 'climb') {
       // Phase by height climbed (signed): stance hands and feet stay put on the bark; descending runs it backwards.
       // W1: above the cadence cap the gait table names for climbing (GAITS.climb.fCap; at 1 min/s the limbs cycled 15 to
@@ -1919,7 +1933,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     ['stand', I_ALL], ['sitIdle', I_ALL], ['rest', I_ALL], ['perch', I_ALL], ['guard', I_ALL & ~idleBit(IDLE.nod)],
     ['forage', idleBit(IDLE.shift) | idleBit(IDLE.glance)], ['nurse', I_FACE | idleBit(IDLE.shift)], ['groomee', idleBit(IDLE.yawn)], ['shelter', idleBit(IDLE.yawn)], ['clingTrunk', idleBit(IDLE.glance)],
     ...['sleep', 'dead', 'deadCarried', 'carryVentral', 'carryDorsal', 'drink', 'groom', 'play', 'wrestle', 'tickle', 'display', 'charge', 'attack', 'defend', 'submit', 'pantGrunt', 'embrace', 'mate', 'share', 'beg',
-      'pantHoot', 'drum', 'alarm', 'patrol', 'listen', 'hunt', 'cower', 'nestBuild', 'walk', 'gallop', 'sneak', 'swagger', 'bipedWalk', 'climb', 'bind', 'portrait'].map(k => [k, 0] as [string, number]),
+      'pantHoot', 'drum', 'alarm', 'patrol', 'listen', 'hunt', 'cower', 'nestBuild', 'walk', 'gallop', 'sneak', 'swagger', 'bipedWalk', 'climb', 'clamber', 'bind', 'portrait'].map(k => [k, 0] as [string, number]),
   ]);
   const SEATED_NAME = /^(rest|sit|perch)/;
   function idleAllow(clip: string): number { const k = IDLE_ALLOW.get(clip); return k !== undefined ? k : SEATED_NAME.test(clip) ? I_ALL : I_FACE; }
@@ -2167,20 +2181,21 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
           // there in one frame once the clamber from the trunk was half done).
           if (inNest) { x = a.nestX; y = a.nestY; z = a.nestZ; }
           // Stage W9: the drawn seat eases to its place (as partners slide into place on the ground, a little slower and
-          // never faster than SEAT_MPS), so an animal joining a partner's bough or lying down along one moves there
-          // instead of jumping. A relocation, a first frame in the crown, or a place more than SEAT_GLIDE_M away (in
-          // any direction: limbs of one crown are metres apart in height) is drawn at once. A seat that does not move
-          // (every animal resting or feeding alone on a limb) is exactly where it was before this stage.
+          // never faster than perch.ts clamberSpeed), so an animal joining a partner's bough or lying down along one
+          // moves there instead of jumping. A relocation or a first frame in the crown is drawn at once. A seat that
+          // does not move (every animal resting or feeding alone on a limb) is exactly where it was before this stage.
           // Drawn at once too, as before this stage: when the forest window gave or took this tree's limbs this frame
           // (ownCut; eased, every animal of a crown rose 3 to 5 m through it for three seconds after the camera
           // arrived), and in time-lapse (above ABOUT_MAX_RATE, stage W6's limit: at 10 min/s pairs form and part
           // several times a second, and eased bodies were away from their seats 41% of the time, 80% at 1 h/s).
-          if (!a.seated || a.track.jumped || a.ownCut === frameNo || curSimRate > ABOUT_MAX_RATE || hyp2(hyp2(x - a.sx, z - a.sz), y - a.sy) > SEAT_GLIDE_M) { a.sx = x; a.sy = y; a.sz = z; }
+          // (Stage W11: a place more than 6 m away was drawn at once too: an animal whose pairing ended was filmed
+          // jumping 7.8 m across its crown. It now moves there like any other, at a clamber's speed; only a place
+          // further off than any crown is wide, CROWN_JUMP_M, is still drawn at once.)
+          if (!a.seated || a.track.jumped || a.ownCut === frameNo || curSimRate > ABOUT_MAX_RATE || hyp2(hyp2(x - a.sx, z - a.sz), y - a.sy) > CROWN_JUMP_M) { a.sx = x; a.sy = y; a.sz = z; }
           else if (a.sx !== x || a.sy !== y || a.sz !== z) {
             const ex = x - a.sx, ey = y - a.sy, ez = z - a.sz, el = hyp2(hyp2(ex, ez), ey);
-            a.glide = el;
-            const k = Math.min(1 - Math.exp(-2.5 * curDt), el > 1e-6 ? SEAT_MPS * curDt / el : 1);
-            if (el < 2e-3) { a.sx = x; a.sy = y; a.sz = z; } else { a.sx += ex * k; a.sy += ey * k; a.sz += ez * k; }
+            const k = Math.min(1 - Math.exp(-2.5 * curDt), el > 1e-6 ? clamberSpeed(curSimRate) * curDt / el : 1);
+            if (el < 2e-3) { a.sx = x; a.sy = y; a.sz = z; } else { a.sx += ex * k; a.sy += ey * k; a.sz += ez * k; a.glide = el * (1 - k); }
           }
           a.seated = true; x = a.sx; y = a.sy; z = a.sz;
         }
@@ -2206,11 +2221,46 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
           a.heading = dampAngle(a.heading, turned ? Math.atan2(GOAL[0] - x, GOAL[2] - z) : Number.isFinite(a.seatFace) ? a.seatFace : perchYaw + (hash01(a.id, 45) - 0.5) * 1.2 + turn, 3, 1 / 30);
         }
       } else { a.seated = false; if (inNest) { x = a.nestX; y = a.nestY; z = a.nestZ; } }
+      // Stage W11: however the place above came about (a seat, the nest, the blend with the trunk, the trunk itself),
+      // the drawn body goes there no faster than a clamber, plus what its own drawn path moved in this frame
+      // (perch.ts crownStep). The blend between a seat and the bark runs its course in half a second whatever the
+      // distance: with a seat 4 m from the trunk that moved the body 0.6 to 0.8 m in a frame. Drawn at once, as the
+      // seat is: a first frame in a tree, a relocation, the frame the forest window gives or takes the tree's limbs,
+      // time-lapse, and a place further off than a crown is wide. A body that is at its place is exactly there.
+      {
+        const tr = a.track, k0 = a.trunkK > 1e-3 ? smoothstep(0, 1, a.trunkK) : 0;
+        let left = a.glide * (1 - k0), sx = 0, sy = 0, sz = 0;
+        if (a.cFrame === frameNo - 1 && !tr.jumped && a.ownCut !== frameNo && curSimRate <= ABOUT_MAX_RATE) {
+          const dx = x - a.cx, dy = y - a.cy, dz = z - a.cz, d = hyp2(hyp2(dx, dz), dy);
+          if (d > 1e-6 && d <= CROWN_JUMP_M) {
+            const k = crownStep(d, curDt, curSimRate, hyp2(hyp2(tr.x - a.qx, tr.z - a.qz), tr.y - a.qy));
+            if (k < 1) { x = a.cx + dx * k; y = a.cy + dy * k; z = a.cz + dz * k; left += d * (1 - k); }
+            sx = x - a.cx; sy = y - a.cy; sz = z - a.cz;
+          }
+        }
+        a.cx = x; a.cy = y; a.cz = z; a.cFrame = frameNo; a.qx = tr.x; a.qy = tr.y; a.qz = tr.z;
+        a.glide = left;
+        // More than a metre to go: it clambers (chooseClip), turned along its line of travel and pitched with it.
+        const was = a.clamber, step = hyp2(hyp2(sx, sz), sy);
+        a.clamber = a.carry === 0 && c.alive && clambering(was, left);
+        if (a.clamber) {
+          a.clamberD += step;
+          if (curDt > 0) a.clamberV = was ? damp(a.clamberV, step / curDt, 10, curDt) : step / curDt;
+          if (step > 1e-4) {
+            const yaw = Math.atan2(sx, sz), pitch = -clamp(Math.atan2(sy, hyp2(sx, sz)), -0.9, 0.9);
+            a.clamberYaw = was ? dampAngle(a.clamberYaw, yaw, 8, curDt) : yaw; a.clamberPitch = was ? damp(a.clamberPitch, pitch, 6, curDt) : pitch;
+          } else if (!was) { a.clamberYaw = a.heading; a.clamberPitch = 0; }
+          a.heading = dampAngle(a.heading, a.clamberYaw, 8, curDt);
+          a.onBranch = true;   // (no stick of its own under a body on the move)
+        } else { a.clamberV = 0; a.clamberD = 0; }
+        a.clamberK = a.clamber || a.clamberK > 1e-3 ? damp(a.clamberK, a.clamber ? 1 : 0, 8, curDt) : 0;
+      }
       // Branch placement is render-only: a.x/a.z keep tracking the sim so speed estimates stay clean.
       bodyFrame(a, x, z, y, 0);
+      if (a.clamberK > 0) { E.set(a.clamberPitch * a.clamberK, a.heading, 0, 'YXZ'); Q.setFromEuler(E); a.bodyQ[0] = Q.x; a.bodyQ[1] = Q.y; a.bodyQ[2] = Q.z; a.bodyQ[3] = Q.w; }
       return;
     }
-    a.onTrunk = false; a.seated = false;
+    a.onTrunk = false; a.seated = false; a.clamber = false; a.clamberK = 0; a.clamberV = 0; a.clamberD = 0;
     if (a.trunkK > 0) a.trunkK = a.trunkK < 1e-3 ? 0 : damp(a.trunkK, 0, 8, curDt);
     const g = ctx.groundHeight(x, z);
     const clip = a.clip;
@@ -2355,6 +2405,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       a.act = onWay ? 'travel' : DRAWN.action; a.actTarget = onWay ? -1 : DRAWN.targetId;
       // "Walking to" is said of a body drawn in a walk; one that runs up to its partner is "going to".
       a.way = DRAWN.way === Way.walking && a.fastGait ? Way.going : DRAWN.way;
+      // Stage W11: a body clambering to its seat in a stationary act (a partner's bough, its own limb) has set off and is
+      // not there yet: its tag says so ("going to groom"), in stage W6's words. Its act stays the one that gives it the seat.
+      if (a.clamber && a.way === Way.none && a.carry === 0 && BODY_SIGN[a.chimp.action] === 'stay') a.way = Way.going;
     }
     for (const a of animList) { a.paired = false; a.pairClip = null; a.partnerId = -1; a.headingTarget = null; a.holds = false; a.holdsBack = false; a.nursed = false; a.bears = 0; a.tx = a.deadDrop ? a.dropX : a.track.x; a.tz = a.deadDrop ? a.dropZ : a.track.z; }
     // (W9: where the infant is on its carrier, and whether it is suckling by the act its drawn body is in. W8: what

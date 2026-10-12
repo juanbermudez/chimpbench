@@ -4,7 +4,7 @@ import type { Chimp } from '../src/types';
 import { B, PI, computeMorph, createFK, createMorph, createPose, solveFK } from '../src/render/creatures/rig';
 import { CLIPS, GROOM_FRONT, GROOM_HIGH, PROP, Pw, feedCycle, feedHold, feedPicks, groomerRole, type PoseCtx } from '../src/render/creatures/poses';
 import { headLook } from '../src/render/creatures/secondary';
-import { NEST_TURNS, NEST_TURN_RAD, PAIR_HEIGHT_M, PAIR_REACH_M, PERCH, SEAT_REACH_M, nestTurn, pairReach, perchBout, perchLies, perchPeriod, perchPosture, seatAllowed, seatGroups, type SeatPairs } from '../src/render/creatures/perch';
+import { CLAMBER_MPS, CLAMBER_OFF_M, CLAMBER_ON_M, CROWN_JUMP_M, NEST_TURNS, NEST_TURN_RAD, PAIR_HEIGHT_M, PAIR_REACH_M, PERCH, SEAT_REACH_M, clamberSpeed, clambering, crownStep, nestTurn, pairReach, perchBout, perchLies, perchPeriod, perchPosture, seatAllowed, seatGroups, type SeatPairs } from '../src/render/creatures/perch';
 import { dampAngle } from '../src/render/creatures/util';
 
 // Stage W9 (docs/staging/w9b-tree-pairs.md): pairs and postures in trees. Everything drawn here is a stylization, so
@@ -322,4 +322,28 @@ test('a pair is formed from the drawn bodies: a partner the simulation has alrea
   for (const simY of [11.3, 7.5]) assert.ok(!pairReach(stays[0], stays[1], stays[2], 1.2, simY, 0), 'by the simulated position: apart');
   assert.ok(pairReach(stays[0], stays[1], stays[2], drawn[0], drawn[1], drawn[2]), 'by the drawn bodies: together');
   assert.ok(!pairReach(stays[0], stays[1], stays[2], drawn[0], drawn[1] - 1.6, drawn[2]), 'and apart once the body is on its way down');
+});
+
+// Stage W11, item 1. A place in a tree that changes (a pairing ends, the body goes to the trunk) is reached at a
+// clamber's speed, never in one frame.
+test('a body in a tree goes to its place no faster than a clamber, plus what its own path moves', () => {
+  assert.equal(CLAMBER_MPS, 2.5); assert.ok(CLAMBER_OFF_M < CLAMBER_ON_M); assert.ok(CROWN_JUMP_M > SEAT_REACH_M);
+  assert.equal(clamberSpeed(1), 2.5); assert.equal(clamberSpeed(4), 2.5); assert.equal(clamberSpeed(60), 37.5);
+  /** Frames and the largest step of a body going `dist` metres to a place that stands still. */
+  const go = (dist: number, dts: number[], rate: number) => { let left = dist, frames = 0, worst = 0; while (left > 1e-9 && frames < 100000) { const dt = dts[frames % dts.length], k = crownStep(left, dt, rate, 0), step = left * k; worst = Math.max(worst, step); left -= step; frames++; } return { frames, worst }; };
+  // The filmed case: 7.8 m across a crown. At 60 frames a second it takes 3.1 s and no frame moves it more than 4.2 cm;
+  // with frames of a tenth of a second (the longest step the layer takes) no frame moves it more than 25 cm.
+  const a = go(7.8, [1 / 60], 4), b = go(7.8, [0.1], 1), c = go(7.8, [1 / 60, 1 / 60, 1 / 60 + 0.035], 4);
+  assert.ok(Math.abs(a.frames / 60 - 7.8 / 2.5) < 0.05 && a.worst < 0.042, `60 Hz: ${(a.frames / 60).toFixed(2)} s, largest step ${a.worst.toFixed(3)} m`);
+  assert.ok(b.worst <= 0.25 + 1e-12 && c.worst < 0.13);
+  // A place within one frame's reach is taken exactly: a body at its seat is exactly there.
+  assert.equal(crownStep(0.03, 1 / 60, 1, 0), 1); assert.equal(crownStep(0, 1 / 60, 1, 0), 1);
+  // What its own drawn path moved in the frame comes on top: a body is never held back from its path. Going down a
+  // trunk at 1 min/s (half a metre a frame) with the bark 5 m from its seat, it gains on the bark every frame.
+  assert.ok(Math.abs(crownStep(5, 1 / 60, 4, 0.5) * 5 - (2.5 / 60 + 0.5)) < 1e-12);
+  assert.ok(crownStep(5, 1 / 60, 60, 0.5) * 5 > 0.5 + 0.6);
+  // At 1 min/s the move takes the simulated time it takes at Watch 4x (15 times fewer real seconds).
+  assert.ok(Math.abs(go(7.8, [1 / 60], 60).frames * 15 - a.frames) <= 15);
+  // Clambering starts beyond a metre and ends within 30 cm, so a body does not flicker in and out of the clip.
+  assert.ok(!clambering(false, 0.9)); assert.ok(clambering(false, 1.1)); assert.ok(clambering(true, 0.5)); assert.ok(!clambering(true, 0.25));
 });

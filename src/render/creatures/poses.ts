@@ -577,6 +577,16 @@ export const CLIPS: Record<string, Clip> = {
   },
   bipedWalk(w, c) { bipedGait(w, c, 0.2); },
   climb(w, c) { climbCycle(w, c, clamp(c.speedU * 3 + 0.25, 0, 1)); },
+  // Stage W11 (stylization, no source for the movement): clambering through a crown to a seat more than a metre away.
+  // On all fours along the line of travel (the creature layer turns and pitches the body along it and advances the
+  // cycle by the distance moved), a little crouched, with hands and feet closed round what they step on instead of
+  // the walk's knuckles and flat soles, and the head up to look where it goes.
+  clamber(w, c) {
+    quadGait(w, c, false, false, 0.8, 1.25);
+    grip(w, 0, 0.85); grip(w, 1, 0.85); toeGrip(w);
+    w.v[PI.root + 1] -= 0.03;
+    w.a(B.neck, -0.14).a(B.head, -0.08);
+  },
   clingTrunk(w, c) { climbCycle(w, c, 0); idleHead(w, c, 0.6); },
 
   rest(w, c) {

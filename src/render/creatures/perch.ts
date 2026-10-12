@@ -141,3 +141,33 @@ export function pairReach(ax: number, ay: number, az: number, bx: number, by: nu
   const dx = bx - ax, dz = bz - az, dy = by - ay;
   return dx * dx + dz * dz <= PAIR_REACH_M * PAIR_REACH_M && (dy < 0 ? -dy : dy) <= PAIR_HEIGHT_M;
 }
+
+// ---- Moving through a crown (stage W11, docs/staging/w11-polish.md) ----
+// The place an animal is drawn at in a tree is the renderer's: its own limb, a seat on a pair's bough, the bark of the
+// trunk while its path goes up or down. When that place changes, the body has to get there. Short changes slide in the
+// seated pose (stage W9). A long one used to be drawn at once (a seat more than 6 m away: an animal leaving a partner
+// 15 m up was filmed jumping 7.8 m across the crown in one frame), and the blend between a far seat and the bark moved
+// a body up to 0.8 m in a frame. Now every such move travels at a clambering speed, in a clambering clip when it is
+// long. All of it is a stylization: no source says how fast a chimpanzee crosses a crown.
+/** The fastest the drawn body moves to its place in a tree by the placement alone, in metres a second of real time at
+ * Real time and Watch 4x (CLAMBER_REF_RATE simulated seconds a second); above that it grows with the playback rate, so
+ * the move takes the same simulated time. Design assumptions. */
+export const CLAMBER_MPS = 2.5, CLAMBER_REF_RATE = 4;
+/** A body further than CLAMBER_ON_M from its place is drawn clambering there; it sits down within CLAMBER_OFF_M. */
+export const CLAMBER_ON_M = 1.0, CLAMBER_OFF_M = 0.3;
+/** A place further than this from the drawn body is drawn at once: wider than any crown, so a stale place can never
+ * carry a body across the map (a safety bound, like the 30 m of a remembered tree). */
+export const CROWN_JUMP_M = 14;
+/** Metres a second of real time the placement may move a body at playback rate `simRate` (simulated seconds a second). */
+export function clamberSpeed(simRate: number): number { return CLAMBER_MPS * (simRate > CLAMBER_REF_RATE ? simRate / CLAMBER_REF_RATE : 1); }
+/**
+ * The share of the way to its place (`dist` metres off) a body in a tree covers this frame, 0..1: at most
+ * clamberSpeed × dt, plus `pathStep`, the distance its own drawn path moved in the frame (the simulated path as played
+ * back: a body going down its trunk or carried along at 1 min/s is never held back from it).
+ */
+export function crownStep(dist: number, dt: number, simRate: number, pathStep: number): number {
+  const may = clamberSpeed(simRate) * dt + pathStep;
+  return dist <= may ? 1 : may / dist;
+}
+/** Whether a body `left` metres from its place is drawn clambering, given whether it was in the frame before. */
+export function clambering(was: boolean, left: number): boolean { return left > (was ? CLAMBER_OFF_M : CLAMBER_ON_M); }
