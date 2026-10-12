@@ -543,7 +543,11 @@ export interface DecisionContext {
 // Render contracts (no Three.js types here)
 // ---------------------------------------------------------------------------
 
-export type Layer = 'canopy' | 'territory' | 'perception' | 'labels' | 'social' | 'weather';
+/**
+ * 'fruit' (stage W7, the Food layer; stylizations and map overlays): fruiting crowns tinted toward their fruit colour,
+ * fruit clusters kept readable from far, a mark per fruiting tree on the map, and the trees the selected animal remembers.
+ */
+export type Layer = 'canopy' | 'territory' | 'perception' | 'labels' | 'social' | 'weather' | 'fruit';
 export type ViewMode = 'rts' | 'close' | 'cinematic';
 export type Quality = 'low' | 'medium' | 'high';
 

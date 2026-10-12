@@ -21,6 +21,7 @@ import { toggleSound } from './sound';
 import { morph, setAttr, setText } from './morph';
 import { createSimulations } from './simulations';
 import { createScaleBar } from './scalebar';
+import { createFruitKey } from './fruitkey';
 import { installTooltips } from './tooltip';
 import { installPopovers } from './popover';
 import { menuButton } from './menu';
@@ -72,6 +73,8 @@ const LAYERS: { id: Layer; label: string; ic: string; key?: string; tip: string 
   { id: 'labels', label: 'Labels', ic: 'tag', key: 'L', tip: 'Labels: names over every chimp' },
   { id: 'social', label: 'Bonds', ic: 'link', tip: 'Bonds: arcs from each chimp to its mother, allies and closest partners' },
   { id: 'weather', label: 'Weather', ic: 'rain', tip: 'Weather: rain, lightning, sun shafts and fireflies' },
+  // Stage W7. Everything this layer draws is a stylization or a map overlay (docs/staging/w7-fruit.md).
+  { id: 'fruit', label: 'Food', ic: 'fig', tip: 'Food: crowns in fruit tinted, a diamond per fruiting tree on the map, outlines on the trees the selected chimp remembers (overlays)' },
 ];
 const VIEWS: { id: ViewMode; label: string; ic: string; key: string }[] = [
   { id: 'rts', label: 'Overview', ic: 'rts', key: 'R' }, { id: 'close', label: 'Close view', ic: 'target', key: 'C' }, { id: 'cinematic', label: 'Cinematic', ic: 'film', key: 'V' },
@@ -128,6 +131,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     <div class="cine-cap" aria-live="polite" data-occluder><b class="cine-title"></b><span class="cine-where"></span><span class="cine-meta"></span></div>
     <div class="cine-exit" data-occluder><kbd>Esc</kbd> exit · <kbd>V</kbd> toggle</div>
     <div class="scalebar" role="img" hidden data-occluder><i class="sb-rule" aria-hidden="true"></i><span class="sb-label" aria-hidden="true"></span></div>
+    <div class="fruitkey" role="note" aria-label="Key to the Food layer's map overlays" hidden data-occluder><span class="fk-fruit" hidden><i class="fk-d" aria-hidden="true"></i><span class="fk-fruit-text"></span></span><span class="fk-mem" hidden><i class="fk-d fk-hollow" aria-hidden="true"></i><span>tree <b class="fk-mem-name"></b> remembers</span></span><em>map overlay</em></div>
     <div class="prologue" hidden data-occluder><b>Dawn in Kibale</b><span>Fast-forwarding at 10 min/s until 07:15</span></div>
     <div class="mobile-bar" data-occluder><button data-mobile="left" aria-pressed="false">${icon('history')}<span>Field log</span></button><button data-mobile="right" aria-pressed="false">${icon('users')}<span>Communities</span></button></div>
     <div class="toasts" aria-live="polite"></div>
@@ -140,7 +144,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
   const q = <T extends HTMLElement = HTMLElement>(s: string) => root.querySelector<T>(s)!;
   const state: UiState = {
     selectedId: defaultSelection(deps.getWorld()), highlightTroopId: null, hoverTroopId: null, tab: 'overview', view: 'rts',
-    layers: { canopy: true, territory: false, perception: false, labels: true, social: false, weather: true }, quality: 'high',
+    layers: { canopy: true, territory: false, perception: false, labels: true, social: false, weather: true, fruit: true }, quality: 'high',
     society: { open: false, troop: 'all', view: 'kinship' }, feedMuted: new Set(), pinnedTraceId: null, experiment: null,
     // The right sidebar starts open where there is room for it beside the bottom panel; on phones both start closed.
     rightMode: 'communities', rightOpen: window.innerWidth >= 1440,
@@ -295,6 +299,17 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
   const feed = createFeed(q('.p-feed'), ctx);
   const minimap = createMinimap(q('.map-host'), ctx);
   const scaleBar = createScaleBar(q('.scalebar'), q('#viewport'), () => deps.getScene());
+  // Stage W7: the key to the Food layer's diamonds, above the scale bar. The selected animal is looked up only when the selection
+  // changes or another simulation is opened (the same id is another animal there); no name once it has died (its marks are gone too).
+  let keyFor = -2, keyWorld: World | null = null, keyChimp: Chimp | undefined;
+  const keyState: { layerOn: boolean; field: boolean; selectedName: string | null } = { layerOn: true, field: false, selectedName: null };   // one record, rewritten each frame
+  const fruitKey = createFruitKey(q('.fruitkey'), q('#viewport'), () => deps.getScene(), () => {
+    const id = state.selectedId ?? -1, w = deps.getWorld();
+    if (id !== keyFor || w !== keyWorld) { keyFor = id; keyWorld = w; keyChimp = id >= 0 ? w.chimps.find(x => x.id === id) : undefined; }
+    keyState.selectedName = keyChimp && keyChimp.alive ? keyChimp.name : null;
+    keyState.layerOn = state.layers.fruit; keyState.field = w.size > 1000;
+    return keyState;
+  });
   const chimpPanel = createChimpPanel(q('.chimp-panel'), ctx);
   const commPanel = createCommunityPanel(q('[data-pane="communities"]'), ctx);
   const societySide = createSocietySide(q('[data-pane="society"]'), ctx);
@@ -673,6 +688,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     tick(now: number) {
       if (state.view !== 'cinematic') hud.frame(now);
       scaleBar.frame();
+      fruitKey.frame();
       syncFollow();
       if (shown.map) minimap.frame();
       if (step >= STEPS.length) { if (now - lastUi < 250) return; lastUi = now; prepare(); step = 0; }

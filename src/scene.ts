@@ -3,15 +3,15 @@ import type { Layer, ListenerPose, Quality, SceneAPI, SceneFrame, ViewMode, Worl
 import { zoomFromFrameHeight } from './audio/mix';
 import { Owner, createEnvState, createNoiseTexture, createSharedUniforms, directionFrom, installAtmosphere, readEnvironment, solarPosition, type EnvFrame } from './render/env/shared';
 import { FIELD_RING_OUTER, createTerrain, type Terrain } from './render/env/terrain';
-import { createVegetation, type Vegetation } from './render/env/vegetation';
+import { createVegetation, type FruitView, type Vegetation } from './render/env/vegetation';
 import { createWater, type WaterSurface } from './render/env/water';
 import { createFieldEnv, type EnvWindow, type FieldEnv } from './render/env/field-env';
-import { createOverview, type Overview } from './render/env/overview';
+import { createFruitLayer, createOverview, type FruitLayerFrame, type Overview } from './render/env/overview';
 import { FIELD_START_ORBIT, FIELD_START_PITCH, FIELD_START_ZOOM, approach, needsRecentre, overviewWeight, partyFocus, runSteps, stepFor, windowCentre } from './render/env/field';
 import { createSky } from './render/env/sky';
 import { createWeather } from './render/env/weather';
 import { createTerritory } from './render/env/territory';
-import { createMarkers } from './render/env/markers';
+import { createBeliefMarkers, createMarkers, type BeliefFrame } from './render/env/markers';
 import { createCameraRig } from './render/env/camera';
 import { createPost } from './render/env/post';
 import { createCreatures, type CreatureFrame, type CreatureLayer } from './render/creatures';
@@ -184,6 +184,17 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
     if (opts.view === 'close' && opts.focusId !== undefined) { rig.setView('close', opts.focusId); rig.setOrbit(FIELD_START_ORBIT, FIELD_START_PITCH, null, true); }
   }
   const creatureRoot = scene.getObjectByName('creatures');
+  // Stage W7 (fruit you can see; docs/staging/w7-fruit.md): the map's fruit marks (field profile: the overview's zooms)
+  // and the selected animal's remembered trees. Each is one instanced mesh that draws only while it shows.
+  const fruitLayer = field ? createFruitLayer(world, owner) : null;
+  if (fruitLayer) scene.add(fruitLayer.mesh);
+  const beliefDrawn: DrawnAct = { action: 'rest', targetId: -1, about: false };
+  const beliefs = createBeliefMarkers(world, owner, container, getPosition, id => !!creatures?.drawnAct?.(id, beliefDrawn) && beliefDrawn.about);
+  scene.add(beliefs.mesh);
+  const fruitView: FruitView = { camera: rig.camera, viewH: 1, on: true };
+  const fruitFrame: FruitLayerFrame = { on: true, camera: rig.camera, hf: 0, perspective: false, viewW: 1, viewH: 1, daylight: 1 };
+  const beliefFrame: BeliefFrame = { on: true, selectedId: null, camera: rig.camera, mode: 'rts', viewW: 1, viewH: 1, dt: 0 };
+  (renderer.domElement as HTMLCanvasElement & { __env: Record<string, unknown> }).__env.fruit = { layer: fruitLayer, beliefs, stats: () => ({ map: fruitLayer?.stats() ?? null, beliefs: beliefs.stats() }) };
   const post = createPost(renderer, scene, rig.camera);
   // The UI's chimp snapshot: drawn after the main frame, only when the UI asks (portrait.ts).
   const portrait = createPortrait(renderer, scene, [sky.key, sky.hemi, sky.flash]);
@@ -207,7 +218,7 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
   // Canvas origin for picking, read on resize and pointerdown (no layout reads per pointer move).
   let originX = 0, originY = 0;
   function readOrigin() { const r = renderer.domElement.getBoundingClientRect(); originX = r.left; originY = r.top; }
-  const layers = { canopy: true, territory: false, perception: false, labels: true, social: false, weather: true };
+  const layers = { canopy: true, territory: false, perception: false, labels: true, social: false, weather: true, fruit: true };
   let disposed = false;
   let first = true;
   let lastCamera: THREE.Camera = rig.camera;
@@ -397,7 +408,8 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
     // view: Fresnel, sky visibility under the crowns and absorption decide how bright the stream reads).
     water.envBoost.value = 0.45 / Math.max(0.02, scene.environmentIntensity);
     water.perspective.value = perspective ? 1 : 0;
-    vegetation.update(world, quality, env.daylight, perspective);
+    fruitView.camera = camera; fruitView.viewH = height; fruitView.on = layers.fruit;
+    vegetation.update(world, quality, env.daylight, perspective, fruitView);
     weather.update(envFrame);
     territory.update(world, dt, frame.elapsed, layers.territory, frame.highlightTroopId, env.daylight, terrain.height);
     markers.update(world, frame.elapsed, terrain.walkable);
@@ -418,6 +430,12 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
       if (creatureRoot) creatureRoot.visible = ow < 1;
     }
     overview?.update(world, { weight: ow, camera, dt, selectedId: frame.selectedId, highlightTroopId: frame.highlightTroopId, viewW: width, viewH: height });
+    if (fruitLayer) {
+      fruitFrame.on = layers.fruit; fruitFrame.camera = camera; fruitFrame.hf = hfNow; fruitFrame.perspective = perspective; fruitFrame.viewW = width; fruitFrame.viewH = height; fruitFrame.daylight = env.daylight;
+      fruitLayer.update(world, fruitFrame);
+    }
+    beliefFrame.on = layers.fruit; beliefFrame.selectedId = frame.selectedId; beliefFrame.camera = camera; beliefFrame.mode = rig.mode; beliefFrame.viewW = width; beliefFrame.viewH = height; beliefFrame.dt = frame.dt;
+    beliefs.update(world, beliefFrame);
     updateKeepClear(camera, perspective, frame.selectedId, dt);
     updateFootprint(camera, perspective);
     perfEnd('creatures', c0);
@@ -784,6 +802,7 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
     portrait.dispose();
     creatures?.dispose();
     overview?.dispose();
+    beliefs.dispose();
     if (fieldEnv && win) { if (pendingDispose) fieldEnv.dispose(pendingDispose); fieldEnv.dispose(win); }
     rig.dispose();
     post.dispose();

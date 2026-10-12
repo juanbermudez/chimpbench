@@ -102,6 +102,14 @@ body.preview .viewport { background: #3a3d38; }
   border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); pointer-events: none;
   font-size: 11px; font-weight: 500; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .sb-rule { display: block; height: 6px; border: 1.5px solid var(--ink-3); border-top: 0; }
+/* Key to the Food layer's map overlays (src/ui/fruitkey.ts, stage W7): above the scale bar, strategy view only. */
+.fruitkey { position: absolute; z-index: 4; right: calc(var(--rs-space) + var(--gap)); bottom: calc(var(--ch-space) + var(--gap) + 32px); display: flex; align-items: center; gap: 10px; height: 26px; padding: 0 10px;
+  border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); pointer-events: none;
+  font-size: 11px; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
+.fruitkey > span { display: inline-flex; align-items: center; gap: 6px; }
+.fruitkey em { font-style: normal; color: var(--ink-3); border-left: 1px solid var(--line); padding-left: 10px; }
+.fk-d { display: block; width: 8px; height: 8px; transform: rotate(45deg); background: #e0762f; }
+.fk-d.fk-hollow { background: none; border: 1.5px solid #e2bf79; width: 9px; height: 9px; }
 .prologue { position: absolute; z-index: 9; top: var(--top); left: 50%; transform: translateX(-50%); display: grid; justify-items: center; gap: 2px; padding: 9px 18px 10px; border-radius: var(--r-lg);
   background: var(--surface); border: 1px solid var(--line-2); box-shadow: var(--shadow); animation: toastIn .8s var(--ease); transition: opacity .8s; }
 .prologue b { font-family: var(--font-display); font-weight: 500; font-size: 17px; color: var(--ink); } .prologue span { font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
@@ -963,6 +971,7 @@ dialog.settings::backdrop { background: rgba(0, 0, 0, .6); }
   .chimp-panel { right: var(--gap); }
   .rside { bottom: calc(var(--ch-space) + var(--gap)); }
   .scalebar { bottom: calc(var(--ch-space) + var(--gap)); }
+  .fruitkey { bottom: calc(var(--ch-space) + var(--gap) + 32px); }
   .hud { gap: 12px; padding: 0 8px 0 12px; } .bar-time { gap: 10px; }
   .wx-sub, .pop-sub, .season, .bar-brand, .bar-brand + .bar-sep, .wx-main span, .bar-sim .save-ind { display: none; }
   .bar-sim .sim-name { width: 6ch; } .pop-main span { display: none; }
@@ -1015,6 +1024,8 @@ dialog.settings::backdrop { background: rgba(0, 0, 0, .6); }
   .mobile-bar button[aria-pressed="true"] { background: var(--overlay); border-color: var(--line-3); }
   .toasts { top: calc(var(--top) + 44px + var(--gap)); }
   .scalebar { right: var(--gap); bottom: calc(var(--sheet-b) + 52px + var(--gap)); }
+  /* Phones: both lines of the key are wider than the screen together, so it wraps (and grows upward) instead of running off the left edge. */
+  .fruitkey { right: var(--gap); bottom: calc(var(--sheet-b) + 52px + var(--gap) + 32px); max-width: calc(100vw - 2 * var(--gap)); height: auto; min-height: 26px; flex-wrap: wrap; justify-content: flex-end; gap: 2px 10px; padding: 4px 10px; }
   .follow-ind { left: var(--gap); bottom: calc(var(--sheet-b) + 52px + var(--gap)); transform: none; }
   .soc-panel { width: 100%; height: 100%; border-radius: 0; }
   .soc-head { padding: 12px 12px 6px; gap: 8px; } .soc-title h2 { font-size: 22px; }
