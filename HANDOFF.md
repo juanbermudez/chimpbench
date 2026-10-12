@@ -1,4 +1,4 @@
-# ChimpBench: handoff (Monday 12 October 2026, 09:52 New York time)
+# ChimpBench: handoff (Monday 12 October 2026, 10:10 New York time)
 
 This file is the entry point for whoever opens this repository next, a person or an agent. Read it first. Then read
 [AGENTS.md](AGENTS.md) (binding conventions, commands, gotchas), [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
@@ -95,7 +95,7 @@ record's own, and each adapter is named by what taught it.
   scenes measured, except about 1 ms in 29 in the widest daytime strategy view of the 160 m map. None of W6 to W10
   was seen with a model. Plan, "Stages W6 to W10"; AGENTS.md, "Open issues".
 
-### 2.2 Running or queued (true at 09:52 EDT on 12 October 2026; this part goes stale within a day)
+### 2.2 Running or queued (true at 10:10 EDT on 12 October 2026; this part goes stale within the hour)
 
 **A model queue is running: stage RW3, then stage R13.** It was started at 09:30 EDT on 12 October in a detached
 `screen` session named `modelqueue`; each stage runs from its own frozen checkout, one model process at a time, and a
@@ -104,13 +104,16 @@ failure of the first does not stop the second. No result of either has been read
 
 - **Stage RW3** (`docs/staging/rw3-prereg.md`): two small adapters taught 557 wild Taï first-grooming-partner
   choices, then scored on the 329 development records; about an hour; frozen checkout `.claude/worktrees/bench-rw3`
-  (c6024c7). Its chain started at 09:31. At 09:52 the check, the dry step and the two reference scorings had ended
-  with exit code 0 and the first training had begun (09:41). Steps: `00-check`, `01-dry`, `10-eval-base`,
-  `11-eval-ngogo`, `20-train-7`, `21-train-11`, `30-eval-7`, `31-eval-11`, `40-report`.
+  (c6024c7). Its chain started at 09:31. At 10:10 the check and the dry step had ended with exit code 0; the two
+  reference scorings had read stage RW2's figures again (0.301 for the untuned model, 0.319 for the Ngogo-taught
+  adapter), the check `rw3-prereg.md` §14.4 asks for before the trainings; the first training had run from 09:41 to
+  10:03 (exit code 0, its manifest written) and the second had begun at 10:03. No Taï-taught adapter had been
+  scored. Steps: `00-check`, `01-dry`, `10-eval-base`, `11-eval-ngogo`, `20-train-7`, `21-train-11`, `30-eval-7`,
+  `31-eval-11`, `40-report`.
 - **Stage R13** (`docs/staging/r13-prereg.md`): every animal aged 8 and over on stage R11's first adapter with a draw
   from its odds (the arm `p5b-s7-draw-1`, which the registered rule names because N1 is met), on the fresh seed 3613:
   at most 20 simulated days in 9 hours, then the rules arm, the control arms and the report; frozen checkout
-  `.claude/worktrees/bench-r13` (fcbd612). At 09:52 its chain had not begun. Steps: `00-check`, `01-dry`, `10-model`,
+  `.claude/worktrees/bench-r13` (fcbd612). At 10:10 its chain had not begun. Steps: `00-check`, `01-dry`, `10-model`,
   `11-rules`, `12-controls`, `20-report`.
 - **To check, only read.** `cat` the `state` and `status.log` of the queue (`bench-r13/artifacts/queue/`), of RW3
   (`bench-rw3/artifacts/rw3-chain/`; a step's output is `<step>.log` beside them) and, once it has begun, of R13
@@ -120,7 +123,8 @@ failure of the first does not stop the second. No result of either has been read
   or `bench-r11` (a model step refuses a tree that is not clean, and R13 reads its decode rule from
   `bench-r11/artifacts/r11/tables/r11-numbers.md`). Start no Python from `/Volumes/Drive/chimpbench/decide-env`, no
   `pnpm dev` without `MGOGO_NO_MODEL=1`, no `scripts/gpu-probe.mjs`. Run no whole test suite and no heavy build while
-  a model step loads or asks: a warm-up failed that way on 12 October (AGENTS.md, "Gotchas").
+  a scoring, loop or population step loads its model or asks: a warm-up failed that way on 12 October (AGENTS.md,
+  "Gotchas"). The population run of stage R13 is such a step for up to nine hours.
 - **Where the output goes** (none of it in git): `bench-rw3/artifacts/decide-ft/rw3/adapters` and
   `bench-rw3/artifacts/rw3` (`tables/rw3-numbers.md`); `bench-r13/artifacts/r13` (`tables/r13-numbers.md`).
 - **If a stage failed.** Its `state` reads `failed` and the last line of its `status.log` names the step. RW3: wait
@@ -131,8 +135,9 @@ failure of the first does not stop the second. No result of either has been read
   checkpoint with what is left of its nine hours, and never past a stop check that ended the run (`r13-prereg.md`,
   "For the integrator").
 
-**Stage W11 (viewer polish) is under its second reading and is not merged** (true at 09:52 EDT on 12 October). It is
-built on branch `w11-polish` on top of 9be7d44 (the builder's head 50c6d00; the second reader has added commits): no
+**Stage W11 (viewer polish) is under its second reading and is not merged** (true at 10:10 EDT on 12 October). It is
+built on branch `w11-polish` on top of 9be7d44 (the builder's head 50c6d00; the second reader's commits follow, the
+last of them bc513ba at 09:38): no
 jump across a crown, a pair picture that agrees with its tag, an eased cut-off scratch, a lone animal no busier, a
 steady nest heading, nests under sleepers, the bough as a limb of its tree with a leafy spray, a hand that meets the
 mouth. Its document is `docs/staging/w11-polish.md` on that branch; its plan block arrives with its merge.
@@ -145,11 +150,13 @@ of the first clone macOS had evicted 14,230 of 18,704 files (the git pack among 
 **Never put the repo, a worktree or run outputs in an iCloud folder** (`ls -lO` shows `dataless` on evicted files).
 
 1. **Node 22.22.3 exactly** (`.node-version`; prefix commands with `fnm exec --using=22.22.3 --`), pnpm 8.15.9, then
-   `pnpm install`. Node 22.19.0 passes the tests and breaks every worker-pool script. No whole-suite run on the
-   present head (57718b5, after three merges on 12 October) is on record. The last on its parts, each on 12 October:
-   1,402 tests, all passing, on the viewer branch (9be7d44); 1,313 tests, 1,312 passing and 1 skipped, on stage R13's
-   last code head; 1,315 tests, 1,314 passing and 1 skipped, on stage RW3's builder head. Run it on the merged head
-   only when no model step is running (§2.2).
+   `pnpm install`. Node 22.19.0 passes the tests and breaks every worker-pool script. The whole suite ran once on
+   the merged code on 12 October, 10:02 to 10:07 EDT, four files at a time, on `docs-12oct` at a3bbbb6 (`track-e`
+   57718b5 plus changes to three documents no test reads): **1,420 tests, 1,419 passing, none failing, 1 skipped**
+   (the guide's scorecard check, whose data file is not on this computer). That is the viewer branch's 1,402 with
+   the 8 of stage R13 and the 10 of stage RW3; it was the first run with the three merges of 12 October together.
+   It ran beside a training of stage RW3 and held the 1-minute load at 8 to 10. Do not run one beside a scoring,
+   loop or population step (§2.2), and never two at once.
    **To run the app with no model at all** (the way to look at it while the queue of §2.2 runs): `MGOGO_NO_MODEL=1 fnm
    exec --using=22.22.3 -- pnpm exec vite --host 127.0.0.1 --port 5181 --strictPort`, then open
    `http://127.0.0.1:5181/?provider=server` (another free port if that one is taken). `MGOGO_NO_MODEL=1` starts no
@@ -218,15 +225,16 @@ addresssed and we move faster parelalizing more work to get closer to the real r
 
 ## 5. Next tasks, in order
 
-1. **Read the model queue** when its state says `done` (or repair it, §2.2). RW3 first: see that the two reference
-   scorings read 0.301 and 0.319 (`rw3-prereg.md` §14.4), then `artifacts/rw3/tables/rw3-numbers.md`, S0 before
-   anything else. R13: `artifacts/r13/tables/r13-numbers.md`, §0 first (the check of the instrument), then viability,
+1. **Read the model queue** when its state says `done` (or repair it, §2.2). RW3 first: the two reference scorings
+   read 0.301 and 0.319 as they must (§2.2); read `artifacts/rw3/tables/rw3-numbers.md`, S0 before anything else,
+   and not the step logs, which print each adapter's score as they run (`rw3-prereg.md` §14.3). R13:
+   `artifacts/r13/tables/r13-numbers.md`, §0 first (the check of the instrument), then viability,
    the level, the field rows. Each stage's `publish` copies its tables to `docs/staging`: commit them on a branch and
    write the result into the registration and the plan in the registered words. For RW3 a statement counts only if
    both seeds meet it; R13 is a level of one training on one world seed.
 2. **Stage W11:** when its second reading has ended, merge it: `pnpm test` and `pnpm build` while no model step runs,
    one look in the running app, and frame time on the graphics card in a close view on a crown with a pair.
-3. **Merge `docs-12oct`** and run the whole suite on the merged head when the queue allows. Before any push: the
+3. **Merge `docs-12oct`** (documents only; the whole suite on its code is on record, §3). Before any push: the
    user's ask, a privacy check of the range (no personal data, no raw rows), and only the two branches by name (§4).
 4. **Put §6 to the user**, the ten rulings first. Nothing of stage R12 is built before them.
 5. **Then:** with no model, the heat probe read on the rules' own odds (until then stage R11's failed mark O3 is not
@@ -245,37 +253,44 @@ Every decision open for the user on 12 October 2026, the most consequential firs
 and what is recommended. Where no recommendation is on file it says so, and what is built stands until a ruling.
 
 1. **The ten rulings on the menu** (first page of `docs/staging/r12-menu-table.md`, each with its recommendation;
-   five smaller design questions follow in `r12-prereg.md`): nothing of stage R12 is built before them.
-2. **Where may a claim of "closer to wild chimpanzees" come from**, now that the short scorecard can show it on one
+   four smaller design questions follow in `r12-prereg.md`, whose fifth, on the seeds, is item 11 here): nothing of
+   stage R12 is built before them.
+2. **A push, deploys and a licence:** `track-e` is 191 commits ahead of the remote, so nothing committed since the
+   push of 11 October at 14:59 EDT is on the remote (stage RW2 with its model scores, stage R11 and its result, the
+   viewer stages W6 to W10, stages R13 and RW3). A push needs the user's ask (before one: the privacy check of §5;
+   the whole suite is on record, §3); deploys stay held; the repository has no LICENSE file and states no terms of
+   use. No recommendation on file.
+3. **Where may a claim of "closer to wild chimpanzees" come from**, now that the short scorecard can show it on one
    row at most: the timing card's anchors, new held-out rows, wild choice records? No recommendation on file
    (`r7b-prereg.md` §8).
-3. **May forked body outcomes ever be a label source?** Recommended: no, as designed (`r7b-prereg.md` §8).
-4. **Should a stay question ("still in this act later?") be trained?** Recommended: not now (`r7b-prereg.md` §8).
-5. **Should the training label keep the rules' continuation bonus and finished penalty**, with which stage R11's
-   adapters carry on more than the rules under the top pick? No recommendation on file (`r11-prereg.md`, the end).
-6. **The working base:** a swallowed share of 0.5 (declared; 13 starvation deaths in 10 seed-runs over three years)
+4. **May forked body outcomes ever be a label source?** Recommended: no, as designed (`r7b-prereg.md` §8). Two of
+   the ten rulings wait on this answer (a drink when not thirsty; a nest or shelter whenever possible).
+5. **Should a stay question ("still in this act later?") be trained?** Recommended: not now (`r7b-prereg.md` §8).
+6. **Should the training label keep the rules' continuation bonus and finished penalty?** They are hand rules about
+   staying, and the review of 10 October asked for labels without them; stage R11 kept them because stripping them
+   changes the teacher. No recommendation on file (`r11-prereg.md`, the end).
+7. **The working base:** a swallowed share of 0.5 (declared; 13 starvation deaths in 10 seed-runs over three years)
    or 0.25 (2 deaths)? Both are carried until ruled (`e-years-prereg.md` §7).
-7. **Who decides for animals under 8?** The rules today, as every result says; the menu table proposes that it stays.
-8. **What counts as "the model picks the kind of act for most of the day":** do minutes the gate holds count (35 to
+8. **Who decides for animals under 8?** The rules today, as every result says; the menu table proposes that it stays.
+9. **What counts as "the model picks the kind of act for most of the day":** do minutes the gate holds count (35 to
    63% becomes 99.9%), and is "most" more than half for kind, target and ending each? No recommendation on file
    (`r7-ledger.md`, "Decisions that are the user's").
-9. **After stage R13 is read, is one training on one world seed enough to act on**, or do a second training and seed
-   come first? No recommendation on file: the stage calls its own result a level (`r13-prereg.md`, the end).
-10. **The next fresh seeds:** recommended that stage R12's loop test takes the sealed 4333 and 4444 and that a new
+10. **After stage R13 is read, is one training on one world seed enough to act on**, or do a second training and seed
+    come first? No recommendation on file: the stage calls its own result a level (`r13-prereg.md`, the end).
+11. **The next fresh seeds:** recommended that stage R12's loop test takes the sealed 4333 and 4444 and that a new
     sealed pair is named now (`r11-prereg.md`, the end).
-11. **The Taï record:** are T-HUN-9 and T-END-12 compromised for the Taï adapter (recommended, and applied until
-    ruled) or only flagged, and may a packet show the bystander bonds (recommended: no)? `rw2-prereg.md` §10.1.
-12. **Budongo:** ask the field station for its sheets, the only route found to wild "join or leave" labels, and make
+12. **The Taï record:** are T-HUN-9 and T-END-12 compromised for the Taï adapter (recommended, and applied until
+    ruled) or only flagged, and may a packet show the bystander bonds (recommended: no)? `rw2-prereg.md` §10.1. If
+    stage RW3 reads "beats the simple rule", one registered opening of the sealed part needs the user's go
+    (`rw3-prereg.md` §5).
+13. **Budongo:** ask the field station for its sheets, the only route found to wild "join or leave" labels, and make
     its party-size figures a registered yardstick? No recommendation on file (`rw2-prereg.md` §10.1).
-13. **Track E:** should the simulation offer a side in a conflict to an unrelated adult female? It never does, and
+14. **Track E:** should the simulation offer a side in a conflict to an unrelated adult female? It never does, and
     about 96% of the Kanyawara partnerships are between unrelated females. No recommendation on file
     (`rw2-prereg.md` §10.1).
-14. **Packet 5's wording:** four questions on what counts as the animal's own experience, and whether results on
+15. **Packet 5's wording:** four questions on what counts as the animal's own experience, and whether results on
     earlier packets must say they listed the rules' first partner first. No recommendation on file; as built all four
     are shown (`r8-prereg.md` §9).
-15. **A push, deploys and a licence:** `track-e` is 191 commits ahead of the remote and a push needs the user's ask
-    (before one: the whole suite on the merged head and the privacy check, §5); deploys stay held; the repository has
-    no LICENSE file and states no terms of use.
 16. **The viewer, what opens by default:** the layout, life-size animals, the close view at the watching speed, the
     Food layer. As built: today's layout and sizes, 1 min/s, Food on.
 17. **The viewer's stylizations** (the plan's "The user's" lines for stages W6 to W10; the ends of `w2-bloom-sky.md`
@@ -294,8 +309,8 @@ Pre-register and commit before any run of changed code; at most 3 iterations per
 development; 48, 7, 21, 5, 11 for confirms; 4111 and 4222 were opened by stage R11, 3613 is stage R13's, 4333 and
 4444 are sealed; never the reserved or retired seeds in AGENTS.md. Switches stay 0 by default; goldens and the field
 pin test must not move. Benchmarks and model runs only from frozen detached checkouts; one model process at a time,
-and no whole test suite or heavy build beside it; no rented compute. At most 3 agents running simulations at once,
-1 to 2 workers each, 1 above load 8. Never commit to `main`; never deploy or push without the user's go. Never send
-the user's email or personal data to an external service; never use Unpaywall; stop at any CAPTCHA. Never commit
-`data/raw`, the derived wild records, the sound files or secrets. Name every result as §1 says. Reports to the user:
-short, plain English, the answer first, explicit confidence levels.
+and no whole test suite or heavy build beside a scoring, loop or population step; no rented compute. At most
+3 agents running simulations at once, 1 to 2 workers each, 1 above load 8. Never commit to `main`; never deploy or
+push without the user's go. Never send the user's email or personal data to an external service; never use
+Unpaywall; stop at any CAPTCHA. Never commit `data/raw`, the derived wild records, the sound files or secrets. Name
+every result as §1 says. Reports to the user: short, plain English, the answer first, explicit confidence levels.
