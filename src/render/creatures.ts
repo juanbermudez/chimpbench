@@ -39,7 +39,7 @@ import { referenceRate, smallMapPace } from './creatures/pace';
 import { applyInertia, blinkAt, createAttention, createBlink, createInertia, scanAngles, selectAttention, springStep, startInertia, type AttnCand, type Attention, type Blink, type Inertia } from './creatures/secondary';
 import type { KeepCandidate } from './env/occluders';
 import { createTreeIndex, type TreeIndex } from './creatures/tree-index';
-import { holding, listening } from './creatures/heard';
+import { endHeard, holding, listening } from './creatures/heard';
 import {
   Listen, PatrolCode, RELEASE_BRISTLE_TAU, RELEASE_DRUM_REACH, RELEASE_WINDOW_H, backSide, createFileCue, createPatrolLook, fileCue, listenVariant,
   patrolClip, patrolLook, patrolTension, phasedParties, stepLeg, type PatrolClip,
@@ -1309,11 +1309,15 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   // call has just reached looks toward where it came from, whatever the distance (the candidate below turns heads only
   // for a caller within 20 m), and a stationary one holds its clip for a moment. Stylizations; field map only. ----
   // (Merge of W6 and W10. The order in which the beat and a heard call take the head is in updateAttention below.)
-  /** True while the body is committing to its own act: the last part of the decision beat (stage W6), its intention
-   * movement, playing or held in until the first step. A call heard then neither takes the head nor holds the clip. */
+  /** True while the body is committing to its own act: the last part of the decision beat (stage W6), in which the
+   * head is on the goal (the beat has a gaze) or the intention movement plays (a body that has yet to start, Way.soon:
+   * the test the movement itself makes), and while that movement is held in until the first step. A body already on
+   * the move when its act changed has neither, and commits nothing. A call heard while this is true does not take
+   * the head and does not hold the clip. */
   function committing(a: Anim): boolean {
     const b = a.beat;
-    return b.since > -Infinity && (b.phase === Phase.intent || (a.intent > 0.5 && !b.waiting));
+    if (!(b.since > -Infinity)) return false;
+    return (b.phase === Phase.intent && (b.gaze !== Gaze.none || a.way === Way.soon)) || (a.intent > 0.5 && !b.waiting);
   }
   function heardAttention(a: Anim, dt: number): number {
     const H = fx.heard;
@@ -1342,9 +1346,11 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     // Merge of stages W6 and W10: who takes the head, the first that applies.
     //   1. An alarming thing within 15 m (a snake model) keeps the eyes: neither the beat (W6's own rule) nor a call
     //      heard (decided at the merge; W10 as built took the head from it) comes before it. It is the top candidate below.
-    //   2. The last part of the decision beat, the intention movement (committing below): the body is already turning
+    //   2. The last part of the decision beat, the intention movement (committing above): the body is already turning
     //      to its goal, so the head stays on the goal. This is also all of the beat that is left at 1 min/s, where a
-    //      community gives a long call every few real seconds: there a call never takes a beat.
+    //      community gives a long call every few real seconds: there a call never takes a beat. A look at a call that
+    //      is under way when this part begins is ended for good (heard.ts endHeard); a call whose arc arrives during
+    //      it is looked at once the body has started, for what is left of its 2.4 s.
     //   3. A long call just heard (W10: 2.4 s from the moment its arc arrives, at most once in 10 s per animal). It
     //      takes the head from the earlier parts of the beat (the glance at the runner-up, the look at the goal), from
     //      a waiting initiator and from the looks back; the beat's countdown runs on meanwhile, so the call never
@@ -1359,7 +1365,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       let alarmed = false;
       for (const st of world.stimuli) if (st.kind === 'snake-model' && (st.position[0] - a.x) ** 2 + (st.position[2] - a.z) ** 2 < 225) { alarmed = true; break; }
       if (!alarmed) {
-        if (heardNow && !partner && !committing(a)) { const hw = heardAttention(a, dt); if (hw > 0) return hw; }
+        const commit = heardNow && committing(a);
+        if (commit) endHeard(fx.heard, a.slot, a.id);
+        if (heardNow && !commit && !partner) { const hw = heardAttention(a, dt); if (hw > 0) return hw; }
         if (beatGaze && beatGoal(a, a.beat.gaze)) {
           if (a.lastSkinFrame < 0 || !Number.isFinite(a.lk[0].x) || Math.abs(a.lk[0].x - GOAL[0]) > 40) for (let k = 0; k < 3; k++) { a.lk[k].x = GOAL[k]; a.lk[k].v = 0; }
           for (let k = 0; k < 3; k++) springStep(a.lk[k], GOAL[k], 0.14, dt);

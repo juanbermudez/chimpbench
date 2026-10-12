@@ -26,9 +26,11 @@ export interface HeardTable {
   /** Per slot: the animal noted (−1 none), the real time its orienting begins, where the call came from (m), and
    * whether its clip was being held last frame (the pose code releases it through a blend). */
   id: Int32Array; at: Float64Array; x: Float32Array; z: Float32Array; held: Uint8Array;
+  /** Per slot: 1 when the look and the hold were ended early (endHeard), until the next call is noted. */
+  over: Uint8Array;
 }
 export function createHeard(cap: number): HeardTable {
-  return { id: new Int32Array(cap).fill(-1), at: new Float64Array(cap).fill(-Infinity), x: new Float32Array(cap), z: new Float32Array(cap), held: new Uint8Array(cap) };
+  return { id: new Int32Array(cap).fill(-1), at: new Float64Array(cap).fill(-Infinity), x: new Float32Array(cap), z: new Float32Array(cap), held: new Uint8Array(cap), over: new Uint8Array(cap) };
 }
 /**
  * Notes that the animal `id` in `slot` hears a call from (x, z), its orienting to begin at real time `at` (the moment
@@ -37,14 +39,23 @@ export function createHeard(cap: number): HeardTable {
 export function noteHeard(t: HeardTable, slot: number, id: number, at: number, x: number, z: number): boolean {
   if (slot < 0 || slot >= t.id.length) return false;
   if (t.id[slot] === id && at - t.at[slot] < HEARD_REFRACTORY_S) return false;
-  t.id[slot] = id; t.at[slot] = at; t.x[slot] = x; t.z[slot] = z;
+  t.id[slot] = id; t.at[slot] = at; t.x[slot] = x; t.z[slot] = z; t.over[slot] = 0;
   return true;
 }
 /** True while the animal in `slot` looks toward the call it heard. */
 export function listening(t: HeardTable, slot: number, id: number, now: number): boolean {
-  return t.id[slot] === id && now >= t.at[slot] && now < t.at[slot] + HEARD_LOOK_S;
+  return t.id[slot] === id && t.over[slot] === 0 && now >= t.at[slot] && now < t.at[slot] + HEARD_LOOK_S;
 }
 /** True while a stationary listener's clip is held. */
 export function holding(t: HeardTable, slot: number, id: number, now: number): boolean {
-  return t.id[slot] === id && now >= t.at[slot] && now < t.at[slot] + HEARD_HOLD_S;
+  return t.id[slot] === id && t.over[slot] === 0 && now >= t.at[slot] && now < t.at[slot] + HEARD_HOLD_S;
+}
+/**
+ * Ends the look and the hold of the animal in `slot` for the call it is listening to (merge of stages W6 and W10: the
+ * body has begun the last part of a decision beat, creatures.ts `committing`). They do not come back for that call:
+ * a head that went call, goal, call again inside two seconds read as a twitch. The refractory time runs on from when
+ * the call was noted, and the next call noted listens as usual. A stylization, like the rest of this file.
+ */
+export function endHeard(t: HeardTable, slot: number, id: number): void {
+  if (slot >= 0 && slot < t.id.length && t.id[slot] === id) t.over[slot] = 1;
 }

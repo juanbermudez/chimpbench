@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { Call, CallKind } from '../src/types';
 import { ARC_BUSY, ARC_FADE_S, ARC_GAP_S, ARC_GROW_S, ARC_HOLD_S, ARC_LIFE_S, ARC_MAX, FRESH_CALL_H, arcAlpha, arcRadius, arrivalDelay, createCallLog, drawsReach, inEarshot, liveArcs, logFind, logSlot, noteCalls } from '../src/render/callreach';
-import { HEARD_HOLD_S, HEARD_LOOK_S, HEARD_REFRACTORY_S, createHeard, holding, listening, noteHeard } from '../src/render/creatures/heard';
+import { HEARD_HOLD_S, HEARD_LOOK_S, HEARD_REFRACTORY_S, createHeard, endHeard, holding, listening, noteHeard } from '../src/render/creatures/heard';
 import { createWorld, tickWorld } from '../src/simulation';
 
 // Stage W10: the reach of a call as it is drawn (src/render/callreach.ts) and who has just heard one
@@ -143,4 +143,20 @@ test('a listener orients once, for a moment, and not again at once', () => {
   assert.ok(noteHeard(t, 3, 21, 11, 1, 2), 'a new animal in a reused slot is noted at once');
   assert.ok(!noteHeard(t, 9, 1, 0, 0, 0) && !noteHeard(t, -1, 1, 0, 0, 0), 'out of range');
   assert.ok(HEARD_HOLD_S >= 1 && HEARD_HOLD_S <= 2 && HEARD_LOOK_S >= HEARD_HOLD_S, 'the brief: a second or two');
+});
+
+// Merge of stages W6 and W10: the last part of a decision beat takes the head back from a call (creatures.ts).
+test('a look ended early does not come back for that call, and the next call listens as usual', () => {
+  const t = createHeard(8);
+  assert.ok(noteHeard(t, 2, 9, 20, 100, -50));
+  assert.ok(listening(t, 2, 9, 20.4) && holding(t, 2, 9, 20.4));
+  endHeard(t, 2, 11);
+  assert.ok(listening(t, 2, 9, 20.5), 'another animal\'s id ends nothing');
+  endHeard(t, 2, 9);
+  assert.ok(!listening(t, 2, 9, 20.5) && !holding(t, 2, 9, 20.5), 'ended at once');
+  assert.ok(!listening(t, 2, 9, 21.5) && !listening(t, 2, 9, 20 + HEARD_LOOK_S - 0.01), 'and not resumed inside the same look');
+  assert.ok(!noteHeard(t, 2, 9, 20 + HEARD_REFRACTORY_S - 0.1, 0, 0), 'the refractory time still runs from when the call was noted');
+  assert.ok(noteHeard(t, 2, 9, 20 + HEARD_REFRACTORY_S + 0.1, 7, 8));
+  assert.ok(listening(t, 2, 9, 20 + HEARD_REFRACTORY_S + 0.2) && holding(t, 2, 9, 20 + HEARD_REFRACTORY_S + 0.2), 'the next call is listened to');
+  endHeard(t, -1, 9); endHeard(t, 99, 9);   // out of range: nothing happens
 });
