@@ -104,3 +104,138 @@ Statements:
 - S8b. A unit test: with a look target far to one side at full weight the fingers stay within 0.06 body lengths of the lip.
 
 **Unchanged pictures.** `scripts/groom-shots.mjs tiles` against the before sheet: tiles are expected to differ only where this stage changes what is drawn (the nest tile, tiles that show the branch prop or the leaf spray). `scripts/groom-shots.mjs cases`: 11 of 11.
+
+## 1. What a viewer sees now
+
+1. **Nobody jumps across a crown.** An animal whose place in a tree changes (its partner leaves, it joins a partner, it goes to the trunk to come down, it arrives up the trunk) goes there at a clamber, 2.5 m a second at Real time and Watch 4x. More than a metre from the place it is bound for it is drawn on all fours with hands and feet gripping, turned and pitched along its way; nearer than that it slides in its seated pose as before. An animal clambering to a partner's bough is tagged "going to groom" until it sits.
+2. **A pair stays a pair until a body leaves.** Two animals grooming in a crown are drawn grooming until the leaving one's drawn body sets off, not one or two ticks before.
+3. **A scratch that is interrupted lets go.** The arm comes away over half a second along the same curve a finished scratch ends on, and the head and fingers come back with it.
+4. **An animal alone is no busier than one in a party.** A glance that finds nobody to glance at uses up its turn in the schedule. An animal feeding alone in a crown now shifts its weight about as often as one with a neighbour.
+5. **An animal in its nest sits still, and a builder turns as asked.** Five headings, 1.9 rad apart, and no trembling when frame times are uneven.
+6. **The nest is under the sleeper wherever the camera was when the nest was first listed.**
+7. **The bough reads as a limb of its tree.** It forks at its host's seat into two tapering halves, has the colour of the tree's own limbs, and is joined to the nearest drawn limb or to the bark by a stem. The cluster a feeding animal holds is a small leafy spray, and a mother with an infant on her belly holds it out to the side.
+8. **The feeding hand meets the mouth.** The head is held for the moment a hand is at the mouth.
+
+Also changed, found by the probes on the way (section 4): the last 0.3 m of a climb down a trunk, and the first of a climb up, are no longer dropped or risen in one frame.
+
+## 2. What was changed
+
+Everything is in the renderer. `git diff 9be7d44 --stat -- src/sim data tests/fixtures src/types.ts src/simulation.ts` prints nothing.
+
+| Item | Where | The rule |
+| --- | --- | --- |
+| 1 | `src/render/creatures/perch.ts` (`crownStep`, `clamberSpeed`, `clambering`), `src/render/creatures.ts` (`placeGrounded`, `chooseClip`, `layoutCrowns`, `evaluatePose`), `src/render/creatures/poses.ts` (clip `clamber`) | The drawn body of an animal in a tree moves toward its place by at most 2.5 m a second of real time (times the playback rate over 4 above Watch 4x) plus what its own drawn path moved in the frame. More than 1.0 m from the place it is bound for (its seat or nest, or the bark while its path goes up or down) it is drawn in the `clamber` clip until it is within 0.3 m. The rule "more than 6 m away: drawn at once" is gone; a place more than 14 m away is still drawn at once, as are the four cases that were there before. |
+| 1 | `creatures.ts` (`Anim.tagWay`, `drawnAct`) | The tags and the interface are told "going to" for a body clambering to a seat on another animal's bough. The body's own reading (`Anim.way`) is not touched. |
+| 2 | `perch.ts` (`pairReach`), `creatures.ts` (`pairingFor`, `groomsThird`) | Reach for a paired pose is read from the two drawn paths. No pairing with a body on its trunk, or with one whose drawn act is a trip and whose path is moving. |
+| 3 | `src/render/creatures/idle.ts` (`scratchRelease`, `idleOverlay`), `creatures.ts` (`stepIdle`, the arm's own record `Anim.scr*`) | A scratch the schedule drops lets go from the reach it had over 0.5 s (0.25 s on a body that has started to move) along the smooth step a finished scratch ends on. The body's part of the scratch follows the same reach. |
+| 4 | `src/render/creatures/secondary.ts` (`idleSpend`), `creatures.ts` (`stepIdle`) | A glance with no neighbour within 9 m waits as long as it would have lasted and then the ordinary gap. |
+| 5 | `perch.ts` (`nestTurn`), `creatures.ts` (`layoutCrowns`, `placeGrounded`) | An animal whose drawn body is in the nest act in a tree gets one heading target, used by both the motion step and the placement. |
+| 6 | `src/render/creatures/nests.ts` (`place`) | Every listed nest keeps its simulated place and has its drawn place found again when the list is redrawn, twice a second. |
+| 7 | `src/render/creatures/props.ts` (`limb`, `leafSprayGeometry`), `creatures.ts` (`emitProps`), `perch.ts` (`boughStem`), `src/render/env/vegetation.ts` and `src/scene.ts` (the hooks `limbNear` and `barkColor`), `poses.ts` (`PoseCtx.bears`, `FEED_HOLD_INFANT`), `src/render/creatures/harness.ts` (`barkColor`, `&action=forage&infant=`) | The branch prop's geometry is a tapered limb (tip 0.6 of the base) placed from point to point and coloured per instance. A bough is two halves from the fork at the host's seat and a stem from the nearest drawn limb within 3 m, else from the bark. The same mesh, the same material (its colour is now white and the instance carries the colour), no new mesh. The leaf block's geometry is a twig with five two-sided blades. |
+| 8 | `secondary.ts` (`headLook`), `poses.ts` (`crownFeed`), `creatures.ts` (`evaluatePose`) | The feeding clip writes a negative look weight that follows the hand to the mouth and back; the layer scales the look system's weight down by it. |
+
+Two optional functions were added to the creature layer's context (`limbNear`, `barkColor`). They read the forest the environment has already built; nothing is added to it and no draw is taken from its random streams.
+
+## 3. Measured before and after
+
+Before: the export of 9be7d44, 04:53 to 05:23 and 06:52 to 06:55 EDT. After: commit 546113e, the third and last run, 06:24 to 06:57 EDT (folder `after/`). The world hash at the starting tick is the same before and after for every probe. A world played and drawn for 24 ticks at 1 min/s through one of the partings has the same hash as the same world stepped there without drawing (`after/played.json`).
+
+| Statement | Before | After | Reading |
+| --- | --- | --- | --- |
+| S1a. Largest step of the placement alone, animals 28 and 26, tick 1585, Watch 4x | 7.82 m and 0.77 m | 0.049 m and 0.052 m | holds |
+| S1b. Steps of the placement alone over 0.5 m, every animal within 80 m, 75 s at Watch 4x, from ticks 1575 and 1130 | 4 and 0 (largest 7.82 m and 0.37 m; 22 and 4 steps over 25 cm) | 0 and 0 (largest 0.053 m and 0.103 m; none over 25 cm) | holds |
+| S1c. Animal 28 drawn clambering on its way to the trunk | 0 s | 1.63 s | holds |
+| (added) A joiner: animal 26 arrives up the trunk and its partner sits 8.9 m away, tick 1187 | carried there by the blend with the trunk in well under a second: 0.42 m in its largest frame, 11 frames over 25 cm | clambers 8.5 m in 3.3 s, largest frame 0.05 to 0.08 m (two runs), tagged "going to groom" for 3.2 of those 3.3 s | not registered |
+| S2a. Drawn act grooming, partner still at its seat, no grooming pose | 3.9 s for four animals, 0.17 s for one | 0.00 s for all seven | holds |
+| S2b. Left grooming nobody after the partner's body has gone (the simulation's act) | 15.0 s and 18.7 s | 15.0 s and 18.7 s | reported; see section 6 |
+| S3a. A scratch cut short: the wrist's largest step, scaled to a sixtieth of a second; time until the reach is gone | 16.7, 11.8 and 15.9 cm; 0.23 to 0.26 s | 4.6, 3.0 and 3.4 cm; 0.42 to 0.45 s | holds for two cuts; the third reads 4.6 cm against the 4 cm registered (first run: 3.5, 3.1, 4.0). In that film one sample of the probe spans two drawn frames (the reach goes from 0.695 to 0.600 in it, two steps of the curve); by the curve the largest step of a sixtieth of a second is 5% of the reach, 3.2 cm of that wrist's 64 cm. |
+| S4b. Weight shifts per animal-minute, feeding in a crown, alone against in company (90 s, Real time) | 2.91 against 1.48 (1.97 times) | 1.09 against 1.56 (0.70 times) | holds |
+| S4c. Harness, feeding alone in a crown, 120 s at Real time | 7 weight shifts (17 at 1 min/s) | 3 (9 at 1 min/s) | holds |
+| S5a. The builder's four turns, every third frame 35 ms longer | 0.99 to 1.00 rad three times and 2.3 rad the other way (two runs) | 1.90, 1.90, 1.90, 1.90 rad | holds |
+| S5a. The heading's travel over the 80 s | 97.7 and 98.3 rad (two runs) | 24.8 rad | does not hold as registered (under 12 rad). The 80 s also hold the animal's last seconds at its old seat, a clamber and a climb. By clip: while it builds 9.8 rad with 3 reversals (before: 75.6 rad, 1,723 reversals), which is the four turns and the turn onto the nest's first heading; asleep 1.3 rad, no reversal (before 13.2 rad, 342); at its old seat 6.4 rad (before 7.7); clambering 5.1 rad; on the trunk 2.3 rad with 82 reversals (before 1.9 rad, 88). |
+| S5b. The sleeper's heading over 10 s | 9.4 rad, 152 reversals | 0 rad | holds |
+| S6a. The nest nearest the sleeper, animals 16 and 14 | 4.79 m above and 2.07 m below the body | 0.17 m below in both, 0 m off in the plane (the body lies 0.12 of its size above the nest's floor) | holds |
+| S7b. How each bough drawn in the films is joined | joined to nothing | three boughs, each with a stem that begins on the axis of a limb the environment draws | holds |
+| S7c. The hand that holds the cluster, from the mother's mid-line (forward kinematics) | 0.11 body lengths, with or without an infant | 0.11 without, 0.30 with an infant on the belly | holds |
+| S8a. Finger joint to lip joint at each pick, animal 3, 60 s | 12 picks, 7.4 to 13.9 cm, three over 10 cm (head turned 0.52 rad) | 12 picks, 7.4 to 7.5 cm (head within 0.02 rad of the chest) | holds |
+
+Pictures (S7a), before and after under the same names: `bough-chain-10-7-13`, `bough-pair-35-30`, `bough-lying-27`, `feed-infant-44`, `feed-infant-12` (each a sheet and a `-full` frame), `harness/boughs.png`, `harness/crown-feed.png`, `harness/nest.png`; after only: `harness/feed-infant.png`, `leave-26-28.png` and `clamber-28.png` (the parting of item 1), `join-28-26.png`.
+
+The tile sheet of `scripts/groom-shots.mjs`: 27 of 30 tiles are pixel-identical and no animal is in another clip. Three differ: the nest tile (the sleeper's heading, 0.003 rad), and the tiles `follow` and `transfer`, each a standing animal with nobody near, whose idle schedules stand elsewhere at the moment of the picture (`before/tileidle.json`, `after/tileidle.json`: four and eight turns taken by then before, two and one after). The grooming cases: 11 of 11.
+
+## 4. The three runs
+
+1. **First run** (the eight fix commits, 05:44 to 06:04). Every statement but S5a held. The builder was drawn clambering for 1,590 of 3,598 frames. It clambered the last metre to its nest place; the tag's "going to" had been written into the body's own reading, from which the nest's progress is worked out, so the nest read as not being built; its place was dropped, the animal was sent back to its limb, and it went to and fro between the two for the whole build. The fault was this stage's own. The films also showed a leaver drawn as a groomed receiver, then in the trunk's climbing cycle, for a third of a second before it clambered, and a guest going back to its own limb tagged "going to groom".
+2. **Second run** (06:07 to 06:15, the probes those changes can move). Changed: the nest's progress is worked out before the clamber clip is returned; an animal that lies keeps its bough while it clambers to it; the tag has its own reading and only says "going to" for a body bound for another animal's bough; whether a body clambers is judged by its distance from the place it is bound for; a partner that has set off is told by its path. S5a's turns read 1.90 rad four times; S1 and S2 held. The largest step left was 0.30 m at every landing: the tree's placement and the ground's differ by the 0.3 m of height at which one hands over to the other.
+3. **Third run** (06:24 to 06:57, everything). Changed: the ground placement keeps the height the drawn path still has, so that hand-over is continuous. This is the run of section 3.
+
+## 5. Tests and checks
+
+- New and extended tests: `tests/render-idle.test.ts` (an animal alone has the same events at the same moments as one in company, less the glances; a scratch cut short lets go with no speed at the cut, never rising, gone in half a second, and the body's part follows), `tests/render-perch.test.ts` (the head held at the mouth against a look point at full weight; the builder's five headings and why one target does not depend on the frame time; pairs by the drawn bodies; the clamber's step, speed and hysteresis; the bough's stem; the spray's size and the hand beside the infant), `tests/render-nests.test.ts` (new: a nest listed without a crown anchor follows the anchor).
+- The checks run at the end are in section 7.
+
+## 6. What is left
+
+- **The one that stays is tagged grooming with nobody to groom.** After the leaver's body has gone, the simulation keeps the other animal in its grooming act for two or three ticks (15.0 s and 18.7 s at Watch 4x in the two partings filmed, a minute or more at Real time). It measures the pair's distance in the plane, and the partner is going down the trunk under it. The renderer draws that animal seated, which is what is there to draw; its tag says what the simulation says. Curing it is a change to the simulation (`src/sim/execution.ts` `pairTick`), outside this stage.
+- **The clamber clip of a paired actor is restarted about three times a second.** Its pairing rewrites its role every frame, and the clip is returned with role 0 (the fault stage W5 found on receivers). The clip is driven by distance, not by its own clock, so nothing shows in the picture; the clip-change counter shows it (`after/join-28-26.json`). The cure is one line in `chooseClip` (return the pairing's role with the clip). It was found in the third run and is not made, since a fourth run is not allowed.
+- **A move of under a metre is still a seated slide**, and the clamber has no branch under it: the body walks the straight line between two seats, through leaves or air, pitched by at most 0.9 rad.
+- **On the trunk the heading still trembles a little** when frame times are uneven (2.3 rad of travel and 82 reversals in 141 frames, the same as before): the motion step and the placement pull two ways there as they did in the nest. Not one of the eight items; the cure is the same.
+- **An animal alone has fewer idle events in all**, since it has nobody to glance at: 1.1 a minute against 3.6 for one feeding in company. Its head still looks about between events as before.
+- **An animal whose two hands both hold on** (two of the five resting postures) cannot scratch; a scratch that is drawn for it is cancelled and its turn drawn again after 2 s, the same mechanism as item 4. Over an hour of schedule it has 26% more yawns, shifts and glances than one with a free hand and no scratches, the same number of events in all. Left as it is: it bears on how busy idle life is.
+- **The bough's colour is matched by eye** to the limbs (the bark texture's mean colour, the tree's tint and 45% of the bark material's moss tint); a prop has none of the forest material's shading, so it is a little flatter than the limbs beside it. It is still not one of the environment's limbs: it does not fade with the keep-clear camera.
+- **The spray is small.** At a 3 m orbit it reads as a twig with leaves; against foliage it is easy to miss.
+- **Not measured:** frame time on the graphics card (the probe is off limits tonight) and main-thread cost. What was added per frame: a dozen multiplications for each animal in a tree, one search of a tree's limbs (seven or fewer segments) per bough drawn, one instance colour per branch prop; twice a second, one placement per listed nest (240 at most).
+- **Not seen:** anything with a model; a second day or another seed; the small map; a clamber at 1 min/s (there it moves at 37.5 m a second of real time, so that it takes the simulated time it takes at Watch 4x); a lying animal clambering to its bough.
+
+## 7. For the integrator
+
+### Commits (on `w11-polish`, from 9be7d44)
+
+| Commit | What |
+| --- | --- |
+| 282f7a6 | The registration (section 0), before any changed code ran |
+| d81acae | Item 4: a glance with nobody to glance at uses up its turn |
+| 604ae2f | Item 3: a scratch cut short lets go like one that ends |
+| 90a9faf | Item 8: the head is held while a hand is at the mouth |
+| 8f5ea29 | Item 6: a nest's drawn place is found again at every redraw |
+| 7fc3cb8 | Item 5: one heading for an animal in its nest |
+| ec9aa80 | Item 2: pairs from the drawn bodies |
+| 32f8187 | Item 1: long moves in a crown are clambered |
+| 592107b | Item 7: the bough as a limb of its tree, the leaf spray |
+| 546113e | Items 1 and 2, second and third run: the faults the first run found, and the last 0.3 m of a climb |
+| the commit after it | This document's sections 1 to 7, the plan block, four lines of `AGENTS.md` |
+
+### Checks at the head
+
+Run on the tree of the last commit, 12 October 2026, 06:58 to 07:07 EDT:
+
+- `pnpm exec tsc --noEmit`: clean. The three changed test files type-check under the same strict options with node's types added.
+- `pnpm exec tsx scripts/gen-params.ts --check`: valid, 1,050 entries, up to date, lint clean.
+- `pnpm test`, once: 1,411 tests, 1,410 pass, none fail, one skipped (it needs a validation file under `artifacts/` that is not in this worktree), 6 min 18 s. Nine of the tests are new. `tests/fixtures/golden-world.json` and `tests/sim-track-e.test.ts` are untouched.
+- `pnpm build`: passes.
+- `scripts/groom-shots.mjs`: the grooming cases 11 of 11; the tile sheet as in section 3.
+- Not run: `scripts/verify-browser.mjs`, the graphics probe, anything with a model.
+
+### Documents changed on this branch
+
+- `IMPLEMENTATION_PLAN.md`: a block "Stage W11: viewer polish" after Stage W9. The blocks of stages W8 and W9 are left as they were; the new block says which of their open points it closes.
+- `AGENTS.md`, only where a line had become untrue: "Idle life" (a turn that cannot be drawn is used up; a cut scratch lets go), "Seats in crowns" (the bough drawn as a limb; the clamber and its five draw-at-once cases in place of "more than 6 m away"; pairings from the drawn paths; the tag's own reading), "Postures and clips in a crown" (the head hold, the spray beside an infant, the nest's place and heading), and the open-issues line for the viewer (the floating log and the builder's heading are out; the tag over an animal left grooming nobody is in).
+- No line was added to `docs/research.md`: the stage cites nothing. Every rule it adds is a drawing rule, labelled a stylization or a design assumption where it stands in the code.
+
+### Merge notes
+
+- `src/render/creatures.ts` carries most of it: new fields on `Anim` (`tagWay`, `scr*`, `gJoin`, `cx` to `qz`, `clamber*`), `pairingFor`, `groomsThird`, `layoutCrowns` (the nest's heading, the clamberer's facing, the lying latch), `chooseClip` (the clamber, in two places), `evaluatePose` (the gait's speed and distance, the look weight, the scratching arm), `stepIdle`, `placeGrounded` (the place it is bound for, the step limit, the ground placement's height), `emitProps`, `drawnAct`.
+- The creature layer's context gained two optional functions, `limbNear` and `barkColor`. Without them a bough is joined to the bark and takes a default colour.
+- The branch prop's material is now white and its colour is per instance; its geometry runs from its base along +Y (it was centred and lay along X). Nothing else drew with it.
+- `PoseCtx` gained an optional field, `bears`. The pose buffer's look weight may now be negative.
+- Run after the merge: frame time on the graphics card in a close view on a crown with a pair on a bough; `scripts/verify-browser.mjs`; one look at a model-driven animal leaving a partner in a crown.
+
+### Decisions that are the user's
+
+1. **The clamber.** 2.5 m a second, drawn from a metre. Recommended: keep. Slower reads calmer at Real time but lags the body behind its own path at Watch 4x.
+2. **The tag "going to groom"** over an animal clambering to its partner. Recommended: keep; it is stage W6's wording for a body that has set off.
+3. **An animal alone has fewer idle events in all** (1.1 a minute against 3.6 feeding in company), since its glance turns pass unused. The other reading of "the same rate" would give it a look about in place of each glance. Recommended: keep; its head already looks about between events.
+4. **An animal whose two hands hold on** gets its unmakeable scratch turns back after 2 s, as the lone animal's glances were. Recommended: leave it until idle busyness as a whole is decided, since its total of events equals that of an animal with a free hand.
+5. **The bough's colour and the spray's size**, both set by eye. Recommended: keep, and look again when the environment can seat two on a limb.
+6. **The simulation keeps a groomer grooming while its partner climbs down** (it measures the pair's distance in the plane). Recommended: a small simulation stage of its own, registered, since it moves the golden hashes.
+7. **The restart of the clamber clip on a paired actor** (section 6). Recommended: make the one-line change at integration and film `join-28-26` once more.
