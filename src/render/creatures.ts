@@ -33,7 +33,7 @@ import {
 } from './creatures/beat';
 import { Posture, intention, postureOf } from './creatures/intention';
 import { Lie, SCRATCH_BELLY, createIdleCtx, idleFace, idleOverlay, lieOf, scratchReach, scratchWrist } from './creatures/idle';
-import { LID_MAX, bodyChannels, coatValue, createChannels, type BodyChannels } from './creatures/bodystate';
+import { LID_MAX, bellyUnder, bodyChannels, coatUnder, coatValue, createChannels, type BodyChannels } from './creatures/bodystate';
 import { bodyStateOf } from '../simulation';
 import { paramsOf } from '../sim/params';
 import { sampleSmooth } from './creatures/motion';
@@ -210,6 +210,8 @@ export interface Anim {
   /** Stage W8, idle life (secondary.ts, creatures/idle.ts): the breathing phase 0..1 and its eased depth, the idle
    * schedule, the reach of a scratch under way and its eased weight shift, and the neighbour a glance is at (−1 none). */
   breathPh: number; breathAmp: number; idle: Idle; scratchK: number; leanK: number; glanceId: number;
+  /** Stage W8: what rides on this animal this frame, as bits: 1 an infant (or a dead infant) on the belly, 2 one on the back (the carry modes). */
+  bears: number;
 }
 
 const PASSIVE = new Set(['rest', 'groom', 'forage', 'travel', 'follow', 'consort', 'guard', 'share', 'beg', 'shelter', 'nurse', 'call', 'play']);
@@ -438,7 +440,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       drinkSimX: NaN, drinkSimZ: NaN, drinkOk: false, drinkX: 0, drinkZ: 0,
       pCode: 0, pSince: 0, pPub: 0, pPubAt: 0, pIndex: 0, pCount: 0, pAhead: -1, pBehind: -1, pVariant: Listen.wait, pSide: 1, patrolAt: -1e9, relBristle: 0,
       tg: createChannels(), ch: { belly: 0, flank: 0, lid: 0, arousal: 0, fear: 0, breath: 0 }, stateAt: -1,
-      breathPh: hash01(chimp.id, 53), breathAmp: 1, idle: createIdle(chimp.id), scratchK: 0, leanK: 0, glanceId: -1,
+      breathPh: hash01(chimp.id, 53), breathAmp: 1, idle: createIdle(chimp.id), scratchK: 0, leanK: 0, glanceId: -1, bears: 0,
     };
     anims.set(chimp.id, a);
     animList.push(a);
@@ -1292,7 +1294,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     // Stage W8: the coat is the larger of what the clip holds and the continuous arousal, sleeked by fear
     // (bodystate.ts coatValue; −1 .. 1). With arousal and fear at 0 it is the clip's value, as before.
     const clipCoat = Math.max(ov[PI.bristle], a.relBristle);
-    a.bristle = damp(a.bristle, debug.w8 ? coatValue(clipCoat, a.ch.arousal, a.ch.fear) : clipCoat, 3, dtAnim);
+    // (Under an infant riding on the back the coat stands no higher than RIDER_COAT: bodystate.ts coatUnder.)
+    a.bristle = damp(a.bristle, debug.w8 ? coatUnder(coatValue(clipCoat, a.ch.arousal, a.ch.fear), (a.bears & 2) !== 0) : clipCoat, 3, dtAnim);
     a.mouth = clamp(Math.max(ov[PI.mouth], ov[PI.grin] * 0.55), 0, 1);
     a.grin = clamp(ov[PI.grin], 0, 1);
     void cam;
@@ -1640,7 +1643,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   /** The drawn channels ease toward the state last read; then breathing and idle life, unless switched off or dead. */
   function stepState(a: Anim, clip: string, dt: number) {
     const ch = a.ch, tg = a.tg;
-    ch.belly = damp(ch.belly, tg.belly, 0.6, dt); ch.flank = damp(ch.flank, tg.flank, 0.6, dt); ch.lid = damp(ch.lid, tg.lid, 0.8, dt);
+    // (A belly with an infant on it is drawn no rounder than built, and gives way about as fast as the infant settles
+    // on it: bodystate.ts bellyUnder.)
+    const onBelly = (a.bears & 1) !== 0;
+    ch.belly = damp(ch.belly, bellyUnder(tg.belly, onBelly), onBelly && ch.belly > 0 ? 3 : 0.6, dt); ch.flank = damp(ch.flank, tg.flank, 0.6, dt); ch.lid = damp(ch.lid, tg.lid, 0.8, dt);
     ch.arousal = damp(ch.arousal, tg.arousal, 1.5, dt); ch.fear = damp(ch.fear, tg.fear, 2.5, dt);
     const idle = a.idle, was = idle.kind, face = idleFace(was, idle.t, idle.dur);
     if (debug.idle && debug.w8 && a.chimp.alive) stepIdle(a, clip, dt);
@@ -1978,8 +1984,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       // "Walking to" is said of a body drawn in a walk; one that runs up to its partner is "going to".
       a.way = DRAWN.way === Way.walking && a.fastGait ? Way.going : DRAWN.way;
     }
-    for (const a of animList) { a.paired = false; a.pairClip = null; a.partnerId = -1; a.headingTarget = null; a.holds = false; a.tx = a.deadDrop ? a.dropX : a.track.x; a.tz = a.deadDrop ? a.dropZ : a.track.z; }
-    for (const a of animList) if (a.carry !== 0 && a.carrierId >= 0) { const m = anims.get(a.carrierId); if (m) m.holds = true; }
+    for (const a of animList) { a.paired = false; a.pairClip = null; a.partnerId = -1; a.headingTarget = null; a.holds = false; a.bears = 0; a.tx = a.deadDrop ? a.dropX : a.track.x; a.tz = a.deadDrop ? a.dropZ : a.track.z; }
+    for (const a of animList) if (a.carry !== 0 && a.carrierId >= 0) { const m = anims.get(a.carrierId); if (m) { m.holds = true; m.bears |= a.carry; } }
     for (const a of animList) pairingFor(a);
     // Each animal is positioned by one pairing only: its own (as actor) first, else the first that targets it.
     actorIds.clear();

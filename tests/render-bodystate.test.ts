@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { BodyPercept, Chimp } from '../src/types';
 import {
   FILL_NEUTRAL, GESTATION_DAYS, GUT_FLANK, LID_FROM, LID_FULL, LID_MAX, MOOD_AGGRESSIVE, POST_CONFLICT_H, PREGNANT, STRESS_COAT, STRESS_FROM, TONIC_COAT,
-  arousalOf, bellyOf, bodyChannels, coatValue, createChannels, flankOf, gutOf, lidOf, scratchOf, yawnOf,
+  RIDER_COAT, arousalOf, bellyOf, bellyUnder, bodyChannels, coatUnder, coatValue, createChannels, flankOf, gutOf, lidOf, scratchOf, yawnOf,
 } from '../src/render/creatures/bodystate';
 import { BODY_STATE, createChimpMaterials, createSilhouetteMaterial } from '../src/render/creatures/material';
 import { PARAM_TEXEL, ROW_TEXELS } from '../src/render/creatures/rig';
@@ -78,6 +78,16 @@ test('the coat value: the clip\'s own value when calm, the larger of clip and ar
   assert.equal(coatValue(1, 1, 1), -1, 'afraid: sleek whatever the clip holds');
   assert.equal(coatValue(1, 0, 0), 1, 'a display holds 1');
   for (const b of [-2, 0, 0.5, 3]) for (const a of [-2, 0, 0.5, 3]) for (const f of [-2, 0, 0.5, 3]) { const v = coatValue(b, a, f); assert.ok(v >= -1 && v <= 1); }
+});
+
+test('a carrier gives way to what it carries: no rounded belly under an infant on it, no tall coat under a rider', () => {
+  // (Review: the infant is placed on the skeleton, so a full belly grew into the infant clinging to it.)
+  for (const b of [-1, -0.4, 0]) { assert.equal(bellyUnder(b, true), b, 'a tucked belly stays as it is'); assert.equal(bellyUnder(b, false), b); }
+  for (const b of [0.2, 0.93, 1 + PREGNANT]) { assert.equal(bellyUnder(b, true), 0, 'no rounder than built under an infant'); assert.equal(bellyUnder(b, false), b, 'and untouched without one'); }
+  rising(grid(100).map(x => x * 3 - 1), b => bellyUnder(b, true), 'belly under an infant');
+  for (const c of [-1, 0, 0.2, RIDER_COAT]) { assert.equal(coatUnder(c, true), c); assert.equal(coatUnder(c, false), c); }
+  for (const c of [0.5, 1]) { assert.equal(coatUnder(c, true), RIDER_COAT); assert.equal(coatUnder(c, false), c); }
+  assert.ok(RIDER_COAT > 0 && RIDER_COAT * BODY_STATE.COAT_RAISE <= 0.02, 'a rider sinks no more than two centimetres into the coat');
 });
 
 const animal = (o: Partial<Chimp> = {}): Chimp => ({ hunger: 0.3, energy: 1, stress: 0.05, health: 1, pregnancy: 0, mood: 'calm', action: 'rest', lastConflict: null, ...o } as Chimp);

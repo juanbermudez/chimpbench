@@ -132,6 +132,17 @@ export function coatValue(clipBristle: number, arousal: number, fear: number): n
   return clamp((1 - f) * Math.max(clamp(clipBristle, 0, 1), clamp(arousal, 0, 1)) - f, -1, 1);
 }
 
+/**
+ * A carrier's body gives way to what it carries (a drawing rule; stylization). The infant is placed on the carrier's
+ * skeleton, not on its drawn surface, so a rounded belly or a coat on end grows into it: with a full gut the body of
+ * an infant on the belly sank into its mother (seen in the review). With an infant, or a dead infant, on the belly the
+ * belly is drawn no rounder than built (a tucked one stays tucked: it makes room); with one riding on the back the
+ * coat stands no higher than RIDER_COAT (1.5 cm before the 1.5 times at which animals are drawn).
+ */
+export const RIDER_COAT = 0.3;
+export function bellyUnder(belly: number, infantOnBelly: boolean): number { return infantOnBelly && belly > 0 ? 0 : belly; }
+export function coatUnder(coat: number, riderOnBack: boolean): number { return riderOnBack && coat > RIDER_COAT ? RIDER_COAT : coat; }
+
 /** Reads every channel for one animal. `body` is the simulation's BodyPercept when a Track E mechanism runs, else null. */
 export function bodyChannels(c: Chimp, body: BodyPercept | null | undefined, time: number, out: BodyChannels): BodyChannels {
   const fill = body?.gutFill ?? 1 - clamp(c.hunger ?? 0.3, 0, 1);
