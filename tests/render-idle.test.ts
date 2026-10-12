@@ -3,7 +3,7 @@ import test from 'node:test';
 import { CLIPS, Pw, type PoseCtx } from '../src/render/creatures/poses';
 import { B, LIMB, PI, createFK, createMorph, createPose, solveFK } from '../src/render/creatures/rig';
 import { Posture, postureOf } from '../src/render/creatures/intention';
-import { GRIP_HELD, HEAD_HAND, Lie, SCRATCH_BELLY, SCRATCH_HZ, SCRATCH_POINT, createIdleCtx, handHolds, idleFace, idleOverlay, lieOf, mayScratch, nodAt, nodLids, scratchReach, scratchWrist, yawnAt, type IdleCtx } from '../src/render/creatures/idle';
+import { GRIP_HELD, HEAD_HAND, Lie, SCRATCH_BELLY, SCRATCH_HZ, SCRATCH_POINT, createIdleCtx, handHolds, idleFace, idleOverlay, lieOf, mayScratch, nodAt, nodLids, scratchReach, scratchWrist, seatIdles, yawnAt, type IdleCtx } from '../src/render/creatures/idle';
 import { PERCH, perchLies } from '../src/render/creatures/perch';
 import {
   BLINK_SLOW, IDLE, IDLE_GAP, IDLE_SETTLE, IDLE_SHARE, SCRATCH, blinkAt, createBlink, createIdle, idleBit, idleCancel, idleGap, idleLean, idleRate, idleStep,
@@ -323,4 +323,11 @@ test('crown feeding: the idle layer never takes a hand (it permits no scratch) a
     for (const bone of [B.uarmL, B.uarmR, B.farmL, B.farmR, B.handL, B.handR, B.fingL, B.fingR, B.fingL2, B.fingR2]) for (let k = 0; k < 3; k++) assert.equal(w.v[bone * 3 + k], base.v[bone * 3 + k], 'arm and hand joints untouched');
     assert.equal(w.pose.propL, base.pose.propL); assert.equal(w.pose.propR, base.pose.propR);
   }
+});
+
+test('the resting seat of a crown has idle life only in a quiet act: not in a display, a fight or a greeting drawn in it', () => {
+  // In a crown these acts have no clip of their own and are drawn seated (creatures.ts chooseClip); on the ground
+  // their clips permit no idle event.
+  for (const act of ['display', 'charge', 'attack', 'submit', 'pant-grunt', 'flee', 'hunt', 'patrol', 'mate', 'reconcile', 'console', 'call', 'alarm', 'dead']) assert.ok(!seatIdles(act), `${act}: nothing but the breath`);
+  for (const act of ['rest', 'follow', 'travel', 'guard', 'groom', 'nest']) assert.ok(seatIdles(act), `${act}: idle life`);
 });

@@ -46,6 +46,18 @@ export function lieOf(v: Float32Array): number {
 export function mayScratch(posture: number, lie: number, inCrown: boolean): boolean {
   return posture === Posture.seated || (!inCrown && (lie === Lie.side || lie === Lie.supine));
 }
+/**
+ * Acts in which a body drawn in the resting seat of a crown ('perch') has idle life (merge of stages W8 and W9; a
+ * drawing rule). In a crown several acts have no clip of their own and are drawn in that seat (creatures.ts
+ * chooseClip): the quiet ones below, and also a display, a charge, an attack, a submission, a pant-grunt, a hunt. On
+ * the ground those have clips that permit no idle event (creatures.ts IDLE_ALLOW); in the seat they would scratch,
+ * yawn and shift their weight in the middle of a display (seen in the harness: three scratches and five shifts in
+ * 90 s on a displaying animal). So the seat permits idle events only in an act that is itself quiet: resting, keeping
+ * a companion company, a pause on the way (drawn as travel), guarding, a partner out of reach, about to leave a nest.
+ * Asked with the act the DRAWN body is in (stage W6), never the simulation's.
+ */
+const SEAT_QUIET: ReadonlySet<string> = new Set(['rest', 'follow', 'travel', 'consort', 'transfer', 'guard', 'groom', 'nurse', 'forage', 'shelter', 'nest', 'climb']);
+export function seatIdles(drawnAct: string): boolean { return SEAT_QUIET.has(drawnAct); }
 /** Finger curl (second joint, radians) from which a hand placed by IK counts as closed round a support: poses.ts grip
  * writes 1.3 at a full grip and 1.17 at the lightest hold of the crown postures; a relaxed hand is at 0.55. */
 export const GRIP_HELD = 1.0;

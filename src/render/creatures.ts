@@ -32,7 +32,7 @@ import {
   realSeconds, restedBefore, runnerUp, startTime, stepLate, type Beat,
 } from './creatures/beat';
 import { Posture, intention, postureOf } from './creatures/intention';
-import { Lie, SCRATCH_BELLY, createIdleCtx, handHolds, idleFace, idleOverlay, lieOf, mayScratch, scratchReach, scratchWrist } from './creatures/idle';
+import { Lie, SCRATCH_BELLY, createIdleCtx, handHolds, idleFace, idleOverlay, lieOf, mayScratch, scratchReach, scratchWrist, seatIdles } from './creatures/idle';
 import { LID_MAX, bellyUnder, bodyChannels, coatUnder, coatValue, createChannels, type BodyChannels } from './creatures/bodystate';
 import { bodyStateOf } from '../simulation';
 import { paramsOf } from '../sim/params';
@@ -1960,6 +1960,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     const still = !a.moving && a.carry === 0 && a.pCode === PatrolCode.none && !inBeat && !pctx.vocal && curSimRate <= ABOUT_MAX_RATE
       && !listening(fx.heard, a.slot, a.id, lastElapsed);
     let allow = still ? idleAllow(clip) : 0;
+    // (Merge of W8 and W9.) The resting seat of a crown also stands in for acts that have no clip there (a display, a
+    // charge, a submission, a pant-grunt): those permit nothing, as their own clips do on the ground (idle.ts seatIdles;
+    // by the act the drawn body is in).
+    if (allow && clip === 'perch' && !seatIdles(a.act)) allow = 0;
     const shifts = (allow & idleBit(IDLE.shift)) !== 0 && !lying && !a.holds;
     if (allow) {
       if (v[PI.eyes] > 0.9) allow = 0; // asleep: it only breathes (a dozing rester, eyes half shut, still scratches and yawns)
