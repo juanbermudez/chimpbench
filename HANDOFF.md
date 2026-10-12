@@ -112,13 +112,16 @@ task 1.**
   half-made folder under `adapters/` first (an adapter counts only with its `manifest.json`). `offline` and
   `loop <seed>` can be run again as they are: they skip what is on file. Details: the end of `r11-prereg.md`.
 
-**Three viewer stages are merged on an integration branch and two are being rebuilt** (true at 22:00 EDT on 11
-October 2026). `w6-decision-beat` (the decision shown on the body), `w7-fruit` (fruit you can see) and `w10-calls-map`
-(calls you can see, and a map of what the community is doing), each built and reviewed on a branch cut from 7f9ec5b,
-were merged into `integrate-t2` (cut from `track-e` at d6a8e0e) on 11 October 2026; `integrate-t2` is not merged into
-`track-e` and not pushed. `w8-state-on-body` and `w9-tree-pairs` were cut off mid-build and are being rebuilt: each
-branch holds its unreviewed partial work as one commit (5ee2096 and 30b8251). Pictures:
-`/Volumes/Drive/chimpbench/shots/watch-2026-10-11/` (the merge's own look at the three together in `integrate-t2/`).
+**All five viewer stages are merged on an integration branch** (true at 02:30 EDT on 12 October 2026).
+`w6-decision-beat` (the decision shown on the body), `w7-fruit` (fruit you can see) and `w10-calls-map` (calls you can
+see, and a map of what the community is doing) were merged into `integrate-t2` (cut from `track-e` at d6a8e0e) on
+11 October 2026; `w9b-tree-pairs` (pairs and postures in trees) and `w8b-state-on-body` (the state on the body, and
+idle life), each rebuilt on that branch after a first build was cut off and each reviewed by a second reader, were
+merged into it on 12 October 2026. `integrate-t2` is not merged into `track-e` and not pushed: frame time on the
+graphics card is still owed for all five before it becomes `track-e` (the probe was off limits while the chain above
+ran), and nothing on it was seen with a model. The cut-off first builds (`w8-state-on-body` 5ee2096, `w9-tree-pairs`
+30b8251) are superseded. Pictures: `/Volumes/Drive/chimpbench/shots/watch-2026-10-11/` (the merges' own looks at the
+stages together in `integrate-t2/` and `merged-t2b/`).
 
 ## 3. Set-up on this computer
 

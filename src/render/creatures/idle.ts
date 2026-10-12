@@ -51,7 +51,7 @@ export function mayScratch(posture: number, lie: number, inCrown: boolean): bool
  * drawing rule). In a crown several acts have no clip of their own and are drawn in that seat (creatures.ts
  * chooseClip): the quiet ones below, and also a display, a charge, an attack, a submission, a pant-grunt, a hunt. On
  * the ground those have clips that permit no idle event (creatures.ts IDLE_ALLOW); in the seat they would scratch,
- * yawn and shift their weight in the middle of a display (seen in the harness: three scratches and five shifts in
+ * yawn and shift their weight in the middle of a display (seen in the harness: three scratches and six shifts in
  * 90 s on a displaying animal). So the seat permits idle events only in an act that is itself quiet: resting, keeping
  * a companion company, a pause on the way (drawn as travel), guarding, a partner out of reach, about to leave a nest.
  * Asked with the act the DRAWN body is in (stage W6), never the simulation's.

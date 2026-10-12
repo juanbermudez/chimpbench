@@ -11,7 +11,7 @@ Pictures and readouts: `/Volumes/Drive/chimpbench/shots/watch-2026-10-11/w10-cal
 **A call has a reach.** In the strategy view and on the map (any orthographic frame) a long call draws a thin arc that grows from the caller to the call's audible radius in 2.4 real seconds, stands there for 0.3 s and fades in 0.9 s. The radius is the simulation's own (`Call.radius`): 1,000 m for a pant-hoot or drumming on the field map, 300 m for a scream or a bark, 50 m for a travel hoo. Quiet calls (grunts, laughter, whimpers, coughs) draw nothing new. At most twelve arcs are in the air at once, and each one drawn lives its whole life: when more long calls are given than that (time-lapse), the calls shown are a sample (section 2, "When calls come faster than arcs can be drawn").
 
 **Listeners react.** Every animal inside the radius when the call is given is a listener (the public contract's own test, section 2).
-- In the close view a listener turns its head toward where the call came from, whatever the distance, at the moment the arc would reach it, and looks for 2.4 s. If it is stationary (feeding, grooming, resting, sitting, drinking) its clip is held for the first 1.5 s and then resumes through a short blend. It does not orient again for 10 s.
+- In the close view a listener turns its head toward where the call came from, whatever the distance, at the moment the arc would reach it, and looks for 2.4 s. If it is stationary (feeding, grooming, resting, sitting, drinking) its clip is held for the first 1.5 s and then resumes through a short blend. It does not orient again for 10 s. (Changed at the merge of 11 October 2026, after this document was written: an animal engaged with a partner, grooming, playing or nursing, does not turn its head to the call. The pair keeps its heads on each other and only holds its clip for the 1.5 s. An animal that only follows another turns as a lone walker does. This is the merge's decision, not this stage's, and it is the user's to confirm: IMPLEMENTATION_PLAN.md, "Stage W10"; the order of gazes is in `creatures.ts` `updateAttention`.)
 - In the strategy view a small ring blips on each listener as the arc passes it (on the animal where it is then, also when it walks), and the banner of a party that heard gets a sound glyph for 4 s.
 - On the map the marker of each party that heard gets a tick (two short arcs, upper left) that fades over 4 s.
 
@@ -135,6 +135,8 @@ Before the stage both views drew nothing for the call beyond the 5 to 18 m ring 
 | Nkeru, grooming on the ground, 333 m from the call | before | (0.93 s) | 123° / 123° / 123° / 123° | 0.015 / 0.016 / 0.016 |
 | | after | 0.93 s | 0° / 0° / 0° / 122° | 0.017 / 0 / 0.017 |
 
+(The groomer's row is the branch as built. On the merged code a grooming animal keeps its look point on its partner when a call reaches it and holds its clip for the 1.5 s: a groomer 354 m from a call stayed on her partner. The merge's decision, the user's to confirm.)
+
 **The map says what parties are doing.** The map at 900 m and at 1,500 m, tick 863 to 867 (10:06), same framing:
 
 | | Before | After |
@@ -255,7 +257,7 @@ Pictures, scripts and readouts: `/Volumes/Drive/chimpbench/shots/watch-2026-10-1
 
 **Seen and left.**
 - A listener's hold is a freeze of the pose from one frame to the next (a forager in mid-reach stops at once) and ends in a 0.25 s blend; it reads as a pause, not as a body settling.
-- The gaze toward a call takes the head from every other target for 2.4 s, a grooming partner and the snake model included.
+- The gaze toward a call takes the head from every other target for 2.4 s, a grooming partner and the snake model included. (No longer so since the merge of 11 October 2026: a snake model within 15 m and a partner the animal is engaged with keep the head, and so does the last part of a decision beat. The merge's decision, the user's to confirm.)
 - A second call noted while a party's heard tick shows takes the tick away until the second arc arrives (the tracker keeps one arrival time per animal).
 - The selected animal's tag can still cover a neighbouring party's marker (`../after/map-hf900-day.png`: half of the "6" marker).
 - In rain the trails, goal lines and arcs are not hazed with the forest (they are overlays), and the rain streaks show as a pale patch on the map; the second is older than this stage.
