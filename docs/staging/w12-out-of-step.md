@@ -331,3 +331,109 @@ Under "Verifying a change", the list of harnesses: the stage's probes are in `â€
 
 - The pant-hoot chorus: left together on purpose. It is the one clip in which several animals still rise and call within seconds of each other.
 - The share of a builder's bars that are not a reach (about a quarter) and the 3 to 12 s an animal waits before its first idle event after it becomes still: set by reasoning, not by eye on a long watch.
+
+## 8. Second reading (12 to 13 October 2026, 22:26 to 00:47 EDT)
+
+A second reader went through the stage without trusting sections 1 to 7. The user's complaint is about what the picture looks like, so every scene was filmed on both builds and looked at, and the figures are given beside what the frames show. Everything of this reading is in `/Volumes/Drive/chimpbench/shots/watch-2026-10-12/w12-out-of-step/review/` (`before/`, `after/`, `repaired/`, `pictures/`).
+
+### 8.1 How it was read
+
+- **Two builds, served in turn, never together.** The unchanged build is a `git archive` of `track-e` at 4ecd1a3 (port 5198); the branch is this worktree (port 5199). `scripts/vite.probe.config.mjs`, `MGOGO_NO_MODEL=1`, the app opened with `provider=server` and the model policy off from the first frame, one headless browser at a time, no model process. The world's hash at the start of every film that opens a world or jumps its clock is the same on both builds (27 films).
+- **A film** (`rv12.mjs`, the scenes in `scenes.json`): one moment, every animation frame read in the page right after the creature layer's own update. Per animal: the clip, both wrists and both feet in its own body, the turn of the chest and of the head, the jaw, the lids, the heading, the largest step of any joint since the frame before, and what the simulation says (its act, a finished nest or none). Every tenth frame the picture goes into a contact sheet. 41 scenes on each build (the six that carry jittered frames, the performance counters or 100 s of idle life included): a new world at dawn (seeds 48 and 7, the field map and the 160 m map, at Real time, at 1 min/s, and as a user gets it with the dawn prologue left to play); nest builders at dusk in continuous play (Real time and the app's default 1 min/s); the clock jumped into dusk, into the night and to the next dawn; the frame a time-lapse stops (among builders, and at midday over a resting party); a party feeding in one crown (5 and 9 animals) and on the ground; resting parties on the ground and in a crown; five groomers side by side on the ground and four in a crown; eight animals walking in file; a pant-hoot chorus; three animals drinking side by side; four mothers with infants; five animals wrestling; a call heard by a party.
+- **Per pair of animals drawn in the same clip** (`an12.mjs`): *wrist r*, the correlation of the wrists' heights at the same instant (left with left and right with right, or left with right when that reads higher); *best r*, the same for the higher wrist at the best time shift within 6 s, with that shift (a canon reads high here); *same arm*, of the frames in which both have one wrist clearly above the other, the share with the same one; and per animal the *cycle*, the first peak of its own autocorrelation.
+- **With nothing in the way** (`hstrip.mjs`): the creature harness, ten animals put into one clip in the same frame on a frozen page clock, the row photographed every 0.3 s. In the app the crowns of the 160 m map hide most of an animal from any one camera, so what the eye says below comes from the field-map films, the ground scenes and these rows.
+
+### 8.2 Verdict
+
+**Fixed.** A person who watches nest builders, a new world at dawn, ground feeders, groomers, drinkers or players on this branch sees animals each doing their own thing; on the build before they moved as one.
+
+What the user most likely saw is not the opening (section 7 guessed a new world at Real time or Watch 4x). With the dawn prologue left to play, the unchanged build shows the building clip for 16 to 21 frames, a third of a second. It is **dusk at the app's own speed after the prologue, 1 min/s**: the building then lasts three seconds, and three builders of one party each made the same movement, a rest, the left arm, a rest, the right arm, at the same moments (wrist r 0.94, 0.82 and 0.66; the same arm in 85, 86 and 69% of the frames in which both reach) while all three turned through the same headings together. On the branch the same three make a left and a left, one right, and a right and a right, at their own moments.
+
+### 8.3 Scene by scene
+
+Before -> after. "n" is the number of animals drawn in that clip together.
+
+| Scene | Clip, n | Wrist r | Best r (shift) | Same arm | Cycles (s) | What the frames show |
+| --- | --- | --- | --- | --- | --- | --- |
+| New world at dawn, Real time, field map, seed 48 | building 8 -> asleep 8 | 0.98 -> nobody moves | 0.98 (0.1 s) -> none | 98% -> none | 2.15 to 2.2 -> none | Before: neighbours sit up and reach with the same arm together. After: bodies lying in full nests, breathing |
+| the same, seed 7; the 160 m map, seeds 48 and 7 | building 5, 6, 7 -> asleep | 1.00, 0.98, 0.98 -> none | | 100, 99, 98% -> none | | the same |
+| Builders at dusk, continuous play, 160 m map | building 3 -> 4 | 0.76 -> 0.30 | 1.00 (0.4 s) -> 0.66 (2.3 s) | 84% -> 32% | 2.02 for all -> 2.8, 2.9, 3.3 | Before: a canon, the same reach every 2.2 s, 0.2 to 0.6 s apart. After: reaches 2.5 to 11.7 s apart, arms in each animal's own order |
+| the same, field map | building 2 | 0.12 -> 0.39 | 1.00 (2.9 s) -> 0.41 | 40% -> 79% | 2.05 both -> one of 2.5 | Before: one copies the other 2.9 s later. After: one reaches while the other sits (these two have bars of 2.64 and 2.76 s, the unlucky one pair in eight; see 8.7) |
+| Clock jumped into dusk, field map | building 2 | 1.00 -> 0.26 | 1.00 -> 0.45 | 100% -> 22% | 2.02 both -> 2.5, 4.9 | Before: the same arm at the same moment (picture 2). After: not together |
+| the same, 160 m map | building 3 -> 4 | 1.00 -> 0.06 | 1.00 -> 0.68 (3.6 s) | 100% -> 0% | | |
+| A time-lapse stops among builders | building 4 | 0.54 -> 0.10 | 0.99 (0.6 s) -> 0.56 (3.1 s) | 67% -> 46% | 1.7 to 2.0 -> 2.9 to 3.3 | |
+| Clock jumped into the night and to dawn | asleep 9, 3, 9, 3 | nobody moves | | | | the same on both builds |
+| Feeding in one crown (field 5, 160 m map 9) | feeding | 0.04 -> 0.04; -0.02 -> -0.01 | 0.70 -> 0.67; 0.65 -> 0.67 | | 10.3 to 13.6 -> 10.7 to 13.5 | Unchanged (stage W9's clip). Never together at one instant; each on a cycle of its own length |
+| Feeding on the ground | feeding 4 | 0.05 -> 0.04 | 0.89 (0.9 s) -> 0.39 | | 3.34 for all -> 3.2, 6.6, 8.5 | Before: one loop, a wave along the row. After: picks at each animal's own moments |
+| Resting, ground | resting 5 | 0.07 -> 0.03 | 0.88 -> 0.40 | | | still bodies, idle life each its own |
+| Resting, crown | seated 4 | 0.12 -> 0.12 | 0.21 -> 0.21 | | | the same |
+| Groomers side by side | grooming 5; 5 | 0.34 -> -0.08; 0.49 -> -0.42 | 0.76 -> 0.51; 0.91 -> 0.60 | | | Before the lips smacked together (jaw r 0.49 and 0.76; now -0.01 and 0.01) |
+| Walking in file (Watch 4x) | walking 8 | 0.05 -> 0.04 | 0.21 -> 0.30 | 51% -> 50% | 0.52 to 0.59 -> 0.51 to 0.58 | Unchanged. Not in step: each its own cadence and footfall |
+| Pant-hoot chorus | calling 4 | -0.22 -> -0.22 | 0.95 (2.8 s) -> 0.95 (2.8 s) | | 8.5 to 9.0 both | Unchanged, on purpose. See 8.7 |
+| Drinking side by side | drinking 3 | 0.86 -> -0.25 | 0.99 -> 0.92 (1.6 s) | 95% -> 46% | 2.12 both -> 2.07, 2.35 | Before: two leaf sponges dipped together. After: one after the other |
+| Wrestling | wrestling 5 | -0.14 -> -0.04 | 0.88 (1.8 s) -> 0.41 | | 5.9 to 6.0 for all -> 5.4 and 5.4, 6.3 and 6.6, 6.9 | Before every pair swapped roles on one beat. After each pair has its own |
+
+The harness rows say the same with nothing in the way. Ten builders started in one frame: before, ten right arms go up together and come down, then ten left arms (`pictures/1-builders-before-after.jpg`); after, at any moment two or three are reaching, each with its own arm, and the rest sit with their hands in the lap.
+
+### 8.4 What must stay together, and does
+
+- **A groomer's hands on its receiver** (`hgroom.mjs groom`: 30 s in 50 ms steps on a frozen clock; the distance of each hand from the receiver's trunk, in receiver sizes; nearer hand, median and largest, before -> after): receiver seated 0.089 and 0.192 -> 0.077 and 0.161; prone 0.149 and 0.181 -> 0.146 and 0.180; on its side 0.131 and 0.191 -> 0.143 and 0.191; arm folded up 0.091 and 0.192 -> 0.077 and 0.161; a mutual pair 0.141 and 0.192 -> 0.139 and 0.186; in a crown 0.088 and 0.192 -> 0.077 and 0.158; an infant held 0.411 and 0.463 -> 0.416 and 0.463. The hands are where they were. `scripts/groom-shots.mjs cases`: 11 of 11.
+- **An infant on its carrier** (five films): the distance between the two drawn bodies is the same to the millimetre (on a resting mother 0.579 m both; on a builder 0.403 -> 0.401 m; riding in the file 0.884 m both), and so is the largest change of the infant's place on her in one frame.
+- **Listeners turning to a call** (field map, a call from a crown with eight animals round it): five of six listeners turn to the caller within 0.01 s of the call before and within 0.02 to 0.22 s after; the sixth does not turn on either build.
+- **Partners of one pair**: the two of a wrestling pair keep one swap period (5.39 and 5.43 s; 6.3 and 6.56 s). No fight and no mating pair occurred in the films; the stage's tests hold those.
+- **The decision beat** (a film with five beats): the same animals, the same start and end to a tenth of a second, the same phases.
+
+### 8.5 What the change could have broken, and did not
+
+- **Movement continuous at a clip's start and end** (Real time films, animals posed every frame): 89 clip changes before, 93 after; the median step of the fastest joint in the frame of the change is 0.8 mm on both; 7 and 8 changes step more than 5 cm, the same transitions on both builds (a seated or standing animal starting up a trunk). One transition reads worse after: an animal going from ground feeding into a pant-hoot stepped 21 cm at the lips in one frame (9 cm at a foot before): a call starts with the simulation and is not fully blended on either build.
+- **The same picture on two runs** (`hgroom.mjs twice`, two loads at the same page times): all 44 animals of the tile sheet, ten builders and one builder: no channel of any pose differs and the screenshots are byte-identical, on the unchanged build, on the branch and after the repair.
+- **Idle life (stage W8)**: events per animal-minute, before -> after: a resting party at Real time for 100 s, 3.7 -> 3.7 (33 events on both); at Watch 4x, 3.8 -> 3.9; feeding in a crown 4.5 -> 4.5. After a time-lapse stops over a resting party: six of seven animals started an event at 2.99 s before; after, the seven start between 5.9 and 10.0 s, two of them within 0.25 s of another.
+- **Stage W11**: with frames made 0 to 45 ms longer at random, a builder's heading has no reversal on either build (travel 0.9 to 1.9 rad before, 0.5 to 2.2 rad after); after a jump into the night all 41 animals in the nest act have their nest within 0.18 m in height and 0 m in the plane (two that are clambering to it apart, the same two on both builds); the dusk film at 1 min/s shows the same clambers at the same moments on both builds.
+- **Cost**: main-thread script time per frame with `?perf=1`, median: 2.2 -> 2.1 ms in a grooming scene of twelve animals and 2.2 -> 2.1 ms among builders (creature layer 1.0 -> 0.9 ms). No difference that can be read. The graphics card was not measured (the probe may not run today).
+- **The world**: `tests/fixtures/golden-world.json` and `tests/sim-track-e.test.ts` untouched and passing. Drawing writes nothing (`writes.mjs`): the 160 m world played with the picture on through dusk to tick 2864 has the hash of the same world brought there by the public tick alone.
+
+### 8.6 The dawn opening
+
+On both seeds and both maps, all 41 animals that are not carried (the whole world, not only those near the camera): before, 41 of 41 in the building clip with their eyes open over nests drawn at a quarter size (0.31 against 1.25); after, 41 of 41 in the sleep clip with the lids shut over full-size nests that are under them (0 m in the plane, 0.17 m in height). These are read a few seconds after the clock starts; filmed from the very first frame with the prologue left to play, every animal near the camera starts in the building clip before and stays in it for 16 to 21 frames, and after none is ever in it. Played at 1 min/s until they rise: before, 521 animal-frames drawn building in a finished nest on the field map and 338 on the 160 m map; after, 0 and 0, and nobody's lids are open while it is in the sleep clip. Builders at dusk in view still build, on both maps, and lie down after the simulation finishes their nest.
+
+### 8.7 Found
+
+**Repaired (two commits, on top of 675362b):**
+
+1. **The building went back when a time-lapse stopped** (ff1d26a). In the frame the speed drops among builders the renderer changes the clock it counts a building on and the count starts again: a builder half way through read a tenth (0.50 to 0.08; on the unchanged build 0.44 to 0.13) and turned back through the headings it had already faced (2.3 rad of heading in the next four seconds). Older than this stage, and seen in a scene this stage is about. `perch.ts` `nestProgress` takes what has been drawn of the nest act as a floor (`Anim.nestTop`); the progress waits there until its clock catches up or the simulation finishes the nest. Filmed again: the builder stays at 0.44 and its heading travels 0.3 rad. A test in `tests/render-step.test.ts` holds it.
+2. **A comment** in `nests.ts` still said a nest first seen finished grows in by the clock (6e6a007).
+
+**Left, for the integrator and the user:**
+
+- **The pant-hoot chorus** is the one thing that still reads as a machine: every caller makes the same stand with both arms raised, within three seconds of the others, on one cycle of nine seconds (best r 0.95 at a shift of 2.8 s, the same before and after; `pictures/4-chorus-still-together.jpg`). The builder left it on purpose and said so. It is the user's call.
+- **At 1 min/s a building lasts about three seconds**, one or two reaches each. Two of the three builders filmed happened to reach with the same arm at overlapping moments (chance: one arm of two), the third with the other. Each also turns through its headings in those seconds, 5 to 11 rad of heading in 3 to 4 s (6.5 to 8.7 rad before, the builders of one party together). The turns per simulated minute are stage W9's; at this speed they read as a spin.
+- **Animals whose acts change in one tick change clip in one frame.** Three drinkers stood up in the same frame on both builds. The simulation does that, the decision beat staggers departures only, and this stage does not touch it.
+- **About one pair of builders in eight keeps nearly the same bar** (within 0.1 s: 143 of the 1,176 pairs of this world). The two of the field-map dusk are such a pair: wrist r 0.39 and the same arm in 79% of the frames in which both reach, though in the frames one reaches while the other sits.
+- **Two leaf-sponge drinkers** are still on one loop at tempos of 2.07 and 2.35 s: over the ten seconds they drank, best r 0.92 at a shift of 1.6 s.
+- **Feeding in a crown** was left as stage W9 made it: nothing together at one instant, each animal on a cycle of 10 to 13.5 s. In a 30 s film any two such cycles match at some shift (best r 0.65 to 0.9); section 3.2's 0.38 is over two minutes.
+- **A step into a call** is not fully blended (8.5).
+
+### 8.8 Where section 7 and the builder's report do not hold
+
+- "The user most likely saw the fault on a new world at Real time or Watch 4x": see 8.2. It shows at dusk at the default speed, which no film of the stage looked at.
+- "Nothing was seen on a second seed or on the 160 m map in the app": it has been now, and reads the same.
+- The two registered clauses the builder reported as not met stand as reported. In continuous play two of three builders made a turn within 0.8 s of each other, in opposite directions.
+- The builder's figures for its own pair of builders were not filmed again; other pairs on both maps read like them (wrist r 0.06 to 0.39 after, 0.76 to 1.00 before for animals that began together).
+
+### 8.9 Checks at the head
+
+Run on 6e6a007, the last commit that touches code or tests; the commit after it only adds this section.
+
+- `tsc --noEmit`: clean. `tests/render-step.test.ts` type-checked by hand with the project's strict options: clean.
+- The whole suite, once (00:34 to 00:40 EDT, no model process running, the 1-minute load at 3 before it and 15 at its height): 1,470 tests, 1,469 pass, none fails, 1 is skipped as on `track-e` (it needs `artifacts/validation/c7a-field1y.json`, which is not on this computer). `tests/render-step.test.ts` now has 12 tests.
+- `pnpm build`: passes.
+- `git diff --stat track-e` names `src/render/` (six files), `tests/render-{step,nests,groom}.test.ts` and this document. Nothing under `src/sim`, `data`, `tests/fixtures` or `src/types.ts`; no line added under `src/render` holds `Math.random`; no pass, target or material.
+- Both probe servers of this reading (5198 and 5199) are stopped and no browser of it is left.
+
+### 8.10 For the integrator and the user
+
+- Commits of this reading, on top of 675362b: ff1d26a (the building never goes back, with its test), 6e6a007 (the comment), then this section. Not pushed, not merged.
+- `Anim` has one more field (`nestTop`) and `nestProgress` one more optional argument (`floor`).
+- Pictures: `review/pictures/1-builders-before-after.jpg` (ten builders started together, a row every 0.3 s, before beside after), `2-dusk-app-before-after.jpg` (two builders at dusk in the app, every tenth frame), `3-dawn-opening-before-after.jpg` (a new world at 06:30), `4-chorus-still-together.jpg` (the chorus as it is).
+- The user's: whether the chorus should spread (8.7); whether a builder should turn less at 1 min/s, where its five headings pass in three seconds (8.7); and the builder's own three questions in section 7.
+- Instruments worth keeping, all in `review/`: `rv12.mjs '<json spec>'` (one film, every frame read, a contact sheet of every tenth frame; `how` is `open`, `user`, `jump`, `watch` or `lapse`), `an12.mjs` and `cmp12.mjs` (the measures, one build against the other), `extra.py` (idle events, the infant on its carrier, the beats, the builders' reaches and turns), `hstrip.mjs` (ten animals in one clip on a frozen clock, a row every 0.3 s), `hgroom.mjs` (the hands on the receiver; the same picture twice), `writes.mjs` (drawing writes nothing), `scan.mjs` (finds the moments).
