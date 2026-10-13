@@ -182,6 +182,8 @@ export interface Anim {
    * when the simulation's finished nest was first seen in it (+Infinity not yet, -Infinity it was there from the first
    * frame), and the drawn time and progress at which that was seen. */
   nestFor: number; nestDoneAt: number; nestRampT: number; nestRampK: number;
+  /** Second reading of stage W12: how far the building of that nest act has been drawn (perch.ts nestProgress `floor`). */
+  nestTop: number;
   ox: number; oz: number;          // eased layout offset (pairing, separation) added to the interpolated point
   // Gait and contacts (gait.ts), transitions (secondary.ts).
   moving: boolean; stillT: number; fastGait: boolean; turnRate: number; climbDy: number; dist: number; strides: number; poseDt: number;
@@ -470,7 +472,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       clip: '', clipT: 0, role: 0, gait: null, phase: hash01(chimp.id, 3),
       x: chimp.position[0], y: 0, z: chimp.position[2], heading: chimp.heading ?? 0, speed: 0, vel: 0, inited: false,
       track: createTrack(chimp.position[0], Math.max(0, chimp.position[1] ?? 0), chimp.position[2]), acts: createActTrack(), ox: 0, oz: 0,
-      act: chimp.action, actTarget: chimp.targetId, way: Way.none, tagWay: Way.none, beat: createBeat(), late: 0, intent: 0, posture: Posture.other, trunkK: 0, onTrunk: false, nestOk: false, nestX: 0, nestY: 0, nestZ: 0, nestK: 1, nestFor: NaN, nestDoneAt: Infinity, nestRampT: 0, nestRampK: 0,
+      act: chimp.action, actTarget: chimp.targetId, way: Way.none, tagWay: Way.none, beat: createBeat(), late: 0, intent: 0, posture: Posture.other, trunkK: 0, onTrunk: false, nestOk: false, nestX: 0, nestY: 0, nestZ: 0, nestK: 1, nestFor: NaN, nestDoneAt: Infinity, nestRampT: 0, nestRampK: 0, nestTop: 0,
       refSpeed: 0, moveSpeed: 0, settle: 0, moving: false, stillT: 0, fastGait: false, turnRate: 0, climbDy: 0, dist: 0, strides: 0, poseDt: 0,
       gs: { f: 0, stride: 0, regime: Regime.natural }, lapse: 0, locks: [createLock(), createLock(), createLock(), createLock()], drop: 0, planted: false, bank: 0,
       inert: createInertia(POSE_SIZE), prevOut: new Float32Array(POSE_SIZE), prevCur: new Float32Array(POSE_SIZE), outVel: new Float32Array(POSE_SIZE), skip: new Uint8Array(POSE_SIZE), hold: new Float32Array(12), holdMask: 0,
@@ -1038,11 +1040,14 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       // community building for four minutes, in step. A nest that appears while the body builds ends the building when
       // the body's own drawn time reaches it. Read only: nothing here writes the World.
       const drawnT = playback.renderT - a.late, has = c.action === 'nest' && c.nest !== null;
-      if (a.nestFor !== a.acts.since) { a.nestFor = a.acts.since; a.nestDoneAt = has ? -Infinity : Infinity; }
+      if (a.nestFor !== a.acts.since) { a.nestFor = a.acts.since; a.nestDoneAt = has ? -Infinity : Infinity; a.nestTop = 0; }
       else if (a.nestDoneAt === Infinity && has) { a.nestDoneAt = world.time; a.nestRampT = drawnT; a.nestRampK = a.nestK < 1 ? a.nestK : 0; }
       const built = seen ? (drawnT - a.acts.shownAt) * 3600 : c.actionTime ?? 9999;
       // Stage W9: how far the building has come, for the nest that grows under it and the builder's turns (placeGrounded).
-      const k = about ? 1 : nestProgress(a.nestDoneAt, drawnT, built, a.nestRampT, a.nestRampK), building = k < 1;
+      // (Second reading: the building of one nest act never goes back, nestTop. `built` starts again when the renderer
+      // changes clocks, as in the frame a time-lapse stops; the builder then turned back through headings it had faced.)
+      const k = about ? 1 : nestProgress(a.nestDoneAt, drawnT, built, a.nestRampT, a.nestRampK, a.nestTop), building = k < 1;
+      if (building) a.nestTop = k;
       a.nestK = k;
       if (a.clamber) return CLAMBER;
       if (about && still && (a.beat.up || a.beat.phase !== Phase.none)) { a.beat.up = true; return ['perch', 0, null]; }

@@ -297,6 +297,27 @@ test('building or asleep is the simulation\'s word: a finished nest has a sleepe
   for (const id of SOLO) { w.bind(pose).reset(); CLIPS.sleep(w, ctxOf(id, 5, { clip: 'sleep', inTree: true })); assert.equal(postureOf(pose.v), Posture.lying); assert.equal(pose.v[PI.eyes], 1); assert.equal(pose.v[PI.ground], 0); }
 });
 
+test('the building of one nest act never goes back (second reading)', () => {
+  const H = 1 / 3600;
+  // The renderer counts the seconds of a building on one of two clocks and may change between them (the frame a
+  // time-lapse stops: filmed with a builder at 0.50 reading 0.08 in the next frame). With what has been drawn as the
+  // floor, the progress waits where it was until its clock has caught up.
+  assert.ok(Math.abs(nestProgress(Infinity, 10, 20, 0, 0) - 20 / NEST_BUILD_S) < 1e-12, 'without a floor the restarted clock reads a twelfth');
+  assert.equal(nestProgress(Infinity, 10, 20, 0, 0, 0.5), 0.5, 'held at what was drawn');
+  let top = 0.5, last = 0.5;
+  for (let s = 20; s < 300; s += 0.25) { const k = nestProgress(Infinity, 10 + s * H, s, 0, 0, top); assert.ok(k >= last && k <= NEST_HOLD_K, `no step back at ${s} s`); assert.ok(k - last < 0.002, 'and no jump when the clock catches up'); top = last = k; }
+  assert.equal(last, NEST_HOLD_K);
+  // The floor alone never finishes a nest: only the simulation's finished nest does. And a floor of 0 changes nothing.
+  assert.equal(nestProgress(Infinity, 10, 5, 0, 0, 1), 5 / NEST_BUILD_S);
+  for (const built of [0, 30, 120, 239, 400]) assert.equal(nestProgress(Infinity, 10, built, 0, 0, 0), nestProgress(Infinity, 10, built, 0, 0));
+  // Once the simulation has finished the nest, the rest is drawn from where the building stood: the floor is under it.
+  const done = 10, t0 = done - 30 * H; last = 0.5;
+  for (let s = 0; s < 30; s += 0.5) { const k = nestProgress(done, t0 + s * H, 20 + s, t0, 0.5, last); assert.ok(k >= last && k < 1); last = k; }
+  assert.equal(nestProgress(done, done, 50, t0, 0.5, last), 1);
+  // A nest that was there when the body was first drawn in the act: asleep, whatever the floor.
+  assert.equal(nestProgress(-Infinity, 0, 0, 0, 0, 0.3), 1);
+});
+
 test('animals released together do not start an idle event together', () => {
   const ALL = idleBit(IDLE.scratch) | idleBit(IDLE.yawn) | idleBit(IDLE.shift) | idleBit(IDLE.glance) | idleBit(IDLE.nod), ids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
   /** Seconds from the release to each animal's first event: held for `busy` s (after `before` s of idling), then free. */

@@ -167,13 +167,22 @@ export function nestTurnAt(id: number, i: number): number { return (i + (2 * has
  * the body has the two ticks it trails by left: the rest of the building is drawn over them, and it ends when the
  * body's own time reaches the finished nest. So builders that begin together do not end together, and nobody builds
  * in a finished nest or sleeps in an unfinished one. The shape of the progress is a stylization.
+ *   floor   how far the building of this nest act has already been drawn (0: nothing yet). The building never goes
+ *           back (second reading of stage W12): `built` is counted on one of two clocks (creatures.ts chooseClip: the
+ *           seconds since the body was seen to arrive, or the simulation's seconds in the act when it was not), and
+ *           when the renderer changes from one to the other the count starts again. Filmed in the frame a time-lapse
+ *           stops among builders, on the build before this stage as well: a builder half way through read a tenth, and
+ *           turned back through the headings it had already faced. With the floor the progress waits where it was
+ *           until its clock has caught up, or the simulation finishes the nest.
  */
 export const NEST_BUILD_S = 240, NEST_HOLD_K = 0.9;
-export function nestProgress(doneAt: number, drawnT: number, built: number, rampT: number, rampK: number): number {
+export function nestProgress(doneAt: number, drawnT: number, built: number, rampT: number, rampK: number, floor = 0): number {
   if (drawnT >= doneAt) return 1;
-  if (doneAt === Infinity) { const k = built / NEST_BUILD_S; return k > NEST_HOLD_K ? NEST_HOLD_K : k > 0 ? k : 0; }
-  const span = doneAt - rampT, u = span > 0 ? (drawnT - rampT) / span : 1;
-  return rampK + (1 - rampK) * (u < 0 ? 0 : u > 1 ? 1 : u);
+  let k: number;
+  if (doneAt === Infinity) { k = built / NEST_BUILD_S; k = k > NEST_HOLD_K ? NEST_HOLD_K : k > 0 ? k : 0; }
+  else { const span = doneAt - rampT, u = span > 0 ? (drawnT - rampT) / span : 1; k = rampK + (1 - rampK) * (u < 0 ? 0 : u > 1 ? 1 : u); }
+  // (Never 1 by the floor alone: only the simulation's finished nest ends the building.)
+  return k < floor && floor < 1 ? floor : k;
 }
 
 /**
