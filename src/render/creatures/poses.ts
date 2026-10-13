@@ -326,8 +326,19 @@ export const NEST_BEAT = { reach: 0, look: 1, press: 2 } as const;
 export const NEST_LOOK_SHARE = 0.14, NEST_PRESS_SHARE = 0.14;
 /** A builder's bar in seconds. */
 export function nestBar(seed: number): number { return NEST_BAR_S[0] + (NEST_BAR_S[1] - NEST_BAR_S[0]) * cyc01(0, seed, 127); }
-/** What bar n of an animal's building is (NEST_BEAT). */
-export function nestBeat(n: number, seed: number): number { const r = cyc01(n, seed, 128); return r < NEST_LOOK_SHARE ? NEST_BEAT.look : r < NEST_LOOK_SHARE + NEST_PRESS_SHARE ? NEST_BEAT.press : NEST_BEAT.reach; }
+function nestDraw(n: number, seed: number): number { const r = cyc01(n, seed, 128); return r < NEST_LOOK_SHARE ? NEST_BEAT.look : r < NEST_LOOK_SHARE + NEST_PRESS_SHARE ? NEST_BEAT.press : NEST_BEAT.reach; }
+/**
+ * What bar n of an animal's building is (NEST_BEAT): the bar's own draw, with two limits. Never more than two bars in
+ * a row without a reach: by the draws alone one builder in twenty has a run of five somewhere in its build, and one was
+ * filmed pressing its nest down for 16 s on end. And no pressing in the first two bars: there is nothing to press yet
+ * (it looks round instead).
+ */
+export function nestBeat(n: number, seed: number): number {
+  const k = nestDraw(n, seed);
+  if (k === NEST_BEAT.reach) return k;
+  if (n >= 2 && nestDraw(n - 1, seed) !== NEST_BEAT.reach && nestDraw(n - 2, seed) !== NEST_BEAT.reach) return NEST_BEAT.reach;
+  return n < 2 && k === NEST_BEAT.press ? NEST_BEAT.look : k;
+}
 /** The arm that reaches in bar n (0 left, 1 right): drawn for each bar, toward the hand the animal favours (30 to 70% right). */
 export function nestArm(n: number, seed: number): 0 | 1 { return cyc01(n, seed, 129) < 0.3 + 0.4 * cyc01(0, seed, 130) ? 1 : 0; }
 /** Toes curled round the support (both feet, or one side: 0 left, 1 right). */

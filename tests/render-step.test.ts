@@ -205,6 +205,13 @@ test('nest builders: each keeps its own bar, pauses, looks round and changes arm
   let look = 0, press = 0, total = 0;
   for (const s of seeds) for (let n = 0; n < 400; n++) { total++; const k = nestBeat(n, s); if (k === NEST_BEAT.look) look++; else if (k === NEST_BEAT.press) press++; }
   assert.ok(Math.abs(look / total - NEST_LOOK_SHARE) < 0.03 && Math.abs(press / total - NEST_PRESS_SHARE) < 0.03, `${look} looks and ${press} presses in ${total} bars`);
+  // Never more than two bars in a row without a reach (a builder was filmed pressing for five), and no pressing in
+  // the first two bars of a build.
+  for (let id = 1; id <= 200; id++) {
+    const s = hash01(id, 17); let run = 0;
+    for (let n = 0; n < 120; n++) { run = nestBeat(n, s) === NEST_BEAT.reach ? 0 : run + 1; assert.ok(run <= 2, `animal ${id}, bar ${n}: ${run} bars without a reach`); }
+    assert.notEqual(nestBeat(0, s), NEST_BEAT.press); assert.notEqual(nestBeat(1, s), NEST_BEAT.press);
+  }
   // The pose: a hand leaves the lap and comes back to it, and nothing jumps from one frame to the next, at a bar's end or anywhere.
   for (const id of SOLO) {
     const v: Variant = { clip: 'nestBuild', inTree: true }, fps = 60, frames = 60 * 40, N = POSE_SIZE + 2, x = run(id, v, frames, fps);
