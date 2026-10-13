@@ -1,3 +1,4 @@
+import { RESOURCE_KIND_LABELS } from '../kernel/resource-contract';
 import type { Action, BodyPercept, BodySight, Candidate, DecisionContext, OptionValue, SocialPercept } from '../types';
 
 // Shared, pure prompt construction: the one definition of the packet text every provider and kernel sends a model
@@ -255,6 +256,7 @@ function memoryLines(ctx: DecisionContext): string[] {
 }
 
 export function buildLocalQuestion(ctx: DecisionContext, opts: { staticInstructions?: boolean; wording?: 1 | 2; own?: OwnOpts } = {}): LocalPacket {
+  if (ctx.resourceChoice) return r15Packet(ctx);
   if (ctx.packet === 5) return buildOwnQuestion(ctx, opts.own); // stage R8: the animal's own experience, neutral options (observeV5 1); `own` chooses the registered length
   return hasState(ctx) ? buildStateQuestion(ctx, opts) : localPacket(ctx, opts); // stage M1: Track E's state (observeState 1)
 }
@@ -694,4 +696,22 @@ export function rulesWordings(): { purposes: string[]; instructions: string[]; u
 // fruitNearby may be a 0..1 index or a count of fruiting trees in view.
 function fruitWord(v: number): string {
   return (v > 1 ? v >= 4 : v >= 0.7) ? 'plenty of ripe fruit in view' : '';
+}
+
+/** The live and training renderer for R15. Neither phase reads candidate valuations or reasons. */
+export function r15Packet(ctx: DecisionContext): LocalPacket {
+  const kinds = ctx.resourceKinds;
+  if (ctx.packet !== 5 || !ctx.own || !ctx.resourceChoice || !kinds || kinds.length !== ctx.candidates.length || !kinds.length) throw new Error('R15 packet needs own-state and aligned phase/kinds');
+  if (ctx.resourceChoice === 'kind' && new Set(kinds).size !== kinds.length) throw new Error('R15 kind entries must be distinct');
+  if (ctx.resourceChoice === 'target' && kinds.some(k => k !== kinds[0])) throw new Error('R15 target entries must share one kind');
+  // Kind text and truncation cannot depend on which concrete target represents the kind.
+  const packet = buildOwnQuestion(ctx.resourceChoice === 'kind' ? { ...ctx, candidates: [] } : ctx, { variant: 'short' });
+  if (ctx.resourceChoice === 'kind') {
+    packet.questions.action.criteria = Object.fromEntries(kinds.map((kind, i) => [`c${i}`, RESOURCE_KIND_LABELS[kind]]));
+    packet.questions.action.instructions = 'Choose what kind of activity this wild chimpanzee does next, from what it perceives, feels and remembers.';
+  } else {
+    packet.state['chosen activity'] = RESOURCE_KIND_LABELS[kinds[0]];
+    packet.questions.action.instructions = 'Choose the target for this activity, from what this wild chimpanzee perceives, feels and remembers.';
+  }
+  return packet;
 }
