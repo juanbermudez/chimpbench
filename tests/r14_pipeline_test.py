@@ -95,6 +95,19 @@ class Pipeline(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'scientifically stopped'): r.validate_world_resume(reg, args)
         reg['state'] = 'done'; reg['seed'] = 7
         with self.assertRaisesRegex(RuntimeError, 'identity mismatch'): r.validate_world_resume(reg, args)
+    def test_resume_rejects_decode_and_switch_drift(self):
+        args = ['--seed', '48', '--arm', 'r14-wire-s7-draw-1', '--packet', 'p5b', '--days', '1', '--burn-in', '1']
+        reg = {'seed': 48, 'arm': 'r14-wire-s7-draw-1', 'packetName': 'p5b', 'daysAsked': 1, 'burnInDays': 1, 'profile': 'field',
+               'paramsFile': 'docs/staging/integrator-kit/params/M6-W50.json', 'paramsSha256': r.sha(r.ROOT / 'docs/staging/integrator-kit/params/M6-W50.json'),
+               'state': 'done', 'stopCheckOn': True, 'minAge': 8, 'timeoutS': 120, 'contexts': True,
+               'switches': {'observeV4': 1, 'observeV5': 1, 'menuParity': 1, 'kernelGate': 1, 'kernelNoRulesPick': 0},
+               'kernel': 'gliner', 'decodeSpec': {'mode': 'draw', 'salt': 1, 'hold': 'act'}, 'adapter': 'fake',
+               'engine': {'name': 'r14-wire-s7-draw-1', 'packet': 'p5b', 'adapter': 'fake', 'decodeName': 'draw-1'}}
+        r.validate_world_resume(reg, args)
+        reg['decodeSpec']['salt'] = 2
+        with self.assertRaisesRegex(RuntimeError, 'decode mismatch'): r.validate_world_resume(reg, args)
+        reg['decodeSpec']['salt'] = 1; reg['switches']['kernelGate'] = 0
+        with self.assertRaisesRegex(RuntimeError, 'switches'): r.validate_world_resume(reg, args)
     def test_resume_budget_cannot_be_reset(self):
         command = ['false']
         r.atomic(r.OUT / 'steps/exhausted.json', {'name': 'exhausted', 'command': command, 'seconds': 3601, 'attempts': []})

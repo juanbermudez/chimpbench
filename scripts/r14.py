@@ -190,6 +190,15 @@ def validate_world_resume(reg, args):
     if any(reg.get(k) != v for k, v in expected.items()): raise RuntimeError('resumed world identity mismatch')
     if reg.get('state') == 'stopped' or (reg.get('stopCheck') or {}).get('stop'): raise RuntimeError('scientifically stopped world cannot resume')
     if reg.get('paramsSha256') != sha(ROOT / expected['paramsFile']) or not reg.get('stopCheckOn') or reg.get('minAge') != 8 or reg.get('timeoutS') != 120: raise RuntimeError('resumed world parameters or stop check changed')
+    rules = reg['arm'] == 'rules'
+    expected_switches = {'observeV4': 1, 'observeV5': 1, 'menuParity': 1, 'kernelGate': 0 if rules else 1, 'kernelNoRulesPick': 0}
+    if reg.get('switches') != expected_switches or reg.get('contexts') is not (not rules): raise RuntimeError('resumed switches or contexts mismatch')
+    expected_decode = None if rules else {'mode': 'draw', 'salt': 1, 'hold': 'act'}
+    if reg.get('kernel') != ('rules' if rules else 'gliner') or reg.get('decodeSpec') != expected_decode: raise RuntimeError('resumed kernel or decode mismatch')
+    engine = reg.get('engine')
+    if rules and engine is not None: raise RuntimeError('rules world has model engine')
+    if not rules and (not engine or engine.get('name') != reg['arm'] or engine.get('packet') != 'p5b' or engine.get('adapter') != reg.get('adapter') or engine.get('decodeName') != 'draw-1'):
+        raise RuntimeError('resumed engine mismatch')
     if reg['arm'] != 'rules' and '-wire-' not in reg['arm']:
         name = os.environ.get('MGOGO_FT_ADAPTERS', '')
         info = adapter(Path(os.environ['MGOGO_FT_ROOT']), name, '-trained-' in reg['arm'])
