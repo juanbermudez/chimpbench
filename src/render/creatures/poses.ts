@@ -5,7 +5,7 @@
 // pitches spine/head forward). Poses are sampled every frame (or less often
 // for distant animals) and crossfaded by the animator.
 import type { CallKind, LifeStage, Mood } from '../../types';
-import { B, PI, LIMB, bodyMass, type Pose } from './rig';
+import { B, PI, LIMB, POSE_SIZE, bodyMass, createPose, type Pose } from './rig';
 import { hyp2 } from '../fastmath';
 import { Listen, PatrolRole } from './patrol';
 import { PERCH } from './perch';
@@ -49,6 +49,16 @@ export interface PoseCtx {
    * creatures.ts). What two partners do to each other takes its tempo from it, so a pair keeps one beat and two pairs
    * differ. Absent or with no partner, the animal's own seed stands in. */
   pairSeed?: number;
+  /** Optional (stage W13, the pant-hoot; docs/staging/w13-chorus-and-spin.md): the caller's standing, 0 (none) to 1 (the
+   * top of its sex's hierarchy: Chimp.rank); its arousal 0..1 as the layer reads it when the call begins
+   * (bodystate.ts; 0.3 is a calm caller); a whole number for this call, the same for as long as it lasts and another for
+   * the animal's next; whether it joins others or answers a far call (CALL_JOIN); and seconds added to the clip's clock
+   * (CALL_QUIET and more: no voice of its own, it only listens). Absent: a calm, middle-ranking caller on its own. */
+  rank?: number; arousal?: number; callN?: number; join?: number; enter?: number;
+  /** Optional (stage W13, the nest): the real seconds a whole building is on screen at the speed being played
+   * (perch.ts NEST_BUILD_S over the simulated seconds per real second). Under NEST_BRIEF_S the builder makes one or
+   * two reaches and no more; absent, the building of stage W12. */
+  span?: number;
 }
 export type Clip = (w: Pw, c: PoseCtx) => void;
 
@@ -314,17 +324,55 @@ export function barProgress(u: number, P: number, D: number, seed: number, k: nu
   const n = Math.floor(u / P), v = (u - n * P - cyc01(n, seed, k) * (P - D)) / D;
   return v >= 0 && v < 1 ? v : -1;
 }
+/**
+ * Uneven bars (stage W13; a stylization like the rest). The moment bar n of an animal begins on a clock cut into bars of
+ * mean length P (s) is (n + j) * P, with j drawn for that bar within +-J (J under a half). Bar n is then
+ * P * (1 + j' - j) long: one animal's bars differ from each other, so it has no fixed beat, and two animals whose mean
+ * bars happen to be equal do not keep time (stage W12 gave each animal a bar of its own, constant length: about one
+ * pair of builders in eight then kept nearly the same tempo, and two leaf-sponge drinkers dipped a moment apart).
+ */
+export function barStart(n: number, P: number, J: number, seed: number, k: number): number { return (n + J * (2 * cyc01(n, seed, k) - 1)) * P; }
+/** Where the clock `u` is in such bars: the bar's number, the seconds into it and its length (written here; nothing is allocated). */
+const BAR = { n: 0, x: 0, len: 0 };
+function ownBar(u: number, P: number, J: number, seed: number, k: number): void {
+  let n = Math.floor(u / P), b0 = barStart(n, P, J, seed, k);
+  if (u < b0) { n--; b0 = barStart(n, P, J, seed, k); }
+  let b1 = barStart(n + 1, P, J, seed, k);
+  if (u >= b1) { n++; b0 = b1; b1 = barStart(n + 1, P, J, seed, k); }
+  BAR.n = n; BAR.x = u - b0; BAR.len = b1 - b0;
+}
+/**
+ * A clock that runs a little fast and a little slow by turns (stage W13): `u` plus two slow waves of the animal's own
+ * (periods 22 to 34 s and 41 to 67 s), which move it by up to about 1.8 s either way and its rate by up to a quarter.
+ * Bars cut on it drift: with barStart alone two animals whose mean bars are equal stayed within a bar of each other
+ * for ever (the bars wobble about a fixed grid), and one pair of builders in the 1,176 of a world still reached on one
+ * beat. Never runs backward (the rate stays above 0.75). Stylization.
+ */
+export function ownDrift(u: number, seed: number, k: number): number {
+  const T1 = 22 + 12 * cyc01(2, seed, k), T2 = 41 + 26 * cyc01(3, seed, k);
+  return u + 0.025 * T1 * sin(TAU * (u / T1 + cyc01(4, seed, k))) + 0.015 * T2 * sin(TAU * (u / T2 + cyc01(5, seed, k)));
+}
 /** Ground feeding: an animal's bar, 3.2 to 4.8 s; the pick within it (the old loop's reach, pluck, hand to the mouth and back). */
 export const FORAGE_BAR_S = [3.2, 4.8] as const, FORAGE_PICK_S = 2.75;
 /** Share of a ground feeder's bars in which it only chews, and of its picks made with the hand it favours. */
 export const FORAGE_IDLE_SHARE = 0.15, FORAGE_MAIN_HAND = 0.85;
-/** Nest building: a builder's bar, 2.6 to 4.0 s by animal, and one reach within it, 1.9 to 2.5 s by animal. */
-export const NEST_BAR_S = [2.6, 4.0] as const, NEST_REACH_S = [1.9, 2.5] as const;
+/** Nest building: a builder's bar by animal, and one reach within it, 1.9 to 2.5 s by animal. Stage W13: the bars
+ * are 2.6 to 5.2 s (they were 2.6 to 4.0: 143 of the 1,176 pairs of one world's 49 animals had bars within a tenth
+ * of a second of each other), and that is a builder's MEAN bar: each bar is its own length (NEST_BAR_JITTER, barStart)
+ * and the builder's clock drifts (ownDrift), so no two builders keep one tempo. */
+export const NEST_BAR_S = [2.6, 5.2] as const, NEST_REACH_S = [1.9, 2.5] as const, NEST_BAR_JITTER = 0.16;
+/**
+ * Stage W13: a building that is on screen for under NEST_BRIEF_S real seconds (the app's 1 min/s shows one in about
+ * four) is drawn as one reach, or two for six builders in ten, begun at the animal's own moments, and then the hands
+ * rest: bars, looks and presses are for a building somebody has the time to watch. Under NEST_BRIEF_MIN_S (10 min/s:
+ * under half a second) there is no reach at all. A drawing rule; stylization.
+ */
+export const NEST_BRIEF_S = 15, NEST_BRIEF_MIN_S = 1.5;
 /** What a builder does in a bar: bends a branch in, looks round, or presses the bent branches down with both hands. */
 export const NEST_BEAT = { reach: 0, look: 1, press: 2 } as const;
 /** Shares of a builder's bars spent looking round and pressing down; the rest are reaches. */
 export const NEST_LOOK_SHARE = 0.14, NEST_PRESS_SHARE = 0.14;
-/** A builder's bar in seconds. */
+/** A builder's bar in seconds (stage W13: the mean; each bar is NEST_BAR_JITTER of it shorter or longer at either end). */
 export function nestBar(seed: number): number { return NEST_BAR_S[0] + (NEST_BAR_S[1] - NEST_BAR_S[0]) * cyc01(0, seed, 127); }
 function nestDraw(n: number, seed: number): number { const r = cyc01(n, seed, 128); return r < NEST_LOOK_SHARE ? NEST_BEAT.look : r < NEST_LOOK_SHARE + NEST_PRESS_SHARE ? NEST_BEAT.press : NEST_BEAT.reach; }
 /**
@@ -341,6 +389,11 @@ export function nestBeat(n: number, seed: number): number {
 }
 /** The arm that reaches in bar n (0 left, 1 right): drawn for each bar, toward the hand the animal favours (30 to 70% right). */
 export function nestArm(n: number, seed: number): 0 | 1 { return cyc01(n, seed, 129) < 0.3 + 0.4 * cyc01(0, seed, 130) ? 1 : 0; }
+/** Which drinkers use a leaf sponge (three in ten, by animal; the others drink with the lips at the water). */
+export function drinksWithSponge(seed: number): boolean { return seed > 0.7; }
+/** The leaf sponge (stage W13): a drinker's mean bar by animal (s), how far each end of a bar may move as a share of
+ * it, and the share of bars without a dip. A lip drinker's mean time between looks up from the water (s). */
+export const SPONGE_BAR_S = [2.8, 4.4] as const, SPONGE_JITTER = 0.16, SPONGE_PAUSE_SHARE = 0.16, LIPS_LOOK_S = [6, 12] as const;
 /** Toes curled round the support (both feet, or one side: 0 left, 1 right). */
 function toeGrip(w: Pw, side: -1 | 0 | 1 = -1, g = 1) { if (side !== 1) w.r(B.toeL, 0.55 * g); if (side !== 0) w.r(B.toeR, 0.55 * g); }
 /**
@@ -354,49 +407,106 @@ function toeGrip(w: Pw, side: -1 | 0 | 1 = -1, g = 1) { if (side !== 1) w.r(B.to
 export const MOUTH_ARM = [-1.459, 1.6, 1.2, -2.3, -0.897, 0.181] as const;
 /** Head tip toward the hand at the mouth the angles above were solved with (0.4 of it on the neck, 0.6 on the head). */
 export const MOUTH_HEAD = 0.5;
-// Crown feeding (stylization, no source for the timings or shares): one cycle is 11 to 14 s by individual. The free
-// hand reaches into the leaves, takes a cluster and pulls it in front of the chest (FEED_PULL_S); the other hand
-// plucks from it one to three times (FEED_PICK_S each: reach, pluck, to the mouth, back to the knee); the rest of the
-// cycle is chewing, so 3 to 10 s. The holding hand changes every cycle, the cluster comes from another place each
-// time, and every 40 to 75 s the animal shifts a hand's width or two along its limb.
-const FEED_PULL_S = 1.6, FEED_PICK_S = 2.1;
+// Crown feeding (stylization, no source for the timings or shares). Stage W9's choreography: the free hand reaches
+// into the leaves, takes a cluster and pulls it in front of the chest; the other hand plucks from it and goes to the
+// mouth; then chewing. The holding hand changes every cycle, the cluster comes from another place each time, and
+// every 40 to 75 s the animal shifts a hand's width or two along its limb.
+// Stage W13: that was ONE sequence for every feeder, on a cycle of the animal's own but never changing length (11 to
+// 14 s): a crown of feeders ran the same loop at slightly different tempos, and any two matched at some shift (the
+// higher wrist of two feeders correlated 0.62 at the best shift in a minute's film, 0.94 for the closest pair). Now
+// the steps and their lengths are the animal's own, cycle by cycle (feedPlan):
+//   - a cycle is as long as it is drawn (barStart: the animal's mean cycle, 9 to 14 s, with each end moved by up to
+//     FEED_JITTER of it: 3 to 23 s);
+//   - most cycles take a cluster (FEED.cluster) and pick from it one to five times as the cycle has room, some of the
+//     later picks after a pause with the cluster held; some reach into the leaves with one hand and take the fruit
+//     straight to the mouth, once or twice, with no cluster (FEED.pluck: the reach elsewhere); some of the shorter
+//     ones are only a look round while it chews (FEED.look);
+//   - how long a pull and a pick take is the animal's own (feedPull, feedPick), and so are its shares of the kinds.
+export const FEED = { cluster: 0, pluck: 1, look: 2 } as const;
+/** How far each end of a feeder's cycle may move, as a share of its mean cycle; the least chewing a cycle ends on (s);
+ * how much longer than a pick from the cluster a reach into the leaves takes. */
+export const FEED_JITTER = 0.32, FEED_CHEW_MIN_S = 1.2, FEED_PLUCK_K = 1.4;
 /** Where the cluster is held by an animal with an infant on its belly: out to the holding side (x, mirrored), up, forward (body lengths). */
 export const FEED_HOLD_INFANT = [0.3, 0.5, 0.36] as const;
-/** Seconds one crown-feeding cycle lasts for an individual (seed 0..1), and how many picks cycle n has (1 to 3). */
-export function feedCycle(seed: number): number { return 11 + 3 * seed; }
-export function feedPicks(n: number, seed: number): number { return 1 + Math.floor(cyc01(n, seed, 1) * 3); }
-/** The hand that holds the cluster in cycle n (0 left, 1 right): it alternates from cycle to cycle. */
+/** Seconds an individual's crown-feeding cycle lasts on average (seed 0..1); the cycle n itself begins at feedPlan(n).start and lasts .len. */
+export function feedCycle(seed: number): number { return 9 + 5 * seed; }
+/** Seconds this animal takes to pull a cluster in, and for one pick from it (reach, pluck, to the mouth, back to the knee). */
+export function feedPull(seed: number): number { return 1.5 + 0.6 * cyc01(0, seed, 21); }
+export function feedPick(seed: number): number { return 1.8 + 0.7 * cyc01(0, seed, 22); }
+/** The hand that holds the cluster in cycle n (0 left, 1 right): it alternates from cycle to cycle. The other hand picks. */
 export function feedHold(n: number, seed: number): 0 | 1 { return (n + (seed > 0.5 ? 1 : 0)) % 2 === 0 ? 0 : 1; }
+/** What cycle n of an animal's feeding is: its kind (FEED), when it begins on the animal's clock and how long it lasts,
+ * the holding hand, the animal's pull and pick times, the number of picks (or of reaches into the leaves), and the
+ * pause before each of the second to fifth pick (s; 0 for none). */
+export interface FeedPlan { kind: number; start: number; len: number; hold: 0 | 1; pull: number; pick: number; picks: number; gap: [number, number, number, number, number] }
+export function feedPlan(n: number, seed: number, out: FeedPlan = { kind: 0, start: 0, len: 0, hold: 0, pull: 0, pick: 0, picks: 0, gap: [0, 0, 0, 0, 0] }): FeedPlan {
+  const L = feedCycle(seed), start = barStart(n, L, FEED_JITTER, seed, 20), len = barStart(n + 1, L, FEED_JITTER, seed, 20) - start;
+  const pull = feedPull(seed), pick = feedPick(seed), room = len - FEED_CHEW_MIN_S, r = cyc01(n, seed, 23), g = out.gap;
+  out.start = start; out.len = len; out.hold = feedHold(n, seed); out.pull = pull; out.pick = pick; g[0] = g[1] = g[2] = g[3] = g[4] = 0;
+  // The animal's own shares of cycles that are a reach into the leaves (12 to 30%) and of looks round (7 to 15% of those short enough).
+  const pluckShare = 0.12 + 0.18 * cyc01(0, seed, 26), lookShare = 0.07 + 0.08 * cyc01(0, seed, 27);
+  if (room < pick * FEED_PLUCK_K + 0.3) { out.kind = FEED.look; out.picks = 0; }
+  else if (room < pull + pick || r < pluckShare) {
+    out.kind = FEED.pluck; out.picks = room >= 2 * pick * FEED_PLUCK_K + 0.9 && cyc01(n, seed, 28) < 0.5 ? 2 : 1;
+    if (out.picks === 2) g[1] = 0.4;
+  } else if (r > 1 - lookShare && len < L) { out.kind = FEED.look; out.picks = 0; }
+  else {
+    const fit = Math.min(5, Math.floor((room - pull) / pick));
+    out.kind = FEED.cluster; out.picks = Math.max(1, fit - Math.floor(cyc01(n, seed, 1) * 3));
+    let spare = room - pull - out.picks * pick;
+    for (let j = 1; j < out.picks; j++) if (spare > 0.7 && cyc01(n * 7 + j, seed, 24) < 0.3) { g[j] = Math.min(spare, 0.7 + 0.9 * cyc01(n * 7 + j, seed, 25)); spare -= g[j]; }
+  }
+  return out;
+}
+/** The number of picks of cycle n (0 in a cycle that is only a look round). */
+export function feedPicks(n: number, seed: number): number { return feedPlan(n, seed, FP).picks; }
+const FP: FeedPlan = { kind: 0, start: 0, len: 0, hold: 0, pull: 0, pick: 0, picks: 0, gap: [0, 0, 0, 0, 0] };
 function crownFeed(w: Pw, c: PoseCtx) {
   sitBase(w, c, 0.15, 0.2);
   toeGrip(w);
-  const L = feedCycle(c.seed), T = c.time, n = Math.floor(T / L), u = T - n * L;
-  const hold = feedHold(n, c.seed), pick: 0 | 1 = hold ? 0 : 1;
+  const seed = c.seed, T = c.time;
+  ownBar(T, feedCycle(seed), FEED_JITTER, seed, 20);
+  const n = BAR.n, u = BAR.x, len = BAR.len, plan = feedPlan(n, seed, FP);
+  const cluster = plan.kind === FEED.cluster, pluckKind = plan.kind === FEED.pluck, picks = plan.picks;
+  const hold = plan.hold, pick: 0 | 1 = hold ? 0 : 1;
   const hx = hold ? -1 : 1, px = -hx; // x sign of the holding and of the picking side (the left is +x)
-  const picks = feedPicks(n, c.seed);
-  const tPick = u - FEED_PULL_S, j = Math.floor(tPick / FEED_PICK_S), v = tPick / FEED_PICK_S - j;
-  const picking = tPick >= 0 && j < picks, tChew = tPick - picks * FEED_PICK_S;
+  const pullS = plan.pull, pickS = pluckKind ? plan.pick * FEED_PLUCK_K : plan.pick;
+  // Which pick the cycle is at (j), how far into it (v), or how long it has only chewed (tChew; -1 before that).
+  let j = 0, v = 0, picking = false, tChew = -1, eaten = 0;
+  {
+    let a = cluster ? pullS : pluckKind ? 0.3 : 0;
+    for (let q = 0; q < picks; q++) {
+      a += plan.gap[q];
+      if (u < a) { j = q; break; }
+      if (u < a + pickS) { j = q; v = (u - a) / pickS; picking = true; break; }
+      a += pickS; eaten = q + 1;
+    }
+    if (eaten === picks) { tChew = u - a; j = Math.max(0, picks - 1); }
+  }
   // Where the cluster is taken (in the leaves, up and out to the holding side) and held (in front of the chest).
-  const fx = hx * (0.3 + 0.1 * cyc01(n, c.seed, 2)), fy = 0.9 + 0.16 * cyc01(n, c.seed, 3), fz = 0.24 + 0.1 * cyc01(n, c.seed, 4);
+  const fx = hx * (0.3 + 0.1 * cyc01(n, seed, 2)), fy = 0.9 + 0.16 * cyc01(n, seed, 3), fz = 0.24 + 0.1 * cyc01(n, seed, 4);
   // (Stage W11: with an infant on the belly the cluster is held out to the holding side and higher, beside the
   // infant, not in front of the chest, where it lay over the infant's back. A stylization.)
   const inf = ((c.bears ?? 0) & 1) !== 0;
   const cx = hx * (inf ? FEED_HOLD_INFANT[0] : 0.11), cy = inf ? FEED_HOLD_INFANT[1] : 0.4, cz = inf ? FEED_HOLD_INFANT[2] : 0.33;
-  // The holding hand: knee → leaves (0.6 s) → chest (by 1.5 s); it lets the stripped cluster go a second into the chewing.
-  const out = smooth(u / 0.6), back = smooth((u - 0.75) / 0.75), drop = smooth(tChew / 1.0);
+  // The holding hand: knee → leaves → chest over the animal's pull time; it lets the stripped cluster go a second
+  // into the chewing. In a cycle without a cluster it stays on its knee.
+  const out = cluster ? smooth(u / (0.375 * pullS)) : 0, back = cluster ? smooth((u - 0.47 * pullS) / (0.47 * pullS)) : 0, drop = cluster ? smooth(tChew / 1.0) : 1;
   const reachK = out * (1 - back);
   {
     const kx = mix(mix(mix(hx * 0.15, fx, out), cx, back), hx * 0.15, drop), ky = mix(mix(mix(0.3, fy, out), cy, back), 0.3, drop), kz = mix(mix(mix(0.33, fz, out), cz, back), 0.33, drop);
     reach(w, hold, kx, ky + (picking ? 0.006 * sin(T * 2.1) : 0), kz, mix(mix(mix(0.4, -2.5, out), -0.9, back), 0.4, drop), 0, hx * mix(mix(mix(-0.2, 0.3, out), 0.5, back), -0.2, drop), 0.5 * (1 - drop) * Math.max(out, 0.01));
-    grip(w, hold, mix(0.45, 1, smooth((u - 0.45) / 0.2) * (1 - drop)));
-    if (u > 0.58 && tChew < 0.75) { if (hold) w.pose.propR = PROP.leaves; else w.pose.propL = PROP.leaves; }
+    grip(w, hold, mix(0.45, 1, smooth((u - 0.28 * pullS) / 0.2) * (1 - drop)));
+    if (cluster && u > 0.36 * pullS && tChew < 0.75) { if (hold) w.pose.propR = PROP.leaves; else w.pose.propL = PROP.leaves; }
   }
-  // The picking hand: from its knee to the cluster by IK, then to the mouth with the IK weight eased out, so the arm
-  // ends in the joint angles of MOUTH_ARM (elbow down), and back to the knee.
-  let mouthK = 0, bite = 0;
+  // The picking hand: from its knee to the cluster by IK (or, with no cluster, up into the leaves on its own side),
+  // then to the mouth with the IK weight eased out, so the arm ends in the joint angles of MOUTH_ARM (elbow down),
+  // and back to the knee.
+  let mouthK = 0, bite = 0, reachP = 0;
   {
-    const jx = px * (0.02 + 0.05 * cyc01(n * 3 + Math.max(0, j), c.seed, 5)), jy = 0.03 * cyc01(n * 3 + Math.max(0, j), c.seed, 6);
-    const pkx = cx + jx, pky = cy + 0.03 + jy, pkz = cz + 0.03;       // the pick point, on the cluster
+    const jx = px * (0.02 + 0.05 * cyc01(n * 3 + j, seed, 5)), jy = 0.03 * cyc01(n * 3 + j, seed, 6);
+    // The pick point: on the cluster, or in the leaves.
+    const pkx = cluster ? cx + jx : px * (0.26 + 0.12 * cyc01(n * 3 + j, seed, 29)), pky = cluster ? cy + 0.03 + jy : 0.84 + 0.16 * cyc01(n * 3 + j, seed, 30), pkz = cluster ? cz + 0.03 : 0.26 + 0.1 * cyc01(n * 3 + j, seed, 8);
     let x = px * 0.15, y = 0.3, z = 0.33, ikW = 1, g = 0.45, hxr = 0.4, hzr = px * -0.2;
     if (picking) {
       const to = smooth(v / 0.22), pluck = v > 0.22 && v < 0.34 ? sin(Math.PI * (v - 0.22) / 0.12) : 0;
@@ -405,10 +515,12 @@ function crownFeed(w: Pw, c: PoseCtx) {
       x = mix(x, pkx, to); y = mix(y, pky, to) - 0.02 * pluck; z = mix(z, pkz, to) - 0.015 * pluck;
       ikW = 1 - mouthK;
       g = mix(0.45, 1, smooth((v - 0.18) / 0.08) * (1 - down));
-      hxr = mix(mix(0.4, -1.1, to), 0.4, down); hzr = px * mix(mix(-0.2, 0.35, to), -0.2, down);
+      hxr = mix(mix(0.4, cluster ? -1.1 : -2.3, to), 0.4, down); hzr = px * mix(mix(-0.2, 0.35, to), -0.2, down);
       if (down > 0) { x = mix(pkx, px * 0.15, down); y = mix(pky, 0.3, down); z = mix(pkz, 0.33, down); }
       if (v > 0.3 && v < 0.66) { if (pick) w.pose.propR = PROP.fruit; else w.pose.propL = PROP.fruit; }
       bite = v > 0.54 && v < 0.7 ? sin(Math.PI * (v - 0.54) / 0.16) : 0;
+      // (The trunk and head go with a reach into the leaves, and are back before the hand is at the mouth.)
+      if (!cluster) reachP = to * (1 - smooth((v - 0.3) / 0.12));
     }
     reach(w, pick, x, y, z, 0, 0, 0, 0, ikW);
     // The bone angles under the IK: MOUTH_ARM while the hand goes to the mouth, the relaxed hand otherwise.
@@ -417,16 +529,20 @@ function crownFeed(w: Pw, c: PoseCtx) {
     w.r(pick ? B.handR : B.handL, mix(hxr, m[4], mouthK), 0, mix(hzr, m[5] * ms, mouthK));
     grip(w, pick, g);
   }
-  // Chewing from the first fruit to the end of the cycle (fading out); the jaw opens for each bite.
-  const chewing = tChew >= 0 || (picking && (j > 0 || v > 0.66));
-  const fade = clamp((L - u) / 1.5, 0, 1);
-  w.face(Math.max(0.5 * bite, chewing ? (0.07 + 0.16 * (0.5 + 0.5 * sin(T * 13.5 * ownTempo(c.seed, 6, 0.15)))) * fade : 0.04), 0.1 * (1 - bite));   // (W12: the chewing rate by animal)
+  // Chewing from the first fruit to the end of the cycle (fading out); the jaw opens for each bite. A cycle that is
+  // only a look round chews what is left for a few seconds.
+  const chewing = eaten > 0 || (picking && (j > 0 || v > 0.66)) || picks === 0;
+  const fade = clamp((len - u) / 1.5, 0, 1) * (picks === 0 ? clamp(1 - u / 3.5, 0, 1) : 1);
+  w.face(Math.max(0.5 * bite, chewing ? 0.04 + (0.03 + 0.16 * (0.5 + 0.5 * sin(T * 13.5 * ownTempo(seed, 6, 0.15)))) * fade : 0.04), 0.1 * (1 - bite));   // (W12: the chewing rate by animal)
   // Trunk and head: toward the leaves while reaching, down to the cluster while plucking, tipped to the hand at the
   // mouth (the angles MOUTH_ARM was solved for: nothing else turns the trunk then), level while chewing.
-  const free = 1 - mouthK, look = picking ? smooth(v / 0.2) * (1 - smooth((v - 0.3) / 0.15)) : 0;
-  w.a(B.spine, 0, hx * 0.1 * reachK * free, 0).a(B.chest, -0.08 * reachK * free, hx * 0.22 * reachK * free, -hx * 0.07 * reachK * free);
-  w.a(B.neck, MOUTH_HEAD * 0.4 * mouthK - 0.12 * reachK * free + 0.1 * look * free, hx * 0.2 * reachK * free, 0);
-  w.a(B.head, MOUTH_HEAD * 0.6 * mouthK - 0.3 * reachK * free + 0.28 * look * free, hx * (0.35 * reachK + 0.12 * look) * free, 0);
+  const free = 1 - mouthK, look = picking && cluster ? smooth(v / 0.2) * (1 - smooth((v - 0.3) / 0.15)) : 0;
+  const lean = hx * reachK + px * reachP, far = reachK + reachP;   // which way the trunk goes with a reach, and how much
+  // A look round (FEED.look): the head turns to a side drawn for the cycle, a little up, and comes back before the next.
+  const round = picks === 0 ? smooth(u / 0.7) * (1 - smooth((u - (len - 1.1)) / 0.9)) : 0, dir = cyc01(n, seed, 9) < 0.5 ? -1 : 1;
+  w.a(B.spine, 0, 0.1 * lean * free, 0).a(B.chest, -0.08 * far * free, 0.22 * lean * free + 0.1 * dir * round, -0.07 * lean * free);
+  w.a(B.neck, MOUTH_HEAD * 0.4 * mouthK - 0.12 * far * free + 0.1 * look * free - 0.05 * round, 0.2 * lean * free + 0.2 * dir * round, 0);
+  w.a(B.head, MOUTH_HEAD * 0.6 * mouthK - 0.3 * far * free + 0.28 * look * free - 0.08 * round, (0.35 * lean + hx * 0.12 * look) * free + 0.3 * dir * round, 0);
   // Stage W11: the head stays where the clip tips it while the hand is at the mouth. A negative look weight holds it
   // against the look system (secondary.ts headLook; it follows the hand up and back down, so nothing snaps). Before,
   // a gaze could turn the head 0.5 rad away at that moment and the hand met the cheek (filmed: 13 to 14 cm from the
@@ -615,6 +731,183 @@ function climbCycle(w: Pw, c: PoseCtx, moving: number) {
 }
 
 // ---------------------------------------------------------------------------
+// The pant-hoot (stage W13, docs/staging/w13-chorus-and-spin.md)
+// ---------------------------------------------------------------------------
+// What a caller looks like is drawn from who it is and how aroused it is, as the simulation publishes them, with the
+// rest of the variety from its id and the number of the call. Who calls, when, and that it calls at all are the
+// simulation's and are not touched. What rests on a source and what does not:
+//   - Most callers keep the posture of what they were doing: seated where they fed or rested, on all fours where they
+//     travelled, seated on the limb in a crown. Field: context of pant-hoots "travel 50.30%, feeding 25.45%, resting
+//     16.60%, displaying 7.65%" [M, fedurek2014]; "travel 45%, feeding 29%, rest 18%, display 7.5%" [M, southern2025].
+//   - Standing upright at the climax, swaying or stamping with the hair on end, is an adult male's and rare: the
+//     same two lines (a display context in about 7.5% of pant-hoots); "rhythmic swaying, more in males", "adult males
+//     perform rhythmic displays" [M, captive, hattoriTomonaga2020]; "charging displays involved exaggerated
+//     locomotion, piloerection and branch shaking" [M, mullerWrangham2004b]. The thresholds are set so that about one
+//     adult male's call in twelve has such a climax at calm arousal: a design assumption aimed at that figure.
+//   - Rank, sex and age move the vigour: higher-ranking males call more [M, southern2025, wilson2007, fedurek2016],
+//     females and juveniles less (0.61 against 1.60 an hour [L, holden2024]; males 1.91, females 0.84, juveniles 0.50
+//     [M, crunchant2021]). Those are rates. That a class which calls less also calls less vigorously is a design
+//     assumption in the same direction, not something the sources say.
+//   - Nobody drums here: drumming is the simulation's own call (no females drummed [M, clarkArcadi2004]).
+//   - A caller that joins others enters part-way: males join the pant-hoots of preferred partners [M, fedurek2013].
+//     Where in the sequence it enters is a design assumption.
+//   - The four parts (low hoos, quickening pants, a climax, a let-down), their lengths, how a caller sits, where its
+//     hands rest, the slap and the stamp: no entry in docs/research.md. STYLIZATIONS.
+//   - Both arms raised overhead: no sentence of the project's sources describes it for any animal. Nobody does it.
+/** The posture a caller on the ground calls from (the `role` of the 'pantHoot' clip): what it was in (creatures.ts). */
+export const CALL_BASE = { seat: 0, quad: 1 } as const;
+/** How far a caller rises at the climax, and what it does there. */
+export const CALL_RISE = { none: 0, allFours: 1, upright: 2 } as const;
+export const CALL_ACT = { none: 0, sway: 1, stamp: 2, slap: 3, shake: 4 } as const;
+/** Whether a call begins alone, joins a pant-hoot begun nearby a moment before, or answers one from further off or earlier. */
+export const CALL_JOIN = { none: 0, joins: 1, answers: 2 } as const;
+/** Vigour from which an adult male stands upright at the climax, an animal rises to all fours, and a male slaps the
+ * ground or shakes the branch it holds; added to the clip's clock, CALL_QUIET says "no voice: it only listens". */
+export const CALL_UPRIGHT_V = 0.78, CALL_ALLFOURS_V = 0.46, CALL_SLAP_V = 0.56, CALL_SHAKE_V = 0.6, CALL_QUIET = 999;
+/**
+ * A caller's vigour for one call, 0..1: its class by age and sex, its standing if it is adult, its arousal above a calm
+ * caller's 0.3, and a share of its own for this call (+-0.15). Never falls as rank or arousal rises.
+ */
+export function callVigour(seed: number, male: boolean, age: number, rank: number, arousal: number, callN: number): number {
+  const cls = age < 4 ? 0.05 : age < 8 ? 0.13 : male ? (age < 15 ? 0.36 : 0.5) : (age < 15 ? 0.2 : 0.26);
+  const standing = age >= 15 ? clamp(rank, 0, 1) : 0;
+  return clamp(cls + (male ? 0.24 : 0.1) * standing + 0.5 * Math.max(0, arousal - 0.3) + (cyc01(callN, seed, 140) - 0.5) * 0.3, 0, 1);
+}
+/** One call as it is drawn: the vigour, how far it rises and what it does at the climax, the length of each part (s)
+ * and of the whole, where in the sequence it enters (s), and the rates of its hoos and its fastest pants (per second). */
+export interface CallStyle { vigour: number; rise: number; act: number; intro: number; build: number; climax: number; down: number; total: number; enter: number; hoo: number; pant: number }
+const CS: CallStyle = { vigour: 0, rise: 0, act: 0, intro: 0, build: 0, climax: 0, down: 0, total: 0, enter: 0, hoo: 0, pant: 0 };
+export function callStyle(c: PoseCtx, out: CallStyle = { vigour: 0, rise: 0, act: 0, intro: 0, build: 0, climax: 0, down: 0, total: 0, enter: 0, hoo: 0, pant: 0 }): CallStyle {
+  const n = c.callN ?? 0, s = c.seed, v = callVigour(s, c.male, c.age, c.rank ?? 0.3, c.arousal ?? 0.3, n), adultMale = c.male && c.age >= 15;
+  out.vigour = v;
+  // (Nobody under eight rises: an infant or a juvenile calls from where it sits, however worked up.)
+  out.rise = c.inTree || c.age < 8 ? CALL_RISE.none : adultMale && v >= CALL_UPRIGHT_V ? CALL_RISE.upright : v >= CALL_ALLFOURS_V ? CALL_RISE.allFours : CALL_RISE.none;
+  out.act = c.inTree ? (adultMale && v >= CALL_SHAKE_V ? CALL_ACT.shake : CALL_ACT.none)
+    : out.rise === CALL_RISE.upright ? (cyc01(n, s, 141) < 0.5 ? CALL_ACT.sway : CALL_ACT.stamp)
+      : adultMale && v >= CALL_SLAP_V && (out.rise === CALL_RISE.allFours || c.role === CALL_BASE.quad) && cyc01(n, s, 142) < 0.5 ? CALL_ACT.slap : CALL_ACT.none;
+  // Each part's length is drawn for the call: low hoos 1.5 to 5 s, the build-up 2.2 to 5.2 s, the climax 1 to 3.3 s
+  // (longer with vigour), the let-down 0.9 to 2.5 s: 6 to 16 s in all.
+  out.intro = 1.5 + 3.5 * cyc01(n, s, 143); out.build = 2.2 + 3.0 * cyc01(n, s, 144); out.climax = 1.0 + 1.5 * cyc01(n, s, 145) * (0.5 + v); out.down = 0.9 + 1.6 * cyc01(n, s, 146);
+  out.total = out.intro + out.build + out.climax + out.down;
+  // A caller that joins comes in between the last of the low hoos and six tenths of the build-up; one that answers
+  // gives a shortened introduction.
+  const j = c.join ?? CALL_JOIN.none;
+  out.enter = j === CALL_JOIN.joins ? out.intro * (0.6 + 0.4 * cyc01(n, s, 149)) + out.build * 0.6 * cyc01(n, s, 150) : j === CALL_JOIN.answers ? out.intro * (0.3 + 0.5 * cyc01(n, s, 149)) : 0;
+  out.hoo = 1.1 + 0.6 * cyc01(0, s, 147); out.pant = 4.2 + 1.6 * cyc01(0, s, 148);
+  return out;
+}
+/** Where a pant-hoot is at `tau` seconds into its sequence: how much of it is on, how far the build-up has come, the
+ * climax, the let-down, the listening afterwards (each 0..1), and the beat of the voice (0..1). Written here. */
+const HE = { on: 0, build: 0, climax: 0, down: 0, after: 0, pulse: 0 };
+function hootEnv(tau: number, st: CallStyle): void {
+  const cs = st.intro + st.build, ce = cs + st.climax;
+  HE.on = smooth(tau / 0.5) * (1 - smooth((tau - st.total) / 0.7));
+  HE.build = smooth((tau - st.intro) / st.build);
+  HE.climax = smooth((tau - cs + 0.25) / 0.5) * (1 - smooth((tau - ce + 0.15) / 0.5));
+  HE.down = smooth((tau - ce) / st.down);
+  HE.after = smooth((tau - st.total) / 1.0);
+  // The beat: low hoos at the animal's own rate, pants that quicken through the build-up, a tremor in the climax,
+  // pants that slow in the let-down. One running phase, so the mouth never skips.
+  const pb = st.hoo * st.intro, pc = pb + 2.2 * st.build + (st.pant - 2.2) * st.build / 2, pd = pc + 6.5 * st.climax, r0 = st.pant * 0.75;
+  let ph: number;
+  if (tau < st.intro) ph = st.hoo * tau;
+  else if (tau < cs) { const x = tau - st.intro; ph = pb + 2.2 * x + (st.pant - 2.2) * x * x / (2 * st.build); }
+  else if (tau < ce) ph = pc + 6.5 * (tau - cs);
+  else { const x = Math.min(tau - ce, st.down); ph = pd + r0 * x + (1.8 - r0) * x * x / (2 * st.down); }
+  HE.pulse = 0.5 - 0.5 * cos(TAU * ph);
+}
+/** The mouth and the lips of the pant-hoot hootEnv was last asked about, `k` of it (1 in the clip): the lips pushed
+ * forward and opening a little on each low hoo, wider and faster through the build-up, the mouth wide with the lips
+ * drawn back at the climax (wider with vigour), the pants again in the let-down. Laid over what the pose holds. */
+function hootFace(w: Pw, st: CallStyle, k: number): void {
+  const E = HE.on * k, C = HE.climax, vg = clamp(st.vigour / 0.6, 0, 1), wide = 0.5 + 0.42 * vg;
+  const pant = 0.07 + (0.12 + 0.2 * HE.build * (1 - HE.down)) * (0.6 + 0.4 * vg) * HE.pulse, v = w.v;
+  const mouth = E * mix(pant, wide * (0.94 + 0.06 * HE.pulse), C), funnel = E * mix(0.9 - 0.3 * HE.build * (1 - 0.5 * HE.down), 0.12, C), grin = E * C * (0.15 + 0.5 * st.vigour);
+  if (mouth > v[PI.mouth]) v[PI.mouth] = mouth;
+  if (funnel > v[PI.funnel]) v[PI.funnel] = funnel;
+  if (grin > v[PI.grin]) v[PI.grin] = grin;
+  browMax(v, E * (0.3 + 0.4 * Math.max(HE.pulse * (1 - C), C)));
+}
+// Two poses to work a second and a third posture out in, before they are mixed into the caller's (never allocated per frame).
+const SCR_A = new Pw().bind(createPose()), SCR_B = new Pw().bind(createPose());
+/** Where the feet stand in the seat, on all fours and upright (z, body lengths: sitBase, quadStance, standBiped). */
+const HOOT_FEET_SEAT_Z = 0.27, HOOT_FEET_QUAD_Z = -0.12, HOOT_FEET_UP_Z = 0.015;
+/** Moves a whole pose along the body's axis: the hips and the four limb targets. */
+function shiftPose(o: Pw, dz: number): void { o.v[PI.root + 2] += dz; for (let l = 0; l < 4; l++) o.v[PI.ik + l * 5 + 2] += dz; }
+/** w becomes w + (o - w) * k in every channel; the hand props are o's from half way. */
+function mixPose(w: Pw, o: Pw, k: number): void {
+  const a = w.v, b = o.v;
+  for (let i = 0; i < POSE_SIZE; i++) a[i] += (b[i] - a[i]) * k;
+  if (k > 0.5) { w.pose.propL = o.pose.propL; w.pose.propR = o.pose.propR; w.pose.propMouth = o.pose.propMouth; }
+}
+/** A caller's seat, its own: how far it hunches and leans, how wide its knees are, and where each hand rests (the
+ * forearm over the knee, the hand on the shin, or the knuckles on the ground beside the hip, the arm propping it). */
+function hootSeat(w: Pw, c: PoseCtx): void {
+  const s = c.seed, lean = (cyc01(0, s, 160) - 0.45) * 0.6, tilt = (cyc01(0, s, 161) - 0.5) * 0.12;
+  sitBase(w, c, -0.2 + 0.9 * cyc01(0, s, 162), 0.5 * cyc01(0, s, 163));
+  w.a(B.hips, lean, 0, tilt).a(B.spine, -0.3 * lean, 0, -0.5 * tilt);
+  for (let k = 0; k < 2; k++) {
+    const side = k as 0 | 1, sx = side ? -1 : 1, h = cyc01(0, s, 164 + k), limb = side ? LIMB.armR : LIMB.armL;
+    // (Knuckles down, as the standing hand of quadStance; the wrist HOOT_KNUCKLE_Y up, so that the knuckles are on the
+    // ground the seated body rests on: at quadStance's 0.13 they were 0.03 under it, and the ground snap lifted the body.)
+    if (h > 0.68) { w.ik(limb, sx * 0.27, HOOT_KNUCKLE_Y, 0.08, 1, 1); w.r(side ? B.handR : B.handL, 0, 0, 0); fist(w, side); w.v[PI.contact + limb] = 1; }
+    else if (h > 0.4) reach(w, side, sx * 0.17, 0.19, 0.37, 0.5, 0, sx * -0.2, 0);
+  }
+}
+/** How far a caller that does not rise is off its rump all the same (0 seated; up to 0.42 of the way to all fours: a
+ * squat, the rump clear of the ground and the hands low in front). Four animals in ten squat; nobody under four years. */
+export function callSquat(seed: number, age: number): number { const h = cyc01(0, seed, 175); return age < 4 || h < 0.6 ? 0 : 0.24 + 0.45 * (h - 0.6); }
+/** Height of the wrist of a seated caller's hand that rests its knuckles on the ground (body lengths). */
+const HOOT_KNUCKLE_Y = 0.16;
+/** A caller on all fours, the head up; an adult male of some vigour may slap the ground with one hand through the climax. */
+function hootQuad(w: Pw, c: PoseCtx, st: CallStyle, tau: number): void {
+  quadStance(w, c, 0);
+  const s = c.seed, C = HE.climax, on = HE.on;
+  // (The front comes up a little with the call, the weight back over the feet.)
+  w.v[PI.root + 1] += 0.015 * on * HE.build; w.a(B.hips, -0.07 * on * (0.4 * HE.build + 0.6 * C)).a(B.neck, 0.12).a(B.head, 0.1);
+  if (st.act === CALL_ACT.slap && C > 0) {
+    const side: 0 | 1 = cyc01(0, s, 173) < 0.5 ? 0 : 1, o = PI.ik + (side ? LIMB.armR : LIMB.armL) * 5, lift = C * pulse(TAU * (1.4 + 0.4 * cyc01(0, s, 174)) * tau);
+    w.v[o + 1] += 0.13 * lift; w.v[o + 2] += 0.04 * lift; w.v[PI.contact + (side ? LIMB.armR : LIMB.armL)] = lift > 0.05 ? 0 : 1;
+    w.a(B.chest, 0, (side ? 1 : -1) * 0.08 * lift, 0);
+  }
+}
+/** An adult male upright at the climax: on two legs with the shoulders hunched and the arms hanging out from the
+ * body (never raised), swaying from foot to foot or stamping, at its own rate. */
+function hootUpright(w: Pw, c: PoseCtx, st: CallStyle, tau: number): void {
+  standBiped(w, c, 1);
+  const s = c.seed, f = 1.3 + 0.6 * cyc01(0, s, 170), sw = sin(TAU * f * tau + 6 * cyc01(0, s, 171)), k = st.act === CALL_ACT.sway ? 1 : 0.35;
+  w.v[PI.root] += 0.05 * k * sw;
+  w.a(B.hips, 0, 0, 0.1 * k * sw).a(B.chest, 0.06, -0.14 * k * sw, -0.05 * k * sw).a(B.neck, 0.1).a(B.head, 0.06);
+  w.r(B.clavL, 0, 0, 0.15).r(B.clavR, 0, 0, -0.15);
+  w.r(B.uarmL, -0.2 - 0.25 * k * sw, 0, 0.5).r(B.farmL, -0.6).r(B.uarmR, -0.2 + 0.25 * k * sw, 0, -0.5).r(B.farmR, -0.6);
+  // (Where the hands hang, for the blend from all fours: the targets carry no weight here.)
+  w.ik(LIMB.armL, 0.36, 0.5, 0.12, 0, 0).ik(LIMB.armR, -0.36, 0.5, 0.12, 0, 0);
+  grip(w, 0, 0.5); grip(w, 1, 0.5);
+  if (st.act === CALL_ACT.stamp) {
+    const r = 1.8 + 0.6 * cyc01(0, s, 172), a = pulse(TAU * r * tau), b = pulse(TAU * r * tau + Math.PI);
+    w.v[PI.ik + LIMB.legL * 5 + 1] += 0.1 * a; w.v[PI.ik + LIMB.legR * 5 + 1] += 0.1 * b;
+    w.v[PI.contact + LIMB.legL] = a > 0.05 ? 0 : 1; w.v[PI.contact + LIMB.legR] = b > 0.05 ? 0 : 1;
+  }
+}
+/** A caller in a crown: seated on its limb with the toes round it and one hand holding on, on the limb in front or on
+ * a branch overhead (arm-hanging occurs [M, Hunt 1992]); it does not rise. An adult male of some vigour shakes the
+ * branch it holds through the climax [M, mullerWrangham2004b: "piloerection and branch shaking"]. */
+function hootLimb(w: Pw, c: PoseCtx, st: CallStyle, tau: number): void {
+  const s = c.seed, side: 0 | 1 = s > 0.5 ? 1 : 0, sx = side ? -1 : 1, over = cyc01(0, s, 167) < 0.4;
+  sitBase(w, c, over ? 0.1 : 0.05 + 0.25 * cyc01(0, s, 162), 0.5 * cyc01(0, s, 163));
+  w.set('ground', 0);
+  toeGrip(w);
+  const shake = st.act === CALL_ACT.shake ? HE.climax * sin(TAU * (3.6 + 1.2 * cyc01(0, s, 168)) * tau) : 0;
+  if (over) { reach(w, side, sx * 0.21, 1.02 + 0.035 * shake, 0.1 + 0.02 * shake, -2.9, 0, sx * 0.3, 0.4); w.a(B.chest, 0, 0, sx * 0.07).a(B.spine, -0.05, 0, sx * 0.03); }
+  else { reach(w, side, sx * 0.05, 0.05 + 0.02 * Math.abs(shake), 0.25 + 0.03 * shake, 0.2, 0, 0, 0.5); w.a(B.chest, 0.04, -sx * 0.06, 0); }
+  grip(w, side, 1);
+  // The other hand: on its knee, or on the limb beside it.
+  if (cyc01(0, s, 169) > 0.55) { const o: 0 | 1 = side ? 0 : 1; reach(w, o, -sx * 0.16, 0.05, 0.1, 0.2, 0, 0, 0.5); grip(w, o, 0.9); }
+  const rock = HE.on * (0.3 + 0.7 * HE.build) * (1 - HE.climax) * (0.5 + st.vigour);
+  w.a(B.chest, -0.04 * rock * HE.pulse + 0.03 * shake, 0, 0).a(B.spine, -0.08 * HE.climax * HE.on, 0, 0);
+}
+
+// ---------------------------------------------------------------------------
 // Clips
 // ---------------------------------------------------------------------------
 export const CLIPS: Record<string, Clip> = {
@@ -707,15 +1000,29 @@ export const CLIPS: Record<string, Clip> = {
     w.a(B.chest, 0.05 * look, sx * 0.2 * look, 0);
   },
   drink(w, c) {
-    if (c.seed > 0.7) { // leaf-sponge: dip, lift, suck
+    const s = c.seed;
+    if (drinksWithSponge(s)) { // leaf-sponge: dip, lift, suck
       sitBase(w, c, 0.3, 0.2);
-      // (Stage W12: at the animal's own tempo, from its own start; it was one loop of 2.9 s for every sponge drinker.)
-      const cyc = (ownClock(c.t, c.seed, 12, 6, 0.25) * 0.35) % 1;
-      const t = smooth(cyc < 0.5 ? cyc / 0.5 : 1 - (cyc - 0.5) / 0.5);
-      reach(w, 1, -0.2 + 0.1 * t, 0.12 + 0.62 * t, 0.46 - 0.08 * t, -1.2 - 0.5 * t, 0, 0, 0.5); grip(w, 1, 0.9);
+      // Stage W12 gave each sponge drinker its own tempo; it was still one loop, dip and lift without a pause, and two
+      // drinkers at close tempos dipped a moment apart (0.92 at the best shift, filmed). Stage W13 (stylization): the
+      // drinker keeps bars of its own, uneven lengths (barStart). In a bar the sponge goes from the mouth down to the
+      // water, soaks a moment and comes back, each for a time drawn for that bar, and is sucked for the rest of the
+      // bar; about one bar in six it lowers the sponge to its knee and looks up instead.
+      const P = SPONGE_BAR_S[0] + (SPONGE_BAR_S[1] - SPONGE_BAR_S[0]) * cyc01(0, s, 31);
+      ownBar(ownDrift(c.t, s, 48) + P * (1 + cyc01(1, s, 31)), P, SPONGE_JITTER, s, 32);
+      const n = BAR.n, x = BAR.x, L = BAR.len;
+      let t = 1, rest = 0;   // t: 1 the sponge at the mouth, 0 in the water; rest: 0..1 lowered to the knee
+      if (cyc01(n, s, 33) < SPONGE_PAUSE_SHARE) rest = smooth(x / 0.6) * (1 - smooth((x - (L - 0.7)) / 0.6));
+      else {
+        const D = Math.min(L - 0.35, 1.7 + 0.8 * cyc01(n, s, 34)), v = (x - cyc01(n, s, 35) * (L - D) * 0.6) / D, soak = 0.1 + 0.14 * cyc01(n, s, 36);
+        if (v > 0 && v < 1) t = v < 0.4 ? 1 - smooth(v / 0.4) : v < 0.4 + soak ? 0 : smooth((v - 0.4 - soak) / (0.6 - soak));
+      }
+      // (Where it dips: a hand's width from bar to bar.)
+      const d = 1 - t, dx = 0.05 * (cyc01(n, s, 37) - 0.5) * d, dz = 0.04 * (cyc01(n, s, 38) - 0.5) * d, dir = cyc01(n, s, 46) < 0.5 ? -1 : 1;
+      reach(w, 1, mix(-0.2 + 0.1 * t + dx, -0.15, rest), mix(0.12 + 0.62 * t, 0.36, rest), mix(0.46 - 0.08 * t + dz, 0.34, rest), mix(-1.2 - 0.5 * t, -0.6, rest), 0, 0, 0.5); grip(w, 1, 0.9);
       w.pose.propR = PROP.sponge;
-      w.face(t > 0.8 ? 0.2 : 0.05, 0.4 * t);
-      w.a(B.head, 0.4 * (1 - t), 0, 0);
+      w.face(0.05 + 0.15 * smooth((t - 0.7) / 0.2) * (1 - rest), 0.4 * t * (1 - rest));
+      w.a(B.head, 0.4 * d - 0.12 * rest, 0.3 * dir * rest, 0).a(B.neck, -0.08 * rest, 0.15 * dir * rest, 0);
       return;
     }
     // Lean down and drink with the lips at the water surface.
@@ -724,7 +1031,14 @@ export const CLIPS: Record<string, Clip> = {
     w.r(B.hips, 1.25).r(B.spine, 0.3).r(B.chest, 0.3).r(B.neck, 0.1).r(B.head, 0.35);
     w.ik(LIMB.armL, 0.27, 0.13, 0.12, 1, 1).ik(LIMB.armR, -0.27, 0.13, 0.12, 1, 1);
     w.ik(LIMB.legL, 0.13, 0.08, -0.22, 1, 1).ik(LIMB.legR, -0.13, 0.08, -0.22, 1, 1);
-    w.face(0.08 + 0.06 * pulse(ownClock(c.t, c.seed, 12, 6, 0.25) * 5), 0.55);   // (W12: the lips on the animal's own clock)
+    // Stage W13 (stylization): every 6 to 12 s, at its own moments, it lifts its head from the water and looks about
+    // for a second or two. Before, a drinker at the water was a still figure: only its lips moved.
+    const P = LIPS_LOOK_S[0] + (LIPS_LOOK_S[1] - LIPS_LOOK_S[0]) * cyc01(0, s, 39);
+    ownBar(c.t + P * (1 + cyc01(1, s, 39)), P, 0.3, s, 43);
+    const D = 1.3 + 0.9 * cyc01(BAR.n, s, 44), v = (BAR.x - cyc01(BAR.n, s, 45) * (BAR.len - D)) / D;
+    const up = v > 0 && v < 1 ? smooth(v / 0.3) * (1 - smooth((v - 0.62) / 0.38)) : 0, dir = cyc01(BAR.n, s, 47) < 0.5 ? -1 : 1;
+    w.a(B.neck, -0.3 * up, 0.2 * dir * up, 0).a(B.head, -0.35 * up, 0.3 * dir * up, 0).a(B.chest, -0.05 * up);
+    w.face((0.08 + 0.06 * pulse(ownClock(c.t, c.seed, 12, 6, 0.25) * 5)) * (1 - 0.6 * up), 0.55 * (1 - up));   // (W12: the lips on the animal's own clock)
   },
   groom(w, c) {
     // Groomer (v2, stylization: see GROOM_SITE_S above): seated close behind (or facing) the partner. The work site
@@ -1021,29 +1335,47 @@ export const CLIPS: Record<string, Clip> = {
     if (c.inTree) { w.set('ground', 0); toeGrip(w); }
   },
   pantHoot(w, c) {
-    // Introduction (soft hoos) → build-up (faster in-out pants, rocking) → climax (standing, arms up, screams) → let-down.
-    const T = (c.t + c.seed * 3) % 9;
-    if (T < 5.5) {
-      sitBase(w, c, 0.1);
-      const build = smooth((T - 1.5) / 4);
-      const rate = 2 + build * 5;
-      w.a(B.neck, -0.25 - 0.3 * build).a(B.head, -0.25 - 0.2 * build);
-      w.v[PI.root + 1] += pulse(T * rate * 1.2) * 0.04 * build;
-      w.a(B.chest, -0.1 * build * pulse(T * rate));
-      w.face(0.12 + 0.3 * build * pulse(T * rate * 1.3), 0.9 - build * 0.3);
-    } else if (T < 7.3) {
-      standBiped(w, c, 1);
-      const k = (T - 5.5) / 1.8;
-      w.a(B.neck, -0.45).a(B.head, -0.35);
-      w.r(B.uarmL, -2.6 + sin(k * 20) * 0.4, 0, 0.6).r(B.uarmR, -2.2 + sin(k * 20 + 1) * 0.4, 0, -0.7).r(B.farmL, -0.4).r(B.farmR, -0.5);
-      w.v[PI.root + 1] += pulse(k * 30) * 0.05;
-      w.set('bristle', 0.8).face(0.95, 0.1, 0.7);
-    } else {
-      sitBase(w, c, 0.1);
-      const k = (T - 7.3) / 1.7;
-      w.a(B.neck, -0.3 * (1 - k));
-      w.face(0.2 * (1 - k), 0.8 * (1 - k));
+    // Stage W13: one pant-hoot, drawn by who gives it (the section "The pant-hoot" above). The clip used to be one
+    // loop of nine seconds for every caller: seated, then on its feet in one frame with both arms thrown up, five
+    // times in a call, whoever it was and wherever it sat.
+    const st = callStyle(c, CS), tau = c.t + st.enter + (c.enter ?? 0), s = c.seed;
+    hootEnv(tau, st);
+    const on = HE.on, B_ = HE.build, C = HE.climax, D = HE.down, p = HE.pulse, vg = st.vigour;
+    const cs = st.intro + st.build, ce = cs + st.climax;
+    if (c.inTree) hootLimb(w, c, st, tau);
+    else {
+      // How far it is up on all fours (kQ) and on two legs (kU). An animal that was on all fours stays there; a seated
+      // one rises through the build-up if it rises at all and sits again in the let-down. Each change takes a second
+      // or more, so no joint moves faster than a rising animal's would.
+      const quad = c.role === CALL_BASE.quad;
+      const q0 = callSquat(s, c.age), up = st.rise >= CALL_RISE.allFours ? smooth((tau - st.intro - 0.35 * st.build) / Math.max(1.1, 0.6 * st.build)) * (1 - smooth((tau - ce - 0.2) / 1.2)) : 0;
+      const kQ = quad ? 1 : q0 + (1 - q0) * up;
+      const kU = st.rise === CALL_RISE.upright ? smooth((tau - cs + 0.55) / 1.0) * (1 - smooth((tau - ce + 0.1) / 1.0)) : 0;
+      // The feet stay where they are: the pose it rises into is moved so that its feet are the seat's (or, from all
+      // fours, the standing ones), and the body comes up over them with the hands going down in front. Unmoved, the
+      // feet's targets slid 0.39 body lengths back under a rising body, and the layer's contact locks re-planted them
+      // in steps of 8 cm and more. A hand is marked planted only when the posture has stopped changing.
+      if (quad) hootQuad(w, c, st, tau);
+      else {
+        hootSeat(w, c);
+        if (kQ > 0) { hootQuad(SCR_A.reset(), c, st, tau); shiftPose(SCR_A, HOOT_FEET_SEAT_Z - HOOT_FEET_QUAD_Z); mixPose(w, SCR_A, kQ); }
+      }
+      if (kU > 0) { hootUpright(SCR_B.reset(), c, st, tau); shiftPose(SCR_B, (quad ? HOOT_FEET_QUAD_Z : HOOT_FEET_SEAT_Z) - HOOT_FEET_UP_Z); mixPose(w, SCR_B, kU); }
+      if ((!quad && up > 0.02 && up < 0.98) || (kU > 0.02 && kU < 0.98)) { w.v[PI.contact + LIMB.armL] = 0; w.v[PI.contact + LIMB.armR] = 0; }
+      // The pants rock the trunk; at the climax a seated caller straightens.
+      const rock = on * (0.3 + 0.7 * B_) * (1 - C) * (0.5 + vg) * (1 - 0.6 * D);
+      w.v[PI.root + 1] += 0.012 * rock * p * (1 - kU);
+      w.a(B.chest, -0.045 * rock * p, 0, 0).a(B.spine, -0.1 * C * on * (1 - kQ), 0, 0);
     }
+    // The head goes up with the hoos and back at the climax, and stays a little raised while it listens afterwards
+    // (three in four "inquiring" pant-hoots got a vocal reply [M, southern2025]). The clip holds the head against the
+    // look system through the build-up and the climax (a negative look weight, secondary.ts headLook); in the low
+    // hoos and afterwards a gaze may take it.
+    const raise = on * (0.5 + 0.3 * B_ + 0.25 * C - 0.25 * D) + 0.22 * HE.after, tilt = (cyc01(0, s, 166) - 0.5) * 0.2;
+    w.a(B.neck, -0.3 * raise - 0.01 * on * p, 0, 0).a(B.head, -0.28 * raise - 0.02 * on * p * (1 - C), 0, tilt * on);
+    if (on > 0) w.set('look', -on * (0.25 + 0.75 * Math.max(B_ * (1 - D), C)));
+    hootFace(w, st, 1);
+    if (c.male && c.age >= 15 && vg > 0.5) w.set('bristle', Math.max(w.v[PI.bristle], on * C * Math.min(1, (vg - 0.5) / 0.35)));
   },
   drum(w, c) {
     // Buttress drumming: bipedal, alternating stamps and hand slaps on a root in front.
@@ -1141,14 +1473,30 @@ export const CLIPS: Record<string, Clip> = {
     // (with the arm drawn for that bar, toward the hand the animal favours, to a place drawn for that bar, after a
     // pause drawn for that bar), sometimes a look round with both hands in the lap, sometimes both hands pressing the
     // bent branches down. A hand leaves the lap and comes back to it, so nothing jumps from one bar to the next.
+    // Stage W13: the bar is the builder's mean; each of its bars is its own length (barStart), so two builders with the
+    // same mean do not keep time. And a building nobody has the time to watch (PoseCtx.span under NEST_BRIEF_S) is one
+    // reach or two and then the hands at rest.
     sitBase(w, c, 0.3, 0.5);
     w.set('ground', 0);
-    const s = c.seed, P = nestBar(s), u = c.t + P * cyc01(1, s, 120), n = Math.floor(u / P), x = u - n * P, kind = nestBeat(n, s);
+    const s = c.seed, P = nestBar(s);
     let lx = 0.12, ly = 0.25, lz = 0.3, lh = -1.0, ll = 0.2, gl = 0.45, rx = -0.12, ry = 0.25, rz = 0.3, rh = -1.0, rl = 0.2, gr = 0.45;
     let turn = 0, headTurn = 0, up = 0, lean = 0;
+    let kind: number = NEST_BEAT.reach, n = 0, x = 0, L = P, v = -1, side: 0 | 1 = 0;
+    if (c.span !== undefined && c.span < NEST_BRIEF_S) {
+      const S = c.span, D = clamp(0.38 * S, 1.0, 1.9), t1 = (0.05 + 0.14 * cyc01(0, s, 133)) * S, t2 = Math.max(t1 + D + 0.15, (0.5 + 0.1 * cyc01(0, s, 134)) * S);
+      side = nestArm(0, s);
+      if (S >= NEST_BRIEF_MIN_S) {
+        v = (c.t - t1) / D;
+        if (v >= 1 && S >= 3 && cyc01(0, s, 132) < 0.6) { n = 1; v = (c.t - t2) / Math.min(D, 0.3 * S); if (cyc01(0, s, 135) < 0.6) side = side ? 0 : 1; }
+      }
+    } else {
+      ownBar(ownDrift(c.t, s, 137) + P * (1 + cyc01(1, s, 120)), P, NEST_BAR_JITTER, s, 131);   // (a clock that drifts: ownDrift)
+      n = BAR.n; x = BAR.x; L = BAR.len; kind = nestBeat(n, s);
+      // (The reach of a bar is 0.8 to 1.2 of the animal's own reach time, drawn for the bar.)
+      if (kind === NEST_BEAT.reach) { const D = Math.min(L - 0.3, (NEST_REACH_S[0] + (NEST_REACH_S[1] - NEST_REACH_S[0]) * cyc01(0, s, 121)) * (0.8 + 0.4 * cyc01(n, s, 136))); side = nestArm(n, s); v = (x - cyc01(n, s, 122) * (L - D)) / D; }
+    }
     if (kind === NEST_BEAT.reach) {
-      const side = nestArm(n, s), sx = side ? -1 : 1, D = Math.min(P - 0.3, NEST_REACH_S[0] + (NEST_REACH_S[1] - NEST_REACH_S[0]) * cyc01(0, s, 121));
-      const v = (x - cyc01(n, s, 122) * (P - D)) / D;
+      const sx = side ? -1 : 1;
       if (v > 0 && v < 1) {
         const k = v < 0.45 ? smooth(v / 0.45) : 1 - smooth((v - 0.45) / 0.55), g = mix(0.45, 1, smooth(k * 3));
         // Where the branch is: out to that side, up and forward; another place in each bar.
@@ -1160,11 +1508,11 @@ export const CLIPS: Record<string, Clip> = {
       }
     } else if (kind === NEST_BEAT.press) {
       // Both hands push the bent branches down into the nest, twice, the trunk leaning over them.
-      const v = (x - 0.15 * P) / (0.7 * P), p = v > 0 && v < 1 ? sin(Math.PI * v) * (0.6 + 0.4 * Math.abs(sin(TAU * v))) : 0;
+      const q = (x - 0.15 * L) / (0.7 * L), p = q > 0 && q < 1 ? sin(Math.PI * q) * (0.6 + 0.4 * Math.abs(sin(TAU * q))) : 0;
       ly -= 0.09 * p; ry -= 0.09 * p; lz += 0.05 * p; rz += 0.05 * p; lx -= 0.03 * p; rx += 0.03 * p; gl = gr = mix(0.45, 0.8, p); lean = p;
     } else {
       // A look round: the head turns to a side drawn for that bar, a little up, and comes back.
-      const v = x / P, e = smooth(v / 0.25) * (1 - smooth((v - 0.7) / 0.3)), dir = cyc01(n, s, 126) < 0.5 ? -1 : 1;
+      const q = x / L, e = smooth(q / 0.25) * (1 - smooth((q - 0.7) / 0.3)), dir = cyc01(n, s, 126) < 0.5 ? -1 : 1;
       turn = dir * 0.1 * e; headTurn = dir * 0.55 * e; up = e;
     }
     reach(w, 0, lx, ly, lz, lh, 0, 0, ll); grip(w, 0, gl);
@@ -1223,11 +1571,28 @@ const CRADLE_SIT = new Set(['stand', 'sitIdle', 'guard', 'shelter', 'groomee', '
 export function cradleFor(clip: string): 0 | 1 | 2 { return CRADLE_WALK.has(clip) ? 1 : CRADLE_SIT.has(clip) ? 2 : 0; }
 
 function browMax(v: Float32Array, b: number) { if (Math.abs(b) > Math.abs(v[PI.brow])) v[PI.brow] = b; }
-/** Face and piloerection layered on top of any clip from the current call and mood. */
-export function vocalOverlay(w: Pw, vocal: CallKind | null, t: number, mood: Mood) {
+/**
+ * Face and piloerection layered on top of any clip from the current call and mood.
+ * Stage W13, a pant-hoot: with `c` and `tau` (the caller's pose context, and the seconds since the layer first drew this
+ * pant-hoot) the face follows the call's own parts, as the 'pantHoot' clip's does (hootFace), `amount` of it (the
+ * layer eases it in and out), and the head comes up by half of what the clip raises it. This is the pant-hoot given
+ * during another act (a traveller's, one on arrival at food, one after a display: the simulation's, not a call act).
+ * With `c` and no `tau` the clip itself draws the call and nothing is added. Before, the mouth pulsed at one rate for
+ * the 45 simulated seconds of the voice and the head was tipped back in the frame the voice began and dropped in the
+ * frame it ended. Without `c`: as it was (the harness's face sheet).
+ */
+export function vocalOverlay(w: Pw, vocal: CallKind | null, t: number, mood: Mood, c?: PoseCtx, tau?: number, amount = 1) {
   const v = w.v;
   const set = (m: number, f: number, g: number) => { v[PI.mouth] = Math.max(v[PI.mouth], m); v[PI.funnel] = Math.max(v[PI.funnel], f); v[PI.grin] = Math.max(v[PI.grin], g); };
-  switch (vocal) {
+  const drawn = vocal === 'pant-hoot' && c !== undefined;
+  if (drawn && tau !== undefined && amount > 0) {
+    const st = callStyle(c, CS);
+    hootEnv(tau + st.enter, st);
+    hootFace(w, st, amount);
+    const raise = HE.on * amount * (0.5 + 0.3 * HE.build + 0.25 * HE.climax - 0.25 * HE.down) * 0.5;
+    w.a(B.neck, -0.3 * raise).a(B.head, -0.28 * raise);
+  }
+  switch (drawn ? null : vocal) {
     case 'pant-hoot': set(0.15 + 0.35 * pulse(t * 7), 0.85, 0); w.a(B.neck, -0.25).a(B.head, -0.2); break;
     case 'scream': set(0.85 + 0.1 * pulse(t * 9), 0, 1); break;
     case 'pant-grunt': set(0.15 + 0.2 * pulse(t * 11), 0.35, 0.1); break;
@@ -1247,7 +1612,7 @@ export function vocalOverlay(w: Pw, vocal: CallKind | null, t: number, mood: Moo
     case 'whimper': browMax(v, 0.7); break;
     case 'laugh': browMax(v, 0.35); v[PI.grin] = Math.max(v[PI.grin], 0.28 * pulse(t * 7)); break;
     case 'alarm-hoo': browMax(v, 0.6); break;
-    case 'pant-hoot': browMax(v, 0.3 + 0.4 * pulse(t * 7)); break;
+    case 'pant-hoot': if (!drawn) browMax(v, 0.3 + 0.4 * pulse(t * 7)); break;
     case 'bark': browMax(v, -0.6); break;
     default: break;
   }

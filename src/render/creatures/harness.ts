@@ -269,7 +269,17 @@ if (mode === 'sheet') {
   const act = (q.get('action') ?? 'travel') as Action;
   list.forEach(([age, sex, text, extra], i) => {
     const x = (i - (list.length - 1) / 2) * 1.25, z = 0;
-    chimp({ age, sex, x, z, action: act, heading: q.has('back') ? Math.PI : -0.35, ...extra });
+    // Stage W13: &action=call gives every animal of the row a pant-hoot's voice (the layer draws one pant-hoot per
+    // voice); &rank=<0..1> and &stress=<0..1> set what the picture of a call reads; &chorus=1 publishes the ten calls
+    // in the row's order, as the simulation lists a chorus (the first began it, the others join); &was=<act> starts the
+    // row in that act and has it call after &after=<seconds> (default 3), to see a call begin.
+    const was = q.get('was') as Action | null, calls = act === 'call';
+    const c = chimp({ age, sex, x, z, action: calls && was ? was : act, heading: q.has('back') ? Math.PI : -0.35, vocal: calls && !was ? 'pant-hoot' : null, ...extra });
+    if (q.has('rank')) c.rank = Number(q.get('rank'));
+    if (q.has('stress')) c.stress = Number(q.get('stress'));
+    const publish = () => { if (q.has('chorus')) world.calls.push({ id: 6_000_000 + i, kind: 'pant-hoot', callerId: c.id, troopId: c.troopId, position: [x, 0, z], time: world.time, radius: 36 }); };
+    if (calls && was) setTimeout(() => { c.action = 'call'; c.vocal = 'pant-hoot'; c.vocalUntil = 1e9; c.mood = 'excited'; publish(); }, Number(q.get('after') ?? 3) * 1000);
+    else if (calls) publish();
     captions.push({ x, y: groundHeight(x, z) - 0.1, z: z + 1.0, text });
   });
   camTarget.set(0, 0.6, 0); camPos.set(0, 1.9, 13.5);
@@ -303,6 +313,9 @@ if (mode === 'sheet') {
   if (first && q.has('age')) { first.age = Number(q.get('age')); first.stage = stageOf(first.age); }
   if (first && q.has('sex')) first.sex = q.get('sex') === 'female' ? 'female' : 'male';
   if (first && q.has('swelling')) first.swelling = Number(q.get('swelling'));
+  // (Stage W13: &rank=<0..1> and &stress=<0..1>, read by the picture of a pant-hoot.)
+  if (first && q.has('rank')) first.rank = Number(q.get('rank'));
+  if (first && q.has('stress')) first.stress = Number(q.get('stress'));
   camTarget.set(0.4, 0.6, 0); camPos.set(2.8, 2.0, 4.6);
   if (q.has('up')) {
     // Stage W9: the tile's animals in a crown. No environment limbs here: the layer's fallback seats and stick props.

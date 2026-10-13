@@ -139,15 +139,91 @@ export function nestTurn(k: number, id?: number): number {
   if (!(k < 1)) return 0;
   const p = k > 0 ? k : 0;
   if (id === undefined) return Math.floor(p * NEST_TURNS) * NEST_TURN_RAD;
-  // (hashUnit, the hash of the idle schedules: for the small ids of a community it separates neighbours better at
-  // these salts than util.ts hash01, whose draws for ids 1, 3, 5, 7 and 9 fell within a tenth of each other here.)
-  const way = hashUnit(id, 9083) < 0.5 ? -1 : 1;
   let turn = 0;
-  for (let i = 1; i < NEST_TURNS; i++) if (p >= nestTurnAt(id, i)) turn += way * NEST_TURN_RAD * (0.7 + 0.6 * hashUnit(id, 9090 + i)) * (hashUnit(id, 9096 + i) < 0.2 ? -0.6 : 1);
+  for (let i = 1; i < NEST_TURNS; i++) if (p >= nestTurnAt(id, i)) turn += nestTurnAngle(id, i);
   return turn;
 }
 /** The share of its build at which animal `id` makes its turn number i (1 .. NEST_TURNS - 1). */
 export function nestTurnAt(id: number, i: number): number { return (i + (2 * hashUnit(id, 9084 + i) - 1) * NEST_TURN_SHIFT) / NEST_TURNS; }
+/** The angle of that turn (rad, signed): 0.7 to 1.3 of NEST_TURN_RAD the way round the animal goes, one in five back the other way. */
+export function nestTurnAngle(id: number, i: number): number {
+  // (hashUnit, the hash of the idle schedules: for the small ids of a community it separates neighbours better at
+  // these salts than util.ts hash01, whose draws for ids 1, 3, 5, 7 and 9 fell within a tenth of each other here.)
+  return (hashUnit(id, 9083) < 0.5 ? -1 : 1) * NEST_TURN_RAD * (0.7 + 0.6 * hashUnit(id, 9090 + i)) * (hashUnit(id, 9096 + i) < 0.2 ? -0.6 : 1);
+}
+
+// ---- The builder's turns as they are drawn (stage W13, docs/staging/w13-chorus-and-spin.md) ----
+// nestTurn above is the plan: at which share of its build an animal turns, and by how much. Drawn as it stood, the
+// heading stepped to each new facing and the body was pulled there by two dampers: a turn of 1.9 rad was over in a
+// third of a second (8.6 rad/s over its fastest quarter second, measured, at every speed), and at the app's default
+// 1 min/s, where a whole building is on screen for about four seconds, the four turns followed each other without a
+// pause: 7 to 12 rad of heading in 3 to 4 s, a spin. And when the nest was done the plan went back to 0, so the
+// animal turned once more as it lay down. Now, all of it a drawing rule (stylization, no source):
+//   - the heading turns no faster than NEST_TURN_MAX. That is the layer's own figure for a turn too fast to be made
+//     on the spot: creatures.ts draws a STANDING animal that turns faster than 0.9 rad/s (about 50 degrees a second)
+//     stepping round. A seated builder has no stepping clip, so it stays under it;
+//   - a planned turn is made only if the watcher has the time for it: the real seconds left of the building must hold
+//     the turn at that speed and NEST_TURN_SETTLE_S after it; a turn that does not fit is cut to what does, and
+//     dropped under NEST_TURN_MIN_RAD; and a turn is not begun before the last one is done and NEST_TURN_GAP_S have
+//     passed (time for a reach). So at Real time a builder still faces five ways; at 1 min/s it turns once, a
+//     little; at 10 min/s it does not turn;
+//   - what it has turned by stays when the nest is done: it lies down facing as it last sat.
+/** The fastest a builder's heading turns (rad per real second). */
+export const NEST_TURN_MAX = 0.9;
+/** Real seconds a turn needs after its travel to ease out before the animal lies down; the least between the end of
+ * one turn and the start of the next; the smallest turn worth making (rad). */
+export const NEST_TURN_SETTLE_S = 2, NEST_TURN_GAP_S = 2.5, NEST_TURN_MIN_RAD = 0.35;
+/** How the turn eases: the speed asked for is SLEW_GAIN times what is left (so it slows over the last 0.7 rad), and
+ * the speed follows that at SLEW_EASE a second (so it starts over about a third of a second). Critically damped. */
+export const SLEW_GAIN = 1.25, SLEW_EASE = 5;
+/**
+ * One step of a turn toward `target`: `s.h` (rad, not wrapped) moves at `s.v`, which never exceeds `max` either way,
+ * and comes to rest on the target without passing it. `gain` and `ease` as SLEW_GAIN and SLEW_EASE.
+ */
+export function slewTurn(s: { h: number; v: number }, target: number, dt: number, max = NEST_TURN_MAX, gain = SLEW_GAIN, ease = SLEW_EASE): void {
+  if (!(dt > 0)) return;
+  const d = target - s.h, want = d * gain > max ? max : d * gain < -max ? -max : d * gain;
+  s.v += (want - s.v) * (1 - Math.exp(-ease * dt));
+  const step = s.v * dt;
+  // (Never past the target in one step: a long frame must not swing it through.)
+  if ((d > 0 && step > d) || (d < 0 && step < d)) { s.h = target; s.v = 0; } else s.h += step;
+}
+/** The same for a heading that wraps (the short way round to `target`); returns the new heading. `s.v` is its speed. */
+export function slewHeading(s: { v: number }, heading: number, target: number, dt: number, max = NEST_TURN_MAX, gain = 3, ease = 8): number {
+  if (!(dt > 0)) return heading;
+  const d = Math.atan2(Math.sin(target - heading), Math.cos(target - heading)), want = d * gain > max ? max : d * gain < -max ? -max : d * gain;
+  s.v += (want - s.v) * (1 - Math.exp(-ease * dt));
+  const step = s.v * dt;
+  if ((d > 0 && step > d) || (d < 0 && step < d)) { s.v = 0; return heading + d; }
+  return heading + step;
+}
+/** A builder's turns as drawn: the next planned turn to look at (0: not begun), the turn asked for so far and the turn
+ * drawn (rad, both kept when the nest is done), its speed, the real seconds drawn, and when the next turn may begin. */
+export interface NestTurnState { i: number; turn: number; h: number; v: number; t: number; free: number; n: number }
+export function nestTurnState(): NestTurnState { return { i: 0, turn: 0, h: 0, v: 0, t: 0, free: 0, n: 0 }; }
+/** A new nest act: nothing turned yet. The first step looks at the turns that are still to come at the progress it is given. */
+export function nestTurnReset(s: NestTurnState): void { s.i = 0; s.turn = 0; s.h = 0; s.v = 0; s.t = 0; s.free = 0; s.n = 0; }
+/**
+ * One frame of builder `id`: `k` how far its building has come (0..1; 1 done), `dt` real seconds, `rate` simulated
+ * seconds per real second. Updates the turn asked for by the rules above and moves the drawn turn `s.h` toward it.
+ * `s.n` counts the turns made. Pure but for `s`.
+ */
+export function nestTurnStep(s: NestTurnState, id: number, k: number, dt: number, rate: number): void {
+  // (First seen part-way through: the turns whose moments have passed were never seen and are not made now.)
+  if (s.i === 0) { s.i = 1; while (s.i < NEST_TURNS && k >= nestTurnAt(id, s.i)) s.i++; }
+  s.t += dt;
+  while (k < 1 && s.i < NEST_TURNS && k >= nestTurnAt(id, s.i)) {
+    const settled = Math.abs(s.turn - s.h) < 0.12, left = (1 - k) * NEST_BUILD_S / (rate > 1 ? rate : 1) - NEST_TURN_SETTLE_S;
+    let a = nestTurnAngle(id, s.i);
+    s.i++;
+    if (!settled || s.t < s.free) continue;
+    const fits = NEST_TURN_MAX * left;
+    if (Math.abs(a) > fits) a = fits >= NEST_TURN_MIN_RAD ? (a < 0 ? -fits : fits) : 0;
+    if (a === 0) continue;
+    s.turn += a; s.n++; s.free = s.t + Math.abs(a) / NEST_TURN_MAX + NEST_TURN_GAP_S;
+  }
+  slewTurn(s, s.turn, dt);
+}
 
 /**
  * Building or asleep (stage W12): how far the nest of an animal drawn in its nest act has come, 0..1; at 1 it is
