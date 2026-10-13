@@ -1425,7 +1425,11 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     // (Stage W13: an animal in its nest turns to its facing no faster than a turn is read, perch.ts slewHeading: the
     // two dampers that used to pull it there covered a builder's turn in a third of a second.)
     if (cut) { a.heading = target; a.hs.v = 0; }
-    else if (a.nestSlew && !a.moving && !a.clamber) a.heading = slewHeading(a.hs, a.heading, target, dt);   // (a body still clambering to its nest place faces along its way, as before)
+    // (A body still clambering to its nest place faces along its way, as before. After the third run of the stage: the
+    // test used to read `&& !a.moving` as well. A body that has just reached its place still counts as moving for 0.8 s,
+    // so its turn from the way it came to the way it sits went through the old damper: up to 3 rad in a third of a
+    // second, in every film of the third run. NOT FILMED since: docs/staging/w13-chorus-and-spin.md, section 6.)
+    else if (a.nestSlew && !a.clamber) a.heading = slewHeading(a.hs, a.heading, target, dt);
     else { a.heading = dampAngle(a.heading, target, a.moving ? 10 : 4.5, dt); a.hs.v = 0; }
     const dh = Math.atan2(Math.sin(a.heading - before), Math.cos(a.heading - before));
     TURN_TMP.v = dt > 0 && !cut ? dh / dt : 0;
@@ -1509,7 +1513,11 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     a.hootK = clip === 'pantHoot' ? 0 : damp(a.hootK, pctx.vocal === 'pant-hoot' ? 1 : 0, 6, dtReal);
     pctx.rank = c.rank ?? 0; pctx.arousal = a.hootArousal; pctx.callN = a.hootN; pctx.join = a.hootJoin; pctx.enter = a.hootT - a.clipT;
     // Stage W13, the nest: how long a whole building is on screen at this speed (the clip draws a brief one briefly).
-    pctx.span = NEST_BUILD_S / Math.max(1, curSimRate);
+    // (After the third run: by the speed that is SET, not the rate achieved in this frame. At 1 min/s the clock reports
+    // 45 to 75 simulated seconds a second from frame to frame, a brief building's reaches are laid out in shares of
+    // this span, and the builder's arm jumped between two reaches for about a second: filmed in the third run. The rate
+    // is read to the nearest of the clock's speeds. NOT FILMED since: the stage document, section 6.)
+    pctx.span = NEST_BUILD_S / (curSimRate < 2 ? 1 : curSimRate < 16 ? 4 : curSimRate < 190 ? 60 : curSimRate < 1500 ? 600 : curSimRate);
     const partner = a.partnerId >= 0 ? anims.get(a.partnerId) : undefined;
     if (partner) {
       // Partner root in this animal's body space (unit scale). Stage W9: an animal on a branch is drawn at its seat, not
