@@ -34,7 +34,7 @@ export interface R15RunOptions {
 
 /** These odds exercise both stages; they are deliberately not a learned behavior policy. */
 export const r15FakeKernel: Kernel = {
-  id: 'r15-fake', label: 'R15 wiring check (no model)',
+  id: 'null', label: 'R15 wiring check (no model)',
   decide(request) {
     const weights = request.options.map((o, i) => {
       const key = request.context.resourceChoice === 'kind' ? request.context.resourceKinds![i] : optionKey(o);
