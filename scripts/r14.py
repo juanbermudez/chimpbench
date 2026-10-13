@@ -446,7 +446,7 @@ def stage_b():
         # Controls and rules first, then the kernel; no raw or sealed field data is needed.
         rules = run_world(f'test-rules-s{world_seed}', world_seed, 'rules', 20, 2)
         step(f'controls-s{world_seed}', NIGHT + ['controls', '--seed', str(world_seed), '--packet', 'p5b', '--days', '20', '--out', str(card)], 2,
-             outputs=[card / f'P/s{world_seed}/rules-plain.json', card / f'P/s{world_seed}/mix30-b.json'])
+             outputs=[card / f'P/s{world_seed}' / (name + '.json') for name in ['rules-plain'] + [f'rules-{i}' for i in range(1, 9)] + [f'{group}-{salt}' for group in ('random', 'mix10', 'mix20', 'mix30') for salt in ('a', 'b')]])
         model = run_world(f'test-model-s{world_seed}', world_seed, f'r14-trained-s{training_seed}-draw-1', 20, 6, OUT / 'ft')
         for kind, folder in [('rules', rules), ('model', model)]:
             step(f'card-{kind}-s{world_seed}', NIGHT + ['replay', str(folder), '--r7', str(card)], 1,
@@ -491,6 +491,10 @@ def dry_run():
         target = OUT / 'parts' / (kind + '.jsonl')
         step('label-' + kind, TSX + ['scripts/r14-collect.ts', str(folder), str(target), '--dry'], .3,
              outputs=[target, Path(str(target) + '.meta.json')])
+        timing = OUT / (kind + '-timing.json')
+        step('timing-' + kind, TSX + ['scripts/r14-population.ts', str(folder), str(timing)], .3, outputs=[timing])
+        if not read(timing)['perAnimalDay']: raise RuntimeError('empty dry timing cohort')
+        if read(str(target) + '.meta.json')['animalNights'] <= 0: raise RuntimeError('empty dry exposure denominator')
         # Force a no-op resume through the same command; complete days must remain byte-identical in world hashes.
         before = [d['hash'] for d in read(folder / 'run.json')['days']]
         step('resume-' + kind, command, .3, e)

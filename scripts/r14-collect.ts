@@ -14,7 +14,7 @@ import { labelData, REDRAWS, SAME_MIN } from './r11-contexts';
 import { traceRun } from './lib/r14-trace';
 import { hash, selectRows, stateOf, stratumOf, type SelectionRow } from './lib/r14';
 import { packetOf } from './lib/r11-packets';
-import { keyOf, readReceipts, readRegistry, sha16 } from './lib/r10-run';
+import { dayName, keyOf, readLines, readReceipts, readRegistry, sha16, type Row } from './lib/r10-run';
 import type { R11Row } from './r11-assemble';
 import type { R8Option } from './r8-contexts';
 
@@ -79,12 +79,14 @@ export async function collect(root: string, out: string, dry = false): Promise<v
   selected = new Map(chosen.map(p => [p.id, p])); phase = 'label';
   const second = await replay();
   if (!second.ok || count !== selected.size) throw new Error(`label replay differs, found ${count}/${selected.size}`);
+  const cohort = new Set(first.animals.map(c => c.id));
+  const animalNights = reg.days.reduce((n, d) => n + readLines<Row>(resolve(root, 'rows', `${dayName(d.day)}.jsonl`)).filter(r => cohort.has(r.id) && r.alive && r.nestShare !== null).length, 0);
   mkdirSync(resolve(out, '..'), { recursive: true });
   const text = labelled.map(x => JSON.stringify(x)).join('\n') + '\n';
   writeFileSync(out, text, { flag: 'wx' });
   writeFileSync(`${out}.meta.json`, JSON.stringify({ stage: 'R14', dry, source, seed: reg.seed, run: root, runCommit: reg.commit,
     runHash: hash(readFileSync(resolve(root, 'run.json'), 'utf8')), dataSha256: hash(text), days: reg.days.length, selected: chosen,
-    animalNights: reg.days.reduce((n, d) => n + d.nights[1], 0), available: points.length, availableStates: { dawnNest: points.filter(p => p.state.nest && p.state.dawn).length, companyDuskNest: points.filter(p => p.state.nest && p.state.dusk && p.state.companyNest).length }, animals: new Set(points.map(p => p.chimpId)).size, labelled: labelled.length, skipped, replay: { selection: first.ok, labels: second.ok, hashes: second.hashes } }, null, 1) + '\n');
+    animalNights, available: points.length, availableStates: { dawnNest: points.filter(p => p.state.nest && p.state.dawn).length, companyDuskNest: points.filter(p => p.state.nest && p.state.dusk && p.state.companyNest).length }, animals: new Set(points.map(p => p.chimpId)).size, labelled: labelled.length, skipped, replay: { selection: first.ok, labels: second.ok, hashes: second.hashes } }, null, 1) + '\n');
   console.log(JSON.stringify({ source, seed: reg.seed, selected: chosen.length, labelled: labelled.length, skipped }));
 }
 if (process.argv[1]?.endsWith('r14-collect.ts')) {
