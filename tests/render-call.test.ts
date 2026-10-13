@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { Call, Chimp } from '../src/types';
-import { CALL_ACT, CALL_ALLFOURS_V, CALL_BASE, CALL_JOIN, CALL_QUIET, CALL_RISE, CALL_UPRIGHT_V, CLIPS, FEED, NEST_BAR_JITTER, NEST_BAR_S, NEST_BRIEF_S, Pw, callSquat, callStyle, callVigour, drinksWithSponge, feedPlan, nestBar, vocalOverlay, type PoseCtx } from '../src/render/creatures/poses';
+import { CALL_ACT, CALL_ALLFOURS_V, CALL_BASE, CALL_HEAVE, CALL_JOIN, CALL_NOD, CALL_QUIET, CALL_RISE, CALL_SETTLE_S, CALL_UPRIGHT_V, CLIPS, FEED, NEST_BAR_JITTER, NEST_BAR_S, NEST_BRIEF_S, Pw, callOver, callSquat, callStyle, callVigour, drinksWithSponge, feedPlan, nestBar, vocalOverlay, type PoseCtx } from '../src/render/creatures/poses';
 import { B, LIMB, PI, POSE_SIZE, computeMorph, createFK, createMorph, createPose, lowestPoint, solveFK } from '../src/render/creatures/rig';
 import { hash01 } from '../src/render/creatures/util';
 import { ANSWER_H, JOIN_H, JOIN_NEAR_M, callAge, callJoin, callNumber } from '../src/render/creatures/call';
-import { NEST_BUILD_S, NEST_HOLD_K, NEST_TURNS, NEST_TURN_MAX, nestTurnAt, nestTurnReset, nestTurnState, nestTurnStep, slewHeading, slewTurn } from '../src/render/creatures/perch';
+import { NEST_BUILD_S, NEST_FACE_OUT, NEST_HOLD_K, NEST_TURNS, NEST_TURN_GAP_S, NEST_TURN_MAX, nestArrive, nestTurnAt, nestTurnReset, nestTurnState, nestTurnStep, slewHeading, slewTurn } from '../src/render/creatures/perch';
 import { Posture, postureOf } from '../src/render/creatures/intention';
 
 // Stage W13 (docs/staging/w13-chorus-and-spin.md), "the chorus and the spin". Stage W12 gave every clip the animal's
@@ -153,7 +153,8 @@ test('ten callers started together are a group, not ten copies or a canon', () =
   // (No correlation of movement is held for a call: it is one event, not a loop, and any two things that happen once
   // in the first quarter of 45 s correlate over the 45. The postures above and the spread of the climaxes say it.)
   // After the call it sits, or stands, as it began, the mouth shut, the head a little raised: it listens.
-  for (const R of runs) { const f = n - 1; assert.ok(R.mouth[f] < 0.06 && R.post[f] === R.post[0] && Math.abs(R.hips[f] - R.hips[0]) < 0.02); }
+  // (Second reading: "as it began" is read once it has settled into its call posture, CALL_SETTLE_S in.)
+  for (const R of runs) { const f = n - 1, g = Math.ceil((CALL_SETTLE_S + 0.2) * fps); assert.ok(R.mouth[f] < 0.06 && Math.abs(R.pitch[f] - R.pitch[g]) < 0.05 && Math.abs(R.hips[f] - R.hips[g]) < 0.02); }
 });
 
 test('nothing steps inside a call: every channel moves at the pace of a body, at every vigour', () => {
@@ -198,11 +199,12 @@ test('a caller that joins enters at its own point; who began alone starts at the
   for (const id of [1, 2, 3]) {
     const who = { id, age: 25, male: true }, alone = callStyle(ctxOf(who, 0)), ans = callStyle(ctxOf(who, 0, { join: CALL_JOIN.answers }));
     assert.equal(alone.enter, 0); assert.ok(ans.enter > 0 && ans.enter < alone.intro, 'an answer gives a shortened introduction');
-    // The joiner's pose at its first frame is the lone caller's pose that far into the sequence.
-    const j = callStyle(ctxOf(who, 0, { join: CALL_JOIN.joins })).enter;
-    w.bind(pose).reset(); CLIPS.pantHoot(w, ctxOf(who, 0, { join: CALL_JOIN.joins })); const a = pose.v.slice();
+    // The joiner's pose is the lone caller's pose that far into the sequence (second reading: once both have settled
+    // into their call posture, CALL_SETTLE_S after each began; in its first frame the joiner is still as it sat).
+    const j = callStyle(ctxOf(who, 0, { join: CALL_JOIN.joins })).enter, T = CALL_SETTLE_S + 0.05;
+    w.bind(pose).reset(); CLIPS.pantHoot(w, ctxOf(who, T, { join: CALL_JOIN.joins })); const a = pose.v.slice();
     // (But for the breath in the chest, which is on the layer's clock.)
-    w.bind(pose).reset(); CLIPS.pantHoot(w, ctxOf(who, j)); for (let i = 0; i < POSE_SIZE; i++) assert.ok(Math.abs(pose.v[i] - a[i]) < 0.03, `channel ${i}`);
+    w.bind(pose).reset(); CLIPS.pantHoot(w, ctxOf(who, j + T)); for (let i = 0; i < POSE_SIZE; i++) assert.ok(Math.abs(pose.v[i] - a[i]) < 0.03, `channel ${i}`);
     // No voice of its own (it drummed, or its call was over before the body got to it): it only listens.
     w.bind(pose).reset(); CLIPS.pantHoot(w, ctxOf(who, 1, { enter: CALL_QUIET })); assert.ok(pose.v[PI.mouth] < 0.06 && pose.v[PI.funnel] < 0.01 && (postureOf(pose.v) === Posture.seated || callSquat(hash01(id, 17), 25) > 0));
   }
@@ -389,4 +391,105 @@ test('the same animal gives the same call, building and meal on every run; nothi
   }
   const { readFileSync } = await import('node:fs');
   for (const f of ['call.ts', 'poses.ts', 'perch.ts']) assert.ok(!/Math\.random/.test(readFileSync(new URL(`../src/render/creatures/${f}`, import.meta.url), 'utf8')), `${f} has no Math.random`);
+});
+
+// ---- Second reading (docs/staging/w13-chorus-and-spin.md, section 9) ----
+test('second reading: a builder sits down in its nest facing as it came; only out of the cone about its trunk does it turn', () => {
+  const wrap = (x: number) => Math.atan2(Math.sin(x), Math.cos(x));
+  // It arrives by a clamber with its heading along its way; when the clamber ends it keeps that heading. Before, the seat's
+  // facing (out from the trunk) was taken at once: up to 3 rad, and under the turning limit that filled the building.
+  for (const out of [0, 1.3, -2.9, 3.1]) for (const came of [-1.9, -0.7, 0, 0.4, 1.6, 2.0]) {
+    const s = nestTurnState(); nestTurnReset(s);
+    assert.equal(nestArrive(s, false, false, out + came, out), false, 'the first frame only notes that it is there');
+    for (let f = 0; f < 20; f++) assert.equal(nestArrive(s, true, true, out + came, out), false, 'on its way it has no facing of its own');
+    assert.equal(s.arr, 1);
+    assert.equal(nestArrive(s, true, false, out + came, out), true, 'the frame it sits down');
+    assert.ok(Math.abs(wrap(s.f + s.h - (out + came))) < 1e-9, `it faces as it came (${came} rad from straight out)`);
+    assert.equal(s.free, 0, 'and has made no turn: its first planned one may come when it is due');
+    assert.equal(nestArrive(s, true, false, out + came + 1, out), false); assert.ok(Math.abs(wrap(s.f - (out + came))) < 1e-9, 'and that is kept');
+  }
+  // Straight at its trunk it would reach through the bark: it turns by what takes it out of that, and no more; and that
+  // turn is one of the building's: the next planned one waits its pause, so at 1 min/s there is no other.
+  for (const came of [2.4, Math.PI, -2.9]) {
+    const s = nestTurnState(); nestArrive(s, false, false, 0.5 + came, 0.5); assert.ok(nestArrive(s, true, false, 0.5 + came, 0.5));
+    const d = wrap(s.f - 0.5), turn = Math.abs(wrap(0.5 + came - s.f)); assert.ok(Math.abs(Math.abs(d) - NEST_FACE_OUT) < 1e-9 && Math.sign(d) === Math.sign(wrap(came)), `arriving ${came.toFixed(1)} rad from straight out it faces ${d.toFixed(2)}`);
+    assert.ok(turn <= Math.PI - NEST_FACE_OUT + 1e-9, 'a turn of 65 degrees at most');
+    assert.ok(Math.abs(s.free - (turn / NEST_TURN_MAX + NEST_TURN_GAP_S)) < 1e-9);
+    for (let f = 1; f <= 270; f++) nestTurnStep(s, 7, Math.min(NEST_HOLD_K, 0.2 + f / 270), 1 / 60, 60); assert.equal(s.n, 0, 'no planned turn on top of it in a building of four seconds');
+  }
+  // A body first drawn in its nest (a new world, a jump of the clock) is given the seat's own facing by the layer in its
+  // first frame and keeps it; the turns of the building are added to the facing it sat down with.
+  { const s = nestTurnState(), seat = 0.9 + 0.4; nestArrive(s, false, false, 3, 0.9); assert.ok(nestArrive(s, true, false, seat, 0.9)); assert.ok(Math.abs(s.f - seat) < 1e-12);
+    s.h = 1.1; assert.equal(nestArrive(s, true, true, 2, 0.9), false); assert.ok(nestArrive(s, true, false, 2, 0.9), 'a clamber that began again is sat down from again'); assert.ok(Math.abs(s.f + s.h - 2) < 1e-12);
+    // Its nest act began on its feeding seat; it went down its trunk and up to its nest place: the old seat's facing is not kept.
+    assert.equal(nestArrive(s, false, false, -1, 0.9), false); assert.ok(nestArrive(s, true, false, -1, 0.9)); assert.ok(Math.abs(s.f + s.h + 1) < 1e-12);
+    nestTurnReset(s); assert.ok(s.arr === 0 && s.f === 0); }
+  // A turn whose moment comes while the body is still on its way to its nest place is not made (it was still being made
+  // when the body sat down, on top of the turn out of the cone); the later ones are.
+  for (let id = 1; id <= 20; id++) {
+    const s = nestTurnState(); nestArrive(s, false, true, 0, 0);
+    for (let f = 0; f < 120; f++) { nestArrive(s, true, true, 0, 0); nestTurnStep(s, id, Math.min(0.35, f / 120 * 0.35), 1 / 60, 4); }
+    assert.equal(s.n, 0, `builder ${id} begins no turn while it clambers in`); assert.equal(s.h, 0);
+    assert.ok(nestArrive(s, true, false, 0, 0));
+    for (let f = 0; f < 60 * 50; f++) nestTurnStep(s, id, Math.min(NEST_HOLD_K, 0.35 + f / 3000 * 0.6), 1 / 60, 4);
+    assert.ok(s.n >= 1, `builder ${id} turns once it sits`);
+  }
+  // The same builder, the same arrival: the same facing.
+  { const a = nestTurnState(), b = nestTurnState(); for (const s of [a, b]) { nestArrive(s, false, false, 0.2, 1); nestArrive(s, true, true, 0.3, 1); nestArrive(s, true, false, 0.4, 1); } assert.deepEqual(a, b); }
+});
+
+test('second reading: between two turns a builder sits still long enough for a reach, at every speed', () => {
+  // At Watch 4x two planned turns can fall six seconds apart: with a pause of 2.5 s a filmed builder turned 2.3 rad, sat
+  // for a second and a half and turned 2.1 rad more the same way. The pause is NEST_TURN_GAP_S; a turn planned inside it is not made.
+  assert.ok(NEST_TURN_GAP_S >= 4.5);
+  for (const rate of [1, 4, 60]) for (let id = 1; id <= 49; id++) {
+    const s = nestTurnState(), F = 60, real = 270 / rate, h: number[] = [0]; nestTurnReset(s);
+    for (let f = 1; f <= Math.ceil((real + 4) * F); f++) { const sim = f / F * rate, k = sim >= 270 ? 1 : sim >= 240 ? NEST_HOLD_K + (1 - NEST_HOLD_K) * (sim - 240) / 30 : Math.min(NEST_HOLD_K, sim / NEST_BUILD_S); nestTurnStep(s, id, k, 1 / F, rate); h.push(s.h); }
+    let still = 0, moved = false, shortest = Infinity;
+    for (let f = 1; f < h.length; f++) { if (Math.abs(h[f] - h[f - 1]) * F > 0.1) { if (moved && still > 0) shortest = Math.min(shortest, still / F); still = 0; moved = true; } else still++; }
+    assert.ok(shortest >= 3.5, `builder ${id} at ${rate} s/s: ${shortest.toFixed(1)} s of sitting still between two turns`);
+  }
+});
+
+test('second reading: a caller comes up into its squat over a second; the voice moves the head and the chest of the quietest caller', () => {
+  // The squat used to be there in the clip's first frame: the blend out of the clip before brought it in a third of a second.
+  let squatters = 0;
+  for (let id = 1; id <= 40; id++) {
+    const who = { id, age: 24, male: false }, q = callSquat(hash01(id, 17), 24); if (q === 0) continue; squatters++;
+    const R = run(who, 'pantHoot', 4, 60), seat = run({ id, age: 24, male: false }, 'pantHoot', 0.05, 60);
+    assert.ok(Math.abs(R.hips[0] - seat.hips[0]) < 1e-6 && R.hips[0] < 0.2, `caller ${id} begins on its seat (hips ${R.hips[0].toFixed(2)})`);
+    const at = (t: number) => R.hips[Math.round(t * 60)];
+    assert.ok(at(CALL_SETTLE_S + 0.1) > at(0) + 0.05 && Math.abs(at(3) - at(CALL_SETTLE_S + 0.1)) < 0.03, 'and is up in its squat once it has settled');
+    let fastest = 0; for (let f = 1; f < R.n; f++) fastest = Math.max(fastest, Math.abs(R.hips[f] - R.hips[f - 1]) * 60);
+    assert.ok(fastest < 0.35, `caller ${id}: its hips rise at ${fastest.toFixed(2)} body lengths a second at most (0.15 in a third of a second before)`);
+  }
+  assert.ok(squatters >= 8);
+  // A joiner that is already part-way up when it enters begins as it sat and gets up at the pace of a body: a
+  // top-ranking, aroused male that joins at the height of the build-up is on his feet in a second and a third, as
+  // fast as one that rises in the course of its own call (0.5 to 0.8 body lengths a second).
+  for (let id = 1; id <= 12; id++) {
+    const who = { id, age: 25, male: true, rank: 1, arousal: 0.9 }, speed = (R: Run) => { let v = 0; for (let f = 1; f < R.n; f++) v = Math.max(v, Math.abs(R.hips[f] - R.hips[f - 1]) * 60); return v; };
+    const R = run(who, 'pantHoot', 3, 60, { join: CALL_JOIN.joins }), low = run(who, 'pantHoot', 0.05, 60), lone = run(who, 'pantHoot', 16, 60);
+    assert.ok(Math.abs(R.hips[0] - low.hips[0]) < 0.03, `joiner ${id} begins ${(R.hips[0] - low.hips[0]).toFixed(3)} body lengths off its seat`);
+    assert.ok(speed(R) < 0.95 && speed(lone) < 0.95, `joiner ${id} rises at ${speed(R).toFixed(2)} body lengths a second at most (alone ${speed(lone).toFixed(2)})`);
+  }
+  // The voice on the body. A quiet adult female through her low hoos and her build-up: the head nods and the chest heaves
+  // by amounts that can be seen (they were 0.03 and 0.03 rad: a still figure whose mouth opened for two seconds).
+  for (const who of [ROW[6], ROW[8], ROW[4], ROW[7]]) for (const over of [{}, { role: CALL_BASE.quad }, { inTree: true }] as Partial<PoseCtx>[]) {
+    const st = callStyle(ctxOf(who, 0, over)), swing = (ch: number, t0: number, t1: number) => { let lo = Infinity, hi = -Infinity, prev = 0, sum = 0; for (let t = t0; t < t1; t += 1 / 120) { w.bind(pose).reset(); CLIPS.pantHoot(w, ctxOf(who, t, over)); const y = pose.v[ch]; if (t > t0) sum = Math.max(sum, Math.abs(y - prev)); prev = y; lo = Math.min(lo, y); hi = Math.max(hi, y); } return hi - lo; };
+    const hoos = swing(B.neck * 3, 0.9, st.intro - 0.2) + swing(B.head * 3, 0.9, st.intro - 0.2), pants = swing(B.chest * 3, st.intro + 0.6 * st.build, st.intro + st.build - 0.3);
+    if (st.intro > 2.2) assert.ok(hoos > 0.05, `animal ${who.id}: the head nods ${hoos.toFixed(3)} rad with each low hoo`);
+    assert.ok(pants > 0.04, `animal ${who.id}: the chest heaves ${pants.toFixed(3)} rad with the pants of the build-up`);
+  }
+  assert.ok(CALL_NOD[0] + CALL_NOD[1] >= 0.08 && CALL_HEAVE >= 0.08);
+});
+
+test('second reading: once its pant-hoot is over a caller only listens (idle life may go on); not before', () => {
+  for (const who of ROW) for (const callN of [0, 1, 2]) for (const join of [CALL_JOIN.none, CALL_JOIN.joins, CALL_JOIN.answers]) {
+    const c = ctxOf(who, 0, { callN, join }), st = callStyle(c);
+    assert.equal(callOver(c, 0), false); assert.equal(callOver(c, st.total - st.enter - 0.1), false, 'not while it calls');
+    assert.equal(callOver(c, st.total - st.enter + 1.05), true, 'a second after its let-down'); assert.equal(callOver(c, 1e6), true);
+    // By then the clip holds a quiet figure: the mouth shut, the head given back to the look system.
+    w.bind(pose).reset(); CLIPS.pantHoot(w, ctxOf(who, st.total - st.enter + 1.05, { callN, join })); assert.ok(pose.v[PI.mouth] < 0.06 && Object.is(pose.v[PI.look], 0));
+  }
 });

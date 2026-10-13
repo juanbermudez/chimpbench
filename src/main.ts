@@ -271,7 +271,7 @@ function frame(now: number) {
   perfAdd('ticks', clock.ticksLastFrame);
   // Visual time runs a little faster at high speed so motion reads as busy, capped so rigs do not blur.
   if (clock.playing) elapsed += dt * Math.min(Math.max(clock.effectiveRate / 60, 1), 3);
-  scene?.update({ dt: clock.playing ? dt : 0, elapsed, selectedId, simRate: clock.playing ? clock.effectiveRate : 0, highlightTroopId: app.state.highlightTroopId, subTick: subTick(clock) });
+  scene?.update({ dt: clock.playing ? dt : 0, elapsed, selectedId, simRate: clock.playing ? clock.effectiveRate : 0, playbackRate: clock.ecoSecondsPerSecond, highlightTroopId: app.state.highlightTroopId, subTick: subTick(clock) });
   // The wheel can move the camera between views (zoom-through): follow only the scene's own view changes, once the UI
   // has pushed its state into the scene (a restored close view must not be overwritten by a fresh scene's default).
   if (scene !== zoomScene) { zoomScene = scene; lastZoomView = undefined; }

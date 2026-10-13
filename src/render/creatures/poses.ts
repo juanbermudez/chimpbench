@@ -857,6 +857,19 @@ function hootSeat(w: Pw, c: PoseCtx): void {
 /** How far a caller that does not rise is off its rump all the same (0 seated; up to 0.42 of the way to all fours: a
  * squat, the rump clear of the ground and the hands low in front). Four animals in ten squat; nobody under four years. */
 export function callSquat(seed: number, age: number): number { const h = cyc01(0, seed, 175); return age < 4 || h < 0.6 ? 0 : 0.24 + 0.45 * (h - 0.6); }
+/** Seconds over which a caller comes up into its squat (and a joiner into what it is already up by) when its call begins. */
+export const CALL_SETTLE_S = 1.4;
+/**
+ * How far the voice moves the body (second reading; stylizations): the head's nod with each hoo and pant (rad, on the
+ * neck and on the head, for a caller of middling vigour), the heave of the chest (rad) and the lift of the body (body
+ * lengths) with each pant at the height of the build-up. They were 0.01, 0.02, 0.045 and 0.012: filmed from eight
+ * metres, a quiet caller sat or stood without moving for the seven seconds of its low hoos and build-up, opened its
+ * mouth for two seconds and was still again. A caller's vigour scales them (CALL_VOICE_K at none and at full).
+ */
+export const CALL_NOD = [0.055, 0.075] as const, CALL_HEAVE = 0.125, CALL_LIFT = 0.026, CALL_VOICE_K = [0.7, 1.3] as const;
+/** Whether the pant-hoot a caller gives is over, `tau` seconds after the layer first drew it (creatures.ts Anim.hootT):
+ * its sequence done and a second more. From then on it only listens, and idle life may go on (creatures.ts). */
+export function callOver(c: PoseCtx, tau: number): boolean { const st = callStyle(c, CS); return tau + st.enter > st.total + 1; }
 /** Height of the wrist of a seated caller's hand that rests its knuckles on the ground (body lengths). */
 const HOOT_KNUCKLE_Y = 0.16;
 /** A caller on all fours, the head up; an adult male of some vigour may slap the ground with one hand through the climax. */
@@ -904,7 +917,7 @@ function hootLimb(w: Pw, c: PoseCtx, st: CallStyle, tau: number): void {
   // The other hand: on its knee, or on the limb beside it.
   if (cyc01(0, s, 169) > 0.55) { const o: 0 | 1 = side ? 0 : 1; reach(w, o, -sx * 0.16, 0.05, 0.1, 0.2, 0, 0, 0.5); grip(w, o, 0.9); }
   const rock = HE.on * (0.3 + 0.7 * HE.build) * (1 - HE.climax) * (0.5 + st.vigour);
-  w.a(B.chest, -0.04 * rock * HE.pulse + 0.03 * shake, 0, 0).a(B.spine, -0.08 * HE.climax * HE.on, 0, 0);
+  w.a(B.chest, -0.8 * CALL_HEAVE * rock * HE.pulse + 0.03 * shake, 0, 0).a(B.spine, -0.08 * HE.climax * HE.on, 0, 0);
 }
 
 // ---------------------------------------------------------------------------
@@ -1348,9 +1361,14 @@ export const CLIPS: Record<string, Clip> = {
       // one rises through the build-up if it rises at all and sits again in the let-down. Each change takes a second
       // or more, so no joint moves faster than a rising animal's would.
       const quad = c.role === CALL_BASE.quad;
-      const q0 = callSquat(s, c.age), up = st.rise >= CALL_RISE.allFours ? smooth((tau - st.intro - 0.35 * st.build) / Math.max(1.1, 0.6 * st.build)) * (1 - smooth((tau - ce - 0.2) / 1.2)) : 0;
+      // (Second reading: a caller's squat, and what a joiner that enters part-way is already up by, come in over the
+      // first CALL_SETTLE_S of the clip. Both were there in its first frame, so the blend out of the clip before
+      // brought them in a third of a second: a female that had been feeding went from her seat into a squat, the hips
+      // 12 cm up and the trunk 35 degrees forward, in 0.35 s as her call began. Filmed.)
+      const ease = smooth(c.t / CALL_SETTLE_S);
+      const q0 = callSquat(s, c.age) * ease, up = st.rise >= CALL_RISE.allFours ? Math.min(ease, smooth((tau - st.intro - 0.35 * st.build) / Math.max(1.1, 0.6 * st.build))) * (1 - smooth((tau - ce - 0.2) / 1.2)) : 0;
       const kQ = quad ? 1 : q0 + (1 - q0) * up;
-      const kU = st.rise === CALL_RISE.upright ? smooth((tau - cs + 0.55) / 1.0) * (1 - smooth((tau - ce + 0.1) / 1.0)) : 0;
+      const kU = st.rise === CALL_RISE.upright ? Math.min(ease, smooth((tau - cs + 0.55) / 1.0)) * (1 - smooth((tau - ce + 0.1) / 1.0)) : 0;
       // The feet stay where they are: the pose it rises into is moved so that its feet are the seat's (or, from all
       // fours, the standing ones), and the body comes up over them with the hands going down in front. Unmoved, the
       // feet's targets slid 0.39 body lengths back under a rising body, and the layer's contact locks re-planted them
@@ -1364,15 +1382,17 @@ export const CLIPS: Record<string, Clip> = {
       if ((!quad && up > 0.02 && up < 0.98) || (kU > 0.02 && kU < 0.98)) { w.v[PI.contact + LIMB.armL] = 0; w.v[PI.contact + LIMB.armR] = 0; }
       // The pants rock the trunk; at the climax a seated caller straightens.
       const rock = on * (0.3 + 0.7 * B_) * (1 - C) * (0.5 + vg) * (1 - 0.6 * D);
-      w.v[PI.root + 1] += 0.012 * rock * p * (1 - kU);
-      w.a(B.chest, -0.045 * rock * p, 0, 0).a(B.spine, -0.1 * C * on * (1 - kQ), 0, 0);
+      w.v[PI.root + 1] += CALL_LIFT * rock * p * (1 - kU);
+      w.a(B.chest, -CALL_HEAVE * rock * p, 0, 0).a(B.spine, -0.1 * C * on * (1 - kQ), 0, 0);
     }
     // The head goes up with the hoos and back at the climax, and stays a little raised while it listens afterwards
     // (three in four "inquiring" pant-hoots got a vocal reply [M, southern2025]). The clip holds the head against the
     // look system through the build-up and the climax (a negative look weight, secondary.ts headLook); in the low
     // hoos and afterwards a gaze may take it.
     const raise = on * (0.5 + 0.3 * B_ + 0.25 * C - 0.25 * D) + 0.22 * HE.after, tilt = (cyc01(0, s, 166) - 0.5) * 0.2;
-    w.a(B.neck, -0.3 * raise - 0.01 * on * p, 0, 0).a(B.head, -0.28 * raise - 0.02 * on * p * (1 - C), 0, tilt * on);
+    // (Second reading: the head nods with each hoo and each pant, CALL_NOD; it stays back through the climax.)
+    const nod = on * p * (1 - C) * mix(CALL_VOICE_K[0], CALL_VOICE_K[1], vg);
+    w.a(B.neck, -0.3 * raise - CALL_NOD[0] * nod, 0, 0).a(B.head, -0.28 * raise - CALL_NOD[1] * nod, 0, tilt * on);
     if (on > 0) w.set('look', -on * (0.25 + 0.75 * Math.max(B_ * (1 - D), C)));
     hootFace(w, st, 1);
     if (c.male && c.age >= 15 && vg > 0.5) w.set('bristle', Math.max(w.v[PI.bristle], on * C * Math.min(1, (vg - 0.5) / 0.35)));

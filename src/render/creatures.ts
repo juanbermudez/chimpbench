@@ -10,9 +10,9 @@ import { createChimpMaterials, createSilhouetteMaterial } from './creatures/mate
 import { PORTRAIT_LAYER, type PortraitSubject } from './creatures/portrait';
 import {
   B, LIMB, PI, PARAM_TEXEL, POSE_SIZE, ROW_TEXELS, boneWorld, computeMorph, copyPose, createFK, createMorph, createPose,
-  lowestPoint, quat, solveFK, writeSkin, type FKState, type Morph, type Pose,
+  beginBendHint, createBendHint, lowestPoint, quat, solveFK, writeSkin, type BendHint, type FKState, type Morph, type Pose,
 } from './creatures/rig';
-import { CALL_BASE, CLIPS, GROOMEE, GROOM_FRONT, GROOM_LAP, PROP, Pw, cradle, cradleFor, gaitFrequency, groomeePosture, groomerRole, vocalOverlay, type Gait, type PoseCtx } from './creatures/poses';
+import { CALL_BASE, CLIPS, GROOMEE, GROOM_FRONT, GROOM_LAP, PROP, Pw, callOver, cradle, cradleFor, gaitFrequency, groomeePosture, groomerRole, vocalOverlay, type Gait, type PoseCtx } from './creatures/poses';
 import { callAge, callJoin, callNumber } from './creatures/call';
 import { clamp, damp, dampAngle, hash01, linearRGB, mixRGB, pixelSize, preToneMapped, smoothstep, vividColor } from './creatures/util';
 import { LIMB_TIP, createProps } from './creatures/props';
@@ -46,7 +46,7 @@ import {
 } from './creatures/secondary';
 import type { KeepCandidate } from './env/occluders';
 import { createTreeIndex, type TreeIndex } from './creatures/tree-index';
-import { CROWN_JUMP_M, NEST_BUILD_S, PERCH, boughStem, clamberSpeed, clambering, crownStep, nestProgress, nestTurnReset, nestTurnState, nestTurnStep, pairReach, perchBout, perchLies, perchPosture, seatAllowed, seatGroups, slewHeading, trunkBound, type NestTurnState, type SeatPairs } from './creatures/perch';
+import { CROWN_JUMP_M, NEST_BUILD_S, PERCH, boughStem, clamberSpeed, clambering, crownStep, nestArrive, nestProgress, nestTurnReset, nestTurnState, nestTurnStep, pairReach, perchBout, perchLies, perchPosture, seatAllowed, seatGroups, slewHeading, trunkBound, type NestTurnState, type SeatPairs } from './creatures/perch';
 import { endHeard, heardTakesHead, holding, listening } from './creatures/heard';
 import {
   Listen, PatrolCode, RELEASE_BRISTLE_TAU, RELEASE_DRUM_REACH, RELEASE_WINDOW_H, backSide, createFileCue, createPatrolLook, fileCue, listenVariant,
@@ -76,6 +76,8 @@ export interface CreatureContext {
 }
 export interface CreatureFrame {
   dt: number; elapsed: number; selectedId: number | null; simRate: number; camera: THREE.Camera;
+  /** Requested ecological seconds per real second, unchanged by pauses or achieved throughput. */
+  playbackRate: number;
   /** Fraction of the next 15 s tick the clock has already accrued (0..1); positions render between tick states. */
   subTick?: number;
   /** Viewport CSS size, filled in by the layer from a ResizeObserver (overlays must not read layout per frame). */
@@ -139,13 +141,13 @@ const ATTN_LOW = new Set(['carryVentral', 'nestBuild', 'groomee', 'shelter']);
 const HEARD_HOLD = new Set(['forage', 'groom', 'groomee', 'sitIdle', 'perch', 'stand', 'drink', 'rest', 'nurse', 'play', 'beg', 'share', 'guard']);
 /** Inertialization time for a clip change (s): quick for gait changes and fights, slow into lying down. */
 function transitionTime(from: string, to: string): number {
+  // Drawing assumption: a full-body call transition gets one second before the amplitude-based extension.
+  if (to === 'pantHoot' || from === 'pantHoot') return 1;
   if (LOCOMOTION.has(from) && LOCOMOTION.has(to)) return 0.25;
   if (to === 'attack' || to === 'defend' || to === 'charge' || from === 'attack') return 0.18;
   if (to === 'climb' || to === 'clingTrunk' || from === 'climb' || from === 'clingTrunk') return 0.22;
   if (LYING.has(to) || LYING.has(from)) return 0.55;
   if (to.startsWith('carry') || from.startsWith('carry')) return 0.4;
-  // (Stage W13: a call begins and ends with the simulation, in the frame of its tick: eased in and out a little longer.)
-  if (to === 'pantHoot' || from === 'pantHoot') return 0.45;
   return 0.3;
 }
 // Arm and leg base heights (unit space) of the ground stance: a contact counts as planted only near them.
@@ -190,16 +192,20 @@ export interface Anim {
   /** Stage W13 (perch.ts nestTurnStep): the builder's turns as drawn in this nest act; nestSlew: its heading is turned
    * to its place in the nest no faster than a turn is read (set each frame by layoutCrowns), hs the speed of that turn. */
   nt: NestTurnState; nestSlew: boolean; hs: { v: number };
+  /** Second reading: it was drawn at its nest place in the frame before (perch.ts nestArrive). */
+  nestWas: boolean;
   /** Stage W13 (the pant-hoot; creatures/call.ts, poses.ts callStyle): the pant-hoot this animal was last seen to give:
    * when its voice ends (Chimp.vocalUntil; NaN none yet), animation seconds since the layer first drew it, its number,
    * the caller's arousal when it began, whether it joined or answered (CALL_JOIN), and how much of its face is laid
-   * over another act's clip (eased in and out). */
-  hootUntil: number; hootT: number; hootN: number; hootArousal: number; hootJoin: number; hootK: number;
+   * over another act's clip (eased in and out). hootOver (second reading): that pant-hoot's sequence is done and the
+   * caller only listens: idle life may go on. */
+  hootUntil: number; hootT: number; hootN: number; hootArousal: number; hootJoin: number; hootK: number; hootOver: boolean;
   ox: number; oz: number;          // eased layout offset (pairing, separation) added to the interpolated point
   // Gait and contacts (gait.ts), transitions (secondary.ts).
   moving: boolean; stillT: number; fastGait: boolean; turnRate: number; climbDy: number; dist: number; strides: number; poseDt: number;
   gs: GaitSolve; lapse: number; locks: ContactLock[]; drop: number; planted: boolean; bank: number;
   inert: Inertia; prevOut: Float32Array; prevCur: Float32Array; outVel: Float32Array; skip: Uint8Array; hold: Float32Array; holdMask: number;
+  callBend: BendHint; callBendActive: boolean;
   dbg: { clipSwitches: number; moveToggles: number; replants: number };
   // Attention (secondary.ts): smoothed world look point (critically damped springs), weight, eye offset, blinks.
   attn: Attention; lk: { x: number; v: number }[]; lookW: number; eye: { x: number; v: number }[]; blink: Blink; exert: number;
@@ -483,11 +489,12 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       clip: '', clipT: 0, role: 0, gait: null, phase: hash01(chimp.id, 3),
       x: chimp.position[0], y: 0, z: chimp.position[2], heading: chimp.heading ?? 0, speed: 0, vel: 0, inited: false,
       track: createTrack(chimp.position[0], Math.max(0, chimp.position[1] ?? 0), chimp.position[2]), acts: createActTrack(), ox: 0, oz: 0,
-      act: chimp.action, actTarget: chimp.targetId, way: Way.none, tagWay: Way.none, beat: createBeat(), late: 0, intent: 0, posture: Posture.other, trunkK: 0, onTrunk: false, nestOk: false, nestX: 0, nestY: 0, nestZ: 0, nestK: 1, nestFor: NaN, nestDoneAt: Infinity, nestRampT: 0, nestRampK: 0, nestTop: 0, nt: nestTurnState(), nestSlew: false, hs: { v: 0 },
-      hootUntil: NaN, hootT: 1e6, hootN: 0, hootArousal: 0.3, hootJoin: 0, hootK: 0,
+      act: chimp.action, actTarget: chimp.targetId, way: Way.none, tagWay: Way.none, beat: createBeat(), late: 0, intent: 0, posture: Posture.other, trunkK: 0, onTrunk: false, nestOk: false, nestX: 0, nestY: 0, nestZ: 0, nestK: 1, nestFor: NaN, nestDoneAt: Infinity, nestRampT: 0, nestRampK: 0, nestTop: 0, nt: nestTurnState(), nestSlew: false, hs: { v: 0 }, nestWas: false,
+      hootUntil: NaN, hootT: 1e6, hootN: 0, hootArousal: 0.3, hootJoin: 0, hootK: 0, hootOver: true,
       refSpeed: 0, moveSpeed: 0, settle: 0, moving: false, stillT: 0, fastGait: false, turnRate: 0, climbDy: 0, dist: 0, strides: 0, poseDt: 0,
       gs: { f: 0, stride: 0, regime: Regime.natural }, lapse: 0, locks: [createLock(), createLock(), createLock(), createLock()], drop: 0, planted: false, bank: 0,
       inert: createInertia(POSE_SIZE), prevOut: new Float32Array(POSE_SIZE), prevCur: new Float32Array(POSE_SIZE), outVel: new Float32Array(POSE_SIZE), skip: new Uint8Array(POSE_SIZE), hold: new Float32Array(12), holdMask: 0,
+      callBend: createBendHint(), callBendActive: false,
       dbg: { clipSwitches: 0, moveToggles: 0, replants: 0 },
       attn: createAttention(), lk: [{ x: 0, v: 0 }, { x: 0, v: 0 }, { x: 0, v: 0 }], lookW: 0, eye: [{ x: 0, v: 0 }, { x: 0, v: 0 }], blink: createBlink(chimp.id), exert: 0,
       rs: [{ x: 0, v: 0 }, { x: 0, v: 0 }, { x: 0, v: 0 }],
@@ -857,7 +864,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
    * Sets seat places and headings; placeGrounded draws them. Runs once a frame, before motion. Nothing here allocates.
    */
   function layoutCrowns(dt: number) {
-    for (const a of animList) { a.wasHost = a.gOn; a.seatHost = -1; a.seatFace = NaN; a.gOn = false; a.nestSlew = false; }
+    for (const a of animList) { a.wasHost = a.gOn; a.seatHost = -1; a.seatFace = NaN; a.gOn = false; a.nestWas = a.nestSlew; a.nestSlew = false; }
     if (SP.n) {
       for (let i = 0; i < SP.n; i++) for (let k = 0; k < 2; k++) {
         // The bough stays with the animal that hosted it in the frame before, else it is that of an animal that is only
@@ -904,8 +911,11 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
           // (W12: the turns are the animal's own. Stage W13: they are made only as far as a watcher has the time for
           // them at the speed being played, no faster than a turn is read, and what was turned stays when the nest is
           // done: perch.ts nestTurnStep. The heading itself goes to this facing under the same limit, updateMotion.)
-          nestTurnStep(a.nt, a.id, a.nestK, dt, curSimRate);
-          a.seatFace = a.ownYaw + (hash01(a.id, 45) - 0.5) * 1.2 + a.nt.h; a.headingTarget = a.seatFace; a.nestSlew = true;
+          // (Second reading: it sits down facing as it came, perch.ts nestArrive. Until it has, and for a body first
+          // drawn in its nest, the facing is the seat's own: out from the trunk with its own offset.)
+          nestArrive(a.nt, a.nestWas, a.clamber, a.heading, a.ownYaw);
+          nestTurnStep(a.nt, a.id, a.nestK, dt, curSetRate);
+          a.seatFace = (a.nt.arr === 2 ? a.nt.f : a.ownYaw + (hash01(a.id, 45) - 0.5) * 1.2) + a.nt.h; a.headingTarget = a.seatFace; a.nestSlew = true;
         }
         continue;
       }
@@ -1425,11 +1435,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     // (Stage W13: an animal in its nest turns to its facing no faster than a turn is read, perch.ts slewHeading: the
     // two dampers that used to pull it there covered a builder's turn in a third of a second.)
     if (cut) { a.heading = target; a.hs.v = 0; }
-    // (A body still clambering to its nest place faces along its way, as before. After the third run of the stage: the
-    // test used to read `&& !a.moving` as well. A body that has just reached its place still counts as moving for 0.8 s,
-    // so its turn from the way it came to the way it sits went through the old damper: up to 3 rad in a third of a
-    // second, in every film of the third run. NOT FILMED since: docs/staging/w13-chorus-and-spin.md, section 6.)
-    else if (a.nestSlew && !a.clamber) a.heading = slewHeading(a.hs, a.heading, target, dt);
+    // A nest approach turns once per frame: here while seated, in placement while clambering.
+    else if (a.nestSlew) { if (!a.clamber) a.heading = slewHeading(a.hs, a.heading, target, dt); }
     else { a.heading = dampAngle(a.heading, target, a.moving ? 10 : 4.5, dt); a.hs.v = 0; }
     const dh = Math.atan2(Math.sin(a.heading - before), Math.cos(a.heading - before));
     TURN_TMP.v = dt > 0 && !cut ? dh / dt : 0;
@@ -1512,12 +1519,13 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     // (Its face over another act's clip comes in and goes out over a moment; over its own clip the clip draws it.)
     a.hootK = clip === 'pantHoot' ? 0 : damp(a.hootK, pctx.vocal === 'pant-hoot' ? 1 : 0, 6, dtReal);
     pctx.rank = c.rank ?? 0; pctx.arousal = a.hootArousal; pctx.callN = a.hootN; pctx.join = a.hootJoin; pctx.enter = a.hootT - a.clipT;
-    // Stage W13, the nest: how long a whole building is on screen at this speed (the clip draws a brief one briefly).
-    // (After the third run: by the speed that is SET, not the rate achieved in this frame. At 1 min/s the clock reports
-    // 45 to 75 simulated seconds a second from frame to frame, a brief building's reaches are laid out in shares of
-    // this span, and the builder's arm jumped between two reaches for about a second: filmed in the third run. The rate
-    // is read to the nearest of the clock's speeds. NOT FILMED since: the stage document, section 6.)
-    pctx.span = NEST_BUILD_S / (curSimRate < 2 ? 1 : curSimRate < 16 ? 4 : curSimRate < 190 ? 60 : curSimRate < 1500 ? 600 : curSimRate);
+    // (Second reading: the simulation's voice lasts 45 simulated seconds and its call act up to 60; the drawn pant-hoot
+    // is over in 6 to 16. For the rest the caller listens, and its idle life goes on: stepIdle. Filmed without it, a
+    // caller stood or sat with no joint moving for 25 to 45 s at Real time.)
+    a.hootOver = pctx.vocal !== 'pant-hoot' || callOver(pctx, a.hootT);
+    // Lay out brief building gestures using the requested clock speed. Achieved throughput fluctuates per frame
+    // and ramps after a pause; using it here re-planned a reach while the arm was already moving.
+    pctx.span = NEST_BUILD_S / curSetRate;
     const partner = a.partnerId >= 0 ? anims.get(a.partnerId) : undefined;
     if (partner) {
       // Partner root in this animal's body space (unit scale). Stage W9: an animal on a branch is drawn at its seat, not
@@ -1621,14 +1629,14 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         if (wPrev < 0.01) { a.skip[o] = a.skip[o + 1] = a.skip[o + 2] = 1; }
         else if (wNew < 0.01) { a.skip[o] = a.skip[o + 1] = a.skip[o + 2] = 1; a.holdMask |= 1 << l; a.hold[l * 3] = ov[o]; a.hold[l * 3 + 1] = ov[o + 1]; a.hold[l * 3 + 2] = ov[o + 2]; }
       }
-      // Larger pose changes take longer: base time × (0.6 + 0.5 × largest joint change in radians), ≤ 0.7 s.
+      // Larger pose changes take longer: base time × (0.6 + 0.5 × largest joint change in radians), capped below at 0.7 s or 1.1 s for calls and perch shifts.
       let big = 0;
       for (let i = 3; i < PI.root; i++) big = Math.max(big, Math.abs(cv[i] - ov[i]));
       // A receiver changing posture (same clip, another role) may be lying down or sitting up: the lying-down time.
       // Stage W9: a change of resting posture in a crown (same clip, another role) is slow: sitting up, lying down along
       // the bough or taking another hold, eased over up to 1.1 s (design assumption).
       const perchShift = clip === 'perch' && prevClip === 'perch';
-      startInertia(a.inert, ov, a.outVel, cv, Math.min(perchShift ? 1.1 : 0.7, (perchShift ? 0.8 : clip === 'groomee' && prevClip === 'groomee' ? 0.55 : transitionTime(prevClip, clip)) * Math.max(1, 0.6 + 0.5 * big)), a.skip);
+      startInertia(a.inert, ov, a.outVel, cv, Math.min(perchShift || clip === 'pantHoot' || prevClip === 'pantHoot' ? 1.1 : 0.7, (perchShift ? 0.8 : clip === 'groomee' && prevClip === 'groomee' ? 0.55 : transitionTime(prevClip, clip)) * Math.max(1, 0.6 + 0.5 * big)), a.skip);
     }
     else if (pop) { a.skip.fill(0); a.holdMask = 0; startInertia(a.inert, ov, a.outVel, cv, 0.25, a.skip); a.inert.t = -dtAnim; }
     const blending = a.inert.t < a.inert.end;
@@ -1659,18 +1667,22 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     // Breathing follows exertion: charges, flights and displays raise it for about a minute.
     a.exert = LOCOMOTION_FAST.has(clip) || clip === 'display' || clip === 'attack' || clip === 'charge' ? damp(a.exert, 1, 0.5, dtReal) : a.exert * Math.exp(-dtReal / 60);
     if (a.exert > 0.02 && ov[PI.ground] > 0.5) ov[B.chest * 3] += Math.sin(animClock * (1.7 + 2.8 * a.exert) + pctx.seed * 9) * 0.02 * a.exert;
-    solveFK(a.out, a.morph, a.fk, look);
+    a.callBendActive ||= clip === 'pantHoot' || prevClip === 'pantHoot';
+    const bend = a.callBendActive && a.lastSkinFrame >= 0 && !a.track.jumped && dtReal <= 0.5 ? a.callBend : undefined;
+    // Snapshot the visible skeleton once. Every contact solve below uses this same prior plane.
+    if (bend) beginBendHint(bend, a.fk, dtReal);
+    solveFK(a.out, a.morph, a.fk, look, bend);
     // Eyes lead the head: the irises turn toward the unsmoothed target at once (saccade), the head catches up.
     if (a.px > 40) aimEyes(a, dtReal); else { a.eye[0].x = a.eye[1].x = 0; }
     const ground = ov[PI.ground];
-    const low = ground > 0.01 ? lowestPoint(a.fk, a.morph) : 0;
+    const low = ground > 0 ? lowestPoint(a.fk, a.morph) : 0;
     a.lift = -low * ground;
     a.planted = plant && ground > 0.5 && a.lapse < 0.5;
     // Climbing and drumming: hands (and climbing feet) go onto the bark of the rendered trunk.
     const bark = clip === 'climb' || clip === 'clingTrunk' ? a.climbTree : clip === 'drum' ? a.drumTree : -1;
-    if (bark >= 0 && a.px > 25 && trunkContacts(a, bark, clip === 'drum' ? 3 : 15)) solveFK(a.out, a.morph, a.fk, look);
-    if (a.planted && plantContacts(a, dtReal)) {
-      solveFK(a.out, a.morph, a.fk, look);
+    if (bark >= 0 && a.px > 25 && trunkContacts(a, bark, clip === 'drum' ? 3 : 15)) solveFK(a.out, a.morph, a.fk, look, bend);
+    if (plant && ground > 0 && a.lapse < 0.5 && plantContacts(a, dtReal)) {
+      solveFK(a.out, a.morph, a.fk, look, bend);
       // A locked hand or foot the limb cannot reach: while walking it is dragged to the reachable point (a
       // centimetre or two at the end of a stance), standing it steps to a reachable spot next frame.
       for (let l = 0; l < 4; l++) {
@@ -1695,9 +1707,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       const lock = a.scrSite === SCRATCH.head ? k : 0;
       if (w0 > 0.01) { ov[o] += (SW[0] - ov[o]) * k; ov[o + 1] += (SW[1] - ov[o + 1]) * k; ov[o + 2] += (SW[2] - ov[o + 2]) * k; ov[o + 3] = Math.max(w0, k); ov[o + 4] = ov[o + 4] * (1 - k) + lock; }
       else { ov[o] = SW[0]; ov[o + 1] = SW[1]; ov[o + 2] = SW[2]; ov[o + 3] = k; ov[o + 4] = lock; }
-      solveFK(a.out, a.morph, a.fk, look);
+      solveFK(a.out, a.morph, a.fk, look, bend);
       for (let j = 0; j < 5; j++) ov[o + j] = IKSAVE[j];
     }
+    if (clip !== 'pantHoot' && !blending && (!bend || !bend.limited)) a.callBendActive = false;
     // Smoothed piloerection and mouth for the shader. After a patrol's release display the coat settles slowly
     // (RELEASE_BRISTLE_TAU) instead of at once; every other animal is unchanged (relBristle stays 0).
     if (releasing(a)) a.relBristle = Math.max(a.relBristle, ov[PI.bristle]);
@@ -1987,9 +2000,11 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       W[0] = TVW[0] + a.bx; W[1] = TVW[1] + a.by; W[2] = TVW[2] + a.bz;
       quat.rot(TVW, 0, q, 0, v[o] * s, 0, v[o + 2] * s);
       const planeY = TVW[1] + a.by;
-      const delta = clamp(ctx.groundHeight(W[0], W[2]) - planeY, -0.2 * s, 0.2 * s);
+      // A lowering hand/foot approaches the terrain correction continuously before it plants.
+      const groundK = !inGait ? 1 - smoothstep(CONTACT_BASE[l] + 0.03, CONTACT_BASE[l] + 0.16, ty) : 1;
+      const delta = clamp(ctx.groundHeight(W[0], W[2]) - planeY, -0.2 * s, 0.2 * s) * groundK * v[PI.ground];
       W[1] += delta;
-      const contact = v[PI.contact + l] > 0.5 && ty < CONTACT_BASE[l] + 0.03;
+      const contact = a.planted && v[PI.contact + l] > 0.5 && ty < CONTACT_BASE[l] + 0.03;
       if (contact && l >= 2) minDelta = Math.min(minDelta, delta);
       const before = a.locks[l].replants;
       // Walking: a planted limb holds until lift-off unless the body has swung far off it (turns); standing, a
@@ -2020,8 +2035,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   }
   // Which idle events a stationary clip permits (a drawing rule; stylization). Everything: standing, sitting, resting
   // and perching. Feeding keeps its arm and mouth: a shift of weight or a glance. Nursing: the face and a shift. Being
-  // groomed and sitting out rain: a yawn. Clinging to a trunk: a glance. Nothing: asleep, dead, carried, drinking,
-  // grooming, calling, displaying, greeting, fighting, mating, playing, building a nest, hunting, every pause of a
+  // groomed and sitting out rain: a yawn. Clinging to a trunk: a glance. A caller, once its pant-hoot is over and it
+  // listens (second reading of stage W13; `still` below keeps everything off while it calls): a shift of weight, a
+  // glance, a scratch. Nothing: asleep, dead, carried, drinking,
+  // grooming, displaying, greeting, fighting, mating, playing, building a nest, hunting, every pause of a
   // patrol (tense and silent), and every moving clip. A clip this table does not know gets the face only, unless its
   // name says it is a rest, a sit or a perch.
   const I_ALL = idleBit(IDLE.scratch) | idleBit(IDLE.yawn) | idleBit(IDLE.shift) | idleBit(IDLE.glance) | idleBit(IDLE.nod);
@@ -2029,8 +2046,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   const IDLE_ALLOW = new Map<string, number>([
     ['stand', I_ALL], ['sitIdle', I_ALL], ['rest', I_ALL], ['perch', I_ALL], ['guard', I_ALL & ~idleBit(IDLE.nod)],
     ['forage', idleBit(IDLE.shift) | idleBit(IDLE.glance)], ['nurse', I_FACE | idleBit(IDLE.shift)], ['groomee', idleBit(IDLE.yawn)], ['shelter', idleBit(IDLE.yawn)], ['clingTrunk', idleBit(IDLE.glance)],
+    ['pantHoot', idleBit(IDLE.shift) | idleBit(IDLE.glance) | idleBit(IDLE.scratch)],
     ...['sleep', 'dead', 'deadCarried', 'carryVentral', 'carryDorsal', 'drink', 'groom', 'play', 'wrestle', 'tickle', 'display', 'charge', 'attack', 'defend', 'submit', 'pantGrunt', 'embrace', 'mate', 'share', 'beg',
-      'pantHoot', 'drum', 'alarm', 'patrol', 'listen', 'hunt', 'cower', 'nestBuild', 'walk', 'gallop', 'sneak', 'swagger', 'bipedWalk', 'climb', 'clamber', 'bind', 'portrait'].map(k => [k, 0] as [string, number]),
+      'drum', 'alarm', 'patrol', 'listen', 'hunt', 'cower', 'nestBuild', 'walk', 'gallop', 'sneak', 'swagger', 'bipedWalk', 'climb', 'clamber', 'bind', 'portrait'].map(k => [k, 0] as [string, number]),
   ]);
   const SEATED_NAME = /^(rest|sit|perch)/;
   function idleAllow(clip: string): number { const k = IDLE_ALLOW.get(clip); return k !== undefined ? k : SEATED_NAME.test(clip) ? I_ALL : I_FACE; }
@@ -2088,9 +2106,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     ch.breath = ICTX.breath * a.breathAmp;
     // What may start now. Not while the body moves, is carried or patrols; not in the last seconds before it starts a
     // new act (the decision beat, stage W6, has the head and the body then) nor while it waits for company; not while
-    // it listens to a call (stage W10) or calls itself; not above the rate at which a second spans minutes (drawn.ts).
+    // it listens to a call (stage W10) or calls itself (second reading of stage W13: once its pant-hoot is over it only
+    // listens for an answer, Anim.hootOver); not above the rate at which a second spans minutes (drawn.ts).
     const b = a.beat, inBeat = (b.since > -Infinity && (b.phase !== Phase.none || b.waiting)) || a.intent > 0.01;
-    const still = !a.moving && a.carry === 0 && a.pCode === PatrolCode.none && !inBeat && !pctx.vocal && curSimRate <= ABOUT_MAX_RATE
+    const still = !a.moving && a.carry === 0 && a.pCode === PatrolCode.none && !inBeat && (!pctx.vocal || (pctx.vocal === 'pant-hoot' && a.hootOver)) && curSimRate <= ABOUT_MAX_RATE
       && !listening(fx.heard, a.slot, a.id, lastElapsed);
     let allow = still ? idleAllow(clip) : 0;
     // (Merge of W8 and W9.) The resting seat of a crown also stands in for acts that have no clip there (a display, a
@@ -2324,7 +2343,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
           // (W9: building a nest it turns a step at a time, pulling branches in from all round; it settles as it lies
           // down. W11: that turn is in seatFace, set by layoutCrowns; the last term only serves a frame without one.)
           // (Stage W13: an animal in its nest is turned by updateMotion alone, under the limit of perch.ts NEST_TURN_MAX.)
-          if (!a.nestSlew || a.clamber) a.heading = dampAngle(a.heading, turned ? Math.atan2(GOAL[0] - x, GOAL[2] - z) : Number.isFinite(a.seatFace) ? a.seatFace : perchYaw + (hash01(a.id, 45) - 0.5) * 1.2 + (a.act === 'nest' ? a.nt.h : 0), 3, 1 / 30);
+          if (!a.nestSlew) a.heading = dampAngle(a.heading, turned ? Math.atan2(GOAL[0] - x, GOAL[2] - z) : Number.isFinite(a.seatFace) ? a.seatFace : perchYaw + (hash01(a.id, 45) - 0.5) * 1.2 + (a.act === 'nest' ? a.nt.h : 0), 3, 1 / 30);
         }
       } else { a.seated = false; if (inNest) { x = a.nestX; y = a.nestY; z = a.nestZ; } }
       // Stage W11: however the place above came about (a seat, the nest, the blend with the trunk, the trunk itself),
@@ -2360,7 +2379,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
             const yaw = Math.atan2(sx, sz), pitch = -clamp(Math.atan2(sy, hyp2(sx, sz)), -0.9, 0.9);
             a.clamberYaw = was ? dampAngle(a.clamberYaw, yaw, 8, curDt) : yaw; a.clamberPitch = was ? damp(a.clamberPitch, pitch, 6, curDt) : pitch;
           } else if (!was) { a.clamberYaw = a.heading; a.clamberPitch = 0; }
-          a.heading = dampAngle(a.heading, a.clamberYaw, 8, curDt);
+          if (a.nestSlew) {
+            // On the first clamber frame motion already turned it; subsequent frames turn only here.
+            if (was) a.heading = slewHeading(a.hs, a.heading, a.clamberYaw, curDt);
+          } else a.heading = dampAngle(a.heading, a.clamberYaw, 8, curDt);
           a.onBranch = true;   // (no stick of its own under a body on the move)
         } else { a.clamberV = 0; a.clamberD = 0; }
         a.clamberK = a.clamber || a.clamberK > 1e-3 ? damp(a.clamberK, a.clamber ? 1 : 0, 8, curDt) : 0;
@@ -2490,12 +2512,15 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   const order: Anim[] = [];
   let lastElapsed = 0;
   let curSimRate = 60;
+  // Brief building gestures use the selected speed; achieved throughput changes every frame.
+  let curSetRate = 60;
   let animRateNow = 1;   // animation seconds per real second this frame (time-lapse plays clips a little faster)
   let curDt = 1 / 60;
   let plantMinPx = 45;
   let closeK = 0;
   function update(frame: CreatureFrame) {
     curSimRate = frame.simRate;
+    curSetRate = frame.playbackRate;
     curDt = clamp(frame.dt, 0, 0.1);
     const q = frame.quality ?? 'high';
     plantMinPx = q === 'high' ? 45 : q === 'medium' ? 135 : 0;

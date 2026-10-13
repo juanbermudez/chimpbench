@@ -167,12 +167,25 @@ export function nestTurnAngle(id: number, i: number): number {
 //     dropped under NEST_TURN_MIN_RAD; and a turn is not begun before the last one is done and NEST_TURN_GAP_S have
 //     passed (time for a reach). So at Real time a builder still faces five ways; at 1 min/s it turns once, a
 //     little; at 10 min/s it does not turn;
-//   - what it has turned by stays when the nest is done: it lies down facing as it last sat.
+//   - what it has turned by stays when the nest is done: it lies down facing as it last sat;
+//   - (second reading) it sits down in its nest facing as it came there (nestArrive). The seat's own facing, out from
+//     the trunk, used to be taken in the frame the body arrived: up to 3 rad at 7 to 13 rad/s. Put under the limit
+//     above, that turn filled the building: at 1 min/s nine of fifteen filmed builders went on swivelling at a
+//     steady 0.9 rad/s for one to two and a half of the three seconds they built (2 to 3.3 rad in all), two were
+//     still turning after they lay down, and at 10 min/s a body already asleep turned 2.5 rad in its nest. A nest is round: nothing needs the animal to face out from the
+//     trunk, only not to face into it (its reaches would go through the bark), so only an animal that arrives within
+//     PI - NEST_FACE_OUT of straight at the trunk turns, by what takes it out of that;
+//   - (second reading) the pause between two turns holds a reach: NEST_TURN_GAP_S was 2.5 s, and at Watch 4x, where
+//     two planned turns can fall six seconds apart, a filmed builder turned 2.3 rad, sat for a second and a half and
+//     turned 2.1 rad more the same way. A planned turn that falls inside the pause is not made.
 /** The fastest a builder's heading turns (rad per real second). */
 export const NEST_TURN_MAX = 0.9;
 /** Real seconds a turn needs after its travel to ease out before the animal lies down; the least between the end of
  * one turn and the start of the next; the smallest turn worth making (rad). */
-export const NEST_TURN_SETTLE_S = 2, NEST_TURN_GAP_S = 2.5, NEST_TURN_MIN_RAD = 0.35;
+export const NEST_TURN_SETTLE_S = 2, NEST_TURN_GAP_S = 5, NEST_TURN_MIN_RAD = 0.35;
+/** How far from straight out from its trunk an animal in its nest may face (rad): it sits as it came unless that is
+ * within PI - NEST_FACE_OUT (about 65 degrees) of straight at the trunk. A drawing rule; stylization. */
+export const NEST_FACE_OUT = 2.0;
 /** How the turn eases: the speed asked for is SLEW_GAIN times what is left (so it slows over the last 0.7 rad), and
  * the speed follows that at SLEW_EASE a second (so it starts over about a third of a second). Critically damped. */
 export const SLEW_GAIN = 1.25, SLEW_EASE = 5;
@@ -198,11 +211,36 @@ export function slewHeading(s: { v: number }, heading: number, target: number, d
   return heading + step;
 }
 /** A builder's turns as drawn: the next planned turn to look at (0: not begun), the turn asked for so far and the turn
- * drawn (rad, both kept when the nest is done), its speed, the real seconds drawn, and when the next turn may begin. */
-export interface NestTurnState { i: number; turn: number; h: number; v: number; t: number; free: number; n: number }
-export function nestTurnState(): NestTurnState { return { i: 0, turn: 0, h: 0, v: 0, t: 0, free: 0, n: 0 }; }
+ * drawn (rad, both kept when the nest is done), its speed, the real seconds drawn, and when the next turn may begin.
+ * Second reading: `arr` whether it has sat down in this nest (0 not seen there yet, 1 seen or on its way, 2 seated) and
+ * `f` the heading it sat down with (rad, world; the turns are added to it). */
+export interface NestTurnState { i: number; turn: number; h: number; v: number; t: number; free: number; n: number; arr: number; f: number }
+export function nestTurnState(): NestTurnState { return { i: 0, turn: 0, h: 0, v: 0, t: 0, free: 0, n: 0, arr: 0, f: 0 }; }
 /** A new nest act: nothing turned yet. The first step looks at the turns that are still to come at the progress it is given. */
-export function nestTurnReset(s: NestTurnState): void { s.i = 0; s.turn = 0; s.h = 0; s.v = 0; s.t = 0; s.free = 0; s.n = 0; }
+export function nestTurnReset(s: NestTurnState): void { s.i = 0; s.turn = 0; s.h = 0; s.v = 0; s.t = 0; s.free = 0; s.n = 0; s.arr = 0; s.f = 0; }
+/**
+ * Second reading of stage W13: the facing an animal sits down in its nest with. Called every frame it is drawn at its
+ * nest place: `here` whether it was drawn there in the frame before as well, `clamber` whether it is still clambering
+ * there (its heading is then its line of travel), `heading` the heading it is drawn with, `out` the bearing of the
+ * place from its trunk. Returns true in the frame it sits down: `s.f` is then the heading it came with, pulled out of
+ * the cone about the trunk (NEST_FACE_OUT), less the turn drawn so far, so that `s.f + s.h` is where it faces. The
+ * first frame there only notes it (whether it clambers is worked out later in that frame). It is sat down from again
+ * after a clamber that begins again (its place moved) and after any frame it was not at its nest place (an animal whose
+ * nest act began on its feeding seat goes down its trunk and up another: what it faced on the old seat is not kept).
+ * What it still has to turn by, out of the cone, is a turn like the planned ones: the next of those waits its pause.
+ * Pure but for `s`.
+ */
+export function nestArrive(s: NestTurnState, here: boolean, clamber: boolean, heading: number, out: number): boolean {
+  if (!here) s.arr = 0;
+  if (clamber || s.arr === 0) { s.arr = 1; return false; }
+  if (s.arr === 2) return false;
+  let d = Math.atan2(Math.sin(heading - out), Math.cos(heading - out));
+  const cone = d > NEST_FACE_OUT ? d - NEST_FACE_OUT : d < -NEST_FACE_OUT ? -NEST_FACE_OUT - d : 0;
+  if (d > NEST_FACE_OUT) d = NEST_FACE_OUT; else if (d < -NEST_FACE_OUT) d = -NEST_FACE_OUT;
+  s.f = out + d - s.h; s.arr = 2;
+  if (cone > 0.05) s.free = s.t + cone / NEST_TURN_MAX + NEST_TURN_GAP_S;
+  return true;
+}
 /**
  * One frame of builder `id`: `k` how far its building has come (0..1; 1 done), `dt` real seconds, `rate` simulated
  * seconds per real second. Updates the turn asked for by the rules above and moves the drawn turn `s.h` toward it.
@@ -216,7 +254,10 @@ export function nestTurnStep(s: NestTurnState, id: number, k: number, dt: number
     const settled = Math.abs(s.turn - s.h) < 0.12, left = (1 - k) * NEST_BUILD_S / (rate > 1 ? rate : 1) - NEST_TURN_SETTLE_S;
     let a = nestTurnAngle(id, s.i);
     s.i++;
-    if (!settled || s.t < s.free) continue;
+    // (Second reading: nor while the body is still on its way to its nest place, `s.arr` 1. A turn begun then was
+    // still being made when it sat down, on top of its turn out of the cone: 1.9 and 2.3 rad at a steady 0.9 rad/s in
+    // two of fifteen buildings filmed at 1 min/s.)
+    if (!settled || s.t < s.free || s.arr === 1) continue;
     const fits = NEST_TURN_MAX * left;
     if (Math.abs(a) > fits) a = fits >= NEST_TURN_MIN_RAD ? (a < 0 ? -fits : fits) : 0;
     if (a === 0) continue;

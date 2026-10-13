@@ -622,7 +622,7 @@ function frame(now: number) {
   }
   controls.update();
   const f: CreatureFrame = {
-    dt, elapsed, selectedId: selId, simRate, camera, daylight, rain, highlightTroopId: hl, subTick: tickAcc / 15,
+    dt, elapsed, selectedId: selId, simRate, playbackRate: simRate, camera, daylight, rain, highlightTroopId: hl, subTick: tickAcc / 15,
     layers: { labels: q.has('labels'), social: q.has('social'), perception: q.has('perception') }, closeView: !ortho,
     quality: (q.get('quality') as CreatureFrame['quality']) ?? 'high',
   };
