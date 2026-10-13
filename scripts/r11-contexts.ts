@@ -91,7 +91,7 @@ function streamFrom(state: number): { next: () => number; state: () => number } 
 
 const _scratch: Candidate[] = [];
 /** The label of a fresh draw, computed at the decision (the sampler's `extend` hook). `redraws`: how many other decision versions. */
-export function labelData(rec: R8Rec, live: { w: World; c: Chimp; list: Candidate[]; menu: Candidate[]; chosen: Candidate; rngBefore: number }, redraws: Redraws = REDRAWS): LabelData | string {
+export function labelData(rec: Pick<R8Rec, 'id' | 'options' | 'rgIndex'>, live: { w: World; c: Chimp; list: Candidate[]; menu: Candidate[]; chosen: Candidate; rngBefore: number }, redraws: Redraws = REDRAWS): LabelData | string {
   const { w, c, list, menu, chosen } = live, P = paramsOf(w);
   if (P.choiceBelief !== 2 || P.redecideValue >= 1 || P.rgOn !== 1) return 'the rules of this world do not draw as the working base does';
   if (menu.length < 2) return 'fewer than two options on the rules\' menu';
