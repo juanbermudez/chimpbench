@@ -43,7 +43,7 @@ def idle(own_lock=False):
     if (not own_lock and MODEL_LOCK.exists()) or (state.exists() and state.read_text().strip() == 'running'):
         raise ValueError('R14 is active; no R15 model process may start')
     commands = subprocess.check_output(['ps', '-axo', 'pid=,command='], text=True).splitlines()
-    pattern = r'(?:^|\s)(?:\S*/)?(?:worker|server|parity|train(?:_[\w]+)?|r14|score_contexts|em_score|eval_offline|eval_ab|distill)\.py(?:\s|$)'
+    pattern = r'(?:^|\s)(?:\S*/)?(?:worker|server|parity|r15_preflight(?:_worker)?|train(?:_[\w]+)?|r14|score_contexts|em_score|eval_offline|eval_ab|distill)\.py(?:\s|$)'
     others = [line.strip().split(maxsplit=1) for line in commands]
     if any(len(parts) == 2 and parts[0] != str(os.getpid()) and re.search(pattern, parts[1]) for parts in others): raise ValueError('another model process is active')
 
@@ -57,11 +57,21 @@ def main():
     name = f'r15-resources-s{args.seed}'
     if (root / 'adapters' / name).exists(): raise ValueError('adapter directory already exists; inspect without overwriting')
     command = [str(ROOT / 'training/decide_ft/r4_py.sh'), 'train_r11.py', '--name', name,
-               '--train', 'contexts/train.jsonl', '--dev', 'contexts/dev.jsonl', '--extra', 'contexts/manifest.json',
+               '--train', 'contexts/train.jsonl', '--dev', 'contexts/dev.jsonl', '--extra', 'contexts/training-manifest.json',
                '--epochs', '3', '--seed', str(args.seed), '--labels', 'soft']
     print('MGOGO_FT_ROOT=' + shlex.quote(str(root)) + ' ' + shlex.join(command), flush=True)
     if not args.run: return
-    run_guarded(command, root)
+    def prepare():
+        from r15_preflight import SCHEMA, sha, validate_preflight, write_new
+        validate(root)
+        validate_preflight(root)
+        manifest = json.loads((root / 'contexts/manifest.json').read_text())
+        manifest['preflight'] = {'schema': SCHEMA, 'receipt_sha256': sha(root / 'preflight/result.json'), 'path': 'preflight/result.json'}
+        destination = root / 'contexts/training-manifest.json'
+        if destination.exists():
+            if json.loads(destination.read_text()) != manifest: raise ValueError('stale training manifest; preserve it and inspect')
+        else: write_new(destination, manifest)
+    run_guarded(command, root, before_launch=prepare)
 
 
 def stop_group(process):
@@ -72,24 +82,25 @@ def stop_group(process):
         process.wait()
 
 
-def run_guarded(command, root):
+def run_guarded(command, root, *, timeout_seconds=MAX_SECONDS, purpose='training', before_launch=None):
     idle()
     MODEL_LOCK.parent.mkdir(parents=True, exist_ok=True)
     fd = os.open(MODEL_LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-    os.write(fd, json.dumps({'pid': os.getpid(), 'stage': 'R15', 'root': str(root)}).encode()); os.close(fd)
+    os.write(fd, json.dumps({'pid': os.getpid(), 'stage': 'R15', 'root': str(root), 'purpose': purpose}).encode()); os.close(fd)
     process = None
     previous = signal.getsignal(signal.SIGTERM)
     def interrupted(signum, frame): raise KeyboardInterrupt('R15 training interrupted')
     try:
         idle(own_lock=True)
+        if before_launch is not None: before_launch()
         signal.signal(signal.SIGTERM, interrupted)
         environment = dict(os.environ, MGOGO_FT_ROOT=str(root), HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1')
         process = subprocess.Popen(command, cwd=ROOT, env=environment, start_new_session=True)
-        try: code = process.wait(timeout=MAX_SECONDS)
+        try: code = process.wait(timeout=timeout_seconds)
         except subprocess.TimeoutExpired as exc:
             stop_group(process)
             process = None
-            raise ValueError('six-hour R15 training budget exhausted; inspect partial adapter before any new run') from exc
+            raise ValueError(('six-hour R15 training' if purpose == 'training' else 'R15 preflight') + ' budget exhausted; inspect partial outputs before any new run') from exc
         raise SystemExit(code)
     finally:
         if process is not None and process.poll() is None: stop_group(process)
