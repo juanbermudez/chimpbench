@@ -1,4 +1,4 @@
-# ChimpBench: handoff (Monday 12 October 2026, 10:15 New York time)
+# ChimpBench: handoff (13 October 2026, New York time)
 
 This file is the entry point for whoever opens this repository next, a person or an agent. Read it first. Then read
 [AGENTS.md](AGENTS.md) (binding conventions, commands, gotchas), [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
@@ -37,6 +37,16 @@ and feels. A virtual field observer scores behaviour against 150 cited field tar
   the rules taught the model and wrote its menu.
 
 ## 2. Where things stand
+
+### 2.0 Current continuation (13 October 2026)
+
+The user asked Codex to take over Claude's interrupted work, finish and verify the animation fixes, and continue the model training repair in parallel. The full-project takeover note is `/Volumes/Drive/chimpbench/CODEX-TAKEOVER-2026-10-13.md`.
+
+- **W13:** the inherited uncommitted arrival, call and movement changes were preserved on `w13-chorus-and-spin`. The continuation passes the clock's requested playback rate directly to the renderer, replacing the inferred speed state. Fresh whole-scene captures and focused checks are in progress; the second seed exposed an arrival-turn edge that is being repaired. Do not treat the old W13 test total or pre-continuation films as verification of the final source.
+- **R14:** registered at `16268cd`, then amended before runs. The pipeline adds labels from the same rules teacher on states reached by the old model, retaining P5b, the menu, draw, gate and simulation parameters. A fake-worker collection and exact replay have passed; independent implementation review is in progress. Stage A is collection, first training, offline harm checks and a bounded rehearsal. Stage B is a separate continuation with the second training and two prospective population tests. No real R14 model process has started at this snapshot.
+- **Scope:** R12's menu expansion and the sealed wild records remain outside this continuation. No app adapter/default is adopted and no remote push or deployment is part of it. Rules-taught model results remain explicitly named as such.
+
+The older queue description in §2.2 is historical. Read the current R14 state and live process before starting any model work; one model process and no concurrent whole suite, build or animation verification.
 
 ### 2.1 What 10 to 12 October 2026 established
 
@@ -95,7 +105,7 @@ record's own, and each adapter is named by what taught it.
   scenes measured, except about 1 ms in 29 in the widest daytime strategy view of the 160 m map. None of W6 to W10
   was seen with a model. Plan, "Stages W6 to W10"; AGENTS.md, "Open issues".
 
-### 2.2 Running or queued (true at 10:15 EDT on 12 October 2026; this part goes stale within the hour)
+### 2.2 Historical queue of 12 October 2026 (completed; retained for artifact paths)
 
 **The model queue of 12 October (stage RW3, then stage R13) ended at 15:11 EDT and both stages are read; no model process is running.** What follows in this paragraph is history, kept for the paths. It was started at 09:30 EDT on 12 October in a detached
 `screen` session named `modelqueue`; each stage runs from its own frozen checkout, one model process at a time, and a
@@ -240,29 +250,12 @@ addresssed and we move faster parelalizing more work to get closer to the real r
 
 ## 5. Next tasks, in order
 
-1. **Read the model queue** when its state says `done` (or repair it, §2.2). RW3 first: the two reference scorings
-   read 0.301 and 0.319 as they must (§2.2); read `artifacts/rw3/tables/rw3-numbers.md`, S0 before anything else,
-   and not the step logs, which print each adapter's score as they run (`rw3-prereg.md` §14.3). R13:
-   `artifacts/r13/tables/r13-numbers.md`, §0 first (the check of the instrument), then viability,
-   the level, the field rows. Each stage's `publish` copies its tables to `docs/staging`: commit them on a branch and
-   write the result into the registration and the plan in the registered words. For RW3 a statement counts only if
-   both seeds meet it; R13 is a level of one training on one world seed.
-2. **Stage W11** is merged (cafc203); the whole suite, the build and frame time on the graphics card are done on the
-   merged head (§3), and so are `node scripts/verify-browser.mjs --no-model` (17 steps pass, 12 October, ended 15:35 EDT: start-up,
-   panels, speeds, night, storm, views, save and exact resume across a reload, the 160 m map, no page or console error)
-   and one look in the running app. Not done: anything in the app with a live model.
-3. **`docs-12oct` is merged** (documents only; the whole suite on its code is on record, §3). Before any push: the
-   user's ask, a privacy check of the range (no personal data, no raw rows), and only the two branches by name (§4).
-4. **Put §6 to the user**, the ten rulings first. Nothing of stage R12 is built before them.
-5. **Then:** with no model, the heat probe read on the rules' own odds (until then stage R11's failed mark O3 is not
-   a finding about the teacher: `r11-prereg.md` §14.2); with the model, the real token count and time of stage R12's
-   two short calls (`r12-prereg.md`, "For the integrator", item 3). Whatever is trained or run after R13 and RW3 is
-   registered first and depends on their results and on §6.
-6. **Small repairs on record:** the guards of `scripts/r9-run.sh` and `scripts/r9-seed2.sh` look for a model process
-   by the interpreter's path only, and those of `scripts/r11-run.sh` and earlier do not know `train_rw3` (AGENTS.md,
-   "Gotchas"); `scripts/r13-run.sh report` does not ask for `rules-plain.json` (`r13-prereg.md` §13.5); the
-   population script does not log items 3 to 8 of the ledger's list (`r7-ledger.md` §13). The older Track E list is
-   in `docs/staging/handoff-2026-10-05.md` §6.2 and was not re-checked on 12 October.
+1. Finish the active W13/R14 continuation in §2.0 and their registered documents. Verify the final combined source with the full bounded suite, build and ordinary app browser test, including persistence, before starting the model chain.
+2. Read R14 Stage A's explicit offline and rehearsal outcomes. A completed rehearsal only establishes completion, exact replay and passage of its catastrophic/futility stop; population viability requires Stage B's separate paired tests. Never retune a failed recipe or open a fresh test silently.
+3. Keep R12's menu changes behind its existing unresolved design decisions (§6). R14 deliberately repairs training coverage without changing the menu or simulation.
+4. Before any push or deployment, follow the user's request and repository privacy rules. All work in this continuation remains local on `track-e` and the stage branches.
+5. Other open scientific work remains: the rules-only heat-probe reading (`r11-prereg.md` §14.2), R12's short calls, the broader decision-ownership questions, and the Track E mechanisms/yardsticks. Earlier queue results RW3 and R13 have already been read; do not restart them as unfinished tasks.
+6. Older operational repairs still on record: `r9-run.sh` and `r9-seed2.sh` identify model processes only by interpreter path; earlier chain guards may not know newer trainers; `r13-run.sh report` does not require `rules-plain.json`; the population script omits ledger items 3–8. R14's own launch must guard process names and prior chain state files.
 
 ## 6. Waiting on the user
 
