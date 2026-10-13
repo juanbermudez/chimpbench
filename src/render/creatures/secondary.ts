@@ -131,6 +131,14 @@ export const IDLE_SHARE = [0, 0.22, 0.06, 0.34, 0.38, 0] as const;
 export const NOD_SHARE = 0.3;
 /** An animal that has just become still (it was walking, calling, in a decision beat) waits at least this long on the idle clock. */
 export const IDLE_SETTLE = 3;
+/**
+ * Stage W12: and up to this much longer, by the animal and the number of its next event (idleSettle). The wait used to
+ * be IDLE_SETTLE for everyone, so whatever held the idle life of several animals at once and let it go at once (a
+ * time-lapse that stops, a call they all listen to, a walk they end together) had every one of them start an event
+ * in the same frame three seconds later (measured: twelve of twelve). A design assumption, like the gaps.
+ */
+export const IDLE_SETTLE_SPREAD = 9;
+export function idleSettle(id: number, n: number): number { return IDLE_SETTLE + IDLE_SETTLE_SPREAD * hashUnit(id, 8001 + n); }
 export interface Idle {
   /** Idle seconds accrued (real seconds × the idle rate): gaps are measured on this clock. */
   clock: number;
@@ -186,7 +194,7 @@ export function idleStep(s: Idle, id: number, dt: number, rate: number, allow: n
     return false;
   }
   // Not idle (walking, calling, asleep, in a decision beat): nothing starts, and nothing starts the moment it is idle again.
-  if (allow === 0) { if (s.next < s.clock + IDLE_SETTLE) s.next = s.clock + IDLE_SETTLE; return false; }
+  if (allow === 0) { const wait = idleSettle(id, s.n); if (s.next < s.clock + wait) s.next = s.clock + wait; return false; }
   if (s.clock < s.next) return false;
   const n = s.n++;
   const w1 = IDLE_SHARE[1] * scratchK, w2 = IDLE_SHARE[2] * yawnK, w3 = IDLE_SHARE[3], w4 = IDLE_SHARE[4], w5 = NOD_SHARE * Math.max(0, nodK);

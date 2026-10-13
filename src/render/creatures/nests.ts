@@ -12,7 +12,9 @@ const MAX_NESTS = 240;
 const NEST_LIFE_HOURS = 24 * 45; // fades over ~45 ecological days
 
 /** grow: how far the nest has been built while its builder was drawn at it, 0..1 (stage W9); absent for a nest first
- * seen finished, which grows in by the clock as before. */
+ * seen finished, which is drawn finished (stage W12: it used to grow in over six simulated minutes from a quarter of
+ * its size, so every sleeper of a new world lay in a quarter of a nest; the simulation lists a nest only once it is
+ * built, src/sim/execution.ts). */
 interface Nest { key: string; treeId: number; x: number; y: number; z: number; built: number; lastUsed: number; seed: number; grow?: number; /** Its place as build() was given it, in half metres. */ kx?: number; kz?: number;
   /** Stage W11: the simulated place it was listed with and the id its place was drawn from (spotFor's `key`), so that
    * its drawn place can be found again (place(), below). */
@@ -154,9 +156,9 @@ export function createNests(parent: THREE.Object3D, ctx: CreatureContext) {
       if (age > NEST_LIFE_HOURS) { nests.delete(n.key); continue; }
       const decay = smoothstep(0, NEST_LIFE_HOURS, age);
       place(n);
-      // Being built: grows in over the first few ecological minutes. Stage W9: a nest whose builder was drawn at work
-      // grows with the building (build() below), from a few bent branches to the finished bowl.
-      const grow = n.grow !== undefined ? NEST_BEGUN + (1 - NEST_BEGUN) * smoothstep(0, 1, n.grow) : clamp((world.time - n.built) / 0.1, 0.25, 1);
+      // Stage W9: a nest whose builder was drawn at work grows with the building (build() below), from a few bent
+      // branches to the finished bowl. Stage W12: any other nest is one the simulation has finished: full size.
+      const grow = n.grow !== undefined ? NEST_BEGUN + (1 - NEST_BEGUN) * smoothstep(0, 1, n.grow) : 1;
       P.set(n.x, n.y - decay * 0.25, n.z);
       E.set((n.seed - 0.5) * 0.25 + decay * 0.25, n.seed * 6.28, (hash01(i, 3) - 0.5) * 0.2);
       Q.setFromEuler(E);

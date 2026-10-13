@@ -25,6 +25,9 @@ test('a nest listed while its tree has no crown follows the crown once the envir
   assert.equal(mesh.count, 1);
   nests.spotFor(tree.id, sleeper.nest.position as [number, number, number], sleeper.id, body);
   assert.ok(Math.abs(m[13] - body.y) < 1e-6 && Math.abs(body.y - 19.7) < 1e-6, `listed at the simulated height (${m[13]})`);
+  // Stage W12: a nest the simulation lists is a finished nest, drawn at its full size from the first frame (it used to
+  // grow in from a quarter of it over six simulated minutes, so every sleeper of a new world lay in a quarter of a nest).
+  assert.ok(Math.abs(Math.hypot(m[0], m[1], m[2]) - 1.25) < 1e-4, `full size at once (${Math.hypot(m[0], m[1], m[2])})`);
 
   // The camera arrives: the crown is drawn lower than that. The body's place follows at once (it is found every
   // frame); the nest's follows when the list is next redrawn, half a second later at the latest.
@@ -51,5 +54,6 @@ test('a nest listed while its tree has no crown follows the crown once the envir
   assert.equal(mesh.count, 2);
   nests.spotFor(tree.id, [8.4, 13, 19.5], builder.id, body);
   assert.ok(Math.abs(m[16 + 13] - body.y) < 1e-6 && Math.abs(body.y - 12) < 1e-6, 'the nest under construction is in the crown too');
+  assert.ok(Math.hypot(m[16], m[17], m[18]) < 1.25 * 0.8, 'and it is still small: it grows with its builder');
   nests.dispose();
 });

@@ -183,7 +183,18 @@ function setupAction(action: Action, x: number, z: number, moving: boolean) {
     }
     case 'play': { const a = chimp({ age: 6, sex: 'male', x, z, action: 'play', heading, vocal: 'laugh', mood: 'playful' }); const b = chimp({ age: 5, sex: 'female', x: x + 0.6, z, action: 'play', target: a.id, mood: 'playful' }); a.targetId = b.id; interaction('play', a, b); break; }
     case 'climb': { const t = tree(x + 0.3, z - 0.6, mode === 'sheet' ? 6 : 12); const a = male({ target: t.id, y: 2.5 }); movers.push({ c: a, cx: x, cz: z, r: 0, speed: 0.6, ang: 0, vertical: true }); break; }
-    case 'nest': { const th = mode === 'sheet' ? 4 : 8; const t = tree(x + 0.2, z - 0.5, th); const a = female({ y: th * 0.8 }); a.nest = { treeId: t.id, position: [x + 1.5, th * 0.8, z] }; a.actionTime = q.has('build') ? 30 : 3600; break; }
+    case 'nest': {
+      // &build: a builder. Stage W12: it has no finished nest yet (the simulation publishes Chimp.nest when the building
+      // ends), sits at its nest place in the tree its act names, and with &build=<seconds> the nest is published after
+      // that long, as the simulation would. Without &build: asleep in a finished nest.
+      const th = mode === 'sheet' ? 4 : 8; const t = tree(x + 0.2, z - 0.5, th);
+      const nest = { treeId: t.id, position: [x + 1.5, th * 0.8, z] as [number, number, number] };
+      if (q.has('build')) {
+        const a = female({ y: th * 0.8, x: x + 1.5, target: t.id }); a.actionTime = 30;
+        const after = Number(q.get('build')); if (after > 0) setTimeout(() => { a.nest = nest; }, after * 1000);
+      } else { const a = female({ y: th * 0.8 }); a.nest = nest; a.actionTime = 3600; }
+      break;
+    }
     case 'mate': { const f = female({ action: 'mate', swelling: 1, x: x + 0.5 }); const m = male({ target: f.id }); f.targetId = m.id; interaction('mate', m, f); break; }
     case 'nurse': { const m = female({}); m.lactating = true; const inf = chimp({ age: 0.4, sex: 'female', x: x + 0.2, z, action: 'nurse', mother: m.id }); m.targetId = inf.id; break; }
     case 'attack': { const b = male({ action: 'submit', age: 17, x: x + 0.7, vocal: 'scream', mood: 'fearful' }); const a = male({ target: b.id, mood: 'aggressive', vocal: 'bark' }); interaction('fight', a, b, 0.8); break; }
