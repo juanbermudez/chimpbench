@@ -1,10 +1,14 @@
 import { applyDecision, resolveByRules } from './simulation';
 import { buildRequest } from './sim/request';
 import { secondRequest } from './sim/decide';
+import { decode, optionKey } from './kernel/decode';
+import { r15FocalIds } from './r15-demo';
+import { paramsOf } from './sim/params';
+import { adapterIdentity } from './providers/http';
 import { readAnswer } from './kernel/answer';
 import type { Candidate, Chimp, DecisionContext, ModelPolicy, World } from './types';
 import { httpProvider } from './providers/http';
-import { ProviderError, type DecisionProvider, type ProviderAnswer } from './providers/types';
+import { ProviderError, type DecisionProvider, type ProviderAnswer, type AdapterIdentity } from './providers/types';
 
 // The decision loop: model-controlled chimps pause at decision points
 // (awaitingDecisionSince), this loop sends one chimp's local percept at a time
@@ -12,6 +16,10 @@ import { ProviderError, type DecisionProvider, type ProviderAnswer } from './pro
 // through the engine. Whenever the model cannot answer in time, rules decide,
 // so lockstep mode can never deadlock the clock.
 
+export interface ResourceCallTrace {
+  stage: 'kind' | 'target'; context: DecisionContext; keys: string[];
+  probabilities: number[]; kernelIndex: number; choiceIndex: number; draw: number;
+}
 export interface DecisionTrace {
   id: string; chimpId: number; chimpName: string; time: number; context: DecisionContext;
   /** The bounded menu shown to the model; score is the sim's rules score. */
@@ -23,14 +31,14 @@ export interface DecisionTrace {
   /** '' or how an applied answer was applied, e.g. 'applied to newer state (still legal)'. */
   note: string;
   /** Provider that produced this trace; absent on older saves. */
-  provider?: string; model?: string;
+  provider?: string; model?: string; identity?: AdapterIdentity; resourceCalls?: ResourceCallTrace[];
 }
 
 export type Roster = 'selected' | 'focal-set' | 'all';
 
 export interface DecisionController {
   enabled: boolean; ready: boolean; busy: boolean; phase: string; status: string; lastError: string;
-  provider: string; providerLabel: string; progress: number | null;
+  provider: string; providerLabel: string; progress: number | null; identity?: AdapterIdentity;
   model: string; device: string; latencyMs: number | null; inputTokens: number | null; calls: number;
   /** Model answers applied: fresh (same version) + revalidated (newer version, still legal). */
   applied: number;
@@ -52,11 +60,11 @@ export interface DecisionController {
 }
 
 /** Non-serializable per-controller state kept out of the UI-facing object. */
-interface Internal { provider: DecisionProvider; world: World | null; abort: AbortController | null; waitingSince: Map<number, number>; statusPollAt: number; }
+interface Internal { provider: DecisionProvider; world: World | null; abort: AbortController | null; waitingSince: Map<number, number>; statusPollAt: number; requestAt: number | null; }
 const internals = new WeakMap<DecisionController, Internal>();
 function internal(controller: DecisionController): Internal {
   let state = internals.get(controller);
-  if (!state) { state = { provider: httpProvider('server', () => `${controller.baseUrl}/api/decide`), world: null, abort: null, waitingSince: new Map(), statusPollAt: 0 }; internals.set(controller, state); }
+  if (!state) { state = { provider: httpProvider('server', () => `${controller.baseUrl}/api/decide`), world: null, abort: null, waitingSince: new Map(), statusPollAt: 0, requestAt: null }; internals.set(controller, state); }
   return state;
 }
 
@@ -79,9 +87,11 @@ export function createDecisionController(provider?: DecisionProvider): DecisionC
 export function setDecisionProvider(controller: DecisionController, provider: DecisionProvider): void {
   const state = internal(controller);
   cancelDecisionRequests(controller); state.provider.dispose?.(); state.provider = provider; state.statusPollAt = 0;
+  controller.timeoutMs = provider.id === 'r15' ? 22000 : controller.provider === 'r15' ? 6000 : controller.timeoutMs;
   controller.provider = provider.id; controller.providerLabel = provider.label; controller.progress = null;
   controller.ready = false; controller.phase = provider.id === 'browser' ? 'stopped' : 'loading';
-  controller.model = provider.id === 'jev' ? 'jev-latest' : MODEL_NAME; controller.device = ''; controller.lastError = '';
+  controller.identity = undefined;
+  controller.model = provider.id === 'jev' ? 'jev-latest' : provider.id === 'r15' ? 'R15 adapter not loaded' : MODEL_NAME; controller.device = ''; controller.lastError = '';
   controller.status = idleStatus(controller);
 }
 
@@ -89,7 +99,7 @@ export function setDecisionProvider(controller: DecisionController, provider: De
 export function cancelDecisionRequests(controller: DecisionController): void {
   controller.generation++;
   const state = internal(controller);
-  state.abort?.abort(); state.abort = null; state.waitingSince.clear();
+  state.abort?.abort(); state.abort = null; state.requestAt = null; state.waitingSince.clear();
   controller.busy = false; controller.inflightChimpId = -1; controller.backoffUntil = 0;
 }
 
@@ -98,10 +108,11 @@ export async function refreshDecideStatus(controller: DecisionController): Promi
   try {
     const body = await provider.status();
     if (internal(controller).provider !== provider) return;
-    controller.ready = body.ready; controller.phase = body.phase;
+    controller.identity = body.identity;
+    controller.ready = body.ready && (controller.provider !== 'r15' || body.identity !== undefined); controller.phase = body.phase;
     controller.model = body.model || controller.model; controller.device = body.device ?? controller.device;
     controller.progress = body.progress ?? null;
-    controller.lastError = body.error ?? '';
+    controller.lastError = controller.provider === 'r15' && body.ready && !body.identity ? 'R15 provider did not identify compatible loaded weights' : body.error ?? '';
     if (!controller.busy) controller.status = idleStatus(controller);
   } catch (error) {
     if (internal(controller).provider !== provider) return;
@@ -133,6 +144,7 @@ function idleStatus(controller: DecisionController): string {
 // ---------------------------------------------------------------------------
 
 export function setPolicy(controller: DecisionController, world: World, mode: ModelPolicy['mode']): void {
+  if (paramsOf(world).resourceTargets === 1 && mode !== 'off') mode = 'lockstep';
   world.modelPolicy.mode = mode;
   controller.enabled = mode !== 'off';
   if (mode === 'off') {
@@ -153,7 +165,7 @@ export function focalSet(world: World, selectedId: number): number[] {
   for (const troop of world.troops) add(alive.find(c => c.id === troop.alphaId));
   const home = selected?.troopId ?? world.troops[0]?.id;
   const byHome = (a: Chimp, b: Chimp) => Number(b.troopId === home) - Number(a.troopId === home) || a.id - b.id;
-  const mothers = alive.filter(c => c.sex === 'female' && (c.stage === 'adult' || c.stage === 'elder')
+  const mothers = alive.filter(c => c.sex === 'female' && (c.age >= 8)
     && alive.some(i => i.motherId === c.id && i.stage === 'infant')).sort(byHome);
   add(mothers.find(c => !ids.includes(c.id)));
   add(alive.filter(c => c.stage === 'juvenile').sort(byHome).find(c => !ids.includes(c.id)));
@@ -161,6 +173,7 @@ export function focalSet(world: World, selectedId: number): number[] {
 }
 
 function rosterIds(world: World, roster: Roster, selectedId: number): number[] {
+  if (paramsOf(world).resourceTargets === 1) return r15FocalIds(world);
   if (roster === 'all') return world.chimps.filter(c => c.alive).map(c => c.id);
   if (roster === 'focal-set') return focalSet(world, selectedId);
   return world.chimps.some(c => c.alive && c.id === selectedId) ? [selectedId] : [];
@@ -174,7 +187,7 @@ function rosterStale(controller: DecisionController, world: World, ids: number[]
 
 /** Writes chimp.controller for every chimp; focalIds is the resulting model-controlled set. */
 export function setRoster(controller: DecisionController, world: World, roster: Roster, selectedId: number): void {
-  controller.roster = roster;
+  controller.roster = paramsOf(world).resourceTargets === 1 ? 'focal-set' : roster;
   applyRoster(controller, world, rosterIds(world, roster, selectedId));
   internal(controller).world = world;
 }
@@ -271,7 +284,9 @@ export function pumpDecisions(controller: DecisionController, world: World, sele
   }
   // Anyone parked longer than the timeout gets rules now, including the chimp in flight (its late answer is then discarded by version).
   for (const chimp of waiting) {
-    if (now - (state.waitingSince.get(chimp.id) ?? now) < controller.timeoutMs) continue;
+    if (controller.provider === 'r15' && chimp.id !== controller.inflightChimpId) continue;
+    const since = controller.provider === 'r15' ? state.requestAt ?? now : state.waitingSince.get(chimp.id) ?? now;
+    if (now - since < controller.timeoutMs) continue;
     if (chimp.id === controller.inflightChimpId) { state.abort?.abort(); controller.generation++; controller.busy = false; controller.inflightChimpId = -1; controller.backoffUntil = now + 250; }
     fallBack(controller, world, chimp, `no model answer within ${Math.round(controller.timeoutMs / 1000)} s`, traces++ < FALLBACK_TRACES_PER_PUMP);
   }
@@ -292,6 +307,8 @@ async function requestDecision(controller: DecisionController, world: World, chi
   if (options.length < 2) { fallBack(controller, world, chimp, 'fewer than two options', true); return; }
   const generation = controller.generation;
   const version = context.version;
+  const resource = context.resourceChoice !== undefined;
+  const identity = controller.identity;
   const abort = new AbortController();
   state.abort = abort;
   controller.busy = true; controller.inflightChimpId = chimp.id; controller.calls++;
@@ -299,15 +316,31 @@ async function requestDecision(controller: DecisionController, world: World, chi
   const started = typeof performance !== 'undefined' ? performance.now() : Date.now();
   const trace: DecisionTrace = { id: traceId(world, chimp.id), chimpId: chimp.id, chimpName: chimp.name, time: world.time, context, options,
     probabilities: [], choiceIndex: -1, rulesIndex, applied: false, discardedReason: '', latencyMs: 0, inputTokens: 0, source: 'model', note: '', provider: controller.provider };
+  if (resource) { trace.resourceCalls = []; trace.identity = identity; }
   let failure = '';
   let answer: BridgeAnswer = {};
   let status = 0;
   let clock = 0;
   /** One provider call. False: superseded (the answer is not ours), or it failed and the failure was handled; the flight is over either way. */
   const ask = async (ctx: DecisionContext, more: (a: BridgeAnswer) => boolean): Promise<boolean> => {
-    failure = ''; answer = {}; status = 0;
+    failure = ''; answer = {}; status = 0; state.requestAt = Date.now();
     try {
+      if (resource && (controller.provider !== 'r15' || !identity)) throw new Error('R15 decisions require verified R15 weights');
       answer = await state.provider.decide(ctx, abort.signal);
+      if (resource) {
+        const loaded = adapterIdentity(answer.identity);
+        if (!loaded || !identity || loaded.adapter !== identity.adapter || loaded.sha256 !== identity.sha256 || loaded.packetVersion !== identity.packetVersion)
+          throw new Error('R15 adapter identity changed or is missing');
+        const read = readAnswer(answer, ctx.candidates.length);
+        if (read) {
+          const stage = ctx.resourceChoice!;
+          const keys = stage === 'kind' ? ctx.resourceKinds!.map(k => `kind/${k}`) : ctx.candidates.map(optionKey);
+          const result = decode({ mode: 'draw', salt: 1 }, { seed: world.seed, chimpId: chimp.id, version, epoch: 0,
+            stage: stage === 'kind' ? 'kind' : `target/${ctx.resourceKinds![0]}` }, keys, read.probabilities, read.index);
+          trace.resourceCalls!.push({ stage, context: ctx, keys, probabilities: read.probabilities, kernelIndex: read.index, choiceIndex: result.index, draw: result.u! });
+          answer = { ...answer, index: result.index, choice: `c${result.index}` };
+        }
+      }
     } catch (error) {
       failure = error instanceof Error ? error.message : 'request failed';
       if (error instanceof ProviderError) { status = error.status; answer.phase = error.phase; }
@@ -317,10 +350,11 @@ async function requestDecision(controller: DecisionController, world: World, chi
     // (the flight stays open only while a second call for the same decision follows at once: activityFirst 2)
     let another = false;
     if (!failure) { try { another = more(answer); } catch (error) { failure = error instanceof Error ? error.message : 'invalid second request'; } }
-    if (failure || !another) { controller.busy = false; controller.inflightChimpId = -1; state.abort = null; }
+    if (failure || !another) { controller.busy = false; controller.inflightChimpId = -1; state.abort = null; state.requestAt = null; }
     clock = Date.now();
     if (failure) {
       controller.lastError = failure;
+      if (resource) { trace.discardedReason = failure; trace.model = controller.model; pushTrace(controller, trace); }
       if (typeof answer.phase === 'string' && answer.phase !== 'ready') { controller.ready = false; controller.phase = answer.phase; controller.backoffUntil = clock + 2000; }
       else if (status === 429) { controller.backoffUntil = clock + (controller.provider === 'jev' ? 10000 : 100); return false; } // someone else holds the worker; retry soon, timeout still applies
       else controller.backoffUntil = clock + (status === 400 ? 1000 : 3000);
@@ -371,7 +405,7 @@ async function requestDecision(controller: DecisionController, world: World, chi
   // If the chimp is still waiting at this decision point, still ours, and the choice is still legal now,
   // apply it to the newer state: applyDecision re-checks the pair against a freshly computed eligible list.
   const stillWaiting = chimp.alive && chimp.controller === 'model' && chimp.awaitingDecisionSince !== null;
-  if (!trace.applied && stillWaiting && chimp.decisionVersion !== version) {
+  if (!resource && !trace.applied && stillWaiting && chimp.decisionVersion !== version) {
     trace.applied = applyDecision(world, chimp.id, choice, 'decide', chimp.decisionVersion);
     if (trace.applied) { trace.note = `${trace.note ? `${trace.note}; ` : ''}applied to newer state (still legal)`; controller.revalidated++; }
   }

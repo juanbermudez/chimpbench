@@ -27,6 +27,7 @@ export const RULES_ENGINE: Engine = { id: 'rules', label: 'Rules', note: 'The si
 /** The name for a model that answered through the decision loop. The interface cannot tell an adapter from the base
  * model by itself, so anything that is not the published base or Jev is named by its own identifier. */
 export function modelEngine(model?: string, provider?: string): Engine {
+  if (provider === 'r15') return { id: 'other-model', label: `R15 ${model ?? 'resource model'}`, note: 'A trained rules-imitation model chose an activity, then a perceived resource target. The loop sampled its probabilities.' };
   if (provider === 'jev' || /^jev/i.test(model ?? '')) return { id: 'general', label: 'General model (Jev) on a rules menu', note: 'A general model picked among options the rules listed and worded.' };
   if (!model || model === BASE_MODEL || model === BASE_MODEL_ONNX) return { id: 'untuned', label: 'Untuned model on a rules menu', note: 'GLiNER2.5-Decide as published, never trained on chimpanzees, picked among options the rules listed and worded.' };
   return { id: 'other-model', label: `Model ${model} on a rules menu`, note: 'A model other than the published base picked among options the rules listed and worded.' };

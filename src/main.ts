@@ -1,4 +1,5 @@
 import './style.css';
+import { createR15Demo, r15FocalIds } from './r15-demo';
 import { applyIntervention, createWorld, relationOf, relationshipOf, tickWorld, type Profile } from './simulation';
 import { createScene, type Scene } from './scene';
 import { advance, createClock, frameBudget, SPEED_PRESETS, setSpeed, subTick } from './clock';
@@ -29,6 +30,7 @@ import { createPersistence, type OpenResult } from './persist/controller';
 const params = new URLSearchParams(location.search);
 perf.on = params.get('perf') === '1' || params.get('perf') === 'gpu';
 perf.gpu = params.get('perf') === 'gpu';
+const r15Demo = params.get('r15') === '1';
 const debugSeed = Number(params.get('seed') ?? 48), debugPop = Number(params.get('pop') ?? 0);
 // New and scratch worlds use the real-metre field profile (C5b, ~8 km); ?profile=compressed opens an unsaved 160 m world
 // (?profile=field an unsaved field one). New simulations pick their profile in the Simulations dialog; saves keep theirs.
@@ -36,9 +38,10 @@ const debugSeed = Number(params.get('seed') ?? 48), debugPop = Number(params.get
 const APP_PROFILE: Profile = 'field';
 const profileParam = params.get('profile');
 const urlProfile: Profile | undefined = profileParam === 'field' || profileParam === 'compressed' ? profileParam : undefined;
-const scratch = params.has('seed') || params.has('pop') || params.has('fresh') || urlProfile !== undefined;
+const scratch = r15Demo || params.has('seed') || params.has('pop') || params.has('fresh') || urlProfile !== undefined;
 const profileOf = (w: World): Profile => w.size > 1000 ? 'field' : 'compressed';
 function makeWorld(seed: number, profile: Profile = urlProfile ?? APP_PROFILE): World {
+  if (r15Demo) return createR15Demo();
   const w = createWorld(seed, { profile });
   if (debugPop > 0) growPopulation(w, debugPop);
   return w;
@@ -55,7 +58,7 @@ try {
 let savedProvider: string | null = null;
 try { savedProvider = localStorage.getItem('mgogo.decision-provider'); } catch { /* storage may be blocked */ }
 // A build-fixed provider (VITE_DECISION_PROVIDER) is not overridden by ?provider= either.
-const providerId = providerSelection(providerConfig, import.meta.env.DEV && import.meta.env.VITE_STATIC !== '1', import.meta.env.VITE_DECISION_PROVIDER ? null : params.get('provider'), savedProvider, import.meta.env.VITE_DECISION_PROVIDER);
+const providerId = r15Demo ? 'r15' : providerSelection(providerConfig, import.meta.env.DEV && import.meta.env.VITE_STATIC !== '1', import.meta.env.VITE_DECISION_PROVIDER ? null : params.get('provider'), savedProvider, import.meta.env.VITE_DECISION_PROVIDER);
 const decider = createDecisionController(createProvider(providerId, providerConfig));
 if (providerConfigError) decider.lastError = providerConfigError;
 // Static hosting (VITE_STATIC=1, e.g. a published artifact): no local model server, no save library and no sound
@@ -82,7 +85,7 @@ const persist = createPersistence({
   dirtyKey: () => `${world.tick}|${mutationKey()}|${JSON.stringify(session())}`,
   notify: (text, severity) => notifyUi(text, severity),
   changed: () => {},
-}, { enabled: !perf.on && !STATIC && params.get('persist') !== '0' });
+}, { enabled: !r15Demo && !perf.on && !STATIC && params.get('persist') !== '0' });
 
 // Until the store answers (~50–100 ms on reload, ~0.3 s on a first visit), show the loading screen.
 const root = document.querySelector<HTMLElement>('#app')!;
@@ -106,9 +109,9 @@ function applyClock(saved: PersistedSession['clock'] | undefined) {
 
 // A save waiting on the older-parameters choice keeps its profile for the stand-in world ("start new" reuses it).
 world = resumed ? resumed.env.world : olderParams && opened?.ok ? makeWorld(olderParams.seed, profileOf(opened.env.world)) : makeWorld(Number.isFinite(debugSeed) ? debugSeed : 48);
-setPolicy(decider, world, resumed ? world.modelPolicy.mode : 'async');
+setPolicy(decider, world, resumed ? world.modelPolicy.mode : r15Demo ? 'lockstep' : 'async');
 if (resumed) restoreDecider(decider, resumed.env.decider, resumed.env.savedAt);
-setRoster(decider, world, resumed?.env.decider.roster ?? 'selected', savedSelection(resumed?.env.session.ui) ?? defaultSelection(world));
+setRoster(decider, world, resumed?.env.decider.roster ?? (r15Demo ? 'focal-set' : 'selected'), savedSelection(resumed?.env.session.ui) ?? defaultSelection(world));
 
 /** Swap in another world (new or opened simulation): cancel model requests, rebuild the scene around the selection
  * the UI will show (the saved one, else the default). */
@@ -177,14 +180,19 @@ const app = createApp(root, {
   getSound: () => audio,
   setSpeed: id => setSpeed(clock, id),
   lapseRate: () => lapseRate(paramsOf(world)),
-  setPlaying: playing => { clock.playing = playing; },
+  setPlaying: playing => {
+    if (r15Demo && playing && !decider.ready) { notifyUi('Start the R15 provider and wait for verified weights before playing this demo.'); return; }
+    clock.playing = playing;
+  },
   setPolicy: mode => { epoch++; setPolicy(decider, world, mode); },
   setRoster: (roster, selectedId) => { epoch++; setRoster(decider, world, roster, selectedId); },
   // A build that fixes the provider (VITE_DECISION_PROVIDER, e.g. the hosted GLiNER-only site) offers no picker.
   setProvider: import.meta.env.VITE_DECISION_PROVIDER ? undefined : id => {
     if (!isProviderId(id)) return;
+    if (r15Demo && id !== 'r15') { notifyUi('This scratch world uses the R15 provider. Open the normal app for other providers.'); return; }
+    if (!r15Demo && id === 'r15') { persist.flushBeforeSwitch(); location.assign(`${location.pathname}?r15=1`); return; }
     epoch++; setDecisionProvider(decider, createProvider(id, providerConfig));
-    try { localStorage.setItem('mgogo.decision-provider', id); } catch { /* storage may be blocked */ }
+    try { if (!r15Demo) localStorage.setItem('mgogo.decision-provider', id); } catch { /* storage may be blocked */ }
     void pollReadiness();
   },
   retryModel: async () => { await startLocalModel(decider); void pollReadiness(); },
@@ -195,6 +203,7 @@ const app = createApp(root, {
   guideUrl: import.meta.env.VITE_GUIDE_URL || '/about',
   persistence: persist.status.mode === 'off' ? undefined : persistenceView,
 });
+if (r15Demo) { app.ctx.select(r15FocalIds(world)[0] ?? defaultSelection(world)); clock.playing = false; }
 captureUi = app.captureUi;
 notifyUi = (text, severity = 1, run, label) => app.ctx.notify({ text, cat: 'system', title: 'Simulations', severity, action: run && label ? { label, run } : undefined });
 
@@ -213,6 +222,7 @@ if (resumed) {
   if (!scratch && persist.canWrite()) void persist.adopt(`Seed ${world.seed}`, world.seed);
   else persist.attach(null);
 }
+if (r15Demo) notifyUi('R15 scratch demo: five animals aged 8+, lockstep, seeded draws. Start the R15 provider, then press Play. This world is not saved.');
 const ps = persist.status;
 if (ps.mode === 'locked') notifyUi(ps.message, 2, () => persist.requestHandoff(), 'Use this tab');
 else if (ps.mode === 'memory' || ps.mode === 'error' || ps.mode === 'readonly') notifyUi(ps.message, 2);

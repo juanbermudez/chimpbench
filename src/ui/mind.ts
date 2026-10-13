@@ -1,3 +1,4 @@
+import { r15Packet } from '../providers/packet';
 import type { Ctx } from './app';
 import type { Chimp, SocialPercept, World } from '../types';
 import type { DecisionTraceView } from './contracts';
@@ -117,7 +118,7 @@ function storyStrip(ctx: Ctx, tr: DecisionTraceView): string {
   const p = model ? tr.probabilities[tr.choiceIndex] : undefined;
   const top = tr.options.map((o, i) => ({ o, v: model && tr.probabilities.length === tr.options.length ? tr.probabilities[i] : o.score })).sort((a, b) => b.v - a.v).slice(0, 3).map(x => actionLabel(x.o.action).toLowerCase());
   const applied = !model ? { cls: 'fb', head: 'Rules fallback', sub: tr.discardedReason || (tr.applied ? 'applied by rules' : 'not applied') }
-    : tr.applied ? (tr.note ? { cls: 'rev', head: 'Applied · revalidated', sub: tr.note } : { cls: 'ok', head: 'Applied fresh', sub: 'same state the model saw' })
+    : tr.applied ? (tr.note?.includes('applied to newer state') ? { cls: 'rev', head: 'Applied · revalidated', sub: tr.note } : { cls: 'ok', head: 'Applied fresh', sub: 'same state the model saw' })
     : { cls: 'bad', head: 'Discarded', sub: tr.discardedReason || 'stale or illegal' };
   const arrow = `<li class="st-arrow" aria-hidden="true">${icon('chevronR')}</li>`;
   return `<ol class="story" aria-label="Decision loop, step by step">
@@ -138,6 +139,10 @@ export function traceCard(ctx: Ctx, tr: DecisionTraceView, pinned: boolean, cont
   return `<article class="trace ${pinned ? 'pinned' : ''}">
     <header class="trace-head"><h3 class="eyebrow">${pinned ? 'Pinned decision' : 'Latest decision'}</h3><b class="mono">${stamp(w, tr.time)}</b>${whoChip(card)}${control}</header>
     ${decisionLine(card)}
+    ${tr.resourceCalls?.length ? `<section class="r15-choices"><h4 class="eyebrow">Activity and target choices</h4><ol>${tr.resourceCalls.map(call => {
+      const labels = r15Packet(call.context).questions.action.criteria;
+      return `<li><b>${call.stage === 'kind' ? 'Activity' : 'Target'}: ${esc(labels[`c${call.choiceIndex}`] ?? 'No valid choice')}</b><span class="mono muted"> · ${Math.round((call.probabilities[call.choiceIndex] ?? 0) * 100)}% · sampled</span></li>`;
+    }).join('')}</ol><p class="subtle">${tr.applied ? 'Applied' : `Not applied: ${esc(tr.discardedReason || 'waiting')}`} · ${esc(tr.identity?.adapter ?? 'R15')} · <span class="mono" title="${esc(tr.identity?.sha256 ?? '')}">${esc(tr.identity?.sha256.slice(0, 12) ?? '')}</span></p></section>` : ''}
     ${model ? `<p class="dnote ${agree ? '' : 'diverge'}">${tr.rulesIndex < 0 ? 'The rules’ own pick is not on this menu.' : agree ? 'The rules pick the same.' : `The rules would pick ${rules ? `${esc(actionLabel(rules.action).toLowerCase())}${targetName(w, rules, tr) ? ` → ${esc(targetName(w, rules, tr))}` : ''}` : 'another option'}.`}</p>` : `<p class="dnote">${esc(card.engine.note)}</p>`}
     <h4 class="eyebrow opts-title ${model ? '' : 'by-rules'}">Options offered <span class="muted">${card.options.length} · <i class="mk-model">●</i> chosen${model ? ' · <i class="mk-rules">◆</i> rules pick' : ''}</span></h4>
     ${optionsList(card)}

@@ -4,13 +4,14 @@ export interface ProviderConfig {
   default: ProviderId | 'auto';
   server: { baseUrl: string };
   jev: { baseUrl: string };
+  r15: { baseUrl: string };
   browser: { model: string; revision: string; device: 'auto' | 'webgpu' | 'wasm'; dtype: 'auto' | 'fp32' | 'fp16' | 'q4' | 'q4f16' };
 }
 export const DEFAULT_PROVIDER_CONFIG: ProviderConfig = {
-  default: 'browser', server: { baseUrl: '/api/decide' }, jev: { baseUrl: '/api/providers/jev' },
+  default: 'browser', server: { baseUrl: '/api/decide' }, jev: { baseUrl: '/api/providers/jev' }, r15: { baseUrl: '/api/providers/r15' },
   browser: { model: 'onnx-community/GLiNER2.5-Decide-ONNX', revision: '2a9b872b5c70ae1105107975a0952a57e0fbba25', device: 'auto', dtype: 'auto' },
 };
-export const isProviderId = (v: unknown): v is ProviderId => v === 'browser' || v === 'server' || v === 'jev';
+export const isProviderId = (v: unknown): v is ProviderId => v === 'browser' || v === 'server' || v === 'jev' || v === 'r15';
 const object = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 function endpoint(v: unknown): string {
   if (typeof v !== 'string' || !v || v.startsWith('//')) throw new Error('Provider endpoint must be a relative path or HTTP(S) URL');
@@ -27,7 +28,7 @@ export function parseProviderConfig(value: unknown): ProviderConfig {
     if (value.default !== 'auto' && !isProviderId(value.default)) throw new Error('Unknown default decision provider');
     result.default = value.default;
   }
-  for (const id of ['server', 'jev'] as const) if (value[id] !== undefined) {
+  for (const id of ['server', 'jev', 'r15'] as const) if (value[id] !== undefined) {
     if (!object(value[id])) throw new Error(`Invalid ${id} provider config`);
     result[id].baseUrl = endpoint(value[id].baseUrl);
   }
