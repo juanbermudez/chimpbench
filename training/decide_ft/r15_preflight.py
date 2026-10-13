@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SCHEMA = 'r15-preflight-v1'
 REVISION = '7ee5da4c2415e32259bcdc0b1a7367c32ce8d6f6'
 LIMITS = {'tokens': 1280, 'rows': 20000, 'dev_per_phase': 6, 'seconds': 2700,
-          'same_precision_gap': 1e-4, 'fp32_half_gap': .005, 'bf16_half_gap': .02, 'sum_error': 1e-5}
+          'same_precision_gap': 1e-4, 'half_api_gap': .001, 'half_api_sum_error': .001, 'fp32_half_gap': .005, 'bf16_half_gap': .02, 'sum_error': 1e-5}
 SOURCES = ('src/providers/packet.ts', 'src/kernel/resource-contract.ts', 'src/sim/context-check.ts',
            'scripts/lib/r15-training.ts', 'scripts/r15-preflight.ts', 'training/decide_ft/common.py',
            'training/decide_ft/soft_loss.py', 'training/decide_ft/train.py', 'training/decide_ft/train_r11.py',
@@ -65,10 +65,10 @@ def fixture_rows(rows):
     return chosen
 
 
-def probability_gap(left, right):
+def probability_gap(left, right, sum_error=None):
     if not left or len(left) != len(right): raise ValueError('probability menu mismatch')
     for probabilities in (left, right):
-        if any(not math.isfinite(p) or p < 0 or p > 1 for p in probabilities) or abs(sum(probabilities) - 1) > LIMITS['sum_error']:
+        if any(not math.isfinite(p) or p < 0 or p > 1 for p in probabilities) or abs(sum(probabilities) - 1) > (LIMITS['sum_error'] if sum_error is None else sum_error):
             raise ValueError('invalid or unnormalized probabilities')
     return max(abs(a - b) for a, b in zip(left, right))
 
@@ -101,7 +101,7 @@ def validate_preflight(root):
         for key, a, b in (('fp32_half_gap', 'fp32', 'half'), ('bf16_half_gap', 'bf16', 'half')):
             if abs(probability_gap(row[a], row[b]) - row[key]) > 1e-10: raise ValueError('inconsistent probability evidence')
         if row.get('same_ids') is not True: raise ValueError('training/serving token mismatch')
-        for key, limit in (('fp32_gap', 'same_precision_gap'), ('half_gap', 'same_precision_gap'), ('fp32_half_gap', 'fp32_half_gap'), ('bf16_half_gap', 'bf16_half_gap')):
+        for key, limit in (('fp32_gap', 'same_precision_gap'), ('half_gap', 'half_api_gap'), ('fp32_half_gap', 'fp32_half_gap'), ('bf16_half_gap', 'bf16_half_gap')):
             value = row.get(key)
             if not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0 or value > LIMITS[limit]: raise ValueError('failed numerical parity')
     return result

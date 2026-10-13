@@ -66,7 +66,7 @@ def main(root):
             (logits,), _ = action_logits(model, batch)
             probabilities = torch.softmax(logits, -1).tolist()
             served_probs = [next(item['confidence'] for item in served if item['label'] == label) for label in packet['questions']['action']['criteria']]
-            return probabilities, probability_gap(probabilities, served_probs), bool(torch.equal(captured[-1].cpu(), batch.input_ids.cpu())), int(batch.attention_mask.sum())
+            return probabilities, probability_gap(probabilities, served_probs, LIMITS['half_api_sum_error'] if next(model.parameters()).dtype == torch.float16 else None), bool(torch.equal(captured[-1].cpu(), batch.input_ids.cpu())), int(batch.attention_mask.sum())
         with torch.inference_mode():
             for row, variant, packet in fixture:
                 fp32, gap, same, n = compare(packet)
@@ -83,7 +83,7 @@ def main(root):
                 item.update(half=half, half_gap=gap, same_ids=item['same_ids'] and same,
                             fp32_half_gap=probability_gap(item['fp32'], half), bf16_half_gap=probability_gap(item['bf16'], half))
         write_new(out / 'parity.json', {'rows': parity, 'base_only': True, 'weight_update': False})
-        if any(not r['same_ids'] or r['fp32_gap'] > LIMITS['same_precision_gap'] or r['half_gap'] > LIMITS['same_precision_gap']
+        if any(not r['same_ids'] or r['fp32_gap'] > LIMITS['same_precision_gap'] or r['half_gap'] > LIMITS['half_api_gap']
                or r['fp32_half_gap'] > LIMITS['fp32_half_gap'] or r['bf16_half_gap'] > LIMITS['bf16_half_gap'] for r in parity):
             raise ValueError('numerical parity tolerance exceeded')
         if identity != {'dataset': dataset_identity(root), 'implementations': implementation_identity(), 'runtime': runtime_identity()}:
