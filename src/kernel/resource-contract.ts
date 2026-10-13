@@ -10,3 +10,5 @@ export const RESOURCE_KIND_LABELS = {
 } satisfies Record<Kind, string>;
 export const isResourceKind = (value: string): value is 'eat_here' | 'go_to_food' | 'drink' => value === 'eat_here' || value === 'go_to_food' || value === 'drink';
 export const isDecisionKind = (value: unknown): value is Kind => typeof value === 'string' && Object.hasOwn(RESOURCE_KIND_LABELS, value);
+
+export const R15_ADAPTER_REQUIRED = 'Perceived-resource choices require a verified R15 adapter through the experimental runner; this provider does not support it.';
