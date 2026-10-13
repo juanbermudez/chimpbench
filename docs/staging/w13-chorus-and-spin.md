@@ -134,3 +134,197 @@ The project's sources are the entries of `docs/research.md`; `docs/visual-plan.m
 | Both arms raised in a V | no sentence of the project's sources describes it for any animal. Nobody does it |
 | The builder's turning limit, how many turns fit, the reaches at 1 min/s | no source; a drawing rule. The building time is the simulation's ([khayer2025] "adult great apes take 2 to 5 min on average") |
 | The order and length of a feeder's steps, the sponge's dips | no source (stage W9 and W12 say so of the clips they changed); stylizations |
+
+## 1. What a person sees now
+
+Read from the third run's films and harness rows (the build at 2a09e9d). Two things seen in those films were repaired afterwards in a commit that no film has seen (a645742; section 6): they are named where they belong.
+
+- **A caller.** It calls once. A female, a young animal or a quiet male stays as it was: seated where it fed or rested, each in its own seat (hunched or leaning back, a hand on a knee, on a shin or with the knuckles on the ground, some squatting), or standing on all fours if it had been standing or drinking. Its lips push forward and open a little on each low hoo, the head comes up, the pants quicken, the mouth opens wide for a second or two with the head back, the pants slow, the mouth shuts, and it sits with its head a little raised, listening, until its act ends. A male of some vigour gets up onto all fours through the build-up, with his hands going down in front of him, and sits again afterwards. A top-ranking or aroused adult male now and then stands up on two legs for the climax, hair on end, arms hanging out from his body, swaying or stamping, and comes down again. Nobody raises an arm. On a limb everybody stays seated with a hand on a branch.
+- **A chorus.** Callers that begin together are a group: the row of ten shows seated animals, squatting ones, two males who rise to all fours at different moments, and their mouths open wide at moments spread over four seconds (`pictures/2-ten-callers-after.jpg`; with the animals top-ranking and aroused one male stands, three more animals rise to all fours, `pictures/3-...`). Before: `pictures/1-ten-callers-before.jpg`. In the app the alpha male and a female of 12 called together on the field map: he stood once at the climax with his arms down, she stood on all fours as she had while drinking (`pictures/4-...`).
+- **The start of a call.** The body no longer swings round: it calls facing as it faced.
+- **A builder.** While it builds, a turn takes two to four seconds and the heading never moves faster than 0.9 rad a second. At 1 min/s it turns once, a little, or not at all, and does not turn back when it lies down. At 10 min/s it does not turn. What is still wrong in the films: in its first second in the nest, as it arrives, the body turns from the way it came to the way it sits as fast as before (up to 3 rad in a third of a second); and at 1 min/s its arm jumped up and down for about a second (`pictures/5-builder-heading-before-after.png` shows the headings). Both are what a645742 repairs.
+- **Feeding in a crown.** No two feeders run one sequence. One pulls a cluster in and picks from it three times with a pause between; its neighbour reaches into the leaves once and chews; a third only looks round. A cycle lasts 3 to 23 s.
+- **Drinking.** The sponge goes down and comes up at its own time each time, is sucked for a longer or shorter moment, and now and then stays on the knee while the animal looks up. The animal with its lips at the water lifts its head every 6 to 12 s.
+
+## 2. What was changed
+
+Renderer only. Five source files, one new; three test files, one new.
+
+- `src/render/creatures/poses.ts`.
+  - **The pant-hoot** (`pantHoot`, `callStyle`, `callVigour`, `hootEnv`, `hootFace`, `hootSeat`, `hootQuad`, `hootUpright`, `hootLimb`). One sequence per call, each part of a length drawn for that call (low hoos 1.5 to 5 s, build-up 2.2 to 5.2 s, climax 1 to 3.3 s, let-down 0.9 to 2.5 s), then listening. A vigour from 0 to 1: the class by age and sex, standing for adults, arousal above a calm caller's, and a share of the call's own. From it: whether the caller rises to all fours (0.46 and over, nobody under eight years), whether an adult male stands upright at the climax (0.78 and over: 8.8% of calm adult males' calls over the ranks, 36% of a top male's and none of a middle or bottom male's; with arousal at 0.6, 87%, 47% and 6%; no female, adolescent or younger animal ever), what he does there (sway or stamp; a slap of the ground on all fours; a shake of the branch on a limb), how wide the mouth opens, how long the climax lasts. The base posture is the clip's role: seated or on all fours. A rising body keeps its feet where they are. The head is held against the look system through the build-up and climax and given back afterwards.
+  - **The face of a pant-hoot given during another act** (`vocalOverlay` with the caller's context): the same parts, eased in and out, with half the head raise. It was one pulse for 45 simulated seconds, with the head tipped back in one frame.
+  - **Crown feeding** (`feedPlan`, `crownFeed`): cycles of uneven length; each is a cluster with one to five picks and pauses, a reach into the leaves, or a look round; the pull and pick times are the animal's own.
+  - **Drinking**: the leaf sponge on uneven bars with a soak, a suck and pauses; a look up for the lip drinker.
+  - **Nest building**: mean bars of 2.6 to 5.2 s (they were 2.6 to 4.0), each bar its own length, on a clock that drifts (`ownDrift`), each reach its own length; and a brief building (`PoseCtx.span` under 15 s: one reach or two, none under 1.5 s).
+  - `barStart`, `ownBar`: bars of uneven length without a running sum.
+- `src/render/creatures/perch.ts`. `nestTurnStep` (which planned turns are made, given the real seconds left of the building), `slewTurn` and `slewHeading` (a turn at no more than 0.9 rad a second, eased), `nestTurnAngle`. `nestTurn` and `nestTurnAt` are still the plan.
+- `src/render/creatures/call.ts` (new). `callJoin`: whether a call began alone, joined a pant-hoot begun within 40 m no more than a tick before, or answered an earlier one that reached the caller, read from `World.calls`. `callAge`, `callNumber`.
+- `src/render/creatures.ts`. A record of the pant-hoot each animal is giving (when its voice ends, seconds since first drawn, its number, the arousal and the join it began with); the base posture chosen when the clip begins; the heading held through a call; the builder's turns through `nestTurnStep` and its heading through `slewHeading`; 0.45 s into and out of the call clip.
+- `src/render/creatures/harness.ts`. In `mode=stages`: `&action=call` gives the row a voice; `&was=<act>&after=<s>` starts it in another act; `&chorus=1` publishes the calls; `&rank=`, `&stress=` (also in `mode=single`).
+- Tests: `tests/render-call.test.ts` (new, 15); `tests/render-perch.test.ts` (stage W9's four crown feeding tests now find a cycle through `feedPlan`; they hold what they held); `tests/render-step.test.ts` (stage W12's line "a chorus keeps one cycle" is gone; a comment on the turn plan).
+
+## 3. Before and after
+
+Seed 48, the same ticks; the world's hash at the start of the four films that jump the clock is the same on both builds (`f29ba727:4227453`, `8107aa27:521718`, `35b6964b:431024`, `80026a98:540131`). "After" is the third run (2a09e9d). One rule of the probes was tightened during run 1 (section 4): the unchanged build is given as read with the final rule.
+
+**Ten callers started together, 45 s (`audit13.mts` A).**
+
+| | Before | After |
+| --- | --- | --- |
+| Both wrists above the head | all ten, 9 s each, up to six at one instant | nobody, 0 s (also in a crown and from all fours) |
+| Upright on two legs | all ten, five times each | nobody in a calm, middle-ranking row; one of ten for 3 s when top-ranking and aroused |
+| Pant-hoots in a call | five | one |
+| Share of the call two animals are in one posture, median pair; at the best shift | 0.72; 0.99 | 0; 0 |
+| Pairs in one posture for more than 0.85 of the call | 6 of 45 at the same instant, 45 of 45 at the best shift | 11 of 45 |
+| Postures at the climax | one | seated, squatting, on all fours (and upright, top-ranking and aroused) |
+| The mouths first open wide over | 2.6 s | 4.1 s |
+
+**Callers in the films (`an13.mjs`).**
+
+| Film | Caller | Before: upright; both wrists above the head (in the clip) | After |
+| --- | --- | --- | --- |
+| `CH1` | male 17, after a pant-grunt | 8.6 s in 5 rises; 8.1 s | on all fours throughout; 0 s; one pant-hoot |
+| | female 21, after resting | 12.1 s in 7; 11.2 s | seated; 0 s; one |
+| | female 36, on a limb | 8.7 s in 5; 8.1 s | seated on the limb; 0 s; one |
+| | male 13, on a limb | 1.8 s in 1; 1.5 s | seated on the limb; 0 s |
+| `CH2` | alpha male 27, after feeding | 8.6 s in 5; 8.0 s | seated, then upright once for 2.0 s at the climax, arms down; 0 s |
+| | female 12, after drinking | 6.2 s in 4; 5.9 s | on all fours; 0 s |
+| `CH3` | male 33, alone, standing | 8.7 s in 5; 8.1 s | on all fours; 0 s; one |
+| `CH4` | female 15, alone, feeding | 8.6 s in 5; 8.0 s | seated; 0 s; one |
+| `CH5` | male 41, answering from 402 m | 8.6 s in 5; 8.2 s | seated, on all fours for 3.3 s, seated; 0 s; one |
+| `CH6` | male 17, after a display | 1.7 s in 1; 1.6 s | on all fours; 0 s; one |
+
+**The start and the end of a call (the same films).**
+
+| | Before | After |
+| --- | --- | --- |
+| Heading in the first second, alpha after feeding | 2.64 rad | 0 |
+| Heading in the first second, male standing | 1.11 rad | 0 |
+| Largest step of a joint in one frame, the second after the start | 4 to 21 cm (21 at the lips of the feeding alpha) | 2 to 16 cm (the alpha 1.2 cm at the change, then 11 cm at a fingertip 0.3 s in; 16 cm at an elbow of a female that was picking) |
+| Inside the clip | 52 to 101 cm at every rise | 1 to 8 cm; 19 cm in one long frame as the alpha stands (7 cm an ordinary frame, at a fingertip) |
+| The second after the end, where the animal stands up at once | 12 cm | 21 cm in one long frame (5 to 8 cm an ordinary frame: the layer's sit-to-stand) |
+
+**The builder: 49 builders, one whole building (`audit13.mts` B; the turn as `nestTurnStep` draws it).**
+
+| Speed | On screen | Heading travels | Fastest quarter second | Most in one second | Turns | After lying down |
+| --- | --- | --- | --- | --- | --- | --- |
+| Real time | 270 s | 8.6 -> 7.0 rad | 8.6 -> 0.9 rad/s | 2.3 -> 0.9 rad | 4 -> 4 | 1.3 -> 0 rad |
+| Watch 4x | 67.5 s | 8.6 -> 6.5 | 8.6 -> 0.9 | 2.3 -> 0.9 | 4 -> 4 | 1.3 -> 0 |
+| 1 min/s | 4.5 s | 8.5 -> 1.1 (most 1.4) | 8.7 -> 0.85 | 3.8 -> 0.73 | 4 -> 1 | 1.3 -> 0 |
+| 10 min/s | 0.45 s | 6.3 -> 0 | 15.6 -> 0 | 6.3 -> 0 | 1 -> 0 | 1.4 -> 0 |
+
+**Builders in the films.** The first 1.2 s in the nest (the arrival) are given apart.
+
+| Film | Before: after the first 1.2 s | After: after the first 1.2 s | The arrival, both builds |
+| --- | --- | --- | --- |
+| Real time (`N6`) | 2.2 and 5.0 rad/s over the fastest half second; 1.1 and 2.5 rad in a second | 0.76 and 0.90 rad/s; 0.68 and 0.90 rad | up to 2.2 rad at 5 to 10 rad/s |
+| Watch 4x (`N2`, four builders) | 1.8 to 4.8 rad/s; 0.9 to 2.4 rad in a second | 0.65 to 0.93 rad/s; 0.58 to 0.90 rad | up to 3.1 rad at 13 rad/s |
+| 1 min/s (`N3`, `N5`, nine builders) | travels 3.4 to 6.7 rad at 3.3 to 8.4 rad/s; 0.5 to 2.6 rad more after lying down | travels 0.13 to 0.81 rad at 0.16 to 0.90 rad/s; 0 to 0.07 rad after lying down | 0.4 to 3.0 rad at up to 12 rad/s |
+| 1 min/s, the whole building | 7.4 to 12.5 rad | 0.75 to 3.5 rad | |
+| 10 min/s (`N4`, nine builders) | 0.4 to 6.8 rad in 0.1 to 0.7 s; 0.3 to 2.0 after lying down | 0 to 3.1 rad (the arrival); 0 to 0.08 after lying down | |
+
+**The loops.**
+
+| | Before | After |
+| --- | --- | --- |
+| Feeding in a crown, 8 feeders, 120 s, best shift within 15 s: median pair; closest; pairs over 0.7 | 0.42; 0.94; 9 of 28 | 0.29; 0.62; 0 |
+| The same, 49 feeders: pairs over 0.7 | 378 of 1,176 | 5 |
+| Film `G1`, five feeders in one crown, a minute, higher wrist at the best shift: median; closest | 0.62; 0.94 | 0.42; 0.70 |
+| Film `G2`, nine feeders | 0.30; 0.89 | 0.26; 0.47 |
+| Leaf sponge, 13 drinkers, 120 s: closest pair; pairs over 0.5 | 0.985; 6 of 78 | 0.34; 0 |
+| Film `L1`, two sponge drinkers | 0.92 | 0.50 |
+| Builders, 49: pairs with bars within 0.1 s | 143 of 1,176 | 76 |
+| Builders: pairs whose higher wrist correlates over 0.6 in a minute; closest | 6; 0.78 | 0; 0.59 |
+
+## 4. The three runs
+
+- **Run 1 (01:41 EDT).** The new tests and the audit, no browser. 5 of the 15 new tests passed; the 29 of the two older files passed. Found: a hand put down beside a seated caller went under the ground and the ground snap lifted the whole body 12 cm; the probes' rule for "upright" (hips above 0.42 body lengths) read the crouch between sitting and all fours as upright, and was tightened to hips above 0.5 with the trunk within 0.6 rad of upright (the unchanged build reads the same five rises with it, 8.6 to 8.7 s where it read 8.8); the slap of a hand was faster than a hand moves; the tests had mistakes of their own (a negative zero, a float compared exactly, a drawing rule I had written down wrongly). Builder, feeding, sponge and bars already read within the registered figures except one pair of builders at 0.61.
+- **Run 2 (01:48).** Tests and audit again: 41 of 44. Found: the pants of the build-up opened a quiet caller's mouth as wide as its climax, so "one pant-hoot" read as nine; 14 of 45 pairs of the row sat in one posture for the whole call; one pair of builders at 0.65. Changed: the seat (lean, hunch, a squat), the pants scaled by vigour, the parts of a call longer or shorter by more, a rising body's feet kept in place, a clock that drifts for builders and sponge drinkers.
+- **Run 3 (01:56 to 02:20).** The 44 tests passed. The audit, four harness rows and the 17 films are the "after" of section 3. The films showed the two faults of section 6. No code was run after it but the checks of section 5.
+
+Two of the three runs were spent before the first film was taken. That left one look at the app, and what that look found could not be filmed again.
+
+## 5. The registered statements, one by one
+
+1. **Nobody raises both arms: met.**
+2. **A call is one pant-hoot: met. No joint steps more than 5 cm in a frame inside the clip: not met as worded.** 1 to 8 cm for callers that sit or stand; 7 cm an ordinary frame at a fingertip while the alpha stands up (it was 52 to 101 cm at every rise). A fast arm, not a jump.
+3. **The picture follows who the animal is: met.**
+4. **Not copies: met for the median pair (0 and 0, under 0.4 and 0.5); not met for "no pair over 0.85".** Eleven of 45 pairs of the calm row sit alike for the whole call: quiet callers whose seats happen to be close. Before, six pairs did at the same instant and every pair did a moment apart. The row shows three postures at the climax, but not the three I named: nobody stands in a calm, middle-ranking row, because an upright climax is rare by design. Mouths open over 4.1 s: met.
+5. **Joining: met** (a test). Eight joiners enter 2.4 to 5.4 s into sequences of 9 to 12 s: 3.25, 5.40, 5.16, 3.28, 2.37, 4.82, 4.86 and 3.64 s. Two pairs of them fall within 0.05 s of each other by chance.
+6. **No step into or out of a call: met for the heading (0 rad; it was 2.64), not met as worded for the joints.** The turn that stepped the lips is gone. Other blends still move a joint 5 to 16 cm in a frame at some starts (an arm that was picking, a body rising from the drinking crouch, a hand going down onto its knuckles), and an animal that stands up the moment its call ends does so at the layer's ordinary pace.
+7. **The builder's limit: met in the audit at every speed; in the films met after the first 1.2 s and not met in them.** The arrival turn is as fast as before.
+8. **The turns fit the time: met in the audit (four, four, one, none). In films `N3` and `N5` not met:** 0.75 to 3.5 rad in a building where I registered 1.5 (it was 7.4 to 12.5); the arrival turn is the difference. One or two reaches at 1 min/s: held by a test with the span fixed, not seen in the films, where the arm jumped.
+9. **It settles: met** (0 to 0.08 rad after lying down; it was 0.3 to 2.6).
+10. **Feeding: met.**
+11. **The leaf sponge: met.**
+12. **Builders' tempos: met.**
+13. **The same animal twice: met.**
+14. **Nothing else moves: met** (section 7).
+
+## 6. Not done, and what is left
+
+- **Repaired after the third run and not filmed (a645742, two lines of `creatures.ts`).** (a) The limit on a builder's heading skipped a body that "is moving", and a body that has just reached its place counts as moving for 0.8 s more: so the arrival turn went through the old damper. The test is now "in its nest and not clambering". (b) A brief building is laid out in shares of the seconds a building is on screen, and that was worked out from the rate the clock achieved in the frame, which moves between 45 and 75 at 1 min/s: the builder's arm jumped between its first and second reach for about a second. It is now worked out from the speed that is set. Both were type-checked and built; no unit test loads the creature layer; nobody has seen them in the app. Reverting a645742 gives the build the films are of.
+- **A hand flicks** 11 cm in one frame, a third of a second into the call of an animal whose hand goes down onto its knuckles (the rig turns a locked hand by the short way round between two orientations, and the short way changes). **A male's arms** come up fast as he stands (7 cm a frame at a fingertip).
+- **From a climb into a call** a hand or a toe steps 35 to 66 cm, as into any clip after the climbing clip (its holds on the bark end at once). Older; not this stage.
+- **A body first drawn in a call** (the clock jumped into one, or the harness row started in the call act) has no posture to keep and is taken for a standing animal: it calls on all fours.
+- **A pant-hoot given outside the call act** (110 of 267 on the field map while travelling) keeps that act's body. Only its face follows the call now.
+- **At 1 min/s a call is on screen for under a second**: its first moment, as before.
+- **Quiet callers that sit alike** stay alike (statement 4).
+- **The three drinkers** still stand up in one frame: the simulation ends their drinks in one tick.
+- **A source for the parts of a pant-hoot and for how callers sit or stand** is not in `docs/research.md`. Everything about them is labelled a stylization. Not looked for in this stage.
+- **Frame time on the graphics card** was not measured. The creature layer's own update read 0.6 to 0.8 ms a frame before and 0.6 to 0.9 after over the 17 films (film by film 0 to 0.2 ms more; the films of the changed build ran beside this stage's own analyses).
+- **Not seen** with a live model, on a second seed, or in a chorus of more than four (the simulation gave none in these two worlds).
+
+## 7. Tests and checks
+
+At the head (a645742), 13 October 2026, 02:24 to 02:32 EDT:
+
+- `tsc --noEmit`: clean. The three test files type-checked by hand with the project's strict options: clean.
+- `scripts/gen-params.ts --check`: valid, 1,050 entries, up to date, lint clean.
+- The render and interface tests: 326, all pass.
+- The whole suite, once (02:25 to 02:31, no other suite and no model process running, the 1-minute load at 3 before it and 17 at its height): 1,485 tests, 1,484 pass, none fails, 1 is skipped as on `track-e` (it needs `artifacts/validation/c7a-field1y.json`, which is not on this computer).
+- `pnpm build`: passes.
+- `git diff --stat track-e`: `src/render/creatures.ts`, `src/render/creatures/{call,harness,perch,poses}.ts`, `tests/render-{call,perch,step}.test.ts` and this document. Nothing under `src/sim`, `data`, `tests/fixtures` or `src/types.ts`; no `Math.random` added; no pass, target or material.
+- Both probe servers (5203, 5204) are stopped and no browser of the stage is left.
+
+## 8. For the integrator
+
+### Commits (on `w13-chorus-and-spin`, from `track-e` at 10f8a70)
+
+- d03758a: the registration, before any changed code ran.
+- 2a09e9d: the change and its tests. The films, the audit and the pictures are of this build.
+- a645742: two lines repaired after the third run, not filmed.
+- this commit: sections 1 to 8.
+
+### For the second reading
+
+- Film builders arriving at their nests at Real time and at 1 min/s on a645742: the first second (`an13.mjs` gives the arrival apart), and the reaches at 1 min/s.
+- Look at a male standing up in a call (`CH2`, the alpha at 18.7 s) and at a hand going down onto its knuckles (`CH2`, 12.1 s).
+- The probes: `rv13.mjs '<json spec>'` (a film), `batch13.mjs before|after`, `an13.mjs <film.json>` (callers and builders), `hrow13.mjs <name> '<query>'` (the harness row; start it from another act with `was=forage&after=1`, or the row has no posture to keep), `audit13.mts` (no browser), `pics13.py`. `serve.sh before|after start|stop`.
+
+### Merge notes
+
+- `PoseCtx` has six new optional fields (`rank`, `arousal`, `callN`, `join`, `enter`, `span`). `vocalOverlay` has three new optional arguments. `feedCycle` is now a feeder's MEAN cycle; cycle n begins at `feedPlan(n, seed).start`. `Anim` has nine new fields.
+- The role of the `pantHoot` clip is the base posture (`CALL_BASE`).
+- Any picture comparison against an older build differs wherever an animal calls, feeds in a crown, drinks or builds.
+
+### Lines proposed for AGENTS.md (not edited on this branch)
+
+Under "Gotchas":
+
+- The pant-hoot (stage W13, `render/creatures/poses.ts` `callStyle`, `render/creatures/call.ts`): one call of the simulation is one drawn pant-hoot, on a clock the layer starts when it first sees the voice (`Chimp.vocalUntil` changes), whatever clip the body is in. What the caller looks like is fixed then: its vigour from age, sex, rank and arousal, whether it joins or answers (from `World.calls`), and the posture it was in (the clip's role, `CALL_BASE`). Nobody raises an arm; only an adult male of high vigour stands. A clip that mixes postures keeps the feet where they are (`shiftPose`) and marks a hand planted only once the posture has stopped changing, or the contact locks re-plant in steps. All stylizations but the lines the section's comment cites.
+- The layer is given the rate the clock ACHIEVES (`frame.simRate` is `clock.effectiveRate`: 45 to 75 at 1 min/s, from frame to frame). Anything laid out in shares of "how long this is on screen" must read the speed that is set, or it moves every frame (a builder's arm did).
+- A builder's heading (stage W13, `perch.ts` `nestTurnStep`, `slewHeading`): `nestTurn` is the plan; the turns drawn are those a watcher has the time for, at no more than `NEST_TURN_MAX` (0.9 rad/s, the layer's own figure for a turn too fast to make on the spot), and what was turned stays when the nest is done. An animal in its nest is turned by `updateMotion` alone.
+- Bars of uneven length without a running sum: `poses.ts` `barStart` (each boundary moved by a draw) and `ownDrift` (a clock that runs fast and slow by turns). `barStart` alone wobbles about a fixed grid: two animals with equal mean bars stay within a bar of each other for ever.
+
+Under "Verifying a change": the stage's probes are in `…/watch-2026-10-13/w13-chorus-and-spin/` (servers on 5203 and 5204).
+
+### Block proposed for IMPLEMENTATION_PLAN.md
+
+```
+## Stage W13: the chorus and the spin (render only)
+**Goal**: what stage W12's second reader found still mechanical: every caller of a pant-hoot making the same stand with both arms raised on one nine-second loop; a nest builder turning through all its headings in the three seconds a building lasts at 1 min/s; feeders in a crown, leaf-sponge drinkers and builders on shared loops; a step into a call.
+**Status**: Built on branch `w13-chorus-and-spin` from `track-e` at 10f8a70 (13 October 2026; `docs/staging/w13-chorus-and-spin.md`, registered before any changed code ran, three runs). Not merged. Nothing under `src/sim`, `data`, `tests/fixtures` or the contract changed. Field map and 160 m map, seed 48. A call is now one pant-hoot drawn by who gives it: nobody raises an arm (every caller did, five times in a call); females, the young and quiet males call seated or on all fours as they were, a male of some vigour rises to all fours, a top-ranking or aroused adult male sometimes stands (36% of a calm top male's calls, 8.8% over the ranks); callers that join enter part-way; a caller no longer swings round as it starts (2.6 rad in the first second, now none). A builder's turns take two to four seconds (0.9 rad/s at most; they were 8.6), at 1 min/s it turns once or not at all (1.1 rad of heading in a building in the audit, 8.5 before) and it no longer turns back as it lies down. Two feeders in a crown no longer match at any shift (0.42 to 0.29 on the median pair over two minutes, 378 of 1,176 pairs over 0.7 to 5), nor two sponge drinkers (0.985 to 0.34), nor two builders (six pairs over 0.6 to none).
+**Open**: two faults seen in the third run's films were repaired afterwards in a commit nobody has filmed (a645742): a builder's first turn as it arrives in its nest was as fast as before, and at 1 min/s its arm jumped for a second. Registered clauses not met as worded: 11 of 45 pairs of quiet callers sit alike for a whole call; joints still move 5 to 16 cm in a frame at some starts of a call and 7 cm a frame as a male stands up; in the films a builder's heading travelled 0.75 to 3.5 rad at 1 min/s (7.4 to 12.5 before) where 1.5 was registered. No source in `docs/research.md` for the parts of a pant-hoot or for callers' postures. Frame time on the graphics card not measured.
+**The user's**: how often a male should stand at the climax (now 8.8% of calm adult males' calls, 36% of a top male's); whether quiet callers should differ more in how they sit; whether a builder at 1 min/s should turn at all.
+```
