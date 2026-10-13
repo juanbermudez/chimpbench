@@ -1,3 +1,4 @@
+import type { Kind } from './decide/facts';
 import type { Vec3 } from 'math';
 
 // Shared plain-data contract between the simulation, the decision loop, the
@@ -491,6 +492,9 @@ export interface BodySight { id: number; name: string; relation: Relation; ageYe
  * chimp's own perception, memory and body. No omniscient world state.
  */
 export interface DecisionContext {
+  /** R15: explicit two-call packet stage and serialized kinds, aligned with candidates. */
+  resourceChoice?: 'kind' | 'target';
+  resourceKinds?: Kind[];
   chimpId: number; version: number; time: number;
   focal: {
     name: string; ageYears: number; stage: LifeStage; sex: Sex; community: string;
