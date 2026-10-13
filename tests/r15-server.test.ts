@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 import { createServer } from 'node:http';
 import { once } from 'node:events';
-import { R15Worker, assertR15Idle, readR15Artifact, type R15Config, type R15Transport } from '../server/r15-worker';
+import { R15Worker, assertR15Idle, readR15Artifact, r15ProcessConfig, type R15Config, type R15Transport } from '../server/r15-worker';
 import { createR15Handler, r15ConfigFromEnv } from '../server/r15';
 import { buildRequest, targetRequest } from '../src/sim/request';
 import { r15Packet } from '../src/providers/packet';
@@ -18,16 +18,17 @@ const hash = (text: string) => createHash('sha256').update(text).digest('hex');
 function fixture(t: test.TestContext) {
   const root = mkdtempSync(resolve(tmpdir(), 'r15-server-')); t.after(() => rmSync(root, { recursive: true, force: true }));
   const { world, chimp } = resourceFixture(), request = buildRequest(world, chimp), packet = r15Packet(request.context);
-  const config: R15Config = { trainingRoot: root, mainRoot: root, adapter: 'r15-resources-s7', device: 'cpu' };
+  const config: R15Config = { trainingRoot: root, mainRoot: root, adapter: 'r15-resources-s7', device: 'mps' };
   const write = (name: string, text: string) => { const path = resolve(root, name); mkdirSync(resolve(path, '..'), { recursive: true }); writeFileSync(path, text); };
   const row = JSON.stringify({ context: request.context, packet }) + '\n', preflight = JSON.stringify({ schema: 'r15-preflight-v1', passed: true });
   const manifest = { stage: 'R15', adapter: config.adapter, packetVersion: R15_PACKET_VERSION, kindTeacher: R15_KIND_TEACHER, targetTeacher: R15_TARGET_TEACHER,
     labels: 'soft', hyperparameters: { seed: 7, epochs: 3 }, base_model: LOCAL_MODEL, base_revision: LOCAL_REVISION,
-    adapter_sha256: hash('weights'), preflight: { schema: 'r15-preflight-v1', receipt_sha256: hash(preflight), path: 'preflight/result.json' },
+    adapter_sha256: hash('weights'), adapter_config_sha256: hash('{}'), preflight_runtime_sha256: hash('runtime'),
+    preflight: { schema: 'r15-preflight-v1', receipt_sha256: hash(preflight), path: 'preflight/result.json' },
     train_sha256: hash(row), dev_sha256: hash(row), history: [1, 2, 3].map(epoch => ({ epoch, nll: 1 })), best_dev: { epoch: 1, nll: 1 } };
   write('contexts/train.jsonl', row); write('contexts/dev.jsonl', row); write('preflight/result.json', preflight);
   write(`adapters/${config.adapter}/manifest.json`, JSON.stringify(manifest)); write(`adapters/${config.adapter}/adapter_model.safetensors`, 'weights'); write(`adapters/${config.adapter}/adapter_config.json`, '{}');
-  const ready = { ready: true, adapters: { [config.adapter]: hash('weights') }, config_sha256: hash('{}'), device: 'cpu' };
+  const ready = { ready: true, adapters: { [config.adapter]: hash('weights') }, config_sha256: hash('{}'), device: 'mps' };
   const transport: R15Transport = { async start(value) { assert.deepEqual(value, packet); return ready; }, async score(batch) {
     return { results: batch.map(item => Object.keys((item.packet as typeof packet).questions.action.criteria).map((_, i) => i === 0 ? 1 : 0)), input_tokens: batch.map(() => 100) };
   }, async close() {} };
@@ -38,6 +39,16 @@ test('server configuration is explicit and no-model suppresses it', () => {
   assert.equal(r15ConfigFromEnv({}), null);
   assert.equal(r15ConfigFromEnv({ MGOGO_R15_ENABLED: '1', MGOGO_NO_MODEL: '1' }), null);
   assert.throws(() => r15ConfigFromEnv({ MGOGO_R15_ENABLED: '1' }), /requires/);
+});
+
+test('only qualified MPS is allowed, flash is disabled, and validation uses the actual selected interpreter', t => {
+  const f = fixture(t);
+  assert.throws(() => r15ProcessConfig({ ...f.config, device: 'cpu' }), /MPS/);
+  const selected = r15ProcessConfig({ ...f.config, python: '/tmp/chosen-env/bin/python' }, { MGOGO_DECIDE_PYTHON: '/tmp/unrelated-env/bin/python', MGOGO_FLASHDEBERTA: '1' });
+  assert.equal(selected.python, '/tmp/chosen-env/bin/python'); assert.equal(selected.env.MGOGO_DECIDE_PYTHON, selected.python);
+  assert.equal(selected.env.MGOGO_DECIDE_DEVICE, 'mps'); assert.equal(selected.env.MGOGO_FLASHDEBERTA, '0');
+  f.write(`adapters/${f.config.adapter}/adapter_config.json`, '{"lora_alpha":999}');
+  assert.throws(() => readR15Artifact(f.config), /identity changed/);
 });
 
 test('completed adapter and changed weights/data/preflight are checked before launch', t => {

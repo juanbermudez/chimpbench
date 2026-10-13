@@ -12,8 +12,8 @@ function send(response: ServerResponse, status: number, body: unknown) {
 export function r15ConfigFromEnv(env: NodeJS.ProcessEnv): R15Config | null {
   if (env.MGOGO_R15_ENABLED !== '1' || env.MGOGO_NO_MODEL) return null;
   if (!env.MGOGO_R15_ROOT || !env.MGOGO_R15_ADAPTER) throw new Error('R15 requires MGOGO_R15_ROOT and MGOGO_R15_ADAPTER');
-  if (env.MGOGO_DECIDE_DEVICE && !['mps', 'cpu'].includes(env.MGOGO_DECIDE_DEVICE)) throw new Error('R15 device must be mps or cpu');
-  return { trainingRoot: resolve(env.MGOGO_R15_ROOT), adapter: env.MGOGO_R15_ADAPTER, python: env.MGOGO_DECIDE_PYTHON, device: env.MGOGO_DECIDE_DEVICE === 'cpu' ? 'cpu' : 'mps' };
+  if (env.MGOGO_DECIDE_DEVICE && env.MGOGO_DECIDE_DEVICE !== 'mps') throw new Error('R15 preflight only qualifies the MPS runtime');
+  return { trainingRoot: resolve(env.MGOGO_R15_ROOT), adapter: env.MGOGO_R15_ADAPTER, python: env.MGOGO_DECIDE_PYTHON, device: 'mps' };
 }
 
 /** Only contexts cross HTTP. Worker paths, adapter and startup arguments are local configuration. */

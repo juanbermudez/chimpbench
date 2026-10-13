@@ -19,6 +19,17 @@ export interface R15Config { trainingRoot: string; adapter: string; repoRoot?: s
 export interface R15Transport { start(packet: unknown): Promise<unknown>; score(batch: ScoreItem[]): Promise<unknown>; close(): Promise<void>; }
 export interface R15Dependencies { transport?: () => R15Transport; processes?: () => string; startupMs?: number; scoreMs?: number; }
 
+/** The preflight qualifies MPS without FlashDeBERTa, using this exact interpreter's environment. */
+export function r15ProcessConfig(config: R15Config, inherited: NodeJS.ProcessEnv = process.env) {
+  if (config.device !== undefined && config.device !== 'mps') throw new Error('R15 preflight only qualifies the MPS runtime');
+  const python = resolve(config.python ?? inherited.MGOGO_DECIDE_PYTHON ?? '/Volumes/Drive/chimpbench/decide-env/bin/python');
+  return { python, env: { ...inherited, MGOGO_DECIDE_PYTHON: python, MGOGO_FT_ROOT: resolve(config.trainingRoot), MGOGO_FT_ADAPTERS: config.adapter,
+    MGOGO_GHN_ROOT: inherited.MGOGO_GHN_ROOT ?? '/Volumes/Drive/chimpbench/GHN', HF_HOME: inherited.HF_HOME ?? '/Volumes/Drive/chimpbench/hf-cache',
+    HF_HUB_CACHE: inherited.HF_HUB_CACHE ?? '/Volumes/Drive/chimpbench/hf-cache/hub', MGOGO_DECIDE_DEVICE: 'mps', MGOGO_FLASHDEBERTA: '0',
+    HF_HUB_OFFLINE: '1', TRANSFORMERS_OFFLINE: '1', PYTHONDONTWRITEBYTECODE: '1', TOKENIZERS_PARALLELISM: 'false',
+    PYTORCH_MPS_HIGH_WATERMARK_RATIO: '0.6', PYTORCH_MPS_LOW_WATERMARK_RATIO: '0.4' } };
+}
+
 /** Existing registered chains are guarded even when they are between subprocesses. */
 export function assertR15Idle(mainRoot: string, processes: string): void {
   for (const path of ['bench-r14/artifacts/r14/state', 'bench-r13/artifacts/queue/state', 'bench-r11/artifacts/r11-chain/state', 'bench-rw3/artifacts/rw3-chain/state', 'bench-rw2/artifacts/rw2/state']) {
@@ -36,9 +47,11 @@ export function readR15Artifact(config: R15Config) {
   assertR15AdapterManifest(manifest);
   if (manifest.adapter !== config.adapter || manifest.base_model !== LOCAL_MODEL || manifest.base_revision !== LOCAL_REVISION
     || !Array.isArray(manifest.history) || manifest.history.length !== 3 || !manifest.history.every((entry, i) => record(entry) && entry.epoch === i + 1 && typeof entry.nll === 'number' && Number.isFinite(entry.nll))
-    || !record(manifest.best_dev) || !record(manifest.preflight) || manifest.preflight.schema !== 'r15-preflight-v1'
+    || !record(manifest.best_dev) || typeof manifest.preflight_runtime_sha256 !== 'string' || !/^[a-f0-9]{64}$/.test(manifest.preflight_runtime_sha256)
+    || !record(manifest.preflight) || manifest.preflight.schema !== 'r15-preflight-v1' || manifest.preflight.path !== 'preflight/result.json'
     || manifest.preflight.receipt_sha256 !== sha(resolve(root, 'preflight/result.json'))
-    || manifest.adapter_sha256 !== sha(resolve(folder, 'adapter_model.safetensors'))) throw new Error('R15 adapter is incomplete or its identity changed');
+    || manifest.adapter_sha256 !== sha(resolve(folder, 'adapter_model.safetensors'))
+    || manifest.adapter_config_sha256 !== sha(resolve(folder, 'adapter_config.json'))) throw new Error('R15 adapter is incomplete or its identity changed');
   const preflight = json(resolve(root, 'preflight/result.json'));
   if (!record(preflight) || preflight.schema !== 'r15-preflight-v1' || preflight.passed !== true) throw new Error('R15 preflight did not pass');
   for (const split of ['train', 'dev']) if (manifest[`${split}_sha256`] !== sha(resolve(root, 'contexts', `${split}.jsonl`))) throw new Error(`R15 ${split} dataset changed`);
@@ -56,12 +69,9 @@ class PythonTransport implements R15Transport {
   constructor(private config: R15Config, private failed: (error: Error) => void) {}
   start(packet: unknown): Promise<unknown> {
     const root = this.config.repoRoot ?? sourceRoot;
-    const child = spawn(this.config.python ?? process.env.MGOGO_DECIDE_PYTHON ?? '/Volumes/Drive/chimpbench/decide-env/bin/python', ['-B', resolve(root, 'server/r15-scorer.py')], {
-      cwd: root, stdio: ['pipe', 'pipe', 'pipe'], env: { ...process.env, MGOGO_FT_ROOT: resolve(this.config.trainingRoot), MGOGO_FT_ADAPTERS: this.config.adapter,
-        MGOGO_GHN_ROOT: process.env.MGOGO_GHN_ROOT ?? '/Volumes/Drive/chimpbench/GHN', HF_HOME: process.env.HF_HOME ?? '/Volumes/Drive/chimpbench/hf-cache',
-        HF_HUB_CACHE: process.env.HF_HUB_CACHE ?? '/Volumes/Drive/chimpbench/hf-cache/hub', MGOGO_DECIDE_DEVICE: this.config.device ?? 'mps',
-        HF_HUB_OFFLINE: '1', TRANSFORMERS_OFFLINE: '1', PYTHONDONTWRITEBYTECODE: '1', TOKENIZERS_PARALLELISM: 'false',
-        PYTORCH_MPS_HIGH_WATERMARK_RATIO: '0.6', PYTORCH_MPS_LOW_WATERMARK_RATIO: '0.4' },
+    const { python, env } = r15ProcessConfig(this.config);
+    const child = spawn(python, ['-B', resolve(root, 'server/r15-scorer.py')], {
+      cwd: root, stdio: ['pipe', 'pipe', 'pipe'], env,
     });
     this.child = child;
     this.exited = new Promise(done => child.once('close', () => {
@@ -133,6 +143,7 @@ export class R15Worker {
   private idle() { assertR15Idle(this.mainRoot, this.dependencies.processes?.() ?? execFileSync('ps', ['-axo', 'pid=,command='], { encoding: 'utf8' })); }
   private async load(): Promise<void> {
     try {
+      r15ProcessConfig(this.config);
       this.idle();
       const artifact = readR15Artifact(this.config);
       mkdirSync(dirname(this.lock), { recursive: true });

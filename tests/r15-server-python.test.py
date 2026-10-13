@@ -1,6 +1,7 @@
 """Live token guard without importing torch, a tokenizer, or a model."""
 import contextlib
 import importlib.util
+import os
 from pathlib import Path
 import sys
 import types
@@ -13,6 +14,14 @@ spec.loader.exec_module(scorer)
 
 
 class TokenGuard(unittest.TestCase):
+    def test_runtime_cannot_validate_another_venv_or_unqualified_device(self):
+        valid = {'MGOGO_DECIDE_DEVICE': 'mps', 'MGOGO_FLASHDEBERTA': '0', 'MGOGO_DECIDE_PYTHON': sys.executable}
+        with patch.dict(os.environ, valid):
+            scorer.require_runtime()
+            for key, value in [('MGOGO_DECIDE_DEVICE', 'cpu'), ('MGOGO_FLASHDEBERTA', '1'), ('MGOGO_DECIDE_PYTHON', '/tmp/other-venv/bin/python')]:
+                with patch.dict(os.environ, {key: value}):
+                    with self.assertRaises(ValueError): scorer.require_runtime()
+
     def test_exact_boundary_without_truncation_or_forward_on_rejection(self):
         calls = []
         class Model:

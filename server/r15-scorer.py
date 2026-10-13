@@ -32,7 +32,17 @@ def checked_score(model, name, packets):
     return model.score(name, packets), counts
 
 
+def require_runtime():
+    if os.environ.get('MGOGO_DECIDE_DEVICE') != 'mps' or os.environ.get('MGOGO_FLASHDEBERTA') != '0':
+        raise ValueError('R15 preflight only qualifies MPS with FlashDeBERTa disabled')
+    if os.path.abspath(sys.executable) != os.path.abspath(os.environ['MGOGO_DECIDE_PYTHON']):
+        raise ValueError('R15 running interpreter differs from the selected runtime')
+    # Keep the venv path: resolving its symlink would incorrectly identify only the shared base binary.
+    os.environ['MGOGO_DECIDE_PYTHON'] = sys.executable
+
+
 def main():
+    require_runtime()
     repo = Path(__file__).resolve().parents[1]
     sys.path.insert(0, str(repo / 'training/decide_ft'))
     root = Path(os.environ['MGOGO_FT_ROOT'])
@@ -43,12 +53,17 @@ def main():
     weights = folder / 'adapter_model.safetensors'
     before = sha(weights)
     config = sha(folder / 'adapter_config.json')
-    from r15_preflight import validate_preflight
-    validate_preflight(root)
+    from r15_preflight import runtime_digest, validate_preflight
+    preflight = validate_preflight(root)
     if sha(root / 'preflight/result.json') != manifest['preflight']['receipt_sha256']:
         raise ValueError('adapter preflight receipt changed')
     if before != manifest['adapter_sha256']:
         raise ValueError('adapter weights differ from the completed manifest')
+    if config != manifest['adapter_config_sha256']:
+        raise ValueError('adapter configuration differs from the completed manifest')
+    runtime_hash = runtime_digest(preflight['identity']['runtime'])
+    if runtime_hash != manifest['preflight_runtime_sha256']:
+        raise ValueError('adapter runtime differs from the completed manifest')
     warmup = json.loads(sys.stdin.readline())['warmup']
     with contextlib.redirect_stdout(sys.stderr):
         from adapters import AdapterModel
