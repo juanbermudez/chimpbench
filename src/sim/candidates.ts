@@ -43,7 +43,7 @@ export const V = {
  * the animal cannot see now: [tree id, the crop it values the tree at, hours since it last saw the tree (Infinity when
  * never), feeders it counts there, the distance]; rg.ts draws the crop from that belief (treeFoodWorth).
  */
-export interface CandidateMeta { v: number; aux: number; raw?: number; jit?: number; bel?: number[] }
+export interface CandidateMeta { v: number; aux: number; raw?: number; jit?: number; base?: number; bel?: number[] }
 export const candidateMeta = new WeakMap<Candidate, CandidateMeta>();
 
 /** The five gates of stage E5e (docs/staging/e5e-prereg.md §2); stage E4q adds the aggression and display gaps, E4p the female's mating gap. */
@@ -140,21 +140,24 @@ export const CODE: Record<Action, number> = {
 // Targets kept per action: forage P.slotsForage, these P.slotsMulti, everything else one.
 const MULTI: Partial<Record<Action, true>> = { groom: true, play: true, charge: true, travel: true, mate: true, follow: true, flee: true, share: true, attack: true, patrol: true };
 
-interface Slot { action: Action; target: number; score: number; v: number; aux: number; raw: number; jit: number; bel: number[] | null }
-const pool: Slot[] = Array.from({ length: 48 }, () => ({ action: 'rest' as Action, target: -1, score: 0, v: 0, aux: 0, raw: 0, jit: 0, bel: null }));
+interface Slot { action: Action; target: number; score: number; v: number; aux: number; raw: number; jit: number; base: number; bel: number[] | null }
+const pool: Slot[] = Array.from({ length: 48 }, () => ({ action: 'rest' as Action, target: -1, score: 0, v: 0, aux: 0, raw: 0, jit: 0, base: 0, bel: null }));
 let n = 0;
 let cur: Chimp;
 let curTime = 0;
+let curVersion = 0;
 let curEnd = 0;
 let curDone = false;
 let curP: Params;
 /** A patrol member on the way out, at stops or in an incursion: no calls and no displays until the release (§5.3.1 P4a). */
 let curSilent = false;
+let resourceSlots: Slot[] | undefined;
 
 function offer(action: Action, target: number, score: number, v: number = V.NONE, aux = -1, bel: number[] | null = null): void {
-  if (!(score > -0.4)) { if (offerTap.fn) offerTap.fn(action, target, score, v, aux, 'threshold', -1); return; }
+  const resource = !!resourceSlots && (action === 'forage' || action === 'drink' || (action === 'travel' && v === V.TREE && aux < 0));
+  if (!resource && !(score > -0.4)) { if (offerTap.fn) offerTap.fn(action, target, score, v, aux, 'threshold', -1); return; }
   if (curSilent && (action === 'call' || action === 'display')) { if (offerTap.fn) offerTap.fn(action, target, score, v, aux, 'silent', -1); return; }
-  const base = score, jit = (hash01(cur.id, cur.decisionVersion, CODE[action], target) - 0.5) * curP.candidateJitterSpan;
+  const base = score, jit = (hash01(cur.id, curVersion, CODE[action], target) - 0.5) * curP.candidateJitterSpan;
   score += jit;
   // stage E3 (urgencySwitchCost; docs/staging/e3-prereg.md §5): no continuation bonus or finished penalty. The cost of
   // switching (time and travel to the alternative) is already in each alternative's score, and staying is the pay test's job
@@ -163,6 +166,10 @@ function offer(action: Action, target: number, score: number, v: number = V.NONE
   let cont = 0;
   if (action === cur.action && target === cur.targetId && curP.urgencySwitchCost !== 1) { cont = curDone ? -curP.finishedPenalty : curTime < curEnd && !(curP.redecideValue >= 1) ? curP.continueBonus : 0; score += cont; }
   const raw = base + cont;
+  if (resource) {
+    resourceSlots!.push({ action, target, score, v, aux, raw, jit, base, bel });
+    return;
+  }
   // stage C13e (joinChoice): the joint trip (travel to a companion's goal tree, aux = its leader) keeps one slot of its
   // own, so the animal's own trips cannot crowd it out of the choice; a trip to the same tree still merges
   const grouped = curP.joinChoice === 1 && action === 'travel', join = grouped && v === V.TREE && aux > 0;
@@ -170,7 +177,7 @@ function offer(action: Action, target: number, score: number, v: number = V.NONE
   for (let i = 0; i < n; i++) {
     const s = pool[i];
     if (s.action !== action) continue;
-    if (s.target === target) { const up = score > s.score; if (up) { s.score = score; s.v = v; s.aux = aux; s.raw = raw; s.jit = jit; s.bel = bel; } if (offerTap.fn) offerTap.fn(action, target, base, v, aux, up ? 'better' : 'worse', -1); return; }
+    if (s.target === target) { const up = score > s.score; if (up) { s.score = score; s.v = v; s.aux = aux; s.raw = raw; s.jit = jit; s.base = base; s.bel = bel; } if (offerTap.fn) offerTap.fn(action, target, base, v, aux, up ? 'better' : 'worse', -1); return; }
     if (grouped && (s.v === V.TREE && s.aux > 0) !== join) continue;
     count++;
     if (worst < 0 || s.score < pool[worst].score) worst = i;
@@ -185,7 +192,7 @@ function offer(action: Action, target: number, score: number, v: number = V.NONE
     slot = pool[n++];
     if (offerTap.fn) offerTap.fn(action, target, base, v, aux, 'kept', -1);
   }
-  slot.action = action; slot.target = target; slot.score = score; slot.v = v; slot.aux = aux; slot.raw = raw; slot.jit = jit; slot.bel = bel;
+  slot.action = action; slot.target = target; slot.score = score; slot.v = v; slot.aux = aux; slot.raw = raw; slot.jit = jit; slot.base = base; slot.bel = bel;
 }
 
 export function dependentOn(world: World, c: Chimp): Chimp | undefined {
@@ -315,15 +322,16 @@ function slotBefore(a: Slot, b: Slot): number { return b.score - a.score || a.ta
 const _order: Slot[] = [];
 
 /** Pure: builds candidates from the chimp's last perception and its body. No rng, no world mutation. */
-export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Candidate[] {
+export function computeCandidates(world: World, c: Chimp, out: Candidate[], resources = false, decisionVersion = c.decisionVersion): Candidate[] {
+  resourceSlots = resources ? [] : undefined;
   out.length = 0;
-  n = 0; cur = c; curTime = world.time; _rm.c = null; _rm.gc = null;
+  n = 0; cur = c; curVersion = decisionVersion; curTime = world.time; _rm.c = null; _rm.gc = null;
   const P = paramsOf(world);
   curP = P;
   const x = ix(c);
   curEnd = x.actEnd; curDone = x.finished;
   curSilent = P.patrolSilence === 1 && c.action === 'patrol' && x.v !== V.APPROACH && !!simOf(world).patrols[c.troopId];
-  if (!c.alive) { out.push({ action: 'dead', targetId: -1, score: 1, reason: 'Life ended' }); return out; }
+  if (!c.alive) { resourceSlots = undefined; out.push({ action: 'dead', targetId: -1, score: 1, reason: 'Life ended' }); return out; }
   const st = stampTrees(world, c, x);
   const idx = index(world);
   const byId = idx.byId;
@@ -516,7 +524,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   };
   // stage E3e (choiceBelief; docs/staging/e3e-prereg.md §5.1): a trip to a tree out of sight carries the animal's belief
   // about its crop (the crop it values the tree at, the hours since it last saw the tree), so rg.ts can draw the crop
-  const cb = fr && P.choiceBelief >= 1;
+  const cb = resources || (fr && P.choiceBelief >= 1);
   const seenH = (id: number): number => { for (let i = 0; i < c.memory.length; i++) { const m = c.memory[i]; if (m.kind === 'tree' && m.entityId === id) return time - m.seenAt; } return Infinity; };
   if (!caretaker || (c.age >= 1.5 && !carried && caretaker.action === 'forage')) {
     for (let _i1 = 0; _i1 < x.trees.length; _i1++) { const id = x.trees[_i1];
@@ -556,7 +564,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     const held = P.departPersist === 1 && !dv && x.tryAt !== undefined && time < x.tryAt && departAudience(world, c) > 0;
     const lost = dv && x.dfa !== undefined && x.dfa === audienceSig(world, c) ? audienceCompany(world, c, P) : 0;
     // (departValue 2, iteration 2: both over the settled audience, the company the animal has, E5b; see audienceSig)
-    const shortlist = P.patchEcology === 1; // field: many remembered trees; score the few best by distance and hunger
+    const shortlist = P.patchEcology === 1 && !resources; // field: many remembered trees; score the few best by distance and hunger
     const water = waterOn(P); // stage E2g: thirst from the water ledger
     _mem.length = 0; _rk.length = 0; _dk.length = 0; _bl.length = 0;
     const minD = P.memoryTreeMinM;
@@ -920,12 +928,14 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     while (j > 0 && slotBefore(order[j - 1], sl) > 0) { order[j] = order[j - 1]; j--; }
     order[j] = sl;
   }
+  if (resourceSlots) order.push(...resourceSlots);
   for (let _i7 = 0; _i7 < order.length; _i7++) { const sl = order[_i7];
     const cand: Candidate = { action: sl.action, targetId: sl.target, score: Math.round(clamp(sl.score, 0, 3) * 1000) / 1000, reason: reasonFor(world, c, sl) };
-    candidateMeta.set(cand, P.choiceBelief >= 1 ? (sl.bel ? { v: sl.v, aux: sl.aux, raw: sl.raw, jit: sl.jit, bel: sl.bel } : { v: sl.v, aux: sl.aux, raw: sl.raw, jit: sl.jit })
+    candidateMeta.set(cand, resources ? { v: sl.v, aux: sl.aux, raw: sl.raw, jit: sl.jit, base: sl.base, ...(sl.bel ? { bel: sl.bel } : {}) } : P.choiceBelief >= 1 ? (sl.bel ? { v: sl.v, aux: sl.aux, raw: sl.raw, jit: sl.jit, bel: sl.bel } : { v: sl.v, aux: sl.aux, raw: sl.raw, jit: sl.jit })
       : P.redecideValue >= 1 ? { v: sl.v, aux: sl.aux, raw: sl.raw, jit: sl.jit } : { v: sl.v, aux: sl.aux });
     out.push(cand);
   }
+  resourceSlots = undefined;
   return out;
 }
 

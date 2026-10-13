@@ -12,6 +12,7 @@ import { ownAsk, ownSetAside } from './own';
 import { paramsOf } from './params';
 import { perceive } from './perception';
 import { buildRequest, targetRequest } from './request';
+import { resourceEligibleActions } from './resources';
 import { gate } from './rg';
 import { random } from './rng';
 import { ix, living } from './state';
@@ -40,7 +41,8 @@ export function decisionPoint(world: World, c: Chimp): void {
   // stage R8 (observeV5; own.ts): what opened this decision point is noted for the animal's packet; nothing else reads it
   if (own) ownAsk(world, c, x.intr !== '', model && c.awaitingDecisionSince !== null, P);
   x.intr = '';
-  const list = getEligibleActions(world, c);
+  const rulesList = getEligibleActions(world, c);
+  const list = P.resourceTargets === 1 && (model || (P.kernelSim >= 1 && c.age >= P.rgMinAge && (P.kernelFocal !== 1 || c.controller === 'model'))) ? resourceEligibleActions(world, c) : rulesList;
   if (model) {
     if (c.awaitingDecisionSince === null) c.awaitingDecisionSince = world.time;
     const policy = world.modelPolicy;
@@ -121,7 +123,7 @@ export function decideByRules(world: World, c: Chimp, policy = false): boolean {
 export function applyDecision(world: World, chimpId: number, candidate: Pick<Candidate, 'action' | 'targetId'>, source: DecisionSource, expectedVersion?: number): boolean {
   const c = living(world, chimpId);
   if (!c || (expectedVersion !== undefined && c.decisionVersion !== expectedVersion)) return false;
-  const current = findCandidate(getEligibleActions(world, c), candidate.action, candidate.targetId);
+  const current = findCandidate(source === 'decide' && paramsOf(world).resourceTargets === 1 ? resourceEligibleActions(world, c) : getEligibleActions(world, c), candidate.action, candidate.targetId);
   if (!current) return false;
   startAction(world, c, current, source);
   if (source === 'decide' && paramsOf(world).kernelGate === 1) {
@@ -204,6 +206,7 @@ export function secondRequest(world: World, request: KernelRequest, answer: unkn
   if (paramsOf(world).activityFirst !== 2 || !request.groups) return null;
   const read = typeof answer === 'object' && answer !== null ? readAnswer(answer, request.options.length) : null;
   const second = read ? targetRequest(request, read.index) : null;
+  if (second && request.context.resourceChoice === 'kind' && decisionContextError(second.context) !== '') throw new Error(`Invalid R15 target request: ${decisionContextError(second.context)}`);
   return second && decisionContextError(second.context) === '' ? second : null;
 }
 
@@ -217,13 +220,18 @@ export function kernelStep(world: World, c: Chimp, kernel: SyncKernel): StepResu
   const result: StepResult = { chimpId: c.id, kernel: kernel.id, by: 'rules', refusal: r.refusal, detail: r.refusal ? r.detail : '', index: -1, request: r.request, calls: 0 };
   if (r.refusal === '') {
     const env = { random: () => random(world) };
-    let request = r.request, answer = kernel.decide(request, env);
-    result.calls = 1;
-    const second = secondRequest(world, request, answer);
-    if (second) { request = result.second = second; answer = kernel.decide(second, env); result.calls = 2; }
-    const s = settleAnswer(world, c, request, answer);
-    result.index = s.index; result.refusal = s.refusal;
-    if (s.refusal === '') result.by = 'kernel';
+    try {
+      let request = r.request, answer = kernel.decide(request, env);
+      result.calls = 1;
+      const second = secondRequest(world, request, answer);
+      if (second) { request = result.second = second; answer = kernel.decide(second, env); result.calls = 2; }
+      const s = settleAnswer(world, c, request, answer);
+      result.index = s.index; result.refusal = s.refusal;
+      if (s.refusal === '') result.by = 'kernel';
+    } catch (error) {
+      if (paramsOf(world).resourceTargets !== 1) throw error;
+      result.refusal = 'kernel-error'; result.detail = error instanceof Error ? error.message : String(error);
+    }
   }
   if (result.by === 'rules') { dropIntent(world, c); decideByRules(world, c); }
   if (kernelTap.fn) kernelTap.fn(c, result);

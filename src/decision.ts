@@ -315,7 +315,9 @@ async function requestDecision(controller: DecisionController, world: World, chi
     // Superseded by cancel, timeout or a new world: the answer is not ours to apply.
     if (controller.generation !== generation) return false;
     // (the flight stays open only while a second call for the same decision follows at once: activityFirst 2)
-    if (failure || !more(answer)) { controller.busy = false; controller.inflightChimpId = -1; state.abort = null; }
+    let another = false;
+    if (!failure) { try { another = more(answer); } catch (error) { failure = error instanceof Error ? error.message : 'invalid second request'; } }
+    if (failure || !another) { controller.busy = false; controller.inflightChimpId = -1; state.abort = null; }
     clock = Date.now();
     if (failure) {
       controller.lastError = failure;

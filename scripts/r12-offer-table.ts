@@ -107,7 +107,7 @@ export function twoMinutePage(md: string): { text: string; words: number } {
 /** What is true of a whole base: each registry switch the offers read, by the name the classification file uses. */
 export function baseFacts(P: Params): Record<string, boolean> {
   return {
-    trace: false,                                                    // quotaTrace.on: null in every simulation
+    trace: false, resources: false,                                  // quotaTrace is off; this table audits ordinary rules enumeration
     circ: circadianOn(P), dark: darkOn(P), rH: P.rhythmHeat === 1, rS: P.rhythmSleep === 1, race: P.departRace === 1,
     fr: forageRateOn(P), gv: gutValueOn(P), shortlist: P.patchEcology === 1, routeChain: P.goalDistScaleM > 0 || P.routeChain === 1,
     callerRate: socialBit(P, 4) && cohesionOn(P) && forageRateOn(P), social4: socialBit(P, 4), cohesion: cohesionOn(P), callTrip: callTripOn(P),

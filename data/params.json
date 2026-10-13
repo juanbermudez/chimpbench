@@ -19388,6 +19388,33 @@
    "notes": "The alpha position stays contested for up to this long."
   },
   {
+   "id": "resourceTargets",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.resourceTargets",
+   "file": "src/sim/request.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage R15: default-off individual-perception resource target menus. Requires activityFirst 2 and observeV5 1. Rules controllers and fallbacks retain their existing candidate list. Design assumption."
+  },
+  {
    "id": "reunionH",
    "group": "social",
    "value": 1,

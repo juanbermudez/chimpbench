@@ -5,6 +5,8 @@ import { boundedCandidates, copyCandidate, kindMenu, menuOrder, phaseMenu, RESPO
 import { observe } from './observe';
 import { paramsOf, type Params } from './params';
 import { byValue, rgMenuParts } from './rg';
+import { optionKind } from './menu';
+import { resourceKind, resourcePercepts, resourceTargetsFor } from './resources';
 
 // The request a decision kernel receives (moved unchanged from src/decision.ts, which re-exports it; stage R1,
 // docs/staging/r1-prereg.md D5): the chimp's own percept (observe) with the menu bounded to at most eight legal options.
@@ -50,6 +52,14 @@ export interface RequestOpts { phaseMenu?: boolean; menuParity?: number; activit
  * without it (the disturbance response included) and rulesIndex is -1; everything else in the context is unchanged.
  */
 export function buildRequest(world: World, chimp: Chimp, opts: RequestOpts = {}): KernelRequest {
+  if (paramsOf(world).resourceTargets === 1) {
+    if (opts.activityFirst !== undefined && opts.activityFirst !== 2) throw new RangeError('resourceTargets requires activityFirst=2');
+    return buildResourceRequest(world, chimp, opts);
+  }
+  return buildLegacyRequest(world, chimp, opts);
+}
+
+function buildLegacyRequest(world: World, chimp: Chimp, opts: RequestOpts = {}): KernelRequest {
   const P = paramsOf(world), parity = (opts.menuParity ?? P.menuParity) === 1, kinds = (opts.activityFirst ?? P.activityFirst) >= 1;
   if (parity || kinds) return buildRequestR2(world, chimp, opts, P, parity, kinds);
   const seen = observe(world, chimp);
@@ -64,6 +74,32 @@ export function buildRequest(world: World, chimp: Chimp, opts: RequestOpts = {})
   const options = boundedCandidates(ctx.candidates, [rules, stimulusResponse(ctx)]);
   const context: DecisionContext = { ...ctx, recent: collapseMemories(ctx.recent), candidates: options };
   return { context, options, rulesIndex: rules ? options.findIndex(o => same(o, rules)) : -1 };
+}
+
+/** R15: keep the legacy flat menu's kind set; only resources acquire new targets. Pure, including on rules trajectories. */
+export function buildResourceRequest(world: World, chimp: Chimp, opts: RequestOpts = {}): KernelRequest {
+  const P = paramsOf(world);
+  if (P.resourceTargets !== 1 || P.activityFirst !== 2 || P.observeV5 !== 1) throw new RangeError('R15 requires resourceTargets=1, activityFirst=2 and observeV5=1');
+  const legacy = buildLegacyRequest(world, chimp, { ...opts, activityFirst: 0 });
+  const withheld = P.kernelNoRulesPick === 1 ? rulesChoice(world, chimp) : null;
+  const percepts = resourcePercepts(world, chimp).filter(k => !withheld || !same(k, withheld)), groups: Candidate[][] = [], options: Candidate[] = [];
+  const kinds = new Set<ReturnType<typeof optionKind>>();
+  for (const old of legacy.options) {
+    const kind = optionKind(old);
+    if (kinds.has(kind)) continue;
+    kinds.add(kind);
+    const representatives = legacy.options.filter(k => optionKind(k) === kind).sort((a, b) => b.score - a.score);
+    let group: Candidate[], representative: Candidate;
+    if (resourceKind(old)) {
+      group = resourceTargetsFor(world, chimp, kind, percepts);
+      if (!group.length) continue;
+      representative = group.find(k => same(k, representatives[0])) ?? [...group].sort((a, b) => b.score - a.score)[0];
+    } else { representative = representatives[0]; group = [representative]; }
+    options.push(copyCandidate(representative)); groups.push(group);
+  }
+  const rules = legacy.rulesIndex >= 0 ? legacy.options[legacy.rulesIndex] : undefined;
+  return { context: { ...legacy.context, candidates: options, resourceChoice: 'kind', resourceKinds: options.map(optionKind) }, options, groups,
+    rulesIndex: rules ? groups.findIndex(g => g.some(k => same(k, rules))) : -1 };
 }
 
 /**
@@ -104,6 +140,9 @@ function buildRequestR2(world: World, chimp: Chimp, opts: RequestOpts, P: Params
 export function targetRequest(request: KernelRequest, index: number): KernelRequest | null {
   const g = request.groups?.[index];
   if (!g || g.length < 2) return null;
-  const options = menuOrder(g);
-  return { context: { ...request.context, candidates: options }, options, rulesIndex: request.rulesIndex === index ? options.indexOf(g[0]) : -1 };
+  const resource = request.context.resourceChoice === 'kind';
+  const options = resource ? g.map(copyCandidate) : menuOrder(g);
+  const context: DecisionContext = { ...request.context, candidates: options,
+    ...(resource ? { resourceChoice: 'target', resourceKinds: options.map(() => request.context.resourceKinds![index]) } : {}) };
+  return { context, options, rulesIndex: request.rulesIndex === index ? (resource ? options.findIndex(k => same(k, request.options[index])) : options.indexOf(g[0])) : -1 };
 }
