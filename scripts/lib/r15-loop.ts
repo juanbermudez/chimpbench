@@ -36,7 +36,10 @@ export interface R15RunOptions {
 export const r15FakeKernel: Kernel = {
   id: 'r15-fake', label: 'R15 wiring check (no model)',
   decide(request) {
-    const weights = request.options.map(o => Math.exp(2 * unit(`r15-fake|${request.context.resourceChoice}|${optionKind(o)}|${optionKey(o)}`)));
+    const weights = request.options.map((o, i) => {
+      const key = request.context.resourceChoice === 'kind' ? request.context.resourceKinds![i] : optionKey(o);
+      return Math.exp(2 * unit(`r15-fake|${request.context.resourceChoice}|${key}`));
+    });
     const total = weights.reduce((a, b) => a + b, 0), probabilities = weights.map(w => w / total), index = topIndex(probabilities);
     return { index, probabilities, choice: `c${index}` };
   },
