@@ -200,7 +200,7 @@ export function createNests(parent: THREE.Object3D, ctx: CreatureContext) {
         nests.set(key, n);
         trim();
       }
-      // (Found already listed: a nest nobody was seen building has no `grow` and keeps growing in by the clock.)
+      // (Found already listed: a nest nobody was seen building has no `grow` and is drawn finished, stage W12.)
       n.kx = Math.round(pos[0] * 2); n.kz = Math.round(pos[2] * 2);
       building.set(builderId, n);
       if (building.size > MAX_NESTS) { const first = building.keys().next(); if (!first.done) building.delete(first.value); }
