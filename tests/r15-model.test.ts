@@ -22,11 +22,11 @@ test('both stages send the identical training packet to the matching loaded adap
   const { world, chimp } = resourceFixture(), first = buildRequest(world, chimp);
   const second = targetRequest(first, first.groups!.findIndex(g => g.length > 1))!;
   const sent: unknown[] = [];
-  const scorer = { async score(batch: { adapter: string; packet: unknown }[]) {
+  const scorer = { status: () => ({ inputTokens: 123 }), async score(batch: { adapter: string; packet: unknown }[]) {
     sent.push(...batch);
     return batch.map(({ packet }) => Object.keys((packet as ReturnType<typeof r15Packet>).questions.action.criteria).map((_, i, a) => i === 0 ? 1 : 0));
   } };
   const kernel = r15ModelKernel(scorer, manifest, { ready: true, adapters: { [adapter]: weights } });
-  for (const request of [first, second]) await kernel.decide(request, { random: () => 0.5 });
+  for (const request of [first, second]) assert.equal((await kernel.decide(request, { random: () => 0.5 })).inputTokens, 123);
   assert.deepEqual(sent, [first, second].map(request => ({ adapter, packet: r15Packet(request.context) })));
 });
