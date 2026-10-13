@@ -9,7 +9,7 @@ import { buildLocalQuestion, buildOwnQuestion, r15Packet } from '../src/provider
 import { decisionContextError } from '../src/sim/context-check';
 import { createWorld, observe } from '../src/simulation';
 import type { Candidate, DecisionContext } from '../src/types';
-import { assembleR15, shellQuote } from '../scripts/r15-contexts';
+import { assembleR15, requireCleanSource, shellQuote } from '../scripts/r15-contexts';
 import { assertR15AdapterManifest, digest, exportRow, kindMarginal, R15_KIND_TEACHER, R15_PACKET_VERSION, R15_TARGET_TEACHER, targetDistribution } from '../scripts/lib/r15-training';
 
 const world = createWorld(48, { params: { observeV5: 1 } }), chimp = world.chimps.find(c => c.alive && c.age >= 8)!;
@@ -102,4 +102,14 @@ test('adapter identity rejects an old adapter, missing completion and wrong trai
 
 test('review command quotes shell metacharacters literally', () => {
   assert.equal(shellQuote("a'b $x `bad`"), "'a'\\''b $x `bad`'");
+});
+
+test('collection and assembly source guard refuses uncommitted files', () => {
+  const root = mkdtempSync(join(tmpdir(), 'r15-clean-source-')), previous = process.cwd();
+  try {
+    execFileSync('git', ['init', '-q', root]); process.chdir(root);
+    requireCleanSource();
+    writeFileSync(join(root, 'uncommitted.txt'), 'fixture');
+    assert.throws(() => requireCleanSource(), /clean committed source/);
+  } finally { process.chdir(previous); rmSync(root, { recursive: true, force: true }); }
 });
