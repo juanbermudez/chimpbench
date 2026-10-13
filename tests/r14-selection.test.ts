@@ -37,3 +37,12 @@ test('R14 arms preserve P5b and draw; registration rejects a different source/se
   const check = (seed: number, days = 10) => r14Refusal(arm, seed, days, 30, 'field', 'docs/staging/integrator-kit/params/M6-W50.json', true, 120, true);
   assert.equal(check(48), ''); assert.equal(check(21), ''); assert.notEqual(check(7), ''); assert.notEqual(check(4333), ''); assert.notEqual(check(48, 5), '');
 });
+
+test('real P5b rendering preserves the registered full-daylight boundary and dark trend suppression', () => {
+  const context = observe(world, chimp);
+  const render = (level: number, trend: number) => buildOwnQuestion({ ...context, light: { level, trend } }, { variant: 'short' });
+  assert.equal(stateOf(render(.97, .1)).day, true);
+  assert.equal(stateOf(render(.969, .1)).day, false);
+  assert.equal(stateOf(render(.01, -.1)).dark, true);
+  assert.equal(stateOf(render(.01, -.1)).dusk, false);
+});

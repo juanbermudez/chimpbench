@@ -53,16 +53,48 @@ class Pipeline(unittest.TestCase):
         root = r.OUT / 'ft'; folder = root / 'adapters/r14-p5b-s7'; folder.mkdir(parents=True)
         weights = folder / 'adapter_model.safetensors'; weights.write_bytes(b'fake weights, never loaded')
         with self.assertRaises(RuntimeError): r.adapter(root, 'r14-p5b-s7')
-        r.atomic(folder / 'manifest.json', {'adapter_sha256': r.sha(weights)})
+        r.atomic(folder / 'manifest.json', {'adapter': 'r14-p5b-s7', 'hyperparameters': {**r.RECIPE, 'seed': 7}, 'base_model': 'fastino/GLiNER2.5-Decide', 'base_revision': '7ee5da4c2415e32259bcdc0b1a7367c32ce8d6f6', 'adapter_sha256': r.sha(weights)})
         self.assertEqual(r.adapter(root, 'r14-p5b-s7')['weights'], r.sha(weights))
+        manifest = r.read(folder / 'manifest.json'); manifest['hyperparameters']['seed'] = 11
+        r.atomic(folder / 'manifest.json', manifest)
+        with self.assertRaisesRegex(RuntimeError, 'recipe mismatch'): r.adapter(root, 'r14-p5b-s7')
+        manifest['hyperparameters']['seed'] = 7; r.atomic(folder / 'manifest.json', manifest)
         weights.write_bytes(b'changed')
         with self.assertRaises(RuntimeError): r.adapter(root, 'r14-p5b-s7')
+    def test_assembly_preserves_prefix_and_rejects_test_leak(self):
+        original_source = r.SOURCE; r.SOURCE = r.OUT / 'source'
+        try:
+            source_row = {'id': 'original-train', 'packet': {}}
+            r.write_rows(r.SOURCE / 'p5b/contexts/train.jsonl', [source_row])
+            r.write_rows(r.SOURCE / 'p5b/contexts/dev.jsonl', [source_row])
+            packet = {'state': {}}
+            r.write_rows(r.SOURCE / 'eval/all.jsonl', [{'id': str(i), 'packets': {'p5b': packet}} for i in range(1500)])
+            r.write_rows(r.SOURCE / 'eval/test.jsonl', [{'id': str(i), 'label': 'fresh', 'soft': {'c0': 1}} for i in range(1500)])
+            for seed in (48, 7, 21):
+                for kind in ('learner', 'rules'):
+                    path = r.OUT / 'parts' / f'{kind}-s{seed}.jsonl'
+                    r.write_rows(path, []); r.atomic(str(path) + '.meta.json', {'dry': True})
+            path = r.OUT / 'parts/learner-s21.jsonl'
+            r.write_rows(path, [{'id': 'leak', 'seed': 21, 'split': 'train'}])
+            with self.assertRaisesRegex(RuntimeError, 'test leak'): r.assemble()
+            r.write_rows(path, []); r.assemble()
+            self.assertEqual((r.OUT / 'ft/contexts/train.jsonl').read_bytes(), (r.SOURCE / 'p5b/contexts/train.jsonl').read_bytes())
+            self.assertEqual(len(r.rows(r.OUT / 'ft/eval.jsonl')), 1500)
+            r.atomic(str(path) + '.meta.json', {'changed': True})
+            with self.assertRaisesRegex(RuntimeError, 'inputs changed'): r.assemble()
+        finally: r.SOURCE = original_source
     def test_completed_step_checks_output_before_skipping(self):
         output = r.OUT / 'small.txt'
         command = [__import__('sys').executable, '-c', f'from pathlib import Path; Path({str(output)!r}).write_text("ok")']
         r.step('small', command, .01, outputs=[output]); r.step('small', command, .01, outputs=[output])
         output.write_text('changed')
         with self.assertRaises(RuntimeError): r.step('small', command, .01, outputs=[output])
+    def test_stopped_rules_world_cannot_resume(self):
+        args = ['--seed', '48', '--arm', 'rules', '--packet', 'p5b', '--days', '10']
+        reg = {'seed': 48, 'arm': 'rules', 'packetName': 'p5b', 'daysAsked': 10, 'burnInDays': 30, 'profile': 'field', 'paramsFile': 'docs/staging/integrator-kit/params/M6-W50.json', 'state': 'stopped'}
+        with self.assertRaisesRegex(RuntimeError, 'scientifically stopped'): r.validate_world_resume(reg, args)
+        reg['state'] = 'done'; reg['seed'] = 7
+        with self.assertRaisesRegex(RuntimeError, 'identity mismatch'): r.validate_world_resume(reg, args)
     def test_resume_budget_cannot_be_reset(self):
         command = ['false']
         r.atomic(r.OUT / 'steps/exhausted.json', {'name': 'exhausted', 'command': command, 'seconds': 3601, 'attempts': []})

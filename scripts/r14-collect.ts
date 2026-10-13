@@ -23,12 +23,13 @@ export async function collect(root: string, out: string, dry = false): Promise<v
   const reg = readRegistry(root), rules = reg.kernel === 'rules', source = rules ? 'rules' : 'learner';
   if (![48, 7, 21].includes(reg.seed) || reg.packetName !== 'p5b') throw new Error('R14 collection: only P5b worlds 48, 7 and 21');
   if (!dry && (reg.profile !== 'field' || reg.burnInDays !== 30 || reg.paramsFile !== 'docs/staging/integrator-kit/params/M6-W50.json' || reg.paramsSha256 !== hash(readFileSync(resolve(reg.paramsFile), 'utf8')) || reg.switches.observeV5 !== 1 || reg.switches.menuParity !== 1)) throw new Error('wrong collection world');
+  if (!dry && (!reg.stopCheckOn || reg.stopCheck?.stop || reg.minAge !== 8 || reg.timeoutS !== 120 || (rules ? reg.arm !== 'rules' : !reg.contexts || reg.decodeSpec?.hold !== 'act'))) throw new Error('collection safety settings differ');
   if (!rules && !dry && (reg.arm !== `r14-source-s${reg.seed === 7 ? 11 : 7}-draw-1` || reg.switches.kernelGate !== 1 || reg.decodeSpec?.mode !== 'draw' || reg.decodeSpec?.salt !== 1)) throw new Error('wrong source policy');
   if ((!dry && (reg.days.length !== 10 || reg.state !== 'done')) || reg.days.some(d => d.timeouts > 0)) throw new Error('collection must finish all days without timeouts');
   if (!dry) {
     const identity: { commit: string; adapters: { name: string; weights: string }[] } = JSON.parse(readFileSync(resolve(out, '../../identity.json'), 'utf8'));
     if (reg.commit !== identity.commit) throw new Error('collection checkout differs from chain identity');
-    if (!rules && !identity.adapters.some(a => a.name === reg.adapter && a.weights === reg.adapterSha256)) throw new Error('collection adapter differs from pinned source');
+    if (!rules && (reg.adapter !== `r11-p5b-s${reg.seed === 7 ? 11 : 7}` || !identity.adapters.some(a => a.name === reg.adapter && a.weights === reg.adapterSha256))) throw new Error('collection adapter differs from pinned source');
   }
   const asks = new Map(readReceipts(root, reg.days.length).filter(l => l.k === 'ask').map(l => [keyOf(l.t, l.id, l.v), l]));
   type Point = SelectionRow & { state: ReturnType<typeof stateOf> };
@@ -83,7 +84,7 @@ export async function collect(root: string, out: string, dry = false): Promise<v
   writeFileSync(out, text, { flag: 'wx' });
   writeFileSync(`${out}.meta.json`, JSON.stringify({ stage: 'R14', dry, source, seed: reg.seed, run: root, runCommit: reg.commit,
     runHash: hash(readFileSync(resolve(root, 'run.json'), 'utf8')), dataSha256: hash(text), days: reg.days.length, selected: chosen,
-    available: points.length, availableStates: { dawnNest: points.filter(p => p.state.nest && p.state.dawn).length, companyDuskNest: points.filter(p => p.state.nest && p.state.dusk && p.state.companyNest).length }, animals: new Set(points.map(p => p.chimpId)).size, labelled: labelled.length, skipped, replay: { selection: first.ok, labels: second.ok, hashes: second.hashes } }, null, 1) + '\n');
+    animalNights: reg.days.reduce((n, d) => n + d.nights[1], 0), available: points.length, availableStates: { dawnNest: points.filter(p => p.state.nest && p.state.dawn).length, companyDuskNest: points.filter(p => p.state.nest && p.state.dusk && p.state.companyNest).length }, animals: new Set(points.map(p => p.chimpId)).size, labelled: labelled.length, skipped, replay: { selection: first.ok, labels: second.ok, hashes: second.hashes } }, null, 1) + '\n');
   console.log(JSON.stringify({ source, seed: reg.seed, selected: chosen.length, labelled: labelled.length, skipped }));
 }
 if (process.argv[1]?.endsWith('r14-collect.ts')) {

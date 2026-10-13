@@ -27,6 +27,7 @@ OUT = Path(os.environ.get('R14_OUT', str(ROOT / 'artifacts/r14'))).resolve()
 TSX = ['fnm', 'exec', '--using=22.22.3', '--', 'pnpm', 'exec', 'tsx']
 NIGHT = TSX + ['scripts/r10-night.ts']
 DRY = False
+RECIPE = {'epochs': 3, 'lr': .0002, 'batch': 2, 'accum': 4, 'r': 16, 'alpha': 32.0, 'dropout': .05, 'checkpointing': 0, 'top_layers': 8, 'amp': 'bf16'}
 
 
 def sha(path):
@@ -92,6 +93,9 @@ def adapter(root, name, trained=False):
     manifest, weights = folder / 'manifest.json', folder / 'adapter_model.safetensors'
     if not manifest.is_file() or not weights.is_file(): raise RuntimeError(f'incomplete or missing adapter {folder}')
     m = read(manifest)
+    expected = {**RECIPE, 'seed': int(name.rsplit('s', 1)[1])}
+    if m.get('adapter') != name or m.get('hyperparameters') != expected: raise RuntimeError(f'{name}: adapter name or recipe mismatch')
+    if m.get('base_model') != 'fastino/GLiNER2.5-Decide' or m.get('base_revision') != '7ee5da4c2415e32259bcdc0b1a7367c32ce8d6f6': raise RuntimeError(f'{name}: base model mismatch')
     if m.get('adapter_sha256') != sha(weights): raise RuntimeError(f'adapter identity mismatch {name}')
     if trained:
         for kind in ('train', 'dev'):
@@ -118,7 +122,15 @@ def pin():
     atomic(path, current)
 
 
+def queue_states():
+    paths = [WT / 'bench-r13/artifacts/queue/state', WT / 'bench-r11/artifacts/r11-chain/state', WT / 'bench-rw3/artifacts/rw3-chain/state']
+    return {str(p): p.read_text().strip() for p in paths if p.exists()}
+
+
 def model_preflight():
+    pin()
+    queued = {p: s for p, s in queue_states().items() if s.lower() != 'done'}
+    if queued: raise RuntimeError('another queue is not done: ' + json.dumps(queued))
     processes = other_models()
     if processes: raise RuntimeError('another model process: ' + ' | '.join(processes))
     if os.getloadavg()[0] >= 8: raise RuntimeError('one-minute load >=8; no model step started')
@@ -141,6 +153,7 @@ def step(name, command, hours=1, environment=None, model=False, outputs=()):
     remaining = hours * 3600 - state['seconds']
     if remaining <= 0: raise RuntimeError(f'{name}: registered cumulative wall budget exhausted')
     if model: model_preflight()
+    state['model'] = model
     state['activeAt'] = time.time()
     state['attempts'].append({'start': state['activeAt'], 'budgetSeconds': remaining})
     atomic(record, state)
@@ -168,6 +181,19 @@ def step(name, command, hours=1, environment=None, model=False, outputs=()):
         state.pop('activeAt', None)
         atomic(record, state)
     log(f'END {name}, {state["seconds"] / 60:.1f} min')
+
+
+def validate_world_resume(reg, args):
+    def arg(name, default=None): return args[args.index('--' + name) + 1] if '--' + name in args else default
+    expected = {'seed': int(arg('seed')), 'arm': arg('arm'), 'packetName': arg('packet'), 'daysAsked': int(arg('days')),
+                'burnInDays': int(arg('burn-in', '30')), 'profile': 'field', 'paramsFile': 'docs/staging/integrator-kit/params/M6-W50.json'}
+    if any(reg.get(k) != v for k, v in expected.items()): raise RuntimeError('resumed world identity mismatch')
+    if reg.get('state') == 'stopped' or (reg.get('stopCheck') or {}).get('stop'): raise RuntimeError('scientifically stopped world cannot resume')
+    if reg.get('paramsSha256') != sha(ROOT / expected['paramsFile']) or not reg.get('stopCheckOn') or reg.get('minAge') != 8 or reg.get('timeoutS') != 120: raise RuntimeError('resumed world parameters or stop check changed')
+    if reg['arm'] != 'rules' and '-wire-' not in reg['arm']:
+        name = os.environ.get('MGOGO_FT_ADAPTERS', '')
+        info = adapter(Path(os.environ['MGOGO_FT_ROOT']), name, '-trained-' in reg['arm'])
+        if reg.get('adapter') != name or reg.get('adapterSha256') != info['weights']: raise RuntimeError('resumed adapter identity mismatch')
 
 
 def run_world(label, seed, arm, days, hours, root=SOURCE):
@@ -203,7 +229,7 @@ def packet_state(packet):
 def assemble():
     ft = OUT / 'ft'; manifest_path = ft / 'contexts/manifest.json'
     parts = [OUT / 'parts' / f'{kind}-s{seed}.jsonl' for seed in (48, 7, 21) for kind in ('learner', 'rules')]
-    inputs = {str(p): sha(p) for p in parts}
+    inputs = {str(p): sha(p) for p in parts + [Path(str(p) + '.meta.json') for p in parts]}
     if manifest_path.exists():
         if read(manifest_path).get('parts') != inputs: raise RuntimeError('assembled inputs changed')
         for p, h in read(manifest_path)['outputs'].items():
@@ -248,7 +274,8 @@ def train(seed):
     name = f'r14-p5b-s{seed}'; ft = OUT / 'ft'; directory = ft / 'adapters' / name
     if directory.exists():
         adapter(ft, name, True)
-        return
+        receipt = OUT / 'steps' / f'train-s{seed}.json'
+        if not receipt.exists() or not read(receipt).get('done'): raise RuntimeError('existing training has no completed step receipt; inspect partial training without resetting budget')
     e = env(); e['MGOGO_FT_ROOT'] = str(ft)
     step('train-s' + str(seed), ['training/decide_ft/r4_py.sh', 'train_r11.py', '--name', name,
          '--train', 'contexts/train.jsonl', '--dev', 'contexts/dev.jsonl', '--extra', 'contexts/manifest.json', '--epochs', '3', '--seed', str(seed), '--labels', 'soft'],
@@ -315,13 +342,17 @@ def reading(seed):
     for s in ('dayNest', 'aloneDusk', 'darkOut'): groups[s] = [x for x in prepared if x['row']['source'] != 'original' and x['row']['stratum'] == s]
     for name, predicate in [('dawnGuard', lambda s: s['nest'] and s['dawn']), ('companyDuskGuard', lambda s: s['nest'] and s['dusk'] and s['companyNest'])]:
         groups[name] = [x for x in prepared if x['row']['source'] != 'original' and predicate(x['row']['state']) and x['nestQ'] >= .99]
+    for name, group in list(groups.items()):
+        if name in ('original', 'learner', 'learnerWithoutNest'): continue
+        for source in ('learner', 'rules'): groups[name + ':' + source] = [x for x in group if x['row']['source'] == source]
+    groups['darkNest'] = [x for x in prepared if x['row']['source'] != 'original' and x['row']['state']['nest'] and x['row']['state']['dark']]
     summary = {}
     for name, group in groups.items():
         animals = [x['row']['chimpId'] for x in group]
         def metric(oldkey, newkey, error=False):
             delta = [(abs(x[newkey] - x['nestQ']) - abs(x[oldkey] - x['nestQ'])) if error else x[newkey] - x[oldkey] for x in group]
             return {'old': mean([x[oldkey] for x in group]), 'new': mean([x[newkey] for x in group]), 'difference': mean(delta), 'animalInterval': interval(delta, animals)}
-        summary[name] = {'n': len(group), 'animals': len(set(animals)), 'divergence': metric('kl0', 'kl1'), 'nest': metric('nest0', 'nest1'), 'nestError': metric('nest0', 'nest1', True)}
+        summary[name] = {'n': len(group), 'animals': len(set(animals)), 'divergence': metric('kl0', 'kl1'), 'nest': metric('nest0', 'nest1'), 'nestError': metric('nest0', 'nest1', True), 'trip': {**metric('trip0', 'trip1'), 'teacher': mean([x['tripQ'] for x in group])}}
     guards = {}
     guards['originalDivergence'] = bool(summary['original']['divergence']['difference'] is not None and summary['original']['divergence']['difference'] <= .05)
     carrying = [x for x in groups['original'] if x['carryQ'] is not None]
@@ -330,10 +361,26 @@ def reading(seed):
     for name in ('dawnGuard', 'companyDuskGuard'):
         g = summary[name]
         guards[name] = g['n'] >= 30 and g['animals'] >= 5 and g['nest']['difference'] is not None and g['nest']['difference'] >= -.01
+    for name in ('dawnGuard', 'companyDuskGuard'):
+        for source in ('learner', 'rules'):
+            g = summary[name + ':' + source]
+            if g['n'] >= 30 and g['animals'] >= 5:
+                guards[name + ':' + source] = g['nest']['difference'] is not None and g['nest']['difference'] >= -.01
+    departures = {}
+    for source in ('learner', 'rules'):
+        path = OUT / 'parts' / (source + '-s21.jsonl.meta.json')
+        if not path.exists(): continue
+        meta = read(path); group = [x for x in prepared if x['row']['source'] == source and x['row']['state']['nest'] and x['row']['state']['dusk'] and x['row']['state']['companyNest']]
+        delta = [x['nest0'] - x['nest1'] for x in group]; ci = interval(delta, [x['row']['chimpId'] for x in group])
+        factor = 100 * meta['availableStates']['companyDuskNest'] / meta['animalNights'] if meta['animalNights'] else None
+        departures[source] = {'asks': meta['availableStates']['companyDuskNest'], 'animalNights': meta['animalNights'], 'sampled': len(group),
+             'extraDeparturesPer100AnimalNights': mean(delta) * factor if delta and factor is not None else None,
+             'animalInterval': [v * factor for v in ci] if ci and factor is not None else None,
+             'limits': 'first-order expected departure difference across all company-dusk asks, not realized trajectory effects; sampled strata can change mixture'}
     benefits = {name: summary[name]['n'] >= 30 and summary[name]['animals'] >= 5 and summary[name]['nestError']['animalInterval'] is not None and summary[name]['nestError']['animalInterval'][1] < 0 for name in ('dayNest', 'aloneDusk')}
     verdict = {'stage': 'R14', 'trainingSeed': seed, 'guards': guards, 'proceed': all(guards.values()),
                'benefit': 'complete evidence' if all(benefits.values()) else 'partial evidence' if any(benefits.values()) else 'not shown',
-               'benefits': benefits, 'groups': summary, 'carryingOn': {'teacher': cq, 'old': c0, 'new': c1},
+               'benefits': benefits, 'groups': summary, 'companyDuskDepartures': departures, 'carryingOn': {'teacher': cq, 'old': c0, 'new': c1},
                'limits': 'offline teacher agreement; animal intervals are descriptive within-world intervals; no population viability or wild-behavior claim'}
     atomic(OUT / f'offline-s{seed}.json', verdict)
     text = [f'# R14 offline, training seed {seed}', '', 'Rules-taught model on a rules menu. Within-world intervals; no population claim.', '',
@@ -341,6 +388,9 @@ def reading(seed):
     text += [f'| {k} | {v} |' for k, v in guards.items()]
     text += ['', '| Set | Rows | Animals | Divergence change | Nest error change |', '| --- | --- | --- | --- | --- |']
     text += [f'| {k} | {g["n"]} | {g["animals"]} | {g["divergence"]["difference"]} | {g["nestError"]["difference"]} |' for k, g in summary.items()]
+    text += ['', 'Trip teacher/old/new probability, by set:', '', '| Set | Teacher | Old | New |', '| --- | --- | --- | --- |']
+    text += [f'| {k} | {g["trip"]["teacher"]} | {g["trip"]["old"]} | {g["trip"]["new"]} |' for k, g in summary.items()]
+    text += ['', 'Company-dusk first-order extra departures per 100 animal-nights (animal intervals; no trajectory claim):', '', '```json', json.dumps(departures, indent=1), '```']
     (OUT / f'offline-s{seed}.md').write_text('\n'.join(text) + '\n')
     log(f'READING s{seed}: proceed={verdict["proceed"]}; {verdict["benefit"]}; {guards}')
     return verdict
@@ -350,6 +400,11 @@ def rehearsal(seed):
     folder = run_world(f'rehearsal-s{seed}', 48, f'r14-trained-s{seed}-draw-1', 5, 2, OUT / 'ft')
     step(f'replay-rehearsal-s{seed}', NIGHT + ['replay', str(folder)], 1, outputs=[folder / 'replay/replay.json'])
     if not read(folder / 'replay/replay.json')['ok']: raise RuntimeError('rehearsal replay failed')
+    reg = read(folder / 'run.json'); stop = reg.get('stopCheck')
+    if not reg.get('stopCheckOn') or not stop or stop.get('day') != 5 or stop.get('stop') is not False: raise RuntimeError('rehearsal has no passed day-five futility check')
+    return {'rehearsalCompleted': True, 'futilityStopPassed': True, 'replay': True, 'stopCheck': stop,
+            'thresholds': {'starved': 2, 'reservePctDay': -1.0, 'nights': .80, 'fallbacks': .10, 'timeouts': .02},
+            'limits': 'futility check only, not R13 viability'}
 
 
 def stage_a():
@@ -372,15 +427,15 @@ def stage_a():
     step('parity', ['training/decide_ft/r4_py.sh', 'parity.py', '--n', '12', '--device', 'mps'], 1, e, model=True)
     train(7); score('r11-p5b-s7', SOURCE); score('r14-p5b-s7', ft)
     result = reading(7)
-    if result['proceed']: rehearsal(7)
-    atomic(OUT / 'stage-a.json', {'done': True, 'offlinePassed': result['proceed'], 'rehearsalPassed': result['proceed'],
+    rehearsal_result = rehearsal(7) if result['proceed'] else {'rehearsalCompleted': False, 'futilityStopPassed': False, 'replay': False}
+    atomic(OUT / 'stage-a.json', {'done': True, 'offlinePassed': result['proceed'], **rehearsal_result,
                                  'next': 'stage-b' if result['proceed'] else 'stop: offline harm or insufficient exposure; inspect offline-s7.json'})
 
 
 def stage_b():
     pin()
     a = read(OUT / 'stage-a.json')
-    if not a['offlinePassed'] or not a['rehearsalPassed']: raise RuntimeError('stage A did not pass')
+    if not a['offlinePassed'] or not a['rehearsalCompleted'] or not a['futilityStopPassed'] or not a['replay']: raise RuntimeError('stage A did not pass')
     train(11); score('r14-p5b-s11', OUT / 'ft')
     if not reading(11)['proceed']:
         atomic(OUT / 'stage-b.json', {'done': True, 'outcome': 'second training failed offline guard; no fresh test opened'}); return
@@ -396,10 +451,29 @@ def stage_b():
         for kind, folder in [('rules', rules), ('model', model)]:
             step(f'card-{kind}-s{world_seed}', NIGHT + ['replay', str(folder), '--r7', str(card)], 1,
                  outputs=[card / f'P/s{world_seed}' / (read(folder / 'run.json')['label'] + '.json')])
+        for kind, folder in [('rules', rules), ('model', model)]:
+            timing = OUT / f'timing-{kind}-s{world_seed}.json'
+            step(f'timing-{kind}-s{world_seed}', TSX + ['scripts/r14-population.ts', str(folder), str(timing)], 1, outputs=[timing])
+        population_timing(world_seed)
         destination = OUT / f'population-s{world_seed}.md'
-        step(f'report-s{world_seed}', TSX + ['scripts/r13-report.ts', '--dir', str(card), '--seed', str(world_seed),
+        step(f'report-s{world_seed}', TSX + ['scripts/r13-report.ts', '--stage', 'R14', '--dir', str(card), '--seed', str(world_seed),
              '--model', read(model / 'run.json')['label'], '--rules', read(rules / 'run.json')['label'], '--model-run', str(model), '--rules-run', str(rules), '--md', str(destination)], 1, outputs=[destination])
     atomic(OUT / 'stage-b.json', {'done': True, 'outcome': 'two population readings on file; inspect V1-V3 separately for each world/training pair'})
+
+
+def population_timing(seed):
+    model = read(OUT / f'timing-model-s{seed}.json')['perAnimalDay']
+    rules = read(OUT / f'timing-rules-s{seed}.json')['perAnimalDay']
+    summary = {}
+    for key in ('daylightNestMin', 'darkOutMin', 'earlyRises', 'shortNight', 'reservePct', 'intake', 'trips', 'distance', 'actChanges'):
+        daily = []
+        for day in range(1, 21):
+            a, b = [mean([r[key] for r in group if r['day'] == day and r.get(key) is not None]) for group in (model, rules)]
+            if a is not None and b is not None: daily.append(a - b)
+        summary[key] = {'model': mean([r[key] for r in model if r.get(key) is not None]), 'rules': mean([r[key] for r in rules if r.get(key) is not None]),
+                        'dailyDifferences': daily, 'dayBlockSensitivityInterval': interval(daily, list(range(len(daily))))}
+    atomic(OUT / f'timing-paired-s{seed}.json', {'stage': 'R14', 'seed': seed, 'readouts': summary,
+           'limits': 'day-block resampling within one world, not a world-general confidence interval; correlated days can understate uncertainty'})
 
 
 def dry_run():
@@ -434,15 +508,18 @@ def main():
     args, rest = parser.parse_known_args()
     if args.command == '_world':
         pos = rest.index('--out'); folder = Path(rest[pos + 1])
+        if (folder / 'run.json').exists(): validate_world_resume(read(folder / 'run.json'), rest)
         command = NIGHT + (['run', '--resume', str(folder), '--hours', rest[rest.index('--hours') + 1]] if (folder / 'run.json').exists() else rest)
         raise SystemExit(subprocess.call(command, cwd=ROOT))
     if rest: parser.error('unrecognized arguments: ' + ' '.join(rest))
     if args.command == 'status':
         print((OUT / 'state').read_text() if (OUT / 'state').exists() else 'not started')
+        ledgers = [read(p) for p in (OUT / 'steps').glob('*.json')]
+        print('charged model hours:', sum(s.get('seconds', 0) + max(0, time.time() - s['activeAt']) if s.get('activeAt') else s.get('seconds', 0) for s in ledgers if s.get('model')) / 3600)
         if (OUT / 'status.log').exists(): print('\n'.join((OUT / 'status.log').read_text().splitlines()[-12:]))
         return
     if args.command == 'check':
-        print(json.dumps(identity(), indent=1)); print('other model processes:', other_models()); return
+        print(json.dumps(identity(), indent=1)); print('other model processes:', other_models()); print('older queue states:', queue_states()); return
     if args.command == 'dry':
         dry_run(); return
     OUT.mkdir(parents=True, exist_ok=True)
@@ -457,7 +534,16 @@ def main():
         (stage_a if args.command == 'stage-a' else stage_b)()
         (OUT / 'state').write_text('done\n'); log(args.command + ' DONE')
     except BaseException:
-        (OUT / 'state').write_text('failed\n'); raise
+        stopped = []
+        for path in (OUT / 'runs').glob('*/run.json'):
+            reg = read(path)
+            if reg.get('state') == 'stopped' or (reg.get('stopCheck') or {}).get('stop'):
+                stopped.append({'run': str(path), 'days': len(reg['days']), 'stopCheck': reg.get('stopCheck'), 'ended': reg.get('ended')})
+        if stopped:
+            atomic(OUT / (args.command + '.json'), {'done': True, 'outcome': 'scientifically stopped; no further model work', 'runs': stopped})
+            (OUT / 'state').write_text('scientific-stop\n')
+        else: (OUT / 'state').write_text('failed\n')
+        raise
     finally: lock.unlink()
 
 
