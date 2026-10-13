@@ -5,6 +5,7 @@
 // 1992 there gives sitting and arm-hanging as postures that occur, not these shares). Render only: nothing reads or
 // writes the World.
 import { hash01 } from './util';
+import { hashUnit } from './secondary';
 
 /** Resting postures of the 'perch' clip (its `role`; poses.ts draws them). `hold` is also the neutral seat (role 0). */
 export const PERCH = { hold: 0, overhead: 1, foot: 2, recline: 3, prone: 4 } as const;
@@ -125,7 +126,64 @@ export function seatAllowed(offset: number, own: number): boolean { return offse
  * at a fixed rate: the turns came out at 1.0 rad, not 1.9, and the body trembled whenever frame times were uneven.
  */
 export const NEST_TURNS = 5, NEST_TURN_RAD = 1.9;
-export function nestTurn(k: number): number { return k < 1 ? Math.floor((k > 0 ? k : 0) * NEST_TURNS) * NEST_TURN_RAD : 0; }
+/**
+ * Stage W12: with `id`, the turns are that animal's own. Without it every builder turned at the same four moments of
+ * its build (k = 0.2, 0.4, 0.6, 0.8), by the same 1.9 rad, the same way round: builders that began together (a party
+ * at dusk, a jump of the clock) swung round in the same frame. Now each turn comes at its own moment (up to
+ * NEST_TURN_SHIFT of a fifth of the build early or late), is 0.7 to 1.3 of NEST_TURN_RAD, goes the way round the
+ * animal goes (by id), and about one turn in five goes back the other way. Still NEST_TURNS headings, still 0 once
+ * the nest is done. Without `id` the function is what it was (the harness and the tests of stage W11 read it so).
+ */
+export const NEST_TURN_SHIFT = 0.45;
+export function nestTurn(k: number, id?: number): number {
+  if (!(k < 1)) return 0;
+  const p = k > 0 ? k : 0;
+  if (id === undefined) return Math.floor(p * NEST_TURNS) * NEST_TURN_RAD;
+  // (hashUnit, the hash of the idle schedules: for the small ids of a community it separates neighbours better at
+  // these salts than util.ts hash01, whose draws for ids 1, 3, 5, 7 and 9 fell within a tenth of each other here.)
+  const way = hashUnit(id, 9083) < 0.5 ? -1 : 1;
+  let turn = 0;
+  for (let i = 1; i < NEST_TURNS; i++) if (p >= nestTurnAt(id, i)) turn += way * NEST_TURN_RAD * (0.7 + 0.6 * hashUnit(id, 9090 + i)) * (hashUnit(id, 9096 + i) < 0.2 ? -0.6 : 1);
+  return turn;
+}
+/** The share of its build at which animal `id` makes its turn number i (1 .. NEST_TURNS - 1). */
+export function nestTurnAt(id: number, i: number): number { return (i + (2 * hashUnit(id, 9084 + i) - 1) * NEST_TURN_SHIFT) / NEST_TURNS; }
+
+/**
+ * Building or asleep (stage W12): how far the nest of an animal drawn in its nest act has come, 0..1; at 1 it is
+ * finished and the animal lies in it. The simulation publishes an animal's nest (Chimp.nest) when the building ends,
+ * and that is the word on it. Before this stage the renderer went by a clock alone, "fewer than 240 s in the act",
+ * which a new world starts at 0 for animals that are in finished nests: a whole community was drawn building at dawn.
+ *   doneAt  the simulated time (h) at which the finished nest was first seen in this act: +Infinity while there is
+ *           none; -Infinity when it was there in the first frame the body was drawn in the act (it was never seen
+ *           being built: a world opens with every animal in its night nest, the clock jumped, the simulation put the
+ *           animal back into the nest it had left)
+ *   drawnT  the body's own drawn time (h); it trails the simulation by two ticks
+ *   built   seconds the body has been building, as far as the renderer knows
+ *   rampT, rampK  the drawn time and the progress at which the finished nest was first seen
+ * While the simulation is still building, the progress follows `built` over NEST_BUILD_S and then waits at
+ * NEST_HOLD_K (the last touches) for as long as the simulation takes: its builders take 3 to 5 minutes by animal and
+ * day [H, nestBuildMinS and nestBuildSpanS], which the renderer cannot know ahead. Once the simulation has finished,
+ * the body has the two ticks it trails by left: the rest of the building is drawn over them, and it ends when the
+ * body's own time reaches the finished nest. So builders that begin together do not end together, and nobody builds
+ * in a finished nest or sleeps in an unfinished one. The shape of the progress is a stylization.
+ *   floor   how far the building of this nest act has already been drawn (0: nothing yet). The building never goes
+ *           back (second reading of stage W12): `built` is counted on one of two clocks (creatures.ts chooseClip: the
+ *           seconds since the body was seen to arrive, or the simulation's seconds in the act when it was not), and
+ *           when the renderer changes from one to the other the count starts again. Filmed in the frame a time-lapse
+ *           stops among builders, on the build before this stage as well: a builder half way through read a tenth, and
+ *           turned back through the headings it had already faced. With the floor the progress waits where it was
+ *           until its clock has caught up, or the simulation finishes the nest.
+ */
+export const NEST_BUILD_S = 240, NEST_HOLD_K = 0.9;
+export function nestProgress(doneAt: number, drawnT: number, built: number, rampT: number, rampK: number, floor = 0): number {
+  if (drawnT >= doneAt) return 1;
+  let k: number;
+  if (doneAt === Infinity) { k = built / NEST_BUILD_S; k = k > NEST_HOLD_K ? NEST_HOLD_K : k > 0 ? k : 0; }
+  else { const span = doneAt - rampT, u = span > 0 ? (drawnT - rampT) / span : 1; k = rampK + (1 - rampK) * (u < 0 ? 0 : u > 1 ? 1 : u); }
+  // (Never 1 by the floor alone: only the simulation's finished nest ends the building.)
+  return k < floor && floor < 1 ? floor : k;
+}
 
 /**
  * Whether two bodies are within reach of each other for a paired pose (grooming, play, an embrace): no more than

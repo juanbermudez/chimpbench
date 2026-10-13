@@ -45,6 +45,10 @@ export interface PoseCtx {
   /** Optional (stage W11): what rides on this animal, as bits: 1 an infant on the belly, 2 one on the back
    * (creatures.ts Anim.bears). Crown feeding holds its cluster out to the side of an infant on the belly. */
   bears?: number;
+  /** Optional (stage W12): 0..1, stable for the pair this animal is in (the hash its pair clock's offset is drawn from,
+   * creatures.ts). What two partners do to each other takes its tempo from it, so a pair keeps one beat and two pairs
+   * differ. Absent or with no partner, the animal's own seed stands in. */
+  pairSeed?: number;
 }
 export type Clip = (w: Pw, c: PoseCtx) => void;
 
@@ -95,14 +99,15 @@ function fist(w: Pw, side: 0 | 1, curl = 1) {
 }
 function grip(w: Pw, side: 0 | 1, g = 1) { w.r(side ? B.fingR : B.fingL, 0.7 * g).r(side ? B.fingR2 : B.fingL2, 1.3 * g); }
 function relaxHands(w: Pw) { w.r(B.fingL, 0.35).r(B.fingR, 0.35).r(B.fingL2, 0.55).r(B.fingR2, 0.55); }
-function breathe(w: Pw, c: PoseCtx, amt = 1) { w.a(B.chest, sin(c.time * 1.7 + c.seed * 9) * 0.012 * amt); }
+function breathe(w: Pw, c: PoseCtx, amt = 1) { w.a(B.chest, sin(c.time * 1.7 * ownTempo(c.seed, 0) + c.seed * 9) * 0.012 * amt); }
 /** Residual head drift under the attention system (creatures.ts A8 moves the head between look targets). */
 function idleHead(w: Pw, c: PoseCtx, amt = 1) {
-  const s = c.seed * 31;
-  w.a(B.neck, sin(c.time * 0.23 + s) * 0.012 * amt, sin(c.time * 0.17 + s * 1.7) * 0.03 * amt, 0);
-  w.a(B.head, sin(c.time * 0.41 + s) * 0.015 * amt, 0, sin(c.time * 0.27 + s) * 0.03 * amt);
+  // (Stage W12: each of the four drifts at the animal's own tempo; they used to keep one tempo for every animal.)
+  const s = c.seed * 31, t = c.time, d = c.seed;
+  w.a(B.neck, sin(t * 0.23 * ownTempo(d, 1, 0.3) + s) * 0.012 * amt, sin(t * 0.17 * ownTempo(d, 2, 0.3) + s * 1.7) * 0.03 * amt, 0);
+  w.a(B.head, sin(t * 0.41 * ownTempo(d, 3, 0.3) + s) * 0.015 * amt, 0, sin(t * 0.27 * ownTempo(d, 4, 0.3) + s) * 0.03 * amt);
 }
-function earFlick(w: Pw, c: PoseCtx) { const f = Math.pow(pulse(c.time * 0.7 + c.seed * 40), 40) * 0.25; w.a(B.earL, 0, f, 0).a(B.earR, 0, -f * 0.5, 0); }
+function earFlick(w: Pw, c: PoseCtx) { const f = Math.pow(pulse(c.time * 0.7 * ownTempo(c.seed, 5, 0.3) + c.seed * 40), 40) * 0.25; w.a(B.earL, 0, f, 0).a(B.earR, 0, -f * 0.5, 0); }
 
 /** Knuckle-walking stance: sloping back, knuckles and flat feet planted. */
 function quadStance(w: Pw, c: PoseCtx, low = 0) {
@@ -138,13 +143,14 @@ function lieSide(w: Pw, c: PoseCtx, side: number, curl = 1, limp = 0) {
   w.ik(LIMB.legL, sx * (0.12 + 0.18 * limp), 0.07, 0.3 - 0.05 * limp, 1, 0.4).ik(LIMB.legR, sx * (0.05 + 0.25 * limp), 0.06, 0.34 - 0.36 * limp, 1, 0.4);
   w.r(B.handL, 0.4, 0, -sx * 1.3).r(B.handR, 0.4, 0, -sx * 1.3).r(B.footL, 0.3, 0, -sx * 1.2).r(B.footR, 0.3, 0, -sx * 1.2);
   relaxHands(w);
-  w.a(B.chest, sin(c.time * 1.1 + c.seed * 9) * 0.02 * k);
+  w.a(B.chest, sin(c.time * 1.1 * ownTempo(c.seed, 0) + c.seed * 9) * 0.02 * k);
 }
-function lieBack(w: Pw, c: PoseCtx, kick = 0) {
+/** `t`: the clock the kicking runs on (stage W12: the caller's own or its pair's; the clip's clock by default). */
+function lieBack(w: Pw, c: PoseCtx, kick = 0, t = c.t) {
   w.root(0, 0.14, 0);
   w.r(B.hips, -1.45).r(B.spine, 0.12).r(B.chest, 0.1).r(B.neck, 0.35).r(B.head, 0.1);
   if (kick) {
-    const k = sin(c.t * 5) * 0.4 * kick;
+    const k = sin(t * 5) * 0.4 * kick;
     w.r(B.thighL, -1.3 + k, 0, 0.35).r(B.thighR, -1.3 - k, 0, -0.35).r(B.shinL, 1.3 - k * 0.5).r(B.shinR, 1.3 + k * 0.5);
     w.r(B.uarmL, -2.2 + k * 0.5, 0, 0.5).r(B.farmL, -1.0).r(B.uarmR, -2.2 - k * 0.5, 0, -0.5).r(B.farmR, -1.0);
   } else {
@@ -153,7 +159,7 @@ function lieBack(w: Pw, c: PoseCtx, kick = 0) {
     w.r(B.uarmL, -2.75, 0, 0.55).r(B.farmL, -1.9).r(B.uarmR, -0.35, 0, -0.15).r(B.farmR, -1.25);
   }
   relaxHands(w);
-  w.a(B.chest, sin(c.time * 1.3 + c.seed * 9) * 0.02);
+  w.a(B.chest, sin(c.time * 1.3 * ownTempo(c.seed, 0) + c.seed * 9) * 0.02);
 }
 function standBiped(w: Pw, c: PoseCtx, tall = 1) {
   w.root(0, 0.56 + tall * 0.04, -0.02);
@@ -273,7 +279,7 @@ function lieProne(w: Pw, c: PoseCtx) {
   w.r(B.thighL, 0.05, 0, 0.28).r(B.shinL, 0.3).r(B.thighR, 0.05, 0, -0.24).r(B.shinR, 0.2);
   w.r(B.footL, 1.3).r(B.footR, 1.3);
   relaxHands(w);
-  w.a(B.chest, sin(c.time * 1.2 + c.seed * 9) * 0.015);
+  w.a(B.chest, sin(c.time * 1.2 * ownTempo(c.seed, 0) + c.seed * 9) * 0.015);
 }
 
 // ---------------------------------------------------------------------------
@@ -282,6 +288,59 @@ function lieProne(w: Pw, c: PoseCtx) {
 const mix = (a0: number, b0: number, k: number) => a0 + (b0 - a0) * k;
 /** 0..1 hash of a cycle number, an individual's seed and a salt (pure: the same moment always gives the same pose). */
 function cyc01(n: number, seed: number, k: number) { const x = sin(n * 12.9898 + seed * 78.233 + k * 37.719) * 43758.5453; return x - Math.floor(x); }
+
+// ---------------------------------------------------------------------------
+// Each animal's own rhythm (stage W12, docs/staging/w12-out-of-step.md)
+// ---------------------------------------------------------------------------
+// A STYLIZATION throughout, like the clips themselves: docs/research.md has no tempo for a chimpanzee bending a
+// branch or picking a fruit, nor how it varies between individuals. The spreads and shares below are design choices
+// with one purpose: two animals in the same clip never move in step unless they do the thing together. Before this
+// stage most cycles ran on the clip's own clock (PoseCtx.t), which has nothing of the animal in it: every animal that
+// entered a clip in the same frame made the same movement with the same arm on the same beat (a whole community
+// "building" at a new world's dawn). A start of its own is not enough either: two metronomes at one tempo started
+// apart still look mechanical. So a cyclic movement takes its tempo, its starting point and, where it has them, its
+// pauses and its choice of arm from the animal's seed (the hash of its id, creatures.ts) through cyc01 above. Pure:
+// the same animal moves the same way on every run, and nothing is allocated.
+/** The animal's own tempo for its movement number k: a factor between 1 - spread and 1 + spread. */
+export function ownTempo(seed: number, k: number, spread = 0.2): number { return 1 + (2 * cyc01(0, seed, 100 + k) - 1) * spread; }
+/** The clock `t` (s) as this animal keeps it for movement k: at its own tempo, from its own starting point (up to `span` s in). */
+export function ownClock(t: number, seed: number, k: number, span = 20, spread = 0.2): number { return t * ownTempo(seed, k, spread) + span * cyc01(1, seed, 100 + k); }
+/**
+ * An irregular beat. The clock `u` (s) is cut into bars of the animal's own length P (s); in bar n a movement of
+ * length D (at most P) begins after a pause drawn for that bar, so the gap between one movement and the next differs
+ * from bar to bar. Returns the movement's progress 0..1, or -1 in the pauses before and after it.
+ */
+export function barProgress(u: number, P: number, D: number, seed: number, k: number): number {
+  const n = Math.floor(u / P), v = (u - n * P - cyc01(n, seed, k) * (P - D)) / D;
+  return v >= 0 && v < 1 ? v : -1;
+}
+/** Ground feeding: an animal's bar, 3.2 to 4.8 s; the pick within it (the old loop's reach, pluck, hand to the mouth and back). */
+export const FORAGE_BAR_S = [3.2, 4.8] as const, FORAGE_PICK_S = 2.75;
+/** Share of a ground feeder's bars in which it only chews, and of its picks made with the hand it favours. */
+export const FORAGE_IDLE_SHARE = 0.15, FORAGE_MAIN_HAND = 0.85;
+/** Nest building: a builder's bar, 2.6 to 4.0 s by animal, and one reach within it, 1.9 to 2.5 s by animal. */
+export const NEST_BAR_S = [2.6, 4.0] as const, NEST_REACH_S = [1.9, 2.5] as const;
+/** What a builder does in a bar: bends a branch in, looks round, or presses the bent branches down with both hands. */
+export const NEST_BEAT = { reach: 0, look: 1, press: 2 } as const;
+/** Shares of a builder's bars spent looking round and pressing down; the rest are reaches. */
+export const NEST_LOOK_SHARE = 0.14, NEST_PRESS_SHARE = 0.14;
+/** A builder's bar in seconds. */
+export function nestBar(seed: number): number { return NEST_BAR_S[0] + (NEST_BAR_S[1] - NEST_BAR_S[0]) * cyc01(0, seed, 127); }
+function nestDraw(n: number, seed: number): number { const r = cyc01(n, seed, 128); return r < NEST_LOOK_SHARE ? NEST_BEAT.look : r < NEST_LOOK_SHARE + NEST_PRESS_SHARE ? NEST_BEAT.press : NEST_BEAT.reach; }
+/**
+ * What bar n of an animal's building is (NEST_BEAT): the bar's own draw, with two limits. Never more than two bars in
+ * a row without a reach: by the draws alone one builder in twenty has a run of five somewhere in its build, and one was
+ * filmed pressing its nest down for 16 s on end. And no pressing in the first two bars: there is nothing to press yet
+ * (it looks round instead).
+ */
+export function nestBeat(n: number, seed: number): number {
+  const k = nestDraw(n, seed);
+  if (k === NEST_BEAT.reach) return k;
+  if (n >= 2 && nestDraw(n - 1, seed) !== NEST_BEAT.reach && nestDraw(n - 2, seed) !== NEST_BEAT.reach) return NEST_BEAT.reach;
+  return n < 2 && k === NEST_BEAT.press ? NEST_BEAT.look : k;
+}
+/** The arm that reaches in bar n (0 left, 1 right): drawn for each bar, toward the hand the animal favours (30 to 70% right). */
+export function nestArm(n: number, seed: number): 0 | 1 { return cyc01(n, seed, 129) < 0.3 + 0.4 * cyc01(0, seed, 130) ? 1 : 0; }
 /** Toes curled round the support (both feet, or one side: 0 left, 1 right). */
 function toeGrip(w: Pw, side: -1 | 0 | 1 = -1, g = 1) { if (side !== 1) w.r(B.toeL, 0.55 * g); if (side !== 0) w.r(B.toeR, 0.55 * g); }
 /**
@@ -361,7 +420,7 @@ function crownFeed(w: Pw, c: PoseCtx) {
   // Chewing from the first fruit to the end of the cycle (fading out); the jaw opens for each bite.
   const chewing = tChew >= 0 || (picking && (j > 0 || v > 0.66));
   const fade = clamp((L - u) / 1.5, 0, 1);
-  w.face(Math.max(0.5 * bite, chewing ? (0.07 + 0.16 * (0.5 + 0.5 * sin(T * 13.5))) * fade : 0.04), 0.1 * (1 - bite));
+  w.face(Math.max(0.5 * bite, chewing ? (0.07 + 0.16 * (0.5 + 0.5 * sin(T * 13.5 * ownTempo(c.seed, 6, 0.15)))) * fade : 0.04), 0.1 * (1 - bite));   // (W12: the chewing rate by animal)
   // Trunk and head: toward the leaves while reaching, down to the cluster while plucking, tipped to the hand at the
   // mouth (the angles MOUTH_ARM was solved for: nothing else turns the trunk then), level while chewing.
   const free = 1 - mouthK, look = picking ? smooth(v / 0.2) * (1 - smooth((v - 0.3) / 0.15)) : 0;
@@ -402,7 +461,7 @@ function perchRest(w: Pw, c: PoseCtx) {
     reach(w, side, sx * 0.09, 0.03, 0.16, 0.3, 0, 0, 0.3); grip(w, side, 0.9);
     w.r(side ? B.fingL : B.fingR, 0.35).r(side ? B.fingL2 : B.fingR2, 0.55);
     w.contact(0, 0, 0, 0);
-    w.a(B.chest, sin(c.time * 1.3 + c.seed * 9) * 0.02);
+    w.a(B.chest, sin(c.time * 1.3 * ownTempo(c.seed, 0) + c.seed * 9) * 0.02);
     w.set('eyes', 0.45);
     return;
   }
@@ -612,12 +671,20 @@ export const CLIPS: Record<string, Clip> = {
   forage(w, c) {
     // In a crown: a cluster held in one hand, picks from it with the other, then chewing (stage W9, crownFeed above).
     if (c.inTree) { crownFeed(w, c); return; }
-    // Reach and pluck, bring to the mouth, chew: a ~3.4 s loop.
-    const cyc = (c.t * 0.3 + c.seed) % 1;
+    // Reach and pluck, bring to the mouth, chew.
+    // Stage W12 (stylization): this was one loop of 3.4 s for every animal, each only at its own point in it. Now the
+    // animal keeps a bar of its own length (FORAGE_BAR_S) from its own starting point; the pick takes FORAGE_PICK_S of
+    // the bar and begins after a pause drawn for that bar; about one bar in seven it only chews; and now and then it
+    // picks with the other hand. The keyframes are the old loop's: its first 82% was the pick, the rest the hand at rest.
+    const P = FORAGE_BAR_S[0] + (FORAGE_BAR_S[1] - FORAGE_BAR_S[0]) * cyc01(0, c.seed, 110), u = c.t + P * cyc01(1, c.seed, 110), n = Math.floor(u / P);
+    const v = cyc01(n, c.seed, 111) < FORAGE_IDLE_SHARE ? -1 : barProgress(u, P, FORAGE_PICK_S, c.seed, 112);
+    const cyc = v < 0 ? 0.9 : v * 0.82;
     sitBase(w, c, 0.15, 0.2);
     const up = c.inTree ? 0.45 : 0.1;
-    const side: 0 | 1 = c.seed > 0.5 ? 1 : 0;
+    const side: 0 | 1 = (c.seed > 0.5) === (cyc01(n, c.seed, 113) < FORAGE_MAIN_HAND) ? 1 : 0;
     const sx = side ? -1 : 1;
+    // (Both hands rest in the picking hand's resting place, so nothing moves when the hand changes between bars.)
+    reach(w, 0, 0.14, 0.34, 0.32, 0.3, 0, 0, 0); grip(w, 0, 0.5); reach(w, 1, -0.14, 0.34, 0.32, 0.3, 0, 0, 0); grip(w, 1, 0.5);
     const pickX = sx * (0.28 + 0.06 * sin(c.seed * 20)), pickY = c.inTree ? 1.15 : 0.13, pickZ = c.inTree ? 0.3 : 0.42;
     // Keyframes: rest (on the knee) → pick → mouth → rest, each leg eased so the hand never jumps.
     const restX = sx * 0.14, restY = 0.34, restZ = 0.32, mouthX = sx * 0.03, mouthZ = mouthPoint[2] + 0.04;
@@ -632,15 +699,18 @@ export const CLIPS: Record<string, Clip> = {
     // [M, Hunt 1992]; about half of individuals by seed.
     if (c.inTree && c.seed > 0.45) { const o: 0 | 1 = side ? 0 : 1; reach(w, o, -sx * 0.14, 1.32, 0.1, -2.9, 0, -sx * 0.3, 0.4); grip(w, o, 1); w.a(B.chest, 0, 0, -sx * 0.08); }
     // Look at the hand while picking, chew afterwards.
-    const chew = cyc > 0.62 ? 0.25 + 0.2 * sin(c.t * 9) : 0.05;
+    const chew = cyc > 0.62 ? 0.25 + 0.2 * sin(ownClock(c.t, c.seed, 11, 5, 0.15) * 9) : 0.05;
     w.face(chew, 0.1);
-    w.a(B.head, cyc < 0.45 ? -0.2 - up * 0.5 : 0.1, sx * (cyc < 0.45 ? 0.35 : 0), 0);
-    w.a(B.chest, cyc < 0.45 ? 0.05 : 0, sx * (cyc < 0.45 ? 0.2 : 0), 0);
+    // (W12: the head and chest go to the hand and come back over a moment; they used to step there in one frame.)
+    const look = smooth(cyc / 0.06) * (1 - smooth((cyc - 0.42) / 0.06));
+    w.a(B.head, mix(0.1, -0.2 - up * 0.5, look), sx * 0.35 * look, 0);
+    w.a(B.chest, 0.05 * look, sx * 0.2 * look, 0);
   },
   drink(w, c) {
     if (c.seed > 0.7) { // leaf-sponge: dip, lift, suck
       sitBase(w, c, 0.3, 0.2);
-      const cyc = (c.t * 0.35 + c.seed) % 1;
+      // (Stage W12: at the animal's own tempo, from its own start; it was one loop of 2.9 s for every sponge drinker.)
+      const cyc = (ownClock(c.t, c.seed, 12, 6, 0.25) * 0.35) % 1;
       const t = smooth(cyc < 0.5 ? cyc / 0.5 : 1 - (cyc - 0.5) / 0.5);
       reach(w, 1, -0.2 + 0.1 * t, 0.12 + 0.62 * t, 0.46 - 0.08 * t, -1.2 - 0.5 * t, 0, 0, 0.5); grip(w, 1, 0.9);
       w.pose.propR = PROP.sponge;
@@ -654,7 +724,7 @@ export const CLIPS: Record<string, Clip> = {
     w.r(B.hips, 1.25).r(B.spine, 0.3).r(B.chest, 0.3).r(B.neck, 0.1).r(B.head, 0.35);
     w.ik(LIMB.armL, 0.27, 0.13, 0.12, 1, 1).ik(LIMB.armR, -0.27, 0.13, 0.12, 1, 1);
     w.ik(LIMB.legL, 0.13, 0.08, -0.22, 1, 1).ik(LIMB.legR, -0.13, 0.08, -0.22, 1, 1);
-    w.face(0.08 + 0.06 * pulse(c.t * 5), 0.55);
+    w.face(0.08 + 0.06 * pulse(ownClock(c.t, c.seed, 12, 6, 0.25) * 5), 0.55);   // (W12: the lips on the animal's own clock)
   },
   groom(w, c) {
     // Groomer (v2, stylization: see GROOM_SITE_S above): seated close behind (or facing) the partner. The work site
@@ -671,7 +741,10 @@ export const CLIPS: Record<string, Clip> = {
     if (c.hasTarget && c.tdist < 2.4) {
       // A lying partner's spine is level: the hair is above the bones, not in front of them.
       const lying = !lap && c.hasBones ? 1 - smooth((c.pb[13] - c.pb[1] - 0.1) / 0.2) : 0;
-      const n = Math.floor(T / GROOM_SITE_S), u = smooth(((T / GROOM_SITE_S) % 1) * GROOM_SITE_S / GROOM_MOVE_S);
+      // (Stage W12: how long a groomer stays at a site and how fast it combs are its own: 6.3 to 11.7 s, 1.1 to 1.9
+      // strokes a second. Every groomer used to change site every 9 s and comb at 1.5 a second.)
+      const S = GROOM_SITE_S * ownTempo(c.seed, 15, 0.3);
+      const n = Math.floor(T / S), u = smooth(((T / S) % 1) * S / GROOM_MOVE_S);
       const s0 = groomSite(c, n - 1, c.role), s1 = groomSite(c, n, c.role);
       // The held infant's back is its far side: the point is pushed outward instead of toward the groomer.
       const pp = partnerPoint(c, s0[0] + (s1[0] - s0[0]) * u, lap ? -0.12 : 0.17 - 0.13 * lying, (s0[1] + (s1[1] - s0[1]) * u) * c.tsize);
@@ -680,7 +753,7 @@ export const CLIPS: Record<string, Clip> = {
       const hop = sin(Math.PI * u) * (u < 1 ? 0.05 : 0), off = lap ? -0.6 : 1, len = lap ? 0.045 : 0.07;
       const gx = pp[0], gy = pp[1] + lying * 0.1 * c.tsize + hop * lying, gz = pp[2] - hop * (1 - lying) * off;
       // Comb stroke: a slow pull through the hair (down a seated back, along a lying body), a quick return off the hair.
-      const st = (T * 1.5) % 1, pull = st < 0.72 ? smooth(st / 0.72) : 1 - smooth((st - 0.72) / 0.28), back = st < 0.72 ? 0 : sin(Math.PI * (st - 0.72) / 0.28);
+      const st = (T * 1.5 * ownTempo(c.seed, 14, 0.25)) % 1, pull = st < 0.72 ? smooth(st / 0.72) : 1 - smooth((st - 0.72) / 0.28), back = st < 0.72 ? 0 : sin(Math.PI * (st - 0.72) / 0.28);
       const P = 6.5 + 4 * c.seed, m = (T + c.seed * 3) % P;
       toMouth = mutual || lap || !GROOM_PICK_TO_MOUTH ? 0 : m < 0.45 ? smooth(m / 0.45) : m < 0.95 ? 1 : m < 1.45 ? 1 - smooth((m - 0.95) / 0.5) : 0;
       lean = lap ? 0.85 : clamp(0.5 + (0.6 - gy) * 1.2 + (gz - 0.55) * 0.8, 0, 1);
@@ -702,14 +775,16 @@ export const CLIPS: Record<string, Clip> = {
     w.a(B.hips, 0.12 * (lean - 0.5) * trunk).a(B.spine, (0.18 + 0.08 * (lean - 0.5)) * trunk, yaw * 0.2).a(B.chest, (0.15 + 0.08 * (lean - 0.5)) * trunk, yaw * 0.25);
     w.a(B.neck, 0.08 + 0.22 * lean - 0.1 * toMouth, yaw * 0.3).a(B.head, 0.4 + 0.25 * lean - 0.3 * toMouth, yaw * 0.3);
     // Lip-smacking while grooming: quick lip presses with a slightly open jaw [M, Parr et al. 2007 action units].
-    w.face(0.05 + 0.06 * pulse(c.t * 5) + 0.22 * toMouth, 0.2);
-    w.set('press', 0.7 * pulse(c.t * 5.5) * (1 - toMouth)).set('brow', 0.15);
+    // (Stage W12: on the groomer's own clock. On the clip's, every groomer that began in the same frame smacked in step.)
+    const lip = ownClock(c.t, c.seed, 13, 8, 0.2);
+    w.face(0.05 + 0.06 * pulse(lip * 5) + 0.22 * toMouth, 0.2);
+    w.set('press', 0.7 * pulse(lip * 5.5) * (1 - toMouth)).set('brow', 0.15);
     w.set('look', 0.35);
   },
   groomee(w, c) {
     // Receiver (v2, stylization): by role it sits hunched presenting the back, lies on its belly or side, or sits with
     // one arm folded onto its head to present the flank. Seated postures shift every 20–60 s: a slow lean and turn, eased over a second.
-    if (c.role === GROOMEE.prone) { lieProne(w, c); w.a(B.head, 0.05 * sin(c.time * 0.31 + c.seed * 7), 0.1 * sin(c.time * 0.13 + c.seed * 3)); w.set('eyes', 0.85).set('brow', 0.05); return; }
+    if (c.role === GROOMEE.prone) { lieProne(w, c); w.a(B.head, 0.05 * sin(c.time * 0.31 * ownTempo(c.seed, 41, 0.3) + c.seed * 7), 0.1 * sin(c.time * 0.13 * ownTempo(c.seed, 42, 0.3) + c.seed * 3)); w.set('eyes', 0.85).set('brow', 0.05); return; }
     if (c.role === GROOMEE.side) {
       const sx = c.seed > 0.5 ? 1 : -1, down = sx > 0;
       lieSide(w, c, sx, 0.55);
@@ -739,61 +814,68 @@ export const CLIPS: Record<string, Clip> = {
   },
   play(w, c) {
     // Solo play: rolling on the back kicking, or bouncing with arm flails; relaxed open-mouth play face.
-    if (c.seed > 0.5 || c.stage === 'infant') { lieBack(w, c, 1); w.a(B.hips, 0, 0, sin(c.t * 2.2) * 0.5); }
+    // (Stage W12: on the animal's own clock. On the clip's, every solo player kicked or bounced in step.)
+    const t = ownClock(c.t, c.seed, 16, 9, 0.25);
+    if (c.seed > 0.5 || c.stage === 'infant') { lieBack(w, c, 1, t); w.a(B.hips, 0, 0, sin(t * 2.2) * 0.5); }
     else {
       quadStance(w, c, 0.1);
-      const b = pulse(c.t * 5);
+      const b = pulse(t * 5);
       w.v[PI.root + 1] += b * 0.12;
       w.a(B.hips, -0.3 * b).a(B.neck, -0.2 * b);
       w.v[PI.ik + LIMB.armL * 5 + 3] = 1 - b; w.v[PI.ik + LIMB.armR * 5 + 3] = 1 - b;
       w.r(B.uarmL, -1.6 * b, 0, 0.5 * b).r(B.uarmR, -1.4 * b, 0, -0.6 * b);
     }
-    w.face(0.45 + 0.15 * pulse(c.t * 6), 0, 0);
+    w.face(0.45 + 0.15 * pulse(t * 6), 0, 0);
   },
   wrestle(w, c) {
     // Paired rough-and-tumble: role 0 on top grappling, role 1 on the back kicking; roles swap.
-    const top = c.role === 0;
+    // (Stage W12: the two play with each other on their pair's clock at their pair's tempo. On the clip's clock every
+    // pair that began in the same frame wrestled in step.)
+    const top = c.role === 0, t = c.pairT * ownTempo(c.pairSeed ?? c.seed, 17, 0.25);
     if (top) {
       crouch(w, c);
       w.root(0, 0.38, -0.05);
       const [px, py, pz] = c.hasTarget ? partnerPoint(c, 0.25, 0.05) : [0, 0.2, 0.35] as const;
-      reach(w, 0, px + 0.12, py + 0.05 + pulse(c.t * 4) * 0.08, pz, -1.3, 0, 0, 0.3);
-      reach(w, 1, px - 0.12, py + 0.05 + pulse(c.t * 4 + 2) * 0.08, pz, -1.3, 0, 0, 0.3);
+      reach(w, 0, px + 0.12, py + 0.05 + pulse(t * 4) * 0.08, pz, -1.3, 0, 0, 0.3);
+      reach(w, 1, px - 0.12, py + 0.05 + pulse(t * 4 + 2) * 0.08, pz, -1.3, 0, 0, 0.3);
       grip(w, 0); grip(w, 1);
-      w.a(B.hips, 0, 0, sin(c.t * 3) * 0.2).a(B.neck, 0.3 + 0.2 * pulse(c.t * 3), 0, 0);
+      w.a(B.hips, 0, 0, sin(t * 3) * 0.2).a(B.neck, 0.3 + 0.2 * pulse(t * 3), 0, 0);
     } else {
-      lieBack(w, c, 1);
-      w.a(B.hips, 0, 0, sin(c.t * 2.5) * 0.35);
+      lieBack(w, c, 1, t);
+      w.a(B.hips, 0, 0, sin(t * 2.5) * 0.35);
       if (c.hasTarget) { reach(w, 0, c.tx + 0.1, 0.45, c.tz, -2.2, 0, 0, 0, 0.7); reach(w, 1, c.tx - 0.1, 0.45, c.tz, -2.2, 0, 0, 0, 0.7); }
     }
-    w.face(0.55 + 0.2 * pulse(c.t * 5), 0, 0);
+    w.face(0.55 + 0.2 * pulse(t * 5), 0, 0);
   },
   tickle(w, c) {
     sitBase(w, c, 0.4);
     const [px, py, pz] = c.hasTarget ? partnerPoint(c, 0.3, 0.1) : [0, 0.3, 0.45] as const;
-    reach(w, 0, px + 0.05, py + pulse(c.t * 6) * 0.06, pz, -1.3, 0, 0, 0.2);
-    reach(w, 1, px - 0.05, py + pulse(c.t * 6 + 1.5) * 0.06, pz, -1.3, 0, 0, 0.2);
+    const t = c.pairT * ownTempo(c.pairSeed ?? c.seed, 18, 0.25);   // (W12: the pair's clock and tempo)
+    reach(w, 0, px + 0.05, py + pulse(t * 6) * 0.06, pz, -1.3, 0, 0, 0.2);
+    reach(w, 1, px - 0.05, py + pulse(t * 6 + 1.5) * 0.06, pz, -1.3, 0, 0, 0.2);
     w.face(0.5, 0, 0);
   },
   display(w, c) {
     // Stationary display: bipedal, bristled, rocking and swaying a branch overhead, stamping.
     standBiped(w, c, 1);
-    const s = sin(c.t * 5.2), st = pulse(c.t * 2.6);
+    // (Stage W12: at the animal's own tempo, from its own start. On the clip's clock two displayers rocked in step.)
+    const t = ownClock(c.t, c.seed, 19, 5, 0.18);
+    const s = sin(t * 5.2), st = pulse(t * 2.6);
     w.v[PI.root] += s * 0.05;
     w.a(B.hips, 0, 0, s * 0.12).a(B.chest, 0, s * 0.25, 0);
-    w.ik(LIMB.legL, 0.15, 0.08 + st * 0.12, 0.05, 1, 1).ik(LIMB.legR, -0.15, 0.08 + pulse(c.t * 2.6 + Math.PI) * 0.12, 0.02, 1, 1);
-    w.r(B.uarmR, -2.4 + s * 0.6, 0, -0.5).r(B.farmR, -0.4 - 0.3 * pulse(c.t * 5.2));
+    w.ik(LIMB.legL, 0.15, 0.08 + st * 0.12, 0.05, 1, 1).ik(LIMB.legR, -0.15, 0.08 + pulse(t * 2.6 + Math.PI) * 0.12, 0.02, 1, 1);
+    w.r(B.uarmR, -2.4 + s * 0.6, 0, -0.5).r(B.farmR, -0.4 - 0.3 * pulse(t * 5.2));
     w.r(B.uarmL, -0.6 - s * 0.4, 0, 0.9).r(B.farmL, -0.6);
     w.r(B.clavL, 0, 0, 0.15).r(B.clavR, 0, 0, -0.2);
     grip(w, 1); grip(w, 0, 0.5);
     w.pose.propR = PROP.branch;
-    w.set('bristle', 1).face(0.1 + 0.35 * pulse(c.t * 2.6), 0.3);
+    w.set('bristle', 1).face(0.1 + 0.35 * pulse(t * 2.6), 0.3);
     w.set('look', 0.6);
   },
   charge(w, c) {
     // End of a charge: slapping the ground with alternating hands, bristled, staring.
     quadStance(w, c, -0.1);
-    const s1 = pulse(c.t * 7), s2 = pulse(c.t * 7 + Math.PI);
+    const t = ownClock(c.t, c.seed, 20, 3, 0.2), s1 = pulse(t * 7), s2 = pulse(t * 7 + Math.PI);   // (W12: its own tempo and start)
     w.ik(LIMB.armL, 0.24, 0.13 + s1 * 0.22, 0.24, 1, 1).ik(LIMB.armR, -0.24, 0.13 + s2 * 0.22, 0.24, 1, 1);
     w.a(B.hips, -0.15).a(B.neck, -0.1);
     w.set('bristle', 1).face(0.3, 0.2, 0.2).set('look', 1);
@@ -803,26 +885,29 @@ export const CLIPS: Record<string, Clip> = {
     crouch(w, c);
     w.root(0, 0.42, -0.08);
     w.a(B.hips, -0.25).a(B.neck, 0.2);
-    const hit = (c.pairT * 2.8) % 1, lft = hit < 0.5, k = lft ? hit * 2 : (hit - 0.5) * 2;
+    // (Stage W12: the blows at the pair's own tempo, the same expression as in 'defend'; the rest on the attacker's own clock.)
+    const hit = (c.pairT * 2.8 * ownTempo(c.pairSeed ?? c.seed, 21, 0.18)) % 1, lft = hit < 0.5, k = lft ? hit * 2 : (hit - 0.5) * 2, t = ownClock(c.t, c.seed, 22, 4, 0.2);
     const [px, py, pz] = c.hasTarget ? partnerPoint(c, 0.28, 0.02) : [0, 0.25, 0.45] as const;
     const up = k < 0.6 ? smooth(k / 0.6) : 1 - smooth((k - 0.6) / 0.4);
     reach(w, 0, px + 0.12, py + (lft ? up * 0.45 : 0.05), pz - (lft ? up * 0.15 : 0), -1.4, 0, 0, 0.2);
     reach(w, 1, px - 0.12, py + (!lft ? up * 0.45 : 0.05), pz - (!lft ? up * 0.15 : 0), -1.4, 0, 0, 0.2);
     grip(w, 0); grip(w, 1);
-    w.a(B.chest, 0.15 * (1 - up), sin(c.t * 5.6) * 0.2, 0).a(B.hips, 0, sin(c.t * 2.1) * 0.3, sin(c.t * 3.1) * 0.12);
-    w.a(B.neck, 0.35 * pulse(c.t * 1.7), 0, 0);
+    w.a(B.chest, 0.15 * (1 - up), sin(t * 5.6) * 0.2, 0).a(B.hips, 0, sin(t * 2.1) * 0.3, sin(t * 3.1) * 0.12);
+    w.a(B.neck, 0.35 * pulse(t * 1.7), 0, 0);
     w.set('bristle', 1).face(0.8, 0, 0.9).set('look', 1);
   },
   defend(w, c) {
     // Victim of contact aggression: on the back or side, arms shielding, kicking, screaming. Flinches when the
     // attacker's blow lands (shared pair clock, blow apex at 60% of each half-cycle of the attack clip).
-    lieBack(w, c, 1);
-    const hk = ((c.pairT * 2.8) % 0.5) * 2, jolt = Math.exp(-(((hk - 0.66) / 0.08) ** 2));
-    w.a(B.hips, 0, 0, 0.5 + sin(c.t * 3.3) * 0.4);
+    // (Stage W12: the flinch at the pair's tempo, as the blows of 'attack'; the kicking and shielding on its own clock.)
+    const t = ownClock(c.t, c.seed, 23, 4, 0.2);
+    lieBack(w, c, 1, t);
+    const hk = ((c.pairT * 2.8 * ownTempo(c.pairSeed ?? c.seed, 21, 0.18)) % 0.5) * 2, jolt = Math.exp(-(((hk - 0.66) / 0.08) ** 2));
+    w.a(B.hips, 0, 0, 0.5 + sin(t * 3.3) * 0.4);
     w.a(B.chest, -0.25 * jolt, 0, 0).a(B.head, 0.3 * jolt, 0, 0.2 * jolt);
     w.v[PI.root + 1] -= 0.03 * jolt;
-    w.r(B.uarmL, -2.0 + sin(c.t * 6) * 0.3, 0, 0.9).r(B.farmL, -1.9).r(B.uarmR, -2.2 + sin(c.t * 6 + 1) * 0.3, 0, -0.8).r(B.farmR, -1.8);
-    w.a(B.neck, -0.2 + sin(c.t * 4) * 0.2, sin(c.t * 2.3) * 0.5, 0);
+    w.r(B.uarmL, -2.0 + sin(t * 6) * 0.3, 0, 0.9).r(B.farmL, -1.9).r(B.uarmR, -2.2 + sin(t * 6 + 1) * 0.3, 0, -0.8).r(B.farmR, -1.8);
+    w.a(B.neck, -0.2 + sin(t * 4) * 0.2, sin(t * 2.3) * 0.5, 0);
     w.set('bristle', 0.6).face(0.95, 0, 1).set('look', 0.5);
   },
   submit(w, c) {
@@ -841,11 +926,12 @@ export const CLIPS: Record<string, Clip> = {
   pantGrunt(w, c) {
     // Approach bowing and bobbing toward the dominant with rapid breathy grunts.
     crouch(w, c);
-    const b = pulse(c.t * 2.6 * TAU / TAU * 1.0 * Math.PI / 1.2);
+    const t = ownClock(c.t, c.seed, 24, 4, 0.2);   // (W12: its own tempo and start)
+    const b = pulse(t * 2.6 * TAU / TAU * 1.0 * Math.PI / 1.2);
     w.v[PI.root + 1] += b * 0.08;
     w.a(B.hips, -0.12 * b).a(B.chest, 0.15 * b).a(B.neck, 0.15 * b).a(B.head, 0.15 * b);
     if (c.hasTarget && c.tdist < 1.8) reach(w, 1, c.tx * 0.45, 0.35, c.tz * 0.45, -1.4, 1.3, 0, 0.6, 0.8);
-    w.face(0.2 + 0.25 * pulse(c.t * 11), 0.35, 0.15).set('look', 1);
+    w.face(0.2 + 0.25 * pulse(t * 11), 0.35, 0.15).set('look', 1);
   },
   embrace(w, c) {
     // Reconciliation / consolation: close seated embrace, arms around the partner's back, heads
@@ -878,7 +964,7 @@ export const CLIPS: Record<string, Clip> = {
     sitBase(w, c, 0.1, 0.4);
     w.root(0, 0.3, -0.05);
     w.r(B.hips, 0.2).r(B.spine, 0.15).r(B.chest, 0.1);
-    w.v[PI.root + 2] += pulse(c.t * 15) * 0.02;
+    w.v[PI.root + 2] += pulse(c.pairT * 15 * ownTempo(c.pairSeed ?? c.seed, 25, 0.2)) * 0.02;   // (W12: the pair's clock and tempo)
     reach(w, 0, 0.14, 0.62, 0.42, -1.3, 0, 0, 0.3); reach(w, 1, -0.14, 0.62, 0.42, -1.3, 0, 0, 0.3);
     grip(w, 0, 0.7); grip(w, 1, 0.7);
     w.face(0.15, 0.2);
@@ -897,14 +983,14 @@ export const CLIPS: Record<string, Clip> = {
   share(w, c) {
     // Meat possessor: seated, chewing, meat in hand; tolerates or passes pieces toward the beggar.
     sitBase(w, c, 0.2);
-    const cyc = (c.t * 0.25 + c.seed) % 1;
+    const t = ownClock(c.t, c.seed, 26, 8, 0.25), cyc = (t * 0.25) % 1;   // (W12: its own tempo and start)
     const give = c.hasTarget && c.tdist < 2.2 && cyc > 0.6;
     if (give) reach(w, 1, c.tx * 0.45, 0.45, c.tz * 0.45, -1.4, 1.4, 0, 0.7);
     else reach(w, 1, -0.04, mouthPoint[1] - 0.04, mouthPoint[2] + 0.02, -2.0, 0, 0, 0.4);
     reach(w, 0, 0.06, 0.5, 0.34, -1.4, 0, 0.4, 0.3);
     grip(w, 0); grip(w, 1);
     w.pose.propR = PROP.meat;
-    w.face(give ? 0.1 : 0.25 + 0.2 * sin(c.t * 7), 0.05);
+    w.face(give ? 0.1 : 0.25 + 0.2 * sin(t * 7), 0.05);
     w.a(B.head, give ? -0.1 : 0.15);
   },
   beg(w, c) {
@@ -930,7 +1016,7 @@ export const CLIPS: Record<string, Clip> = {
     reach(w, 0, -0.02, 0.36, 0.44, -1.4, 0, 1.3, 0.2); reach(w, 1, 0.02, 0.33, 0.45, -1.4, 0, -1.3, 0.2);
     grip(w, 0, 0.8); grip(w, 1, 0.8);
     w.set('bristle', 0.25).set('eyes', 0.4);
-    w.a(B.chest, sin(c.time * 7) * 0.006); // shivering
+    w.a(B.chest, sin(c.time * 7 * ownTempo(c.seed, 27) + c.seed * 50) * 0.006); // shivering (W12: at its own tempo)
     // In a crown (stage W9, stylization): the same huddle on the branch, feet gripping it.
     if (c.inTree) { w.set('ground', 0); toeGrip(w); }
   },
@@ -962,7 +1048,7 @@ export const CLIPS: Record<string, Clip> = {
   drum(w, c) {
     // Buttress drumming: bipedal, alternating stamps and hand slaps on a root in front.
     standBiped(w, c, 0.8);
-    const beat = c.t * 3.2;
+    const beat = ownClock(c.t, c.seed, 28, 3, 0.15) * 3.2;   // (W12: its own tempo and start)
     const l = pulse(beat * Math.PI), r = pulse(beat * Math.PI + Math.PI);
     w.ik(LIMB.legL, 0.12, 0.08 + l * 0.2, 0.08 + l * 0.1, 1, 1).ik(LIMB.legR, -0.12, 0.08 + r * 0.2, 0.05 + r * 0.1, 1, 1);
     reach(w, 0, 0.18, 0.35 + r * 0.25, 0.42, -1.6, 0, 0, 0.3); reach(w, 1, -0.18, 0.35 + l * 0.25, 0.42, -1.6, 0, 0, 0.3);
@@ -980,7 +1066,7 @@ export const CLIPS: Record<string, Clip> = {
       w.set('bristle', 0.85).face(0.15, 0.9).set('look', 1);
       return;
     }
-    const raise = pulse(c.t * 0.9 + c.seed * 6) > 0.8;
+    const raise = pulse(ownClock(c.t, c.seed, 29, 10, 0.3) * 0.9) > 0.8;   // (W12: its own tempo and start)
     if (raise) w.r(B.uarmR, -2.3, 0, -0.4).r(B.farmR, -0.6);
     w.set('bristle', 0.85).face(0.15, 0.9).set('look', 1);
   },
@@ -1006,8 +1092,8 @@ export const CLIPS: Record<string, Clip> = {
         w.root(0, 0.45, -0.22);
         w.ik(LIMB.armL, 0.2, 0.13, 0.1, 1, 1).ik(LIMB.armR, -0.2, 0.13, 0.1, 1, 1);
         w.r(B.hips, 1.25).a(B.spine, 0.12).a(B.chest, 0.18).r(B.neck, 0.2).r(B.head, 0.45);
-        const burst = Math.pow(pulse(c.t * 0.9 + c.seed * 7), 3);
-        w.a(B.head, 0.05 * burst * pulse(c.t * 12), 0.08 * sin(c.t * 0.7 + c.seed * 9), 0);
+        const t = ownClock(c.t, c.seed, 30, 10, 0.3), burst = Math.pow(pulse(t * 0.9), 3);   // (W12: its own tempo and start)
+        w.a(B.head, 0.05 * burst * pulse(t * 12), 0.08 * sin(t * 0.7 + c.seed * 9), 0);
         break;
       }
       case Listen.back:
@@ -1047,17 +1133,43 @@ export const CLIPS: Record<string, Clip> = {
     w.set('bristle', 0.6).face(0.5, 0, 1);
   },
   nestBuild(w, c) {
-    // Seated in the crown bending branches in toward the lap, one arm after the other.
+    // Seated in the crown bending branches in toward the lap.
+    // Stage W12 (stylization; no source for the timings or the shares): each builder keeps its own time. Before, the
+    // cycle and the arm came from the clip's clock alone (2.2 s, left and right in turn), so every animal that began
+    // in the same frame bent the same branch with the same arm on the same beat. Now the bar is the animal's own
+    // (nestBar), it starts at its own point in its first bar, and each bar is drawn for that animal: mostly a reach
+    // (with the arm drawn for that bar, toward the hand the animal favours, to a place drawn for that bar, after a
+    // pause drawn for that bar), sometimes a look round with both hands in the lap, sometimes both hands pressing the
+    // bent branches down. A hand leaves the lap and comes back to it, so nothing jumps from one bar to the next.
     sitBase(w, c, 0.3, 0.5);
     w.set('ground', 0);
-    const cyc = (c.t * 0.45) % 1, side: 0 | 1 = Math.floor(c.t * 0.45) % 2 ? 1 : 0;
-    const k = cyc < 0.45 ? smooth(cyc / 0.45) : 1 - smooth((cyc - 0.45) / 0.55);
-    const sx = side ? -1 : 1;
-    reach(w, side, sx * (0.15 + 0.4 * k), 0.35 + 0.45 * k, 0.25 + 0.2 * k, -1.2 - k * 0.6, 0, 0, 0.3);
-    grip(w, side, 1);
-    reach(w, side ? 0 : 1, -sx * 0.12, 0.25, 0.3, -1.0, 0, 0, 0.2);
-    w.a(B.chest, 0, sx * 0.3 * k, 0).a(B.head, -0.1, sx * 0.4 * k, 0);
-    if (k > 0.3) { if (side) w.pose.propR = PROP.leaves; else w.pose.propL = PROP.leaves; }
+    const s = c.seed, P = nestBar(s), u = c.t + P * cyc01(1, s, 120), n = Math.floor(u / P), x = u - n * P, kind = nestBeat(n, s);
+    let lx = 0.12, ly = 0.25, lz = 0.3, lh = -1.0, ll = 0.2, gl = 0.45, rx = -0.12, ry = 0.25, rz = 0.3, rh = -1.0, rl = 0.2, gr = 0.45;
+    let turn = 0, headTurn = 0, up = 0, lean = 0;
+    if (kind === NEST_BEAT.reach) {
+      const side = nestArm(n, s), sx = side ? -1 : 1, D = Math.min(P - 0.3, NEST_REACH_S[0] + (NEST_REACH_S[1] - NEST_REACH_S[0]) * cyc01(0, s, 121));
+      const v = (x - cyc01(n, s, 122) * (P - D)) / D;
+      if (v > 0 && v < 1) {
+        const k = v < 0.45 ? smooth(v / 0.45) : 1 - smooth((v - 0.45) / 0.55), g = mix(0.45, 1, smooth(k * 3));
+        // Where the branch is: out to that side, up and forward; another place in each bar.
+        const ox = sx * (0.45 + 0.15 * cyc01(n, s, 123)), oy = 0.64 + 0.26 * cyc01(n, s, 124), oz = 0.36 + 0.16 * cyc01(n, s, 125);
+        if (side) { rx = mix(rx, ox, k); ry = mix(ry, oy, k); rz = mix(rz, oz, k); rh = mix(rh, -1.8, k); rl = mix(rl, 0.3, k); gr = g; }
+        else { lx = mix(lx, ox, k); ly = mix(ly, oy, k); lz = mix(lz, oz, k); lh = mix(lh, -1.8, k); ll = mix(ll, 0.3, k); gl = g; }
+        turn = sx * 0.3 * k; headTurn = sx * 0.4 * k;
+        if (k > 0.3) { if (side) w.pose.propR = PROP.leaves; else w.pose.propL = PROP.leaves; }
+      }
+    } else if (kind === NEST_BEAT.press) {
+      // Both hands push the bent branches down into the nest, twice, the trunk leaning over them.
+      const v = (x - 0.15 * P) / (0.7 * P), p = v > 0 && v < 1 ? sin(Math.PI * v) * (0.6 + 0.4 * Math.abs(sin(TAU * v))) : 0;
+      ly -= 0.09 * p; ry -= 0.09 * p; lz += 0.05 * p; rz += 0.05 * p; lx -= 0.03 * p; rx += 0.03 * p; gl = gr = mix(0.45, 0.8, p); lean = p;
+    } else {
+      // A look round: the head turns to a side drawn for that bar, a little up, and comes back.
+      const v = x / P, e = smooth(v / 0.25) * (1 - smooth((v - 0.7) / 0.3)), dir = cyc01(n, s, 126) < 0.5 ? -1 : 1;
+      turn = dir * 0.1 * e; headTurn = dir * 0.55 * e; up = e;
+    }
+    reach(w, 0, lx, ly, lz, lh, 0, 0, ll); grip(w, 0, gl);
+    reach(w, 1, rx, ry, rz, rh, 0, 0, rl); grip(w, 1, gr);
+    w.a(B.spine, 0.05 * lean).a(B.chest, 0.1 * lean, turn, 0).a(B.head, -0.1 + 0.25 * lean - 0.12 * up, headTurn, 0);
   },
   sleep(w, c) { lieSide(w, c, c.seed > 0.5 ? 1 : -1, 1.1); w.set('eyes', 1); w.set('ground', 0); w.root(0, 0.15, 0); },
   dead(w, c) { lieSide(w, c, c.seed > 0.5 ? 1 : -1, 0.2, 1); w.set('eyes', 0.75); w.face(0.2); },
@@ -1087,7 +1199,7 @@ export const CLIPS: Record<string, Clip> = {
     // Jockey riding: body lying forward along the mother's back, hands gripping her shoulder hair.
     w.set('ground', 0);
     w.root(0, 0, 0);
-    w.r(B.hips, 0.95).r(B.spine, 0.25).r(B.chest, 0.15).r(B.neck, -0.75).r(B.head, -0.35, sin(c.time * 0.35 + c.seed * 9) * 0.45);
+    w.r(B.hips, 0.95).r(B.spine, 0.25).r(B.chest, 0.15).r(B.neck, -0.75).r(B.head, -0.35, sin(c.time * 0.35 * ownTempo(c.seed, 40, 0.3) + c.seed * 9) * 0.45);
     w.r(B.thighL, -1.1, 0, 0.95).r(B.shinL, 1.7).r(B.thighR, -1.1, 0, -0.95).r(B.shinR, 1.7);
     w.r(B.footL, -0.6, 0.6).r(B.footR, -0.6, -0.6);
     w.r(B.uarmL, -1.2, 0, 0.45).r(B.farmL, -0.9).r(B.uarmR, -1.2, 0, -0.45).r(B.farmR, -0.9);

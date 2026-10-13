@@ -45,7 +45,7 @@ import {
 } from './creatures/secondary';
 import type { KeepCandidate } from './env/occluders';
 import { createTreeIndex, type TreeIndex } from './creatures/tree-index';
-import { CROWN_JUMP_M, PERCH, boughStem, clamberSpeed, clambering, crownStep, nestTurn, pairReach, perchBout, perchLies, perchPosture, seatAllowed, seatGroups, trunkBound, type SeatPairs } from './creatures/perch';
+import { CROWN_JUMP_M, PERCH, boughStem, clamberSpeed, clambering, crownStep, nestProgress, nestTurn, pairReach, perchBout, perchLies, perchPosture, seatAllowed, seatGroups, trunkBound, type SeatPairs } from './creatures/perch';
 import { endHeard, heardTakesHead, holding, listening } from './creatures/heard';
 import {
   Listen, PatrolCode, RELEASE_BRISTLE_TAU, RELEASE_DRUM_REACH, RELEASE_WINDOW_H, backSide, createFileCue, createPatrolLook, fileCue, listenVariant,
@@ -178,6 +178,12 @@ export interface Anim {
   /** Stage W6: where its body lies in its nest, kept while the drawn body is still in the nest act. Stage W9: nestK, how
    * far the drawn body has come with building it, 0..1 (1: not building). */
   nestOk: boolean; nestX: number; nestY: number; nestZ: number; nestK: number;
+  /** Stage W12 (perch.ts nestProgress): the nest act this record is for (its start as drawn.ts notes it; NaN none),
+   * when the simulation's finished nest was first seen in it (+Infinity not yet, -Infinity it was there from the first
+   * frame), and the drawn time and progress at which that was seen. */
+  nestFor: number; nestDoneAt: number; nestRampT: number; nestRampK: number;
+  /** Second reading of stage W12: how far the building of that nest act has been drawn (perch.ts nestProgress `floor`). */
+  nestTop: number;
   ox: number; oz: number;          // eased layout offset (pairing, separation) added to the interpolated point
   // Gait and contacts (gait.ts), transitions (secondary.ts).
   moving: boolean; stillT: number; fastGait: boolean; turnRate: number; climbDy: number; dist: number; strides: number; poseDt: number;
@@ -466,7 +472,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       clip: '', clipT: 0, role: 0, gait: null, phase: hash01(chimp.id, 3),
       x: chimp.position[0], y: 0, z: chimp.position[2], heading: chimp.heading ?? 0, speed: 0, vel: 0, inited: false,
       track: createTrack(chimp.position[0], Math.max(0, chimp.position[1] ?? 0), chimp.position[2]), acts: createActTrack(), ox: 0, oz: 0,
-      act: chimp.action, actTarget: chimp.targetId, way: Way.none, tagWay: Way.none, beat: createBeat(), late: 0, intent: 0, posture: Posture.other, trunkK: 0, onTrunk: false, nestOk: false, nestX: 0, nestY: 0, nestZ: 0, nestK: 1,
+      act: chimp.action, actTarget: chimp.targetId, way: Way.none, tagWay: Way.none, beat: createBeat(), late: 0, intent: 0, posture: Posture.other, trunkK: 0, onTrunk: false, nestOk: false, nestX: 0, nestY: 0, nestZ: 0, nestK: 1, nestFor: NaN, nestDoneAt: Infinity, nestRampT: 0, nestRampK: 0, nestTop: 0,
       refSpeed: 0, moveSpeed: 0, settle: 0, moving: false, stillT: 0, fastGait: false, turnRate: 0, climbDy: 0, dist: 0, strides: 0, poseDt: 0,
       gs: { f: 0, stride: 0, regime: Regime.natural }, lapse: 0, locks: [createLock(), createLock(), createLock(), createLock()], drop: 0, planted: false, bank: 0,
       inert: createInertia(POSE_SIZE), prevOut: new Float32Array(POSE_SIZE), prevCur: new Float32Array(POSE_SIZE), outVel: new Float32Array(POSE_SIZE), skip: new Uint8Array(POSE_SIZE), hold: new Float32Array(12), holdMask: 0,
@@ -634,7 +640,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       case 'play':
         if (b.act !== 'play') return;
         kind = 'play'; sep = 0.22;
-        { const swap = Math.floor((animClock + hash01(a.id + b.id, 1) * 10) / 3) % 2; const tickle = hash01(a.id * 7 + b.id, 2) > 0.7;
+        // (Stage W12: the two swap roles every 2.4 to 4.2 s by pair; it was every 3 s for every pair.)
+        { const swap = Math.floor((animClock + hash01(a.id + b.id, 1) * 10) / (2.4 + 1.8 * hash01(a.id * 7 + b.id, 3))) % 2; const tickle = hash01(a.id * 7 + b.id, 2) > 0.7;
           if (tickle) { clipA = 'tickle'; clipB = 'play'; roleA = 0; roleB = 1; kind = 'tickle'; sep = 0.3; bHeading = Math.PI; }
           else { clipA = 'wrestle'; clipB = 'wrestle'; roleA = swap; roleB = 1 - swap; bHeading = Math.PI / 2; } }
         break;
@@ -882,7 +889,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         // builder's heading travelled 98 rad in 80 s, a sleeper's 9 rad in 10 s, and the builder's four turns came out
         // at 1.0 rad instead of 1.9. Not while its decision beat turns it to what it chose (as below).
         if (a.act === 'nest' && a.carry === 0 && a.chimp.alive && a.track.y > 0.3 && !a.onTrunk && a.chimp.action !== 'climb' && !(a.way === Way.soon && a.beat.phase >= Phase.look) && ownOf(a)) {
-          a.seatFace = a.ownYaw + (hash01(a.id, 45) - 0.5) * 1.2 + nestTurn(a.nestK); a.headingTarget = a.seatFace;
+          a.seatFace = a.ownYaw + (hash01(a.id, 45) - 0.5) * 1.2 + nestTurn(a.nestK, a.id); a.headingTarget = a.seatFace;   // (W12: the turns are the animal's own)
         }
         continue;
       }
@@ -984,10 +991,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   // creatures/beat.ts), walks or climbs when its path does, and stands neutral when it pauses on the way; the pose of
   // the new act comes at the moment the tag turns plain. The timings and substitutions are stylizations.
   const NEUTRAL: [string, number, Gait | null] = ['stand', 0, null], CLAMBER: [string, number, Gait | null] = ['clamber', 0, 'walk'];
-  /** Simulated seconds the building clip plays from the drawn body's arrival at its nest place (stage W6's four
-   * minutes; the simulation builds for 3 to 5 [H, nestBuildMinS and nestBuildSpanS]). Stage W9: the nest grows over
-   * them, and the builder faces five ways in turn as it pulls branches in from all round (perch.ts nestTurn; stylization). */
-  const NEST_BUILD_S = 240;
+  // (The length of the building, four minutes since stage W6, is perch.ts NEST_BUILD_S since stage W12: the simulation builds
+  // for 3 to 5 [H, nestBuildMinS and nestBuildSpanS], and the drawn building now ends when the simulation's does.
+  // Stage W9: the nest grows over it, and the builder faces five ways in turn, perch.ts nestTurn; stylization.)
   function chooseClip(a: Anim, moving: boolean, fast: number): [string, number, Gait | null] {
     const c = a.chimp;
     if (debug.clip) return [debug.clip, 0, null];
@@ -1027,9 +1033,22 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       // (Not after skipped states: the moment the body was first seen in the nest is then not its arrival, and every
       // sleeper would build for four minutes after a fast-forward.)
       const seen = a.acts.shown === a.acts.since && Number.isFinite(a.acts.shownAt) && !startUnseen(a.acts);
-      const built = seen ? (playback.renderT - a.late - a.acts.shownAt) * 3600 : c.actionTime ?? 9999, building = !about && built < NEST_BUILD_S;
+      // Stage W12: building or asleep is the simulation's own word (perch.ts nestProgress). It publishes Chimp.nest when
+      // the building ends. A nest that is there in the first frame the body is drawn in this nest act was never seen
+      // being built, and the animal is drawn in it: before, the test was the clock alone ("fewer than 240 s in the
+      // act"), and a new world, which opens with every animal in a finished nest and that clock at 0, showed a whole
+      // community building for four minutes, in step. A nest that appears while the body builds ends the building when
+      // the body's own drawn time reaches it. Read only: nothing here writes the World.
+      const drawnT = playback.renderT - a.late, has = c.action === 'nest' && c.nest !== null;
+      if (a.nestFor !== a.acts.since) { a.nestFor = a.acts.since; a.nestDoneAt = has ? -Infinity : Infinity; a.nestTop = 0; }
+      else if (a.nestDoneAt === Infinity && has) { a.nestDoneAt = world.time; a.nestRampT = drawnT; a.nestRampK = a.nestK < 1 ? a.nestK : 0; }
+      const built = seen ? (drawnT - a.acts.shownAt) * 3600 : c.actionTime ?? 9999;
       // Stage W9: how far the building has come, for the nest that grows under it and the builder's turns (placeGrounded).
-      a.nestK = building ? clamp(built / NEST_BUILD_S, 0, 1) : 1;
+      // (Second reading: the building of one nest act never goes back, nestTop. `built` starts again when the renderer
+      // changes clocks, as in the frame a time-lapse stops; the builder then turned back through headings it had faced.)
+      const k = about ? 1 : nestProgress(a.nestDoneAt, drawnT, built, a.nestRampT, a.nestRampK, a.nestTop), building = k < 1;
+      if (building) a.nestTop = k;
+      a.nestK = k;
       if (a.clamber) return CLAMBER;
       if (about && still && (a.beat.up || a.beat.phase !== Phase.none)) { a.beat.up = true; return ['perch', 0, null]; }
       return [building ? 'nestBuild' : 'sleep', 0, null];
@@ -1471,8 +1490,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         const bx = TP[0] - ax, bz = TP[2] - az;
         pctx.pb[k * 3] = (bx * ch + bz * sh) / s; pctx.pb[k * 3 + 1] = (TP[1] - a.by) / s; pctx.pb[k * 3 + 2] = (-bx * sh + bz * ch) / s;
       }
-      pctx.pairT = animClock + hash01(Math.min(a.id, partner.id) * 7 + Math.max(a.id, partner.id), 5) * 40;
-    } else { pctx.hasTarget = false; pctx.hasBones = false; pctx.tdist = 99; pctx.tsize = 1; pctx.tx = pctx.ty = pctx.tz = 0; pctx.pairT = pctx.time; }
+      // (Stage W12: the pair's own hash is also the seed of its tempo, poses.ts PoseCtx.pairSeed.)
+      pctx.pairSeed = hash01(Math.min(a.id, partner.id) * 7 + Math.max(a.id, partner.id), 5); pctx.pairT = animClock + pctx.pairSeed * 40;
+    } else { pctx.hasTarget = false; pctx.hasBones = false; pctx.tdist = 99; pctx.tsize = 1; pctx.tx = pctx.ty = pctx.tz = 0; pctx.pairT = pctx.time; pctx.pairSeed = pctx.seed; }
     pw.bind(a.cur).reset();
     (CLIPS[clip] ?? CLIPS.stand)(pw, pctx);
     // Stage W6: the intention movement of the decision beat (creatures/intention.ts; stylization), laid over the clip
@@ -1491,7 +1511,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       }
     }
     if ((c.carryingDeadId ?? -1) >= 0 && anims.get(c.carryingDeadId!)?.carry) { const k = cradleFor(clip); if (k) cradle(pw, k === 1); }
-    vocalOverlay(pw, pctx.vocal, animClock + pctx.seed * 10, pctx.mood);
+    // (Stage W12: the jaw of a call at the animal's own tempo, 0.88 to 1.12 of the call's; it was one tempo for all.)
+    vocalOverlay(pw, pctx.vocal, animClock * (0.88 + 0.24 * hash01(a.id, 87)) + pctx.seed * 10, pctx.mood);
     if (a.pCode !== PatrolCode.none) {
       // Silent patrol legs: lips pressed under a lowered brow, some piloerection; tensest in neighbour range.
       const tn = patrolTension(a.pCode), v = a.cur.v;
@@ -1874,7 +1895,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     const back = 0.36 * a.morph.size; // body origin behind the waterline; the drinking lean puts the lips over it
     a.tx = a.drinkX - dx / d * back; a.tz = a.drinkZ - dz / d * back;
     a.headingTarget = Math.atan2(dx, dz);
-    if (a.visible && ctx.ripple && Math.floor(animClock * 1.3 + a.id) !== Math.floor((animClock - curDt) * 1.3 + a.id)) ctx.ripple(a.drinkX + dx / d * 0.1, a.drinkZ + dz / d * 0.1, 0.5);
+    // (Stage W12: each drinker's rings at its own moments and rate. The offset used to be the animal's id, a whole
+    // number, so every drinker's ring came in the same frame.)
+    const rr = 1.1 + 0.4 * hash01(a.id, 88), ro = hash01(a.id, 89);
+    if (a.visible && ctx.ripple && Math.floor(animClock * rr + ro) !== Math.floor((animClock - curDt) * rr + ro)) ctx.ripple(a.drinkX + dx / d * 0.1, a.drinkZ + dz / d * 0.1, 0.5);
   }
   /**
    * A drummer within reach of a trunk or buttress faces it and slaps it (vocal 'drum'). Runs before motion. A patrol's
@@ -2249,7 +2273,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
           const turned = !a.clamber && a.way === Way.soon && a.beat.phase >= Phase.look && beatGoal(a, Gaze.goal);
           // (W9: building a nest it turns a step at a time, pulling branches in from all round; it settles as it lies
           // down. W11: that turn is in seatFace, set by layoutCrowns; the last term only serves a frame without one.)
-          const turn = a.act === 'nest' ? nestTurn(a.nestK) : 0;
+          const turn = a.act === 'nest' ? nestTurn(a.nestK, a.id) : 0;
           a.heading = dampAngle(a.heading, turned ? Math.atan2(GOAL[0] - x, GOAL[2] - z) : Number.isFinite(a.seatFace) ? a.seatFace : perchYaw + (hash01(a.id, 45) - 0.5) * 1.2 + turn, 3, 1 / 30);
         }
       } else { a.seated = false; if (inNest) { x = a.nestX; y = a.nestY; z = a.nestZ; } }

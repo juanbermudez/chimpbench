@@ -15,11 +15,11 @@ const ctx = (over: Partial<PoseCtx> = {}): PoseCtx => ({
 const pose = createPose(), w = new Pw();
 function run(clip: string, c: PoseCtx): Float32Array { w.bind(pose).reset(); CLIPS[clip](w, c); return pose.v; }
 const arm = (v: Float32Array, limb: number) => [v[PI.ik + limb * 5], v[PI.ik + limb * 5 + 1], v[PI.ik + limb * 5 + 2], v[PI.ik + limb * 5 + 3]];
-/** IK targets of both hands over 14 s of the pair clock in 50 ms steps (the fact-check's window). */
-function sweep(c: PoseCtx, each?: (v: Float32Array) => void) {
+/** IK targets of both hands over 14 s of the pair clock in 50 ms steps (the fact-check's window), or over `seconds`. */
+function sweep(c: PoseCtx, each?: (v: Float32Array) => void, seconds = 14) {
   const min = [[9, 9, 9], [9, 9, 9]], max = [[-9, -9, -9], [-9, -9, -9]], path = [0, 0];
   let last: number[][] | null = null;
-  for (let i = 0; i <= 280; i++) {
+  for (let i = 0; i <= seconds * 20; i++) {
     c.pairT = 100 + i * 0.05; c.t = i * 0.05; c.time = 40 + i * 0.05;
     const v = run('groom', c), hands = [arm(v, LIMB.armL), arm(v, LIMB.armR)];
     each?.(v);
@@ -32,7 +32,9 @@ function sweep(c: PoseCtx, each?: (v: Float32Array) => void) {
 test('the groomer\'s hands travel over the partner and comb; picks to the mouth stay off', () => {
   // A seated partner 0.8 body lengths ahead, known by its root only (no posed bones).
   let jaw = 0;
-  const s = sweep(ctx({ hasTarget: true, tz: 0.8, tdist: 0.8 }), v => { jaw = Math.max(jaw, v[PI.mouth]); });
+  // (Stage W12: a groomer's time at a site is its own, 6.3 to 11.7 s; it was 9 s for every groomer. The window is
+  // 28 s here, so that it holds two changes of site whatever this groomer's time is.)
+  const s = sweep(ctx({ hasTarget: true, tz: 0.8, tdist: 0.8 }), v => { jaw = Math.max(jaw, v[PI.mouth]); }, 28);
   // Before stage W5 the hands stayed within 0.02 body lengths of one height (3 cm on an adult); now the work site
   // moves over the back at least once in the window.
   assert.ok(s.range[0][1] > 0.08 && s.range[1][1] > 0.08, `both hands travel up and down the back (${s.range.map(r => r[1].toFixed(2))})`);
