@@ -141,9 +141,9 @@ test('drinkers: the lips and the leaf sponge are each animal\'s own', () => {
 });
 
 test('what animals do together stays together', () => {
-  // A pant-hoot chorus: callers that start together reach the climax within three seconds of each other (left as it was).
-  const hoot = together({ clip: 'pantHoot' }, SOLO, 120, 10, 6);
-  assert.ok(hoot.rBest > 0.9, `a chorus keeps one cycle (${hoot.rBest.toFixed(3)})`);
+  // (A pant-hoot chorus was left on one cycle by this stage, every caller rising with both arms up within three
+  // seconds of the others. Stage W13 redrew it: tests/render-call.test.ts holds that callers are a group of animals,
+  // each its own, and that a call is one pant-hoot.)
   // An attacker's blow and its victim's flinch are on the pair's one beat: the flinch peaks at 0.66 of each half cycle.
   for (const id of ACTORS) {
     const blow = (t: number) => { w.bind(pose).reset(); CLIPS.attack(w, ctxOf(id, t, { clip: 'attack', pair: true })); return Math.max(pose.v[PI.ik + LIMB.armL * 5 + 1], pose.v[PI.ik + LIMB.armR * 5 + 1]); };
@@ -237,7 +237,9 @@ test('nest builders: each turns at its own moments, by its own amounts', () => {
   const ids = SOLO, at = ids.map(id => Array.from({ length: NEST_TURNS - 1 }, (_, i) => nestTurnAt(id, i + 1)));
   for (let a = 0; a < ids.length; a++) {
     const id = ids[a];
-    assert.equal(nestTurn(0, id), 0); assert.equal(nestTurn(1, id), 0, 'done: it lies down facing as it sat at first'); assert.equal(nestTurn(-0.2, id), 0);
+    // (The plan reads 0 again when the nest is done. Since stage W13 the layer draws the turns through perch.ts nestTurnStep,
+    // which keeps what was turned: the animal lies down facing as it last sat. tests/render-call.test.ts.)
+    assert.equal(nestTurn(0, id), 0); assert.equal(nestTurn(1, id), 0); assert.equal(nestTurn(-0.2, id), 0);
     // In order, each within NEST_TURN_SHIFT of a fifth of its nominal moment, and the heading changes exactly there.
     for (let i = 0; i < NEST_TURNS - 1; i++) { assert.ok(Math.abs(at[a][i] * NEST_TURNS - (i + 1)) <= NEST_TURN_SHIFT + 1e-9); if (i) assert.ok(at[a][i] > at[a][i - 1]); assert.notEqual(nestTurn(at[a][i] - 1e-6, id), nestTurn(at[a][i] + 1e-6, id)); }
     const seen: number[] = [0]; for (let k = 0; k < 1; k += 0.0005) { const t = nestTurn(k, id); if (seen[seen.length - 1] !== t) seen.push(t); }

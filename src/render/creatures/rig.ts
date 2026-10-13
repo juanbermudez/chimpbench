@@ -286,11 +286,29 @@ export interface FKState {
 }
 export function createFK(): FKState { return { localQ: new Float32Array(BONE_COUNT * 4), q: new Float32Array(BONE_COUNT * 4), p: new Float32Array(BONE_COUNT * 3) }; }
 
+/** Optional temporal bend-plane continuity for a caller's changing posture; ordinary IK stays stateless. */
+export interface BendHint { axes: Float32Array; dt: number; limited: boolean; }
+export function createBendHint(): BendHint { return { axes: new Float32Array(12), dt: 0, limited: false }; }
+/** Capture once per pose evaluation, before any repeated contact solves overwrite the skeleton. */
+export function beginBendHint(h: BendHint, fk: FKState, dt: number): void {
+  h.dt = Math.max(0, dt); h.limited = false;
+  const p = fk.p;
+  for (let i = 0; i < LIMBS.length; i++) {
+    const l = LIMBS[i], u = l.upper * 3, k = l.lower * 3, e = l.end * 3, o = i * 3;
+    const ax = p[k] - p[u], ay = p[k + 1] - p[u + 1], az = p[k + 2] - p[u + 2];
+    const bx = p[e] - p[u], by = p[e + 1] - p[u + 1], bz = p[e + 2] - p[u + 2];
+    const x = ay * bz - az * by, y = az * bx - ax * bz, z = ax * by - ay * bx;
+    const n = Math.hypot(x, y, z);
+    h.axes[o] = n > 1e-6 ? x / n : 0; h.axes[o + 1] = n > 1e-6 ? y / n : 0; h.axes[o + 2] = n > 1e-6 ? z / n : 0;
+  }
+}
+
 /**
  * Evaluate the pose in body space (origin on the ground under the animal, +Z
  * forward). IK targets are in unit space and scaled by morph.size.
  */
-export function solveFK(pose: Pose, m: Morph, fk: FKState, look: Float32Array | null = null) {
+export function solveFK(pose: Pose, m: Morph, fk: FKState, look: Float32Array | null = null, bend?: BendHint) {
+  if (bend) bend.limited = false;
   const v = pose.v, lq = fk.localQ, q = fk.q, p = fk.p, size = m.size;
   for (let i = 0; i < BONE_COUNT; i++) eulerToQuat(lq, i * 4, v[i * 3], v[i * 3 + 1], v[i * 3 + 2]);
   qmul(lq, B.uarmL * 4, lq, B.uarmL * 4, ARM_FIX_L, 0);
@@ -307,7 +325,7 @@ export function solveFK(pose: Pose, m: Morph, fk: FKState, look: Float32Array | 
     const limb = LIMB_OF_UPPER[i];
     if (limb >= 0) {
       const o = PI.ik + limb * 5;
-      if (v[o + 3] > 0.001) solveLimb(pose, m, fk, LIMBS[limb], v[o] * size, v[o + 1] * size, v[o + 2] * size, Math.min(1, v[o + 3]), v[o + 4]);
+      if (v[o + 3] > 0.001) solveLimb(pose, m, fk, LIMBS[limb], v[o] * size, v[o + 1] * size, v[o + 2] * size, Math.min(1, v[o + 3]), v[o + 4], bend, limb);
     }
     const ls = m.len[par] * size;
     let ox = OFFSET[i * 3] * ls, oy = OFFSET[i * 3 + 1] * ls, oz = OFFSET[i * 3 + 2] * ls;
@@ -356,7 +374,7 @@ function aimHead(fk: FKState, m: Morph, look: Float32Array, weight: number) {
 }
 const T16 = new Float32Array(16);
 
-function solveLimb(pose: Pose, m: Morph, fk: FKState, limb: LimbDef, tx: number, ty: number, tz: number, weight: number, lock: number) {
+function solveLimb(pose: Pose, m: Morph, fk: FKState, limb: LimbDef, tx: number, ty: number, tz: number, weight: number, lock: number, bend?: BendHint, limbIndex = 0) {
   const { q, p, localQ: lq } = fk;
   const u = limb.upper, l = limb.lower, e = limb.end, par = PARENT[u];
   const size = m.size;
@@ -378,8 +396,30 @@ function solveLimb(pose: Pose, m: Morph, fk: FKState, limb: LimbDef, tx: number,
   const px = TV[9], py = TV[10], pz = TV[11];
   let hx = py * dz - pz * dy, hy = pz * dx - px * dz, hz = px * dy - py * dx;
   let hl = hyp3(hx, hy, hz);
-  if (hl < 1e-4) { hx = 1; hy = 0; hz = 0; hl = 1; }
+  const poleSingular = hl < 1e-4;
+  if (poleSingular) { hx = 1; hy = 0; hz = 0; hl = 1; }
   hx /= hl; hy /= hl; hz /= hl;
+  if (bend) {
+    const o = limbIndex * 3, ax = bend.axes[o], ay = bend.axes[o + 1], az = bend.axes[o + 2];
+    const dot = ax * dx + ay * dy + az * dz;
+    let bx = ax - dx * dot, by = ay - dy * dot, bz = az - dz * dot;
+    const n = hyp3(bx, by, bz);
+    if (n > 1e-5) {
+      bx /= n; by /= n; bz /= n;
+      const cross = dx * (by * hz - bz * hy) + dy * (bz * hx - bx * hz) + dz * (bx * hy - by * hx);
+      // Drawing assumption: a call bend plane turns at most 4 rad/s, including posture entry and exit.
+      const angle = Math.atan2(cross, bx * hx + by * hy + bz * hz), max = 4 * bend.dt;
+      if (poleSingular) {
+        hx = bx; hy = by; hz = bz; bend.limited = true;
+      } else if (Math.abs(angle) > max + 1e-6) {
+        const turn = Math.sign(angle) * max, c = Math.cos(turn), s = Math.sin(turn);
+        hx = bx * c + (dy * bz - dz * by) * s;
+        hy = by * c + (dz * bx - dx * bz) * s;
+        hz = bz * c + (dx * by - dy * bx) * s;
+        bend.limited = true;
+      }
+    }
+  }
   // Angle at the root between chain direction and the upper bone (law of cosines).
   const cosA = Math.max(-1, Math.min(1, (L1 * L1 + d * d - L2 * L2) / (2 * L1 * d)));
   const alpha = Math.acos(cosA);

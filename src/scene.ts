@@ -61,7 +61,9 @@ export interface CameraFootprint {
  * frames run long).
  * drawnAct (stage W4): the act an animal's drawn body is in, and whether the simulation has begun a newer one the body
  * has not started (render/creatures/drawn.ts); fills the caller's record, false when the animal is not drawn. */
-export type Scene = SceneAPI & { getFootprint(): CameraFootprint; followChimp(id: number): void; portrait: { request(id: number, canvas: HTMLCanvasElement, refresh?: boolean): boolean };
+/** Requested playback stays fixed while achieved throughput varies or the clock is paused. */
+export type RenderFrame = SceneFrame & { playbackRate: number };
+export type Scene = Omit<SceneAPI, 'update'> & { update(frame: RenderFrame): void; getFootprint(): CameraFootprint; followChimp(id: number): void; portrait: { request(id: number, canvas: HTMLCanvasElement, refresh?: boolean): boolean };
   drawnAct(id: number, out: DrawnAct): boolean };
 /** Scene options (outside the shared contract), field profile only. focusId: the animal whose party the strategy view
  * frames at start (the whole-map overview when absent, as in the env harness). view 'close': open in the close view on
@@ -349,7 +351,7 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
 
   // --- Frame loop
   const envFrame: EnvFrame = { dt: 0, elapsed: 0, camera: rig.camera, target: new THREE.Vector3(), env, quality, mode: 'rts', weatherLayer: true, pixelWorld: 0.1 };
-  const creatureFrame: CreatureFrame = { dt: 0, elapsed: 0, selectedId: null, simRate: 0, camera: rig.camera, daylight: 1, rain: 0, highlightTroopId: null, layers: { labels: true, social: false, perception: false }, closeView: false, hoverId: -1 };
+  const creatureFrame: CreatureFrame = { dt: 0, elapsed: 0, selectedId: null, simRate: 0, playbackRate: 60, camera: rig.camera, daylight: 1, rain: 0, highlightTroopId: null, layers: { labels: true, social: false, perception: false }, closeView: false, hoverId: -1 };
   let lastNow = performance.now();
   let frameIndex = 0;
   let fps = 60;
@@ -357,7 +359,7 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
 
   const pace = createPace();
   let lastRaf = performance.now(), skippedDt = 0;
-  function update(frame: SceneFrame) {
+  function update(frame: RenderFrame) {
     if (disposed) return;
     const now = performance.now();
     // Frame pacing: on ≥ 100 Hz displays the 3D view renders every other display frame (even 60 Hz); the skipped
@@ -419,7 +421,7 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
     perfEnd('env', e0);
     const c0 = perfNow();
     if (creatures) {
-      creatureFrame.dt = dt; creatureFrame.elapsed = frame.elapsed; creatureFrame.selectedId = frame.selectedId; creatureFrame.simRate = frame.simRate; creatureFrame.subTick = frame.subTick ?? 0;
+      creatureFrame.dt = dt; creatureFrame.elapsed = frame.elapsed; creatureFrame.selectedId = frame.selectedId; creatureFrame.simRate = frame.simRate; creatureFrame.playbackRate = frame.playbackRate; creatureFrame.subTick = frame.subTick ?? 0;
       creatureFrame.camera = camera; creatureFrame.daylight = env.daylight; creatureFrame.rain = env.rain; creatureFrame.highlightTroopId = frame.highlightTroopId;
       creatureFrame.layers.labels = layers.labels && ow < 0.5; creatureFrame.layers.social = layers.social; creatureFrame.layers.perception = layers.perception;
       creatureFrame.closeView = rig.mode !== 'rts';
@@ -756,7 +758,7 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
     // One state-only frame first (update() returns before rendering while warming): it builds the PMREM
     // environment, fog and lights the real frames use. Compiling before that produced programs without the
     // environment map, so the first real frame recompiled every lit material synchronously.
-    update({ dt: 0, elapsed: 0, selectedId: null, simRate: 0, highlightTroopId: null });
+    update({ dt: 0, elapsed: 0, selectedId: null, simRate: 0, playbackRate: 60, highlightTroopId: null });
     sky.refreshEnv(); // the first real frame re-renders the IBL at its own clock (clouds move with time)
     const hidden: THREE.Object3D[] = [];
     scene.traverse(object => { if (!object.visible) { hidden.push(object); object.visible = true; } });

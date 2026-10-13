@@ -90,7 +90,7 @@ function frame(now: number) {
     if (acc > 1) acc = 0;
   }
   if (!q.has('rate')) override(); else if (q.has('rain') || q.has('cloud')) { if (q.has('rain')) world.environment.rain = num('rain')!; if (q.has('cloud')) world.environment.cloud = num('cloud')!; }
-  scene.update({ dt, elapsed, selectedId: focus, simRate: paused ? 0 : rate, highlightTroopId: num('troop') ?? null, subTick: paused ? 0 : Math.min(1, acc) });
+  scene.update({ dt, elapsed, selectedId: focus, simRate: paused ? 0 : rate, playbackRate: rate, highlightTroopId: num('troop') ?? null, subTick: paused ? 0 : Math.min(1, acc) });
   if (now - hudAt > 500) {
     hudAt = now;
     const d = scene.getDiagnostics();

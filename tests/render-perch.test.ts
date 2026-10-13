@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { Chimp } from '../src/types';
 import { B, PI, computeMorph, createFK, createMorph, createPose, solveFK } from '../src/render/creatures/rig';
-import { CLIPS, FEED_HOLD_INFANT, GROOM_FRONT, GROOM_HIGH, PROP, Pw, feedCycle, feedHold, feedPicks, groomerRole, type PoseCtx } from '../src/render/creatures/poses';
+import { CLIPS, FEED, FEED_CHEW_MIN_S, FEED_HOLD_INFANT, GROOM_FRONT, GROOM_HIGH, PROP, Pw, feedCycle, feedHold, feedPick, feedPicks, feedPlan, feedPull, groomerRole, type PoseCtx } from '../src/render/creatures/poses';
 import { LIMB_TIP, leafSprayGeometry } from '../src/render/creatures/props';
 import { headLook } from '../src/render/creatures/secondary';
 import { CLAMBER_MAX_RATE, CLAMBER_MPS, CLAMBER_OFF_M, CLAMBER_ON_M, CROWN_JUMP_M, NEST_TURNS, NEST_TURN_RAD, PAIR_HEIGHT_M, PAIR_REACH_M, PERCH, SEAT_REACH_M, STEM_REACH_M, boughStem, clamberSpeed, clambering, crownStep, nestTurn, pairReach, perchBout, perchLies, perchPeriod, perchPosture, seatAllowed, seatGroups, trunkBound, type SeatPairs } from '../src/render/creatures/perch';
@@ -151,35 +151,40 @@ test('in every resting posture a hand or a foot is on a support', () => {
 // ---- Crown feeding (poses.ts 'forage' in a tree) ----
 /** The feeding pose of an individual at clip time T. */
 function feed(seed: number, T: number, age = 24) { w.bind(pose).reset(); CLIPS.forage(w, ctx({ seed, time: T, t: T, age })); return pose.v; }
-const PULL = 1.6, PICK = 2.1; // poses.ts FEED_PULL_S, FEED_PICK_S
+// Stage W13 (docs/staging/w13-chorus-and-spin.md): a cycle is no longer n times one length. feedPlan(n, seed) says when
+// cycle n begins, how long it lasts and what it is; the animal's own pull and pick times are feedPull and feedPick.
+/** The first `count` cycles from `from` on in which the animal takes a cluster (FEED.cluster). */
+function clusterCycles(seed: number, count: number, from = 3): number[] { const out: number[] = []; for (let n = from; out.length < count && n < from + 200; n++) if (feedPlan(n, seed).kind === FEED.cluster) out.push(n); return out; }
 
-test('crown feeding: a cluster in one hand, one to three picks from it with the other, then chewing; hands alternate', () => {
+test('crown feeding: a cluster in one hand, picks from it with the other, then chewing; hands alternate', () => {
   for (const seed of [0.1, 0.45, 0.62, 0.93]) {
-    const L = feedCycle(seed);
-    assert.ok(L >= 11 && L <= 14);
+    const L = feedCycle(seed), PULL = feedPull(seed), PICK = feedPick(seed);
+    assert.ok(L >= 9 && L <= 14, 'the mean cycle'); assert.ok(PULL >= 1.5 && PULL <= 2.1 && PICK >= 1.8 && PICK <= 2.5);
     const counts = new Set<number>();
-    for (let n = 3; n < 40; n++) {
-      const picks = feedPicks(n, seed), hold = feedHold(n, seed);
-      assert.ok(picks >= 1 && picks <= 3);
+    for (let n = 3; n < 40; n++) assert.notEqual(feedHold(n, seed), feedHold(n + 1, seed), 'the holding hand changes every cycle');
+    for (const n of clusterCycles(seed, 30)) {
+      const plan = feedPlan(n, seed), picks = plan.picks, hold = plan.hold, T0 = plan.start;
+      assert.equal(picks, feedPicks(n, seed)); assert.equal(hold, feedHold(n, seed));
+      assert.ok(picks >= 1 && picks <= 5);
       counts.add(picks);
-      assert.notEqual(hold, feedHold(n + 1, seed), 'the holding hand changes every cycle');
       // In the middle of the first pick the holding hand has the cluster and the other hand the fruit.
-      feed(seed, n * L + PULL + 0.5 * PICK);
+      feed(seed, T0 + PULL + 0.5 * PICK);
       assert.equal(hold ? pose.propR : pose.propL, PROP.leaves, 'the free hand holds a leaf-and-fruit cluster');
       assert.equal(hold ? pose.propL : pose.propR, PROP.fruit, 'the other hand has plucked from it');
-      // Chewing: at least 3 s between the last pick and the next cycle, with the jaw working and both hands empty at the end.
-      const chew = L - PULL - picks * PICK;
-      assert.ok(chew >= 3 && chew <= 10.5, `chewing lasts ${chew.toFixed(1)} s`);
+      // Chewing: the rest of the cycle after the last pick (and the pauses between picks), with the jaw working and
+      // both hands empty at the end.
+      const eating = PULL + picks * PICK + plan.gap.reduce((a, b) => a + b, 0), chew = plan.len - eating;
+      assert.ok(chew >= FEED_CHEW_MIN_S - 1e-9, `chewing lasts ${chew.toFixed(1)} s`);
       let open = 0, shut = 1;
-      for (let k = 0; k < 20; k++) { const v = feed(seed, n * L + PULL + picks * PICK + 1.2 + k * 0.05); open = Math.max(open, v[PI.mouth]); shut = Math.min(shut, v[PI.mouth]); }
+      for (let k = 0; k < 20; k++) { const v = feed(seed, T0 + eating + 0.05 + k * 0.05); open = Math.max(open, v[PI.mouth]); shut = Math.min(shut, v[PI.mouth]); }
       assert.ok(open - shut > 0.08, 'the jaw works while chewing');
-      feed(seed, n * L + PULL + picks * PICK + 1.5);
+      feed(seed, T0 + eating + 1.1);
       assert.ok(pose.propL === 0 && pose.propR === 0, 'nothing in the hands once it only chews');
     }
     assert.ok(counts.size >= 2, 'the number of picks varies from cycle to cycle');
     // The pick point on the cluster differs between picks of one cycle and between cycles.
     const pts = new Set<string>();
-    for (let n = 3; n < 9; n++) for (let j = 0; j < feedPicks(n, seed); j++) { const v = feed(seed, n * L + PULL + (j + 0.28) * PICK), o = PI.ik + (feedHold(n, seed) ? 0 : 1) * 5; pts.add(`${Math.abs(v[o]).toFixed(3)},${v[o + 1].toFixed(3)}`); }
+    for (const n of clusterCycles(seed, 6)) { const plan = feedPlan(n, seed); let a = plan.start + PULL; for (let j = 0; j < plan.picks; j++) { a += plan.gap[j]; const v = feed(seed, a + 0.28 * PICK), o = PI.ik + (plan.hold ? 0 : 1) * 5; pts.add(`${Math.abs(v[o]).toFixed(3)},${v[o + 1].toFixed(3)}`); a += PICK; } }
     assert.ok(pts.size >= 4, 'the picks land on different points');
   }
 });
@@ -187,12 +192,12 @@ test('crown feeding: a cluster in one hand, one to three picks from it with the 
 test('crown feeding: the hand reaches the mouth with the elbow below the shoulder, at every age and on both sides', () => {
   for (const [age, sex] of [[24, 'male'], [21, 'female'], [8, 'male'], [2, 'female']] as const) {
     const m = morphOf(age, sex), s = m.size;
-    for (const seed of [0.3, 0.7]) for (const n of [4, 5]) {
-      const L = feedCycle(seed), pick = feedHold(n, seed) ? 0 : 1;
+    for (const seed of [0.3, 0.7]) for (const n of clusterCycles(seed, 2, 4)) {
+      const T0 = feedPlan(n, seed).start, PULL = feedPull(seed), PICK = feedPick(seed), pick = feedHold(n, seed) ? 0 : 1;
       let worst = -Infinity, sawMouth = false;
       // The whole pick, in 30 ms steps: the elbow never rises above the shoulder; at the mouth the fingers are at the lips.
       for (let t = 0; t <= PICK; t += 0.03) {
-        const v = feed(seed, n * L + PULL + t, age);
+        const v = feed(seed, T0 + PULL + t, age);
         solveFK(pose, m, fk, null);
         const shoulder = at(pick ? B.uarmR : B.uarmL, s), elbow = at(pick ? B.farmR : B.farmL, s);
         worst = Math.max(worst, elbow[1] - shoulder[1]);
@@ -222,9 +227,9 @@ test('crown feeding: the head is held while a hand is at the mouth, whatever the
   for (const [age, sex] of [[24, 'male'], [8, 'male']] as const) {
     const m = morphOf(age, sex), s = m.size;
     for (const seed of [0.3, 0.7]) for (const side of [-1, 1]) {
-      const n = 4, L = feedCycle(seed), pick = feedHold(n, seed) ? 0 : 1;
+      const n = clusterCycles(seed, 1, 4)[0], T0 = feedPlan(n, seed).start, PULL = feedPull(seed), PICK = feedPick(seed), pick = feedHold(n, seed) ? 0 : 1;
       for (let t = 0; t <= PICK; t += 0.03) {
-        const v = feed(seed, n * L + PULL + t, age);
+        const v = feed(seed, T0 + PULL + t, age);
         const atMouth = v[PI.ik + pick * 5 + 3] < 1e-3;
         // The clip's own request: nothing outside a pick's way to the mouth, the whole head at the mouth.
         assert.ok(v[PI.look] <= 0 && v[PI.look] >= -1);
@@ -244,8 +249,7 @@ test('crown feeding: the head is held while a hand is at the mouth, whatever the
   assert.ok(worstHeld < 0.06, `held: fingers at most ${worstHeld.toFixed(3)} body lengths from the lower lip`);
   assert.ok(worstFree > 2 * worstHeld, `as it was, a head turned by a gaze left them ${worstFree.toFixed(3)} away`);
   // Chewing and reaching leave the head to the look system.
-  const chew = feed(0.3, 4 * feedCycle(0.3) + PULL + 3 * PICK + 1, 24);
-  assert.equal(chew[PI.look], 0);
+  { const n = clusterCycles(0.3, 1, 4)[0], plan = feedPlan(n, 0.3), chew = feed(0.3, plan.start + plan.len - 0.6, 24); assert.equal(chew[PI.look], 0); }
 });
 
 // ---- A partner with an infant on its body (poses.ts groomerRole) ----
@@ -402,11 +406,11 @@ test('the cluster is a small leafy spray, and an animal with an infant on its be
   assert.ok(b.max.y > 0 && b.min.y < -0.1, 'the hand holds it near the top of the twig');
   g.dispose();
   // The holding hand: 0.11 body lengths from the mid-line without an infant (in front of the chest), 0.3 with one.
-  for (const seed of [0.3, 0.7]) for (const n of [4, 5]) {
-    const L = feedCycle(seed), hold = feedHold(n, seed), m = morphOf(21, 'female');
-    for (let u = PULL; u < PULL + 2; u += 0.1) {
+  for (const seed of [0.3, 0.7]) for (const n of clusterCycles(seed, 2, 4)) {
+    const T0 = feedPlan(n, seed).start, PULL = feedPull(seed), hold = feedHold(n, seed), m = morphOf(21, 'female');
+    for (let u = PULL; u < PULL + feedPick(seed); u += 0.1) {
       for (const bears of [0, 1, 2]) {
-        w.bind(pose).reset(); CLIPS.forage(w, ctx({ seed, time: n * L + u, t: n * L + u, age: 21, male: false, bears }));
+        w.bind(pose).reset(); CLIPS.forage(w, ctx({ seed, time: T0 + u, t: T0 + u, age: 21, male: false, bears }));
         solveFK(pose, m, fk, null);
         const hand = at(hold ? B.handR : B.handL, m.size), side = hold ? -1 : 1;
         if (bears & 1) { assert.ok(hand[0] * side > 0.27, `beside the infant: ${(hand[0] * side).toFixed(2)} from the mid-line`); assert.ok(hand[1] > 0.45, 'and no lower than its back'); }
