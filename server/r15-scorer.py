@@ -41,7 +41,15 @@ def require_runtime():
     os.environ['MGOGO_DECIDE_PYTHON'] = sys.executable
 
 
+def require_lock():
+    owner = json.loads(Path(os.environ['MGOGO_R15_LOCK_PATH']).read_text())
+    parent = int(os.environ['MGOGO_R15_PARENT_PID'])
+    if owner.get('stage') != 'R15-app' or owner.get('pid') != parent or parent != os.getppid() or owner.get('token') != os.environ['MGOGO_R15_LOCK_TOKEN']:
+        raise ValueError('R15 scorer requires its launching process to hold the exclusive model lock')
+
+
 def main():
+    require_lock()
     require_runtime()
     repo = Path(__file__).resolve().parents[1]
     sys.path.insert(0, str(repo / 'training/decide_ft'))

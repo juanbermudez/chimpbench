@@ -66,12 +66,12 @@ class PythonTransport implements R15Transport {
   private child: ChildProcessWithoutNullStreams | null = null;
   private pending: { resolve(value: unknown): void; reject(error: Error): void } | null = null;
   private exited: Promise<void> = Promise.resolve();
-  constructor(private config: R15Config, private failed: (error: Error) => void) {}
+  constructor(private config: R15Config, private failed: (error: Error) => void, private lock: { path: string; token: string }) {}
   start(packet: unknown): Promise<unknown> {
     const root = this.config.repoRoot ?? sourceRoot;
     const { python, env } = r15ProcessConfig(this.config);
     const child = spawn(python, ['-B', resolve(root, 'server/r15-scorer.py')], {
-      cwd: root, stdio: ['pipe', 'pipe', 'pipe'], env,
+      cwd: root, stdio: ['pipe', 'pipe', 'pipe'], env: { ...env, MGOGO_R15_LOCK_PATH: this.lock.path, MGOGO_R15_LOCK_TOKEN: this.lock.token, MGOGO_R15_PARENT_PID: String(process.pid) },
     });
     this.child = child;
     this.exited = new Promise(done => child.once('close', () => {
@@ -149,7 +149,8 @@ export class R15Worker {
       mkdirSync(dirname(this.lock), { recursive: true });
       const token = randomUUID(); writeFileSync(this.lock, JSON.stringify({ pid: process.pid, stage: 'R15-app', token }), { flag: 'wx', mode: 0o600 }); this.token = token;
       this.idle();
-      this.transport = this.dependencies.transport?.() ?? new PythonTransport(this.config, error => { this.error = error.message; this.phase = 'failed'; void this.release(); });
+      this.transport = this.dependencies.transport?.() ?? new PythonTransport(this.config,
+        error => { this.error = error.message; this.phase = 'failed'; void this.release(); }, { path: this.lock, token: this.token });
       const ready = await this.bounded(this.transport.start(artifact.warmup), this.dependencies.startupMs ?? 600_000);
       if (!record(ready) || ready.ready !== true || !record(ready.adapters) || ready.adapters[this.config.adapter] !== artifact.identity.sha256
         || ready.config_sha256 !== artifact.configHash || ready.device !== (this.config.device ?? 'mps')) throw new Error('R15 loaded adapter identity differs from the completed manifest');

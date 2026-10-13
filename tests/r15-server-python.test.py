@@ -2,6 +2,8 @@
 import contextlib
 import importlib.util
 import os
+import json
+import tempfile
 from pathlib import Path
 import sys
 import types
@@ -14,6 +16,18 @@ spec.loader.exec_module(scorer)
 
 
 class TokenGuard(unittest.TestCase):
+    def test_direct_start_requires_the_launching_parent_lock(self):
+        with tempfile.TemporaryDirectory() as root:
+            path = Path(root) / 'lock'
+            env = {'MGOGO_R15_LOCK_PATH': str(path), 'MGOGO_R15_LOCK_TOKEN': 'owner', 'MGOGO_R15_PARENT_PID': '123'}
+            owner = {'stage': 'R15-app', 'pid': 123, 'token': 'owner'}
+            with patch.dict(os.environ, env), patch.object(os, 'getppid', return_value=123):
+                path.write_text(json.dumps(owner))
+                scorer.require_lock()
+                for change in ({'stage': 'R14'}, {'pid': 456}, {'token': 'other'}):
+                    path.write_text(json.dumps({**owner, **change}))
+                    with self.assertRaises(ValueError): scorer.require_lock()
+
     def test_runtime_cannot_validate_another_venv_or_unqualified_device(self):
         valid = {'MGOGO_DECIDE_DEVICE': 'mps', 'MGOGO_FLASHDEBERTA': '0', 'MGOGO_DECIDE_PYTHON': sys.executable}
         with patch.dict(os.environ, valid):
