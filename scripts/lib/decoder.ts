@@ -14,6 +14,8 @@ import { decode, optionKey, type DecodeMode, type DecodeSpec } from '../../src/k
 import type { DecodeStep } from '../../src/kernel/loop';
 import type { KernelRequest, StepResult } from '../../src/kernel/types';
 import { ix } from '../../src/sim/state';
+import { optionKind } from '../../src/sim/menu';
+import type { Kind } from '../../src/decide/facts';
 import type { Chimp, World } from '../../src/types';
 
 /**
@@ -51,18 +53,20 @@ export interface DecodeRecord {
   u?: number; g?: number[];
 }
 
-/**
- * The option keys of a request. An entry of a kinds-first request (activityFirst; not used in stage R9) stands for a kind, so it is keyed apart from the option that represents it.
- * LIMIT, measured by the review of this stage (prereg §10.4): a held draw does not hold under activityFirst. With
- * activityFirst 1 the key noted for the applied entry ("kind/…") never equals the animal's act, so every ask opens a new
- * `act` epoch; a kind's noise follows the option that represents it, which changes between asks; and with activityFirst 2
- * the two requests of one decision share the draw of `draw` (one decision version). Use `held` and `draw` with
- * activityFirst 0 only until a kind has a key of its own.
- */
-export const requestKeys = (request: KernelRequest): string[] => request.options.map(o => (request.groups ? 'kind/' : '') + optionKey(o));
+// The additive R15 context fields are structurally optional here, so legacy requests retain their exact shape.
+type StagedRequest = KernelRequest & { context: { resourceChoice?: 'kind' | 'target'; resourceKinds?: Kind[] } };
+const requestKind = (request: StagedRequest, index: number): Kind => request.context.resourceKinds?.[index] ?? optionKind(request.options[index]);
+const isKindRequest = (request: StagedRequest): boolean => !!request.groups || request.context.resourceChoice === 'kind';
+const isTargetRequest = (request: StagedRequest): boolean => request.context.resourceChoice === 'target';
+
+/** Kind identity does not depend on the target chosen to represent it on this menu (stage R15). */
+export const requestKeys = (request: KernelRequest): string[] => request.options.map((o, i) => isKindRequest(request) ? `kind/${requestKind(request, i)}` : optionKey(o));
+export type DecodeStage = 'flat' | 'kind' | `target/${Kind}`;
+/** Every checked kernel answer, in call order. The legacy settle method still returns only its final record. */
+export interface DecodeCall { stage: DecodeStage; keys: string[]; record: DecodeRecord }
 
 /** What the decoder remembers of an animal: the key of the option it applied last (null: the rules settled the last ask), when, in which epoch, and whether an interrupt arrived right after. */
-export interface Last { key: string | null; at: number; epoch: number; pending: boolean }
+export interface Last { key: string | null; at: number; epoch: number; pending: boolean; kind?: Kind }
 /** A decoder's notes by animal id, as plain data (JSON-lossless). */
 export type DecoderState = Record<number, Last>;
 
@@ -72,6 +76,8 @@ export interface Decoder {
   step(world: World): DecodeStep;
   /** Called for every result of a pass: notes what was applied, and returns the record of that ask (null when the kernel was never asked or its answer failed the answer check). */
   settle(world: World, result: StepResult): DecodeRecord | null;
+  /** Settle once and return every checked call, including a kind answer preceding a failed target call. Use instead of settle. */
+  settleCalls(world: World, result: StepResult): DecodeCall[];
   /**
    * The decoder's notes, as plain data. A run that stops and resumes (a checkpoint taken between passes) saves them
    * beside the world and passes them back to `newDecoder`: the resumed run then decodes as the uninterrupted one would.
@@ -80,7 +86,7 @@ export interface Decoder {
 }
 
 export function newDecoder(spec: HarnessDecode, from?: DecoderState): Decoder {
-  const last = new Map<number, Last>(Object.entries(from ?? {}).map(([id, v]) => [Number(id), { ...v }])), open = new Map<number, { record: DecodeRecord; keys: string[] }>();
+  const last = new Map<number, Last>(Object.entries(from ?? {}).map(([id, v]) => [Number(id), { ...v }])), open = new Map<number, { version: number; calls: DecodeCall[] }>();
   /** The epoch of this ask and why it opened, from the animal as it is now and what the decode applied last. */
   const epochOf = (world: World, c: Chimp, version: number, s: Last | undefined): { epoch: number; open: Opened; also?: 'replaced' } => {
     if (spec.hold === 'block') { const b = Math.floor(world.time / BLOCK_H); return { epoch: b, open: !s ? 'first' : s.epoch !== b ? 'block' : '' }; }
@@ -94,28 +100,41 @@ export function newDecoder(spec: HarnessDecode, from?: DecoderState): Decoder {
     }
     return { epoch: why ? version : s!.epoch, open: why, ...(also ? { also } : {}) };
   };
+  const settleCalls = (world: World, result: StepResult): DecodeCall[] => {
+    const pending = open.get(result.chimpId), c = world.chimps.find(x => x.id === result.chimpId);
+    open.delete(result.chimpId);
+    const request = result.second ?? result.request;
+    const calls = request && pending?.version === request.context.version ? pending.calls : [];
+    const final = calls.at(-1), epoch = final?.record.epoch ?? (spec.hold === 'block' ? Math.floor(world.time / BLOCK_H) : -1);
+    const applied = request?.options[result.index];
+    // An interrupt raised later in this pass is pending for the next ask, including one at the same world time.
+    if (result.by === 'kernel' && final && applied) {
+      last.set(result.chimpId, { key: optionKey(applied), at: world.time, epoch, pending: !!c && ix(c).intr !== '',
+        ...(final.stage === 'flat' ? {} : { kind: requestKind(request, result.index) }) });
+    } else last.set(result.chimpId, { key: null, at: world.time, epoch, pending: false });
+    return calls;
+  };
   return {
     spec,
     step: world => (c, request, answer) => {
-      const s = last.get(c.id), keys = requestKeys(request), version = request.context.version, e = epochOf(world, c, version, s);
-      const d = decode(spec, { seed: world.seed, chimpId: c.id, version, epoch: e.epoch }, keys, answer.probabilities, answer.index);
-      const record: DecodeRecord = { mode: spec.mode, salt: spec.salt, hold: spec.hold, epoch: e.epoch, open: e.open, prev: s && s.key !== null ? keys.indexOf(s.key) : null, kernel: answer.index, index: d.index };
+      const s = last.get(c.id), keys = requestKeys(request), version = request.context.version;
+      const pending = open.get(c.id), first = pending?.version === version ? pending.calls[0] : undefined;
+      const kind = isKindRequest(request);
+      const target = !kind && (isTargetRequest(request) || first?.stage === 'kind');
+      const stage: DecodeStage = kind ? 'kind' : target && request.options.length ? `target/${requestKind(request, 0)}` : 'flat';
+      const e = target && first ? first.record : epochOf(world, c, version, s);
+      const d = decode(spec, { seed: world.seed, chimpId: c.id, version, epoch: e.epoch, ...(stage === 'flat' ? {} : { stage }) }, keys, answer.probabilities, answer.index);
+      const previous = stage === 'kind' && s?.kind ? `kind/${s.kind}` : s?.key;
+      const record: DecodeRecord = { mode: spec.mode, salt: spec.salt, hold: spec.hold, epoch: e.epoch, open: e.open, prev: s && s.key !== null ? keys.indexOf(previous ?? '') : null, kernel: answer.index, index: d.index };
       if (e.also) record.also = e.also;
       if (d.u !== undefined) record.u = d.u;
       if (d.g !== undefined) record.g = d.g;
-      open.set(c.id, { record, keys });
+      const call = { stage, keys, record };
+      open.set(c.id, { version, calls: target && first && pending ? [...pending.calls, call] : [call] });
       return d.index;
     },
-    settle(world, result) {
-      const o = open.get(result.chimpId), c = world.chimps.find(x => x.id === result.chimpId);
-      open.delete(result.chimpId);
-      const epoch = o?.record.epoch ?? (spec.hold === 'block' ? Math.floor(world.time / BLOCK_H) : -1);
-      // an interrupt raised after this animal's choice was applied, in the same pass, is pending for the next tick: the
-      // next ask then opens an epoch (its time equals the time of the choice, so the time test alone would miss it)
-      if (result.by === 'kernel' && o) last.set(result.chimpId, { key: o.keys[result.index], at: world.time, epoch, pending: !!c && ix(c).intr !== '' });
-      else last.set(result.chimpId, { key: null, at: world.time, epoch, pending: false });
-      return o?.record ?? null;
-    },
+    settle(world, result) { return settleCalls(world, result).at(-1)?.record ?? null; },
+    settleCalls,
     snapshot: () => Object.fromEntries([...last].map(([id, v]) => [id, { ...v }])),
   };
 }

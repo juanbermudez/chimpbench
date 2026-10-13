@@ -23,8 +23,9 @@ export const DECODE_MODES: readonly DecodeMode[] = ['top', 'draw', 'held'];
 /** A decode setting, whole: how the option is taken, and which repeat this is (two salts give two independent sets of draws on one world). */
 export interface DecodeSpec { mode: DecodeMode; salt: number }
 
-/** Where one ask sits: the world's seed, the animal, its decision version (one per ask) and, for `held`, the epoch the caller says this ask belongs to. */
-export interface DecodeAt { seed: number; chimpId: number; version: number; epoch: number }
+/** Stage is omitted for the legacy flat hash; hierarchical calls name their distinct stage.
+ * Where one ask sits: the world's seed, the animal, its decision version (one per ask) and, for `held`, the epoch the caller says this ask belongs to. */
+export interface DecodeAt { seed: number; chimpId: number; version: number; epoch: number; stage?: string }
 
 /** The option position to apply, and what produced it: the uniform draw (`draw`) or the noise per option (`held`). */
 export interface Decoded { index: number; u?: number; g?: number[] }
@@ -50,9 +51,9 @@ export const gumbel = (u: number): number => -Math.log(-Math.log(u));
 export function topIndex(p: number[]): number { let b = 0; for (let i = 1; i < p.length; i++) if (p[i] > p[b]) b = i; return b; }
 
 /** The uniform draw of one ask (`draw`). */
-export const drawUnit = (salt: number, at: DecodeAt): number => unit(`draw|${at.seed}|${salt}|${at.chimpId}|${at.version}`);
+export const drawUnit = (salt: number, at: DecodeAt): number => unit(`draw|${at.seed}|${salt}|${at.chimpId}|${at.version}${at.stage === undefined ? '' : `|${at.stage}`}`);
 /** The noise of one option inside one epoch (`held`). */
-export const heldNoise = (salt: number, at: DecodeAt, key: string): number => gumbel(unit(`held|${at.seed}|${salt}|${at.chimpId}|${at.epoch}|${key}`));
+export const heldNoise = (salt: number, at: DecodeAt, key: string): number => gumbel(unit(`held|${at.seed}|${salt}|${at.chimpId}|${at.epoch}|${key}${at.stage === undefined ? '' : `|${at.stage}`}`));
 
 /** The option where the running sum of p / sum(p) first passes u; -1 when no option has a positive probability. */
 export function drawAt(p: number[], u: number): number {
