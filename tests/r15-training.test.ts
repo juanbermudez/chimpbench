@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -7,7 +9,7 @@ import { buildLocalQuestion, buildOwnQuestion, r15Packet } from '../src/provider
 import { decisionContextError } from '../src/sim/context-check';
 import { createWorld, observe } from '../src/simulation';
 import type { Candidate, DecisionContext } from '../src/types';
-import { assembleR15 } from '../scripts/r15-contexts';
+import { assembleR15, shellQuote } from '../scripts/r15-contexts';
 import { assertR15AdapterManifest, digest, exportRow, kindMarginal, R15_KIND_TEACHER, R15_PACKET_VERSION, R15_TARGET_TEACHER, targetDistribution } from '../scripts/lib/r15-training';
 
 const world = createWorld(48, { params: { observeV5: 1 } }), chimp = world.chimps.find(c => c.alive && c.age >= 8)!;
@@ -41,8 +43,9 @@ test('target packet retains perceived target distinctions and validates kind ide
 test('kind marginal preserves total activity probability and reports excluded mass', () => {
   assert.deepEqual(kindMarginal(['eat_here', 'drink'], ['eat_here', 'eat_here', 'drink'], [.2, .3, .5]), { q: [.5, .5], excluded: 0 });
   const subset = kindMarginal(['drink'], ['eat_here', 'drink'], [.2, .8]);
+  assert.ok(subset);
   assert.deepEqual(subset.q, [1]); assert.ok(Math.abs(subset.excluded - .2) < 1e-12);
-  assert.throws(() => kindMarginal(['drink'], ['eat_here'], [1]), /no mass/);
+  assert.equal(kindMarginal(['drink'], ['eat_here'], [1]), null);
 });
 
 test('conditional target teacher is normalized, deterministic and independent of menu order', () => {
@@ -59,16 +62,31 @@ test('assembly exports exact live packets, rejects duplicate/split/packet change
   const root = mkdtempSync(join(tmpdir(), 'r15-training-'));
   try {
     const row = exportRow(world, chimp, { context, options: choices, rulesIndex: -1 }, 'fixture', [.4, .6], R15_KIND_TEACHER, { redraws: 2000, matchedMenus: 500, excludedKindMass: 0 });
-    const part = join(root, 'part.jsonl'); writeFileSync(part, JSON.stringify(row) + '\n');
+    const part = join(root, 'part.jsonl');
+    const hash = (path: string) => createHash('sha256').update(readFileSync(path)).digest('hex');
+    const writePart = (rows: object[]) => {
+      writeFileSync(part, rows.map(r => JSON.stringify(r)).join('\n') + '\n');
+      writeFileSync(part + '.meta.json', JSON.stringify({ stage: 'R15', packetVersion: R15_PACKET_VERSION, seed: row.seed, rows: rows.length,
+        commit: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), paramsHash: hash('docs/staging/integrator-kit/params/M6-W50.json'), output: hash(part) }));
+    };
+    writePart([row]);
     assembleR15([part], join(root, 'ft'));
     const manifest = JSON.parse(readFileSync(join(root, 'ft/contexts/manifest.json'), 'utf8'));
     assert.equal(manifest.packetVersion, R15_PACKET_VERSION);
+    assert.equal(manifest.inputs[part + '.meta.json'], hash(part + '.meta.json'));
+    assert.equal(manifest.phaseCounts[row.split].kind, 1);
+    const metadata = JSON.parse(readFileSync(part + '.meta.json', 'utf8'));
+    for (const key of ['commit', 'paramsHash', 'output']) {
+      writeFileSync(part + '.meta.json', JSON.stringify({ ...metadata, [key]: 'changed' }));
+      assert.throws(() => assembleR15([part], join(root, 'badprovenance')), /provenance/);
+    }
+    writePart([row]);
     assert.equal(row.packetHash, digest(buildLocalQuestion(context)));
-    writeFileSync(part, JSON.stringify({ ...row, split: 'test' }) + '\n');
+    writePart([{ ...row, split: 'test' }]);
     assert.throws(() => assembleR15([part], join(root, 'leak')), /split leak/);
-    writeFileSync(part, JSON.stringify({ ...row, packetHash: 'changed' }) + '\n');
+    writePart([{ ...row, packetHash: 'changed' }]);
     assert.throws(() => assembleR15([part], join(root, 'badpacket')), /packet parity/);
-    writeFileSync(part, JSON.stringify(row) + '\n' + JSON.stringify(row) + '\n');
+    writePart([row, row]);
     assert.throws(() => assembleR15([part], join(root, 'duplicate')), /duplicate/);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
@@ -80,4 +98,8 @@ test('adapter identity rejects an old adapter, missing completion and wrong trai
   assert.throws(() => assertR15AdapterManifest({ ...good, adapter: 'r11-p5b-s7' }), /incompatible/);
   assert.throws(() => assertR15AdapterManifest({ ...good, adapter_sha256: undefined }), /incomplete/);
   assert.throws(() => assertR15AdapterManifest({ ...good, hyperparameters: { seed: 11, epochs: 3 } }), /incompatible/);
+});
+
+test('review command quotes shell metacharacters literally', () => {
+  assert.equal(shellQuote("a'b $x `bad`"), "'a'\\''b $x `bad`'");
 });

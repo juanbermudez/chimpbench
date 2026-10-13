@@ -6,11 +6,14 @@ import os
 from pathlib import Path
 import re
 import shlex
+import signal
 import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
 VERSION = 'resource-targets-v1'
+MODEL_LOCK = Path('/Volumes/Drive/chimpbench/MGOGO/artifacts/r14-chain.lock')
+MAX_SECONDS = 6 * 3600
 
 
 def sha(path):
@@ -27,17 +30,22 @@ def validate(root):
     for kind in ('train', 'dev'):
         path = root / 'contexts' / (kind + '.jsonl')
         if manifest['outputs'].get(str(path)) != sha(path) or manifest['counts'].get(kind, 0) < 1: raise ValueError('missing/empty R15 ' + kind)
+        rows = [json.loads(line) for line in path.read_text().splitlines() if line]
+        phases = {phase: sum(row.get('phase') == phase for row in rows) for phase in ('kind', 'target')}
+        if min(phases.values()) < 1 or sum(phases.values()) != len(rows) or manifest.get('phaseCounts', {}).get(kind) != phases:
+            raise ValueError('R15 ' + kind + ' requires verified kind and target rows')
     return manifest
 
 
-def idle():
+def idle(own_lock=False):
     main = Path('/Volumes/Drive/chimpbench/MGOGO')
     state = main / '.claude/worktrees/bench-r14/artifacts/r14/state'
-    if (main / 'artifacts/r14-chain.lock').exists() or (state.exists() and state.read_text().strip() == 'running'):
+    if (not own_lock and MODEL_LOCK.exists()) or (state.exists() and state.read_text().strip() == 'running'):
         raise ValueError('R14 is active; no R15 model process may start')
-    commands = subprocess.check_output(['ps', '-axo', 'command='], text=True).splitlines()
-    pattern = r'(?:^|\s)(?:\S*/)?(?:worker|server|parity|train_r11|score_contexts|em_score)\.py(?:\s|$)'
-    if any(re.search(pattern, c) for c in commands): raise ValueError('another model process is active')
+    commands = subprocess.check_output(['ps', '-axo', 'pid=,command='], text=True).splitlines()
+    pattern = r'(?:^|\s)(?:\S*/)?(?:worker|server|parity|train(?:_[\w]+)?|r14|score_contexts|em_score|eval_offline|eval_ab|distill)\.py(?:\s|$)'
+    others = [line.strip().split(maxsplit=1) for line in commands]
+    if any(len(parts) == 2 and parts[0] != str(os.getpid()) and re.search(pattern, parts[1]) for parts in others): raise ValueError('another model process is active')
 
 
 def main():
@@ -53,17 +61,40 @@ def main():
                '--epochs', '3', '--seed', str(args.seed), '--labels', 'soft']
     print('MGOGO_FT_ROOT=' + shlex.quote(str(root)) + ' ' + shlex.join(command), flush=True)
     if not args.run: return
+    run_guarded(command, root)
+
+
+def stop_group(process):
+    os.killpg(process.pid, signal.SIGTERM)
+    try: process.wait(timeout=30)
+    except subprocess.TimeoutExpired:
+        os.killpg(process.pid, signal.SIGKILL)
+        process.wait()
+
+
+def run_guarded(command, root):
     idle()
-    lock = Path('/Volumes/Drive/chimpbench/MGOGO/artifacts/r15-model.lock')
-    lock.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-    os.write(fd, str(os.getpid()).encode()); os.close(fd)
+    MODEL_LOCK.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(MODEL_LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    os.write(fd, json.dumps({'pid': os.getpid(), 'stage': 'R15', 'root': str(root)}).encode()); os.close(fd)
+    process = None
+    previous = signal.getsignal(signal.SIGTERM)
+    def interrupted(signum, frame): raise KeyboardInterrupt('R15 training interrupted')
     try:
+        idle(own_lock=True)
+        signal.signal(signal.SIGTERM, interrupted)
         environment = dict(os.environ, MGOGO_FT_ROOT=str(root), HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1')
-        result = subprocess.run(command, cwd=ROOT, env=environment)
-        raise SystemExit(result.returncode)
+        process = subprocess.Popen(command, cwd=ROOT, env=environment, start_new_session=True)
+        try: code = process.wait(timeout=MAX_SECONDS)
+        except subprocess.TimeoutExpired as exc:
+            stop_group(process)
+            process = None
+            raise ValueError('six-hour R15 training budget exhausted; inspect partial adapter before any new run') from exc
+        raise SystemExit(code)
     finally:
-        lock.unlink()
+        if process is not None and process.poll() is None: stop_group(process)
+        signal.signal(signal.SIGTERM, previous)
+        MODEL_LOCK.unlink()
 
 
 if __name__ == '__main__':

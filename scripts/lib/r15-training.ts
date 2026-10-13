@@ -32,9 +32,10 @@ export function normalize(values: number[]): number[] {
   if (!(sum > 0)) throw new Error('label has no mass');
   return values.map(v => v / sum);
 }
-export function kindMarginal(kinds: Kind[], originalKinds: Kind[], probabilities: number[]): { q: number[]; excluded: number } {
+export function kindMarginal(kinds: Kind[], originalKinds: Kind[], probabilities: number[]): { q: number[]; excluded: number } | null {
   if (originalKinds.length !== probabilities.length || new Set(kinds).size !== kinds.length) throw new Error('misaligned kinds');
   const p = normalize(probabilities), q = kinds.map(k => p.reduce((s, v, i) => s + (originalKinds[i] === k ? v : 0), 0));
+  if (!q.some(v => v > 0)) return null;
   return { q: normalize(q), excluded: Math.max(0, 1 - q.reduce((a, b) => a + b, 0)) };
 }
 export interface TargetValue { key: string; raw: number; belief: Belief | null }
@@ -80,6 +81,7 @@ export function r15TrainingRows(w: World, c: Chimp, request: KernelRequest, id: 
   const label = labelData({ id, options, rgIndex: best }, { w, c, list, menu, chosen: menu[best], rngBefore: rng }, REDRAWS);
   if (typeof label === 'string' || !label.listOk || label.same < SAME_MIN) return { rows, exclusions: [typeof label === 'string' ? label : 'insufficient original-menu label reconstruction'] };
   const marginal = kindMarginal(request.context.resourceKinds, menu.map(optionKind), label.counts);
+  if (!marginal) return { rows, exclusions: ['zero-retained-kind-mass'] };
   rows.push(exportRow(w, c, request, id, marginal.q, R15_KIND_TEACHER, { redraws: label.n, matchedMenus: label.same, excludedKindMass: marginal.excluded }));
   const targets = request.groups.map((group, i) => ({ group, i, kind: request.context.resourceKinds?.[i] }))
     .filter(g => g.kind && isResourceKind(g.kind) && g.group.length > 1)
