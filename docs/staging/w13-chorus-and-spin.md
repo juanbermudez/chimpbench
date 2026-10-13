@@ -328,3 +328,22 @@ Under "Verifying a change": the stage's probes are in `…/watch-2026-10-13/w13-
 **Open**: two faults seen in the third run's films were repaired afterwards in a commit nobody has filmed (a645742): a builder's first turn as it arrives in its nest was as fast as before, and at 1 min/s its arm jumped for a second. Registered clauses not met as worded: 11 of 45 pairs of quiet callers sit alike for a whole call; joints still move 5 to 16 cm in a frame at some starts of a call and 7 cm a frame as a male stands up; in the films a builder's heading travelled 0.75 to 3.5 rad at 1 min/s (7.4 to 12.5 before) where 1.5 was registered. No source in `docs/research.md` for the parts of a pant-hoot or for callers' postures. Frame time on the graphics card not measured.
 **The user's**: how often a male should stand at the climax (now 8.8% of calm adult males' calls, 36% of a top male's); whether quiet callers should differ more in how they sit; whether a builder at 1 min/s should turn at all.
 ```
+
+
+## 9. Continuation registration, 13 October 2026
+
+The user asked Codex to take over, finish and verify the animation fixes. This is the continuation of the second reading, not a fourth run hidden inside section 4. The three original implementation runs and their failures remain above. Before any new run of changed code, this amendment records what is being inherited and what will be checked.
+
+### 9.1 Inherited working state
+
+The branch head is `49bbc57`. Four files have uncommitted second-reading changes: `src/render/creatures.ts`, `src/render/creatures/perch.ts`, `src/render/creatures/poses.ts`, and `tests/render-call.test.ts`, each with filesystem modification time 13 October 2026, 04:26:53 EDT. They add arrival-facing preservation, a five-second gap between nest turns, held playback-speed classification across pauses, slower entry into a call squat, visible voice movement, and idle life after the vocal sequence. These changes are preserved. The earlier `review/repaired-2` films ended at 04:32 EDT, but their contents and tests are not assumed to validate the current files.
+
+### 9.2 The continuation checks
+
+The continuation uses one private no-model probe server on port 5224 and one browser at a time, with `provider=server` and model policy off before the first frame. The frozen world, final source hashes, capture specifications, raw per-frame data, contact sheets and readings are kept under `/Volumes/Drive/chimpbench/shots/watch-2026-10-13/w13-chorus-and-spin/codex-final/`. The existing review's scenes and probes are reused. Nothing under simulation, data, fixtures or the shared world contract is to change.
+
+The first pass reads the inherited changes and runs the focused call, perch and step tests, then records the actual current code in the browser. It covers nest arrival and completion at Real time, Watch 4x and 1 min/s, the 10 min/s transition, dawn finished nests, calls and their entry/exit in groups and alone, crown and ground feeding, drinking, and a second seed. The source stops changing during each capture. Every selected scene is inspected as pictures, not just read as correlations. Any repair is followed by the affected scenes again; at most two repair passes follow this initial continuation pass. New limits are not invented after a result is seen.
+
+For nest turns, the existing 0.9 rad/s drawing limit and no return spin after sleep remain the targets. The first 1.2 seconds of arrival are included. At 1 min/s a build should have no more than one planned turn and visibly finish with the simulation. The transition into the nest must not consume the entire brief building in a spin. Callers must not repeat the old synchronized arms-up loop; they retain age/sex/posture differences and finish one vocal sequence before ordinary idle life resumes. The older five-centimetre frame-step claim is not silently relaxed: any remaining transition that fails it is reported with its clip and size. Quiet animals sharing a still posture is not a synchronization failure by itself.
+
+After the focused checks and actual visual reading, one whole suite with test concurrency four and one production build will run on the final code. GPU timing is separate: no GPU number is claimed from a capped, screenshot-recorded or concurrent workload. No model process runs beside this verification. The results below will distinguish inherited evidence, fresh evidence and any remaining limits. The branch is committed for the integrator; it is not merged or pushed by this worker.
