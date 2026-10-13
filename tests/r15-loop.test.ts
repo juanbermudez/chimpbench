@@ -2,12 +2,14 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { runR15, r15FakeKernel, type R15Call } from '../scripts/lib/r15-loop';
 import { resourceFixture } from './fixtures/r15';
+import { TICK_HOURS } from '../src/sim/state';
 import type { Kernel } from '../src/kernel/types';
 import { worldHash } from './fixtures/golden';
 
 const decode = { mode: 'draw', salt: 1, hold: 'act' } as const;
 function fixture() {
   const { world, chimp } = resourceFixture();
+  world.tick = Math.round(world.time / TICK_HOURS);
   world.modelPolicy = { ...world.modelPolicy, mode: 'lockstep' };
   chimp.controller = 'model'; chimp.nextDecision = world.time;
   return world;
