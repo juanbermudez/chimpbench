@@ -6,7 +6,7 @@ Working plan for the current program. Objectives: `docs/realism-roadmap.md`. Del
 
 ## R15 continuation (13 October 2026)
 
-The user requested further model control from recurrent animal state and perception, with a training path. R15 implements the narrowly registered food/water target slice of R12, default off, while the frozen R14 repair runs. Ownership was split into resources/legality, decoding/replay and training/packets. Integration and focused verification are in progress; real R15 collection/training and full checks wait for R14 to be idle. See `docs/staging/r15-perceived-targets.md` and `docs/staging/r15-training-contract.md`. This does not approve the remaining ten-part R12 redesign as a whole or open sealed data.
+The user requested further model control from recurrent animal state and perception, with a training path. R15 implements the narrowly registered food/water target slice of R12, default off, while the frozen R14 repair runs. Ownership was split into resources/legality, decoding/replay and training/packets. Implementation and focused verification are complete: 30 TypeScript tests, seven Python tests, strict checking and source audit passed; the 720-tick fake-kernel field run replayed all 79 calls exactly. Real R15 collection/tokenizer/training/population validation and the full suite/build wait for R14 to be idle. The app default is unchanged. See `docs/staging/r15-perceived-targets.md` and `docs/staging/r15-training-contract.md`. This does not approve the remaining ten-part R12 redesign as a whole or open sealed data.
 
 ## Parallel tracks (from 2026-09-29, local git at the time: the repository has a public remote since 5 October 2026; the integrator merges into `main`)
 | Track | Owner | Where | Scope |
