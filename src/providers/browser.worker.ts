@@ -1,3 +1,4 @@
+import { R15_ADAPTER_REQUIRED } from '../kernel/resource-contract';
 import { AutoModel, AutoTokenizer, env, Tensor, type PreTrainedModel, type PreTrainedTokenizer } from '@huggingface/transformers';
 import { buildLocalQuestion, validateDecisionContext } from './packet';
 import { encodeGliner, softmax, browserState } from './encoding';
@@ -35,6 +36,7 @@ async function load(config: ProviderConfig['browser']) {
   } finally { loading = false; }
 }
 async function decide(id: number, context: DecisionContext) {
+  if (context.resourceChoice) { report({ id, error: R15_ADAPTER_REQUIRED }); return; }
   if (!model || !tokenizer || !validateDecisionContext(context)) { report({ id, error: 'Browser provider is not ready or the percept is invalid' }); return; }
   if (busy) { report({ id, error: 'Browser provider is busy', code: 429 }); return; }
   busy = true;

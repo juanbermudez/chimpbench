@@ -1,3 +1,4 @@
+import { R15_ADAPTER_REQUIRED } from '../src/kernel/resource-contract';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { ViteDevServer } from 'vite';
 import { appendFileSync, existsSync, mkdirSync, renameSync, statSync } from 'node:fs';
@@ -95,6 +96,7 @@ export function setupDecideMiddleware(server: ViteDevServer): void {
     const invalid = decisionContextError(body);
     if (invalid) { send(response, 400, { error: `Invalid decision context: ${invalid}` }); return; }
     const ctx = body as DecisionContext;
+    if (ctx.resourceChoice) { send(response, 409, { error: R15_ADAPTER_REQUIRED }); return; }
     // Single flight: a queued request would answer a stale percept.
     if (inflight || readiness.busy || Date.now() - lastStartedAt < MIN_SPACING_MS) { send(response, 429, { error: 'Local Decide is busy; one request at a time' }); return; }
     inflight = true; lastStartedAt = Date.now();
