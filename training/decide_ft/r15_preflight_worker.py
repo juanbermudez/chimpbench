@@ -9,7 +9,7 @@ import time
 import zlib
 
 from r15_preflight import (ROOT, SCHEMA, LIMITS, dataset_identity, implementation_identity, runtime_identity,
-                           fixture_rows, probability_gap, read, sha, write_new)
+                           fixture_rows, probability_gap, read, sha, write_new, assert_execution_runtime)
 from train_r15 import MODEL_LOCK, validate
 
 
@@ -17,6 +17,7 @@ def main(root):
     lock = read(MODEL_LOCK)
     if lock.get('pid') != os.getppid() or lock.get('purpose') != 'preflight' or lock.get('root') != str(root):
         raise ValueError('preflight worker requires its exclusive supervisor lock')
+    assert_execution_runtime()
     manifest = validate(root)
     rows = {s: [json.loads(line) for line in (root / f'contexts/{s}.jsonl').read_text().splitlines() if line] for s in ('train', 'dev')}
     if sum(map(len, rows.values())) > LIMITS['rows']: raise ValueError('preflight dataset exceeds registered row cap')

@@ -37,9 +37,25 @@ def dataset_identity(root):
 def implementation_identity(): return {p: sha(ROOT / p) for p in SOURCES}
 
 
+def execution_python():
+    return Path(os.environ.get('MGOGO_DECIDE_PYTHON', '/Volumes/Drive/chimpbench/decide-env/bin/python')).absolute()
+
+
+def runtime_digest(runtime):
+    return hashlib.sha256(json.dumps(runtime, sort_keys=True, separators=(',', ':')).encode('utf-8')).hexdigest()
+
+
+def assert_execution_runtime():
+    selected = execution_python()
+    if Path(sys.prefix).resolve() != selected.parent.parent.resolve() or sha(sys.executable) != sha(selected):
+        raise ValueError('actual interpreter/environment differs from selected preflight runtime')
+
+
 def runtime_identity():
     # Package metadata and source files only: importing this validator never loads a model.
-    python = Path(os.environ.get('MGOGO_DECIDE_PYTHON', '/Volumes/Drive/chimpbench/decide-env/bin/python'))
+    if os.environ.get('MGOGO_DECIDE_DEVICE', 'mps') != 'mps' or os.environ.get('MGOGO_FLASHDEBERTA', '0') != '0':
+        raise ValueError('R15 is qualified only for MPS with FlashDeBERTa disabled')
+    python = execution_python()
     sites = list((python.parent.parent / 'lib').glob('python*/site-packages'))
     installed = {dist.metadata['Name'].lower(): dist for dist in importlib.metadata.distributions(path=[str(p) for p in sites])}
     packages = {}

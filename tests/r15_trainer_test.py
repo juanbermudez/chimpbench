@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 
 SCRIPT = Path(__file__).resolve().parents[1] / 'training/decide_ft/train_r15.py'
+sys.path.insert(0, str(SCRIPT.parent))
 spec = importlib.util.spec_from_file_location('r15_trainer', SCRIPT)
 trainer = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(trainer)

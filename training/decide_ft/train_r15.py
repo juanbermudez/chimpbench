@@ -71,7 +71,28 @@ def main():
         if destination.exists():
             if json.loads(destination.read_text()) != manifest: raise ValueError('stale training manifest; preserve it and inspect')
         else: write_new(destination, manifest)
-    run_guarded(command, root, before_launch=prepare)
+    run_guarded(command, root, before_launch=prepare, after_success=lambda: complete_adapter(root, name))
+
+
+def complete_adapter(root, name):
+    from r15_preflight import validate_preflight, runtime_digest
+    receipt = validate_preflight(root)
+    folder = root / 'adapters' / name
+    path = folder / 'manifest.json'
+    manifest = json.loads(path.read_text())
+    history = manifest.get('history', [])
+    if manifest.get('stage') != 'R15' or manifest.get('adapter') != name or manifest.get('labels') != 'soft' or manifest.get('hyperparameters', {}).get('epochs') != 3:
+        raise ValueError('training did not produce the registered R15 adapter')
+    if len(history) != 3 or [row.get('epoch') for row in history] != [1, 2, 3]: raise ValueError('incomplete R15 training history')
+    if manifest.get('adapter_sha256') != sha(folder / 'adapter_model.safetensors') or manifest.get('preflight', {}).get('receipt_sha256') != sha(root / 'preflight/result.json'):
+        raise ValueError('completed adapter weights or preflight identity changed')
+    for split in ('train', 'dev'):
+        if manifest.get(split + '_sha256') != sha(root / f'contexts/{split}.jsonl'): raise ValueError('completed adapter dataset changed')
+    manifest['adapter_config_sha256'] = sha(folder / 'adapter_config.json')
+    manifest['preflight_runtime_sha256'] = runtime_digest(receipt['identity']['runtime'])
+    temporary = folder / 'manifest-completed.json.tmp'
+    with temporary.open('x') as output: json.dump(manifest, output, indent=2); output.write('\n')
+    os.replace(temporary, path)
 
 
 def stop_group(process):
@@ -82,7 +103,7 @@ def stop_group(process):
         process.wait()
 
 
-def run_guarded(command, root, *, timeout_seconds=MAX_SECONDS, purpose='training', before_launch=None):
+def run_guarded(command, root, *, timeout_seconds=MAX_SECONDS, purpose='training', before_launch=None, after_success=None):
     idle()
     MODEL_LOCK.parent.mkdir(parents=True, exist_ok=True)
     fd = os.open(MODEL_LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
@@ -94,13 +115,15 @@ def run_guarded(command, root, *, timeout_seconds=MAX_SECONDS, purpose='training
         idle(own_lock=True)
         if before_launch is not None: before_launch()
         signal.signal(signal.SIGTERM, interrupted)
-        environment = dict(os.environ, MGOGO_FT_ROOT=str(root), HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1')
+        from r15_preflight import execution_python
+        environment = dict(os.environ, MGOGO_FT_ROOT=str(root), MGOGO_DECIDE_PYTHON=str(execution_python()), MGOGO_DECIDE_DEVICE='mps', MGOGO_FLASHDEBERTA='0', HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1')
         process = subprocess.Popen(command, cwd=ROOT, env=environment, start_new_session=True)
         try: code = process.wait(timeout=timeout_seconds)
         except subprocess.TimeoutExpired as exc:
             stop_group(process)
             process = None
             raise ValueError(('six-hour R15 training' if purpose == 'training' else 'R15 preflight') + ' budget exhausted; inspect partial outputs before any new run') from exc
+        if code == 0 and after_success is not None: after_success()
         raise SystemExit(code)
     finally:
         if process is not None and process.poll() is None: stop_group(process)
