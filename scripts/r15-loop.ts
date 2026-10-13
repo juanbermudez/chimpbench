@@ -63,6 +63,8 @@ export async function main(): Promise<void> {
   writeAtomic(manifestFile, JSON.stringify(manifest, null, 2));
   const replay = await runR15(initial, r15FakeKernel, { ticks, identity, decode, journal, replayOnly: true });
   assert.equal(replay.endHash, result.endHash); assert.deepEqual(replay.receipts, result.receipts);
+  assert.ok(result.calls.some(c => c.stage.startsWith('target/')), 'wiring proof incomplete: no target call');
+  assert.ok(result.receipts.some(r => r.calls.length === 2 && r.decode.length === 2 && r.by === 'kernel'), 'wiring proof incomplete: no applied two-call decision');
   const summary = { schema: R15_RECEIPT_SCHEMA, model: false, ticks, focal, calls: result.calls.length,
     targetCalls: result.calls.filter(c => c.stage.startsWith('target/')).length,
     decisions: result.receipts.length, applied: result.receipts.filter(r => r.by === 'kernel').length,

@@ -47,7 +47,7 @@ export function r15CallKey(world: World, request: KernelRequest): { key: string;
   return { key: `${world.seed}:${world.tick}:${request.context.chimpId}:${request.context.version}:${stage}`, stage };
 }
 
-/** Advances an already configured world. A checkpoint is taken only between complete decision passes. */
+/** Advances an already configured world. Checkpoints are between passes; discard this world if the run throws. */
 export async function runR15(world: World, kernel: Kernel, opts: R15RunOptions): Promise<{
   receipts: R15Receipt[]; calls: R15Call[]; decoder: DecoderState; endHash: string;
 }> {
@@ -68,7 +68,9 @@ export async function runR15(world: World, kernel: Kernel, opts: R15RunOptions):
     const passCalls = new Map<number, R15Call[]>();
     let fatal: Error | null = null;
     const recorded: Kernel = { id: kernel.id, label: kernel.label, async decide(request, env) {
-      opts.onRequest?.(world, request);
+      if (fatal) throw fatal;
+      try { opts.onRequest?.(world, request); }
+      catch (e) { fatal = e instanceof Error ? e : new Error(String(e)); throw fatal; }
       const { key, stage } = r15CallKey(world, request), packetHash = hashR15(r15Packet(request.context));
       const contextHash = hashR15(request.context), options = request.options.map(optionKey);
       let call = journal.get(key);
@@ -99,7 +101,7 @@ export async function runR15(world: World, kernel: Kernel, opts: R15RunOptions):
         refusal: result.refusal, index: result.index, applied: optionKey(c) };
     });
     receipts.push(...pass);
-    opts.onPass?.(pass, { world, decoder: decoder.snapshot(), completedTicks: tick + 1 });
+    opts.onPass?.(pass, { world: structuredClone(world), decoder: decoder.snapshot(), completedTicks: tick + 1 });
   }
   return { receipts, calls, decoder: decoder.snapshot(), endHash: worldHash(world) };
 }

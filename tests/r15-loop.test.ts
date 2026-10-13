@@ -1,19 +1,15 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { runR15, r15FakeKernel, type R15Call } from '../scripts/lib/r15-loop';
-import { createWorld, tickWorld } from '../src/simulation';
+import { resourceFixture } from './fixtures/r15';
 import type { Kernel } from '../src/kernel/types';
 import { worldHash } from './fixtures/golden';
 
 const decode = { mode: 'draw', salt: 1, hold: 'act' } as const;
-const params = { ...JSON.parse(readFileSync('docs/staging/integrator-kit/params/M6-W50.json', 'utf8')) as Record<string, number>, observeV4: 1, observeV5: 1, menuParity: 1, activityFirst: 2, resourceTargets: 1, kernelGate: 1 };
 function fixture() {
-  const world = createWorld(48, { profile: 'compressed', params });
-  for (let i = 0; i < 120; i++) tickWorld(world);
+  const { world, chimp } = resourceFixture();
   world.modelPolicy = { ...world.modelPolicy, mode: 'lockstep' };
-  const c = world.chimps.find(c => c.alive && c.age >= 8)!;
-  c.controller = 'model'; c.nextDecision = world.time;
+  chimp.controller = 'model'; chimp.nextDecision = world.time;
   return world;
 }
 // Prefer a multi-target resource in the wiring fixture; this is a fake kernel, not a behavior claim.
@@ -37,6 +33,8 @@ test('two-stage calls replay exactly and a changed packet fails closed', async (
 
 test('a crash after the kind answer reuses it and reproduces the uninterrupted world', async () => {
   const initial = fixture(), journal: R15Call[] = [];
+  const another = initial.chimps.find(c => c.alive && c.age >= 8 && c.controller !== 'model')!;
+  another.controller = 'model'; another.nextDecision = initial.time;
   const expected = await runR15(structuredClone(initial), targetSeeking, { ticks: 120, identity: 'fixture', decode });
   await assert.rejects(runR15(structuredClone(initial), targetSeeking, { ticks: 120, identity: 'fixture', decode,
     onCall(call) { journal.push(call); throw new Error('simulated process loss'); },
@@ -52,4 +50,14 @@ test('checkpoint between passes preserves world, decoder and subsequent receipts
   const resumed = await runR15(JSON.parse(JSON.stringify(world)), targetSeeking, { ticks: 60, identity: 'fixture', decode, decoderState: JSON.parse(JSON.stringify(first.decoder)) });
   assert.equal(resumed.endHash, full.endHash); assert.deepEqual([...first.receipts, ...resumed.receipts], full.receipts);
   assert.notEqual(worldHash(initial), full.endHash);
+});
+
+test('onPass checkpoints remain snapshots after later ticks', async () => {
+  const world = fixture();
+  const saved: { hash: string; checkpoint: import('../scripts/lib/r15-loop').R15Checkpoint }[] = [];
+  await runR15(world, targetSeeking, { ticks: 4, identity: 'fixture', decode,
+    onPass(_receipts, checkpoint) { if (!saved.length) saved.push({ hash: worldHash(checkpoint.world), checkpoint }); },
+  });
+  assert.equal(saved.length, 1); assert.equal(worldHash(saved[0].checkpoint.world), saved[0].hash);
+  assert.equal(saved[0].checkpoint.completedTicks, 1); assert.notEqual(worldHash(world), saved[0].hash);
 });
