@@ -9,8 +9,10 @@ import { buildLocalQuestion, buildOwnQuestion, r15Packet } from '../src/provider
 import { decisionContextError } from '../src/sim/context-check';
 import { createWorld, observe } from '../src/simulation';
 import type { Candidate, DecisionContext } from '../src/types';
+import { resourceFixture } from './fixtures/r15';
+import { buildRequest } from '../src/sim/request';
 import { assembleR15, requireCleanSource, shellQuote } from '../scripts/r15-contexts';
-import { assertR15AdapterManifest, digest, exportRow, kindMarginal, R15_KIND_TEACHER, R15_PACKET_VERSION, R15_TARGET_TEACHER, targetDistribution } from '../scripts/lib/r15-training';
+import { assertR15AdapterManifest, digest, exportRow, kindMarginal, r15TrainingRows, R15_KIND_TEACHER, R15_PACKET_VERSION, R15_TARGET_TEACHER, targetDistribution } from '../scripts/lib/r15-training';
 
 const world = createWorld(48, { params: { observeV5: 1 } }), chimp = world.chimps.find(c => c.alive && c.age >= 8)!;
 const baseline = observe(world, chimp);
@@ -112,4 +114,18 @@ test('collection and assembly source guard refuses uncommitted files', () => {
     writeFileSync(join(root, 'uncommitted.txt'), 'fixture');
     assert.throws(() => requireCleanSource(), /clean committed source/);
   } finally { process.chdir(previous); rmSync(root, { recursive: true, force: true }); }
+});
+
+
+test('the real scaffold teachers export both phases without mutating a live fixture', () => {
+  const params = JSON.parse(readFileSync('docs/staging/integrator-kit/params/M6-W50.json', 'utf8'));
+  const { world, chimp } = resourceFixture(params), before = JSON.stringify(world);
+  const result = r15TrainingRows(world, chimp, buildRequest(world, chimp), 'r15-fixture-integration');
+  assert.deepEqual(result.exclusions, []);
+  assert.deepEqual(result.rows.map(row => row.phase), ['kind', 'target']);
+  for (const row of result.rows) {
+    assert.deepEqual(row.packet, r15Packet(row.context));
+    assert.ok(Math.abs(Object.values(row.soft).reduce((a, b) => a + b, 0) - 1) < 1e-8);
+  }
+  assert.equal(JSON.stringify(world), before);
 });
