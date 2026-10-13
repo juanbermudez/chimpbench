@@ -81,6 +81,7 @@ import { replayReport, replayRun, runPacket } from './lib/r10-read';
 import { DAY, DayFiles, dayName, diskRefusal, keyOf, meterStart, MIN_AGE, newestCkpt, pruneCkpts, readCkpt, readLines, readRegistry, RECEIPT_SCHEMA, RECEIPT_SCHEMA_PACKET, RunStopped, runDay, runningModelProcesses, setAside, sha16, STOP, stopCheck, swapUsedMB, warmedWorker,
   UNDER_AGE, writeCkpt, writeRegistry, type Arrival, type AskLine, type DaySummary, type Engine, type Line, type Registry, type Row, type Tap } from './lib/r10-run';
 import { PACKET_NAMES, PACKET_VERSION, packetOf, type PacketName } from './lib/r11-packets';
+import { r14Arm, r14Refusal } from './lib/r14';
 import { decodeRule, isRegisteredArm, PLAIN_RULES, populationSeedRefusal, R13, registeredRunRefusal, REGISTERED_SHA256, resumeBudget } from './lib/r13';
 import { ARMS, armWorld, GuardedScorer, type ArmSpec } from './r5-pilot';
 import { engineArm, engineKernel, engineSpec, LOOP_SWITCHES, warmUpPacket, workerRefusal, type EngineArm } from './r11-loop';
@@ -114,7 +115,7 @@ export function resultName(kernel: string, adapter: string | null): string {
 const seedRole = (seed: number) => seed === 48 || seed === 7 ? 'a training seed of the rules-taught adapters (48 and 7)' : seed === 21 || seed === 5 ? 'a held-out seed read in stages R4 to R5-gate (not fresh)'
   : seed === R13.seed ? 'the fresh seed registered for stage R13 (docs/staging/r13-prereg.md §4)' : seed === 4111 || seed === 4222 ? 'a test seed of stage R11 (not fresh)' : 'a development seed';
 /** The arm of a run: one of scripts/r5-pilot.ts ARMS, or an arm of stage R11's loop by its own name (its adapter, packet and decode: scripts/r11-loop.ts engineArm). */
-function armOf(name: string): { spec: ArmSpec | undefined; eng: EngineArm | null } { const eng = engineArm(name); return { spec: eng ? engineSpec(eng) : ARMS[name], eng }; }
+function armOf(name: string): { spec: ArmSpec | undefined; eng: EngineArm | null } { const eng = r14Arm(name) ?? engineArm(name); return { spec: eng ? engineSpec(eng) : ARMS[name], eng }; }
 
 /**
  * The burned-in world of a run or of its control arms, with its hash. A packet 5 world (observeV5 1 from the first tick)
@@ -187,6 +188,7 @@ async function run(a: Args): Promise<number> {
     // the same checks as at the first start: a mistyped --days would otherwise close the run as "done" without a tick
     const days = a.has('days') ? +a.flag('days') : reg.daysAsked, hours = a.has('hours') ? +a.flag('hours') : null;
     if (!Number.isInteger(days) || days < 1 || (hours !== null && !(hours > 0))) throw new Refused('--days is a whole number of days; --hours is positive');
+    if (reg.stage === 'R14' && (days !== reg.daysAsked || reg.stopCheck?.stop || reg.state === 'stopped')) throw new Refused('R14 refuses changed length or resuming a scientifically stopped run');
     reg.daysAsked = days; reg.hours = hours;
     if (reg.engine?.registered) {
       // the registered run of stage R13 (docs/staging/r13-prereg.md §5, §6; the review's amendments A4 and A5 in §13): it is
@@ -209,7 +211,7 @@ async function run(a: Args): Promise<number> {
     if (spec.redraw) throw new Refused(`arm "${arm}" is a re-draw of the rules: not an arm of this script`);
     if (!Number.isInteger(seed) || seed < 0) throw new Refused('--seed N is required (a non-negative integer)');
     if (RESERVED_SEEDS.has(seed)) throw new Refused(`seed ${seed} is a reserved or retired seed (AGENTS.md): development seeds only`);
-    const sealed = populationSeedRefusal(seed, eng);
+    const sealed = populationSeedRefusal(seed, r14Arm(arm) ? null : eng);
     if (sealed) throw new Refused(sealed);
     if (profile !== 'field' && profile !== 'compressed') throw new Refused('--profile field | compressed');
     // the packet: an arm of stage R11 fixes its own; otherwise --packet (the state-only packet of stage R4 unless a packet 5 is named)
@@ -231,13 +233,17 @@ async function run(a: Args): Promise<number> {
     const paramsFile = a.flag('params-file', 'docs/staging/integrator-kit/params/M6-W50.json'), text = readFileSync(resolve(ROOT, paramsFile), 'utf8');
     // an arm of stage R11 with a real adapter is the registered run: the decode rule must be on hand and name it, and the world and the length are the registered ones
     let ruleRead: Registry['decodeRule'];
-    if (eng && eng.adapter !== 'fake') {
+    if (eng && eng.adapter !== 'fake' && !r14Arm(arm)) {
       const file = process.env.R13_R11_NUMBERS ? resolve(process.env.R13_R11_NUMBERS) : '', table = file && existsSync(file) ? readFileSync(file, 'utf8') : null, rule = table === null ? null : decodeRule(table);
       const why = registeredRunRefusal({ arm, profile, burnInDays, paramsFile, days, hours, stopCheck: !a.has('no-stop-check'), timeoutS: +a.flag('timeout-s', '120'), contexts: !a.has('no-contexts') }, rule);
       if (why) throw new Refused(why);
       ruleRead = { arm: rule!.arm, n1: rule!.n1, s0: rule!.s0, why: rule!.why, file, sha256: createHash('sha256').update(table!).digest('hex') };
     }
     // a packet 5 world carries the switches of stage R11's loop (observeV5 1 from the first tick); the old path's world is unchanged
+    if (eng && r14Arm(arm)) {
+      const why = r14Refusal(eng, seed, days, burnInDays, profile, paramsFile, !a.has('no-stop-check'), +a.flag('timeout-s', '120'), !a.has('no-contexts'));
+      if (why) throw new Refused(why);
+    }
     const params: Record<string, number> = { ...JSON.parse(text) as Record<string, number>, ...(v5 ? LOOP_SWITCHES : { observeV4: 1, menuParity: 1 }) };
     // the decode (stage R9's step of the loop): a model arm always has one; a no-model kernel arm only when --decode is given
     const hold = a.flag('hold', eng ? eng.decode.hold : 'act'), salt = a.has('decode-salt') ? +a.flag('decode-salt') : eng ? eng.decode.salt : undefined;
@@ -251,14 +257,14 @@ async function run(a: Args): Promise<number> {
       seed, seedRole: seedRole(seed), profile, burnInDays, daysAsked: days, hours, paramsFile, paramsSha256: createHash('sha256').update(text).digest('hex'), params,
       switches: { observeV4: 1, menuParity: 1, kernelGate: spec.gate ?? 0, kernelNoRulesPick: spec.noPick ?? 0, ...(v5 ? { observeV5: 1 } : {}) },
       arm, kernel: spec.kernel, adapter: spec.adapter ?? null, decode: decodeWords(decodeSpec), decodeSpec, packet: PACKET_VERSION[packetName], ...(packetName !== 'state' ? { packetName } : {}),
-      ...(eng ? { engine: { name: eng.name, key: eng.key, adapter: eng.adapter, packet: eng.packet, decodeName: eng.decodeName, what: eng.what, registered: isRegisteredArm(eng.name) && seed === R13.seed } } : {}), ...(ruleRead ? { decodeRule: ruleRead } : {}), ...(v5 ? { stage: 'R13' } : {}),
+      ...(eng ? { engine: { name: eng.name, key: eng.key, adapter: eng.adapter, packet: eng.packet, decodeName: eng.decodeName, what: eng.what, registered: isRegisteredArm(eng.name) && seed === R13.seed } } : {}), ...(ruleRead ? { decodeRule: ruleRead } : {}), ...(v5 ? { stage: r14Arm(arm) ? 'R14' : 'R13' } : {}),
       name: resultName(spec.kernel, spec.adapter ?? null),
       minAge: MIN_AGE, under: spec.kernel === 'rules' ? 'the rules decide for every animal' : UNDER_AGE, burnInHash: '', startHash: '', worker: null, env: Object.fromEntries(ENV_KEYS.map(k => [k, process.env[k] ?? null])),
       machine: { load: loadavg(), swapUsedMB: swapUsedMB(), freeGB: 0, freeWhere: '' }, contexts: !a.has('no-contexts') && spec.kernel !== 'rules', timeoutS: +a.flag('timeout-s', '120'), stopCheckOn: !a.has('no-stop-check'),
       segments: [], days: [], stopCheck: null, events: [] };
   }
   // an arm of stage R11 is rebuilt from its name (a resume reads it from the registry); `dry`: its worker holds no model
-  const eng = reg.engine ? engineArm(reg.engine.name) : null, spec = eng ? engineSpec(eng) : ARMS[reg.arm], dry = eng?.adapter === 'fake', worker = spec.kernel === 'gliner', model = worker && !dry;
+  const eng = reg.engine ? (r14Arm(reg.engine.name) ?? engineArm(reg.engine.name)) : null, spec = eng ? engineSpec(eng) : ARMS[reg.arm], dry = eng?.adapter === 'fake', worker = spec.kernel === 'gliner', model = worker && !dry;
   if (reg.engine && !eng) throw new Refused(`the registry names arm "${reg.engine.name}" of stage R11's loop, which this checkout does not know`);
   const disk = diskRefusal(out);
   if (disk.refusal) throw new Refused(disk.refusal);

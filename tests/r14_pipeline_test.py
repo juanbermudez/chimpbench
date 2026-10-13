@@ -1,0 +1,71 @@
+"""Exercise the actual R14 data/report/identity functions without loading a model."""
+import importlib.util
+import json
+from pathlib import Path
+import tempfile
+import unittest
+
+spec = importlib.util.spec_from_file_location('r14', Path(__file__).resolve().parents[1] / 'scripts/r14.py')
+r = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(r)
+
+class Pipeline(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(); self.old = r.OUT
+        r.OUT = Path(self.temp.name); (r.OUT / 'ft/scores').mkdir(parents=True)
+    def tearDown(self):
+        r.OUT = self.old; self.temp.cleanup()
+    def fixture(self, harm=False):
+        data, old, new = [], [], []
+        for group in ('original', 'dayNest', 'aloneDusk', 'dawnGuard', 'companyDuskGuard'):
+            for i in range(40):
+                nestq = .0 if group == 'dayNest' else 1.0
+                p0 = .9 if group != 'dayNest' else .8
+                p1 = .95 if group != 'dayNest' else .1
+                if harm and group == 'companyDuskGuard': p1 = .8
+                state = {'nest': True, 'day': group == 'dayNest', 'dawn': group == 'dawnGuard', 'dusk': group in ('aloneDusk', 'companyDuskGuard'), 'dark': False, 'alone': group == 'aloneDusk', 'companyNest': group == 'companyDuskGuard'}
+                ident = f'{group}-{i}'
+                packet = {'state': {}, 'questions': {'action': {'criteria': {'c0': 'Stay', 'c1': 'Leave'}}}}
+                data.append({'id': ident, 'chimpId': i % 10, 'source': 'original' if group == 'original' else 'learner', 'stratum': group,
+                             'state': state, 'selectedVia': 'plain', 'packet': packet, 'soft': {'c0': nestq, 'c1': 1-nestq}, 'carryOn': 0,
+                             'options': [{'action': 'nest', 'family': 'nest'}, {'action': 'travel', 'family': 'food-trip'}]})
+                old.append({'id': ident, 'probs': [p0, 1-p0]}); new.append({'id': ident, 'probs': [p1, 1-p1]})
+        r.write_rows(r.OUT / 'ft/eval.jsonl', data)
+        r.write_rows(r.OUT / 'ft/scores/r11-p5b-s7.jsonl', old)
+        r.write_rows(r.OUT / 'ft/scores/r14-p5b-s7.jsonl', new)
+    def test_harm_is_a_real_stop(self):
+        self.fixture(); self.assertTrue(r.reading(7)['proceed'])
+        self.fixture(harm=True); result = r.reading(7)
+        self.assertFalse(result['proceed']); self.assertFalse(result['guards']['companyDuskGuard'])
+    def test_insufficient_exposure_is_not_a_pass(self):
+        self.fixture()
+        path = r.OUT / 'ft/eval.jsonl'; data = r.rows(path)
+        for row in data: row['chimpId'] = 1
+        r.write_rows(path, data)
+        self.assertFalse(r.reading(7)['proceed'])
+    def test_reordered_or_invalid_probabilities_rejected(self):
+        self.fixture(); path = r.OUT / 'ft/scores/r14-p5b-s7.jsonl'
+        scores = r.rows(path); r.write_rows(path, scores[::-1])
+        with self.assertRaises(RuntimeError): r.reading(7)
+        scores[0]['probs'] = [2, -1]; r.write_rows(path, scores)
+        with self.assertRaises(RuntimeError): r.reading(7)
+    def test_weights_without_manifest_or_changed_bytes_refused(self):
+        root = r.OUT / 'ft'; folder = root / 'adapters/r14-p5b-s7'; folder.mkdir(parents=True)
+        weights = folder / 'adapter_model.safetensors'; weights.write_bytes(b'fake weights, never loaded')
+        with self.assertRaises(RuntimeError): r.adapter(root, 'r14-p5b-s7')
+        r.atomic(folder / 'manifest.json', {'adapter_sha256': r.sha(weights)})
+        self.assertEqual(r.adapter(root, 'r14-p5b-s7')['weights'], r.sha(weights))
+        weights.write_bytes(b'changed')
+        with self.assertRaises(RuntimeError): r.adapter(root, 'r14-p5b-s7')
+    def test_completed_step_checks_output_before_skipping(self):
+        output = r.OUT / 'small.txt'
+        command = [__import__('sys').executable, '-c', f'from pathlib import Path; Path({str(output)!r}).write_text("ok")']
+        r.step('small', command, .01, outputs=[output]); r.step('small', command, .01, outputs=[output])
+        output.write_text('changed')
+        with self.assertRaises(RuntimeError): r.step('small', command, .01, outputs=[output])
+    def test_resume_budget_cannot_be_reset(self):
+        command = ['false']
+        r.atomic(r.OUT / 'steps/exhausted.json', {'name': 'exhausted', 'command': command, 'seconds': 3601, 'attempts': []})
+        with self.assertRaisesRegex(RuntimeError, 'budget exhausted'): r.step('exhausted', command, 1)
+
+if __name__ == '__main__': unittest.main()
