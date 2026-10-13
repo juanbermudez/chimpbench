@@ -6,6 +6,8 @@ Working plan for the current program. Objectives: `docs/realism-roadmap.md`. Del
 
 ## R15 continuation (13 October 2026)
 
+App/training continuation integrated through `41bd4f9`: explicit verified R15 provider, unsaved five-animal demo, real-tokenizer/numerical preflight gate, development readout and replayable real-loop CLI. Final focused checks:74 TypeScript and17 Python pass; strict checking passes. Real collection/training/app proof and deferred heavy checks await the active R14 chain. An authorized thread heartbeat continues this sequence; execution details and limits are in `docs/staging/r15-perceived-targets.md`.
+
 The user requested further model control from recurrent animal state and perception, with a training path. R15 implements the narrowly registered food/water target slice of R12, default off, while the frozen R14 repair runs. Ownership was split into resources/legality, decoding/replay and training/packets. Implementation and focused verification are complete: 30 TypeScript tests, seven Python tests, strict checking and source audit passed; the 720-tick fake-kernel field run replayed all 79 calls exactly. Real R15 collection/tokenizer/training/population validation and the full suite/build wait for R14 to be idle. The app default is unchanged. See `docs/staging/r15-perceived-targets.md` and `docs/staging/r15-training-contract.md`. This does not approve the remaining ten-part R12 redesign as a whole or open sealed data.
 
 ## Parallel tracks (from 2026-09-29, local git at the time: the repository has a public remote since 5 October 2026; the integrator merges into `main`)
