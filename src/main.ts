@@ -381,6 +381,15 @@ if (params.get('test') === '1') {
     /** Runs whole ticks synchronously through the public tick (no decision pump). */
     tick(n: number) { for (let i = 0; i < n; i++) tickWorld(world); return world.tick; },
     hash: () => fnv(JSON.stringify(world)),
+    /** Read-only evidence for the bounded R15 browser proof; never drives decisions or ticks. */
+    r15Evidence: () => structuredClone({ tick: world.tick, identity: decider.identity, params: paramsOf(world),
+      focalIds: r15FocalIds(world), traces: decider.traces.slice(-20),
+      controlled: world.chimps.filter(c => c.controller === 'model').map(c => ({
+        id: c.id, age: c.age, alive: c.alive, action: c.action, targetId: c.targetId,
+        decisionSource: c.decisionSource, decisionVersion: c.decisionVersion,
+        position: c.position, hunger: c.hunger, thirst: c.thirst, energy: c.energy,
+      })),
+    }),
     /**
      * Rules only and paused, then in one task: save, continue a copy parsed from the exact saved text by m ticks, and
      * continue the live world by m ticks (the uninterrupted run). Further saves stop, so a reload resumes this save.
