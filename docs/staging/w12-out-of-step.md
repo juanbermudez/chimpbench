@@ -120,3 +120,214 @@ Read on the changed build with the same scripts, the same world and the same tic
 7. **Nothing else moves.** `tests/fixtures/golden-world.json` and `tests/sim-track-e.test.ts` untouched and passing; `git diff --stat track-e` names only `src/render/`, `tests/render-*` and `docs/staging/`; `tsc --noEmit`, `gen-params --check`, the render and interface tests, the whole suite and `pnpm build` pass.
 
 What this registration does not cover: frame time on the graphics card (no probe of it may run today; the change adds no draw call, texture or material, and the clips' new arithmetic is a few hashes per animal per frame); a live model; the colobus.
+
+## 1. What a viewer sees now
+
+- **A new world at dawn.** Every animal lies asleep in a finished nest of full size, eyes shut, breathing at its own rate, until its own act changes. Nobody builds, nobody turns. (Before: the whole community sat up bending the same branch with the same arm on the same beat for four simulated minutes, in nests drawn at a quarter of their size, and all swung round 1.9 rad in the same third of a second.)
+- **Builders at dusk.** Each keeps its own time: a bar of its own length (2.6 to 4.0 s), a reach with one arm or the other toward a place of its own after a pause of its own, now and then a look round or both hands pressing the branches down. It turns at its own moments, by its own amounts, its own way round. It goes on until the simulation has finished its nest, then lies down; two builders who began together do not end together.
+- **The other clips.** Ground feeders pick on bars of their own length (3.2 to 4.8 s), skip a bar now and then and sometimes use the other hand. Drinkers, groomers (lip-smack, strokes, time at a site), solo players, displayers, chargers, pant-grunters, drummers, alarm callers, sniffers and meat holders move at their own tempo from their own start. Wrestlers, a tickler, an attacker and its victim and a mating pair keep their own pair's beat, and two pairs differ. A pant-hoot chorus still climbs together.
+- **Idle life.** When a time-lapse stops, or a party is let go by a call it listened to, the first scratch, shift or glance of each animal comes at its own moment, 3 to 12 s later, not from all of them at 3.00 s.
+
+## 2. What was changed
+
+Renderer only; six source files and three test files.
+
+- `src/render/creatures/poses.ts`. Three small pure helpers: `ownTempo(seed, k)` (the animal's tempo for its movement number k), `ownClock(t, seed, k)` (the clip clock at that tempo from the animal's own start) and `barProgress` (an irregular beat: bars of the animal's own length, the movement after a pause drawn for each bar). All through the file's own `cyc01` hash of the animal's seed, which is the hash of its id. `nestBuild` is rebuilt on bars (`nestBar`, `nestBeat`, `nestArm`): a hand leaves the lap and comes back to it, so nothing jumps between bars; never more than two bars in a row without a reach; no pressing in the first two bars. Ground `forage` keeps its keyframes on bars of the animal's own length (and its head and chest now go to the hand and back over a moment; they stepped there in one frame). `drink`, `groom`, `play`, `display`, `charge`, `pantGrunt`, `drum`, `alarm`, `listen` (sniffing), `share`, the chewing of crown feeding and the small sines of the still poses (breathing in the clip, the head's drift, the ear flick, the infant's head on its mother's back, shivering) take their tempo from the animal. `wrestle`, `tickle`, the blows of `attack` with the flinches of `defend`, and `mate` run on the pair's clock at the pair's tempo (`PoseCtx.pairSeed`, new and optional). `pantHoot` and the gaits are untouched.
+- `src/render/creatures/perch.ts`. `nestProgress`: building or asleep from the simulation's finished nest. `nestTurn(k, id)`: with an id, the turns are that animal's own (without one, as before).
+- `src/render/creatures.ts`. The nest branch of `chooseClip` keeps, per animal and nest act, when the simulation's finished nest was first seen (`Chimp.nest`, read only) and asks `nestProgress`; `pairSeed` is set beside the pair clock; a playing pair swaps roles every 2.4 to 4.2 s by pair; the jaw of a call runs at 0.88 to 1.12 of the call's tempo by animal; the ring under a drinker comes at the animal's own moments (the offset was the id, a whole number: every drinker's ring fell in the same frame).
+- `src/render/creatures/nests.ts`. A nest the simulation lists is drawn finished (it grew in from a quarter of its size over six simulated minutes).
+- `src/render/creatures/secondary.ts`. `idleSettle(id, n)`: the wait after idle life is released is 3 to 12 s by animal and event, where it was 3 s for all.
+- `src/render/creatures/harness.ts`. `&action=nest&build` is a builder as the simulation has one: no finished nest, its tree as target; `&build=<seconds>` publishes the nest after that long.
+- Tests: `tests/render-step.test.ts` (new, 11 tests), one line in `tests/render-nests.test.ts`, and the window of one grooming test (`tests/render-groom.test.ts`: 28 s instead of 14, so that it holds two changes of site whatever the groomer's own time at a site is).
+
+How "building" against "asleep" is decided now. In the first frame an animal's body is drawn in a nest act: if the simulation already has a finished nest for it, it was never seen being built and the animal is drawn asleep in it (a new world, a jump of the clock, an animal the simulation puts back into the nest it had left). If not, it builds: the progress follows the seconds since its drawn arrival over 240 s and waits at 0.9 for as long as the simulation takes. When the simulation publishes the nest, the body, which trails it by two ticks, draws the rest of the building over those two ticks and lies down when its own drawn time reaches the finished nest.
+
+## 3. Before and after
+
+Field map, seed 48, the same ticks; the world's hash at each starting tick is the same before and after (A `e7ea6473:4167150`, C `717ba35a:4285714`, D `23fab325:4273385`, F `659cd308:4274824`). "After" is the third run. Readouts: `before/` and `after/` (`run2/` holds the second run's).
+
+### 3.1 The films
+
+| Film | Read | Before | After |
+| --- | --- | --- | --- |
+| `A-open-rt`, the opening, Real time | drawn building in a nest the simulation has finished | 9 of 9 near the camera, 41 of 41 in the world | 0 of 9, 0 of 41: all asleep, lids shut |
+| | wrist r, same arm, rhythm r (36 pairs) | 0.984, 98.9%, 0.976 | nobody builds |
+| | turns of the heading in 70 s | all 9 within 0.3 s of each other, 1.9 rad | none |
+| | the nest under each | a quarter size, growing for six simulated minutes (by the code; in the pictures no nest shows under the two animals) | full size from the first frame (in the pictures) |
+| `C-jump-dusk`, two builders after a jump | wrist r, first 20 s | 0.994 | 0.09 |
+| | rhythm r, first 20 s | 1.000 | 0.39 |
+| | same arm | 100% | 68% over 20 s, 61% over 60 s |
+| `B-dusk-watched`, the same two, watched | wrist r; same arm; rhythm r | -0.16; 49.5%; 0.997 | 0.16; 77%; 0.35 |
+| `E-lapse-dusk`, after a time-lapse | wrist r; same arm; rhythm r | 0.05; 58%; 0.998 | 0.08; 71%; 0.64 |
+| `D-jump-night`, `F-jump-dawn2` | asleep | 4 of 4, 4 of 4 | 4 of 4, 4 of 4 |
+| `G-lapse-midday`, first idle events after the speed change | | 2.86, 2.86 and 3.01 s | 6.91, 7.99 and 9.49 s |
+| `H-dusk-through`, Watch 4x to the end of both builds (after only) | from the simulation finishing a nest to the body lying down | | 2.00 ticks for both builders; the progress never steps by more than 0.002 in a frame |
+| | the two builders' reaches | | `LRRRRRLLLLLRR` with gaps of 2.5 to 6.8 s; `RRLLLLRLRRL` with gaps of 2.5 to 9.8 s |
+
+In `H` the simulation finishes the first builder's nest with the drawn progress at 0.76 and the second's with it waiting at 0.9; each lies down two ticks later. (By the old rule each stopped a fixed 240 simulated seconds after its own arrival, whatever the simulation said: for the first builder that is about four ticks after its nest was finished.) The first builder turns by 1.12, -1.37, -2.19 and 1.45 rad, the second by -1.71, -2.12, -1.41 and -1.53 rad; two turns of each fall within 2 s of a turn of the other in that film (at Watch 4x, where a build lasts under a minute), one of those pairs going opposite ways.
+
+### 3.2 The audit of the clips (animals entered in the same frame)
+
+`audit.mts`, eight animals (four pairs for the paired clips), before -> after. r0: their movement at the same instant; rBest: at the best shift within 6 s; the last column is the harness (`hprobe.mjs clips`: ten animals, the clip forced on all in one frame, 12 s, the pose as drawn; role 0 and no partner, so it is given once per clip; for `listen` that is the scanning variant, not the sniffing one, and for `play` ten animals of mixed ages and variants).
+
+**Clips that were in step or on one loop**
+
+| Variant | Pairs identical | r0, 30 s | rBest, 120 s | Harness, the pose as drawn (role 0, no partner): r0; rBest |
+| --- | --- | --- | --- | --- |
+| nestBuild | 0/28 -> 0/28 | 1.00 -> 0.08 | 1.00 -> 0.14 | 1.00 -> 0.11; 1.00 -> 0.61 |
+| play (solo, infant) | 0/28 -> 0/28 | 1.00 -> 0.02 | 1.00 -> 0.02 | 0.03 -> 0.01; 0.03 -> 0.03 |
+| wrestle (on top) | 6/6 -> 0/6 | 1.00 -> 0.04 | 1.00 -> 0.02 | 0.96 -> 0.11; 0.96 -> 0.33 |
+| wrestle (under) | 0/6 -> 0/6 | 1.00 -> 0.03 | 1.00 -> 0.02 | 0.96 -> 0.11; 0.96 -> 0.33 |
+| tickle | 0/6 -> 0/6 | 0.92 -> 0.02 | 0.99 -> 0.08 | 0.48 -> -0.02; 0.88 -> 0.50 |
+| display | 0/28 -> 0/28 | 1.00 -> 0.04 | 1.00 -> 0.02 | 0.99 -> 0.08; 0.99 -> 0.28 |
+| charge | 0/28 -> 0/28 | 1.00 -> 0.02 | 1.00 -> 0.01 | 0.69 -> 0.07; 0.85 -> 0.31 |
+| pantGrunt | 6/6 -> 0/6 | 1.00 -> 0.02 | 1.00 -> 0.03 | 0.88 -> 0.00; 0.92 -> 0.18 |
+| drum | 0/28 -> 0/28 | 1.00 -> 0.01 | 1.00 -> 0.02 | 0.96 -> 0.06; 0.99 -> 0.19 |
+| mate (male) | 6/6 -> 0/6 | 1.00 -> 0.00 | 1.00 -> 0.01 | 0.20 -> 0.13; 0.89 -> 0.89 |
+| attack | 0/6 -> 0/6 | 0.65 -> 0.06 | 0.94 -> 0.02 | 0.51 -> 0.10; 0.83 -> 0.34 |
+| defend | 0/6 -> 0/6 | 0.96 -> 0.02 | 0.96 -> 0.02 | 0.95 -> 0.08; 0.95 -> 0.31 |
+| forage (ground) | 0/28 -> 0/28 | 0.07 -> 0.08 | 0.99 -> 0.15 | 0.00 -> 0.00; 0.99 -> 0.64 |
+| drink | 10/28 -> 0/28 | 0.00 -> 0.00 | 0.00 -> 0.01 | 0.03 -> -0.01; 0.77 -> 0.45 |
+| share | 0/6 -> 0/6 | 0.59 -> 0.11 | 0.96 -> 0.05 | 0.92 -> -0.02; 0.98 -> 0.23 |
+| groom (behind) | 0/6 -> 0/6 | 0.64 -> 0.04 | 0.74 -> 0.07 | 0.99 -> 0.01; 0.99 -> 0.21 |
+| groom (mutual) | 0/6 -> 0/6 | 0.66 -> 0.10 | 0.91 -> 0.05 | 0.99 -> 0.01; 0.99 -> 0.21 |
+| groom (infant held) | 0/6 -> 0/6 | 0.87 -> -0.02 | 0.94 -> 0.03 | 0.99 -> 0.01; 0.99 -> 0.21 |
+| groom (front) | 0/6 -> 0/6 | 0.66 -> 0.10 | 0.91 -> 0.05 | 0.99 -> 0.01; 0.99 -> 0.21 |
+| groom (high) | 0/6 -> 0/6 | 0.56 -> 0.09 | 0.89 -> 0.06 | 0.99 -> 0.01; 0.99 -> 0.21 |
+| alarm | 0/28 -> 0/28 | 0.00 -> 0.01 | 0.99 -> 0.05 | 0.00 -> 0.00; 0.99 -> 0.83 |
+| listen (sniff) | 0/28 -> 0/28 | 0.73 -> 0.16 | 0.97 -> 0.08 | 0.27 -> 0.37; 0.88 -> 0.88 |
+
+**Left as they were**
+
+| Variant | Pairs identical | r0, 30 s | rBest, 120 s | Harness, the pose as drawn (role 0, no partner): r0; rBest |
+| --- | --- | --- | --- | --- |
+| pantHoot | 0/28 -> 0/28 | 0.02 -> 0.02 | 0.98 -> 0.98 | 0.27 -> 0.27; 0.97 -> 0.97 |
+| walk | 0/28 -> 0/28 | 0.54 -> 0.54 | 0.93 -> 0.93 |  |
+| gallop | 0/28 -> 0/28 | 0.21 -> 0.21 | 1.00 -> 1.00 |  |
+| sneak | 0/28 -> 0/28 | 0.50 -> 0.51 | 0.92 -> 0.91 |  |
+| swagger | 0/28 -> 0/28 | 0.24 -> 0.24 | 1.00 -> 1.00 |  |
+| bipedWalk | 0/28 -> 0/28 | 0.57 -> 0.57 | 1.00 -> 1.00 |  |
+| climb | 0/28 -> 0/28 | 0.52 -> 0.52 | 0.94 -> 0.94 |  |
+| clamber | 0/28 -> 0/28 | 0.52 -> 0.52 | 0.93 -> 0.93 |  |
+| forage (crown) | 0/28 -> 0/28 | 0.34 -> 0.34 | 0.38 -> 0.38 | 0.00 -> 0.00; 0.99 -> 0.64 |
+| groomee (seated) | 0/6 -> 0/6 | 0.00 -> -0.01 | 0.24 -> 0.24 | 0.03 -> 0.07; 0.54 -> 0.55 |
+
+**Still poses and slow sines**
+
+| Variant | Pairs identical | r0, 30 s | rBest, 120 s | Harness, the pose as drawn (role 0, no partner): r0; rBest |
+| --- | --- | --- | --- | --- |
+| stand | 0/28 -> 0/28 | 0.07 -> 0.07 | 0.80 -> 0.14 | 0.09 -> 0.06; 0.56 -> 0.54 |
+| sitIdle | 0/28 -> 0/28 | 0.07 -> 0.07 | 0.80 -> 0.14 | 0.01 -> 0.03; 0.24 -> 0.21 |
+| perch (seat) | 0/28 -> 0/28 | 0.33 -> 0.26 | 0.62 -> 0.34 | 0.01 -> 0.03; 0.14 -> 0.22 |
+| sleep | 0/28 -> 0/28 | 0.26 -> -0.04 | 1.00 -> 0.09 | -0.01 -> -0.09; 0.89 -> 0.88 |
+| carryDorsal | 0/28 -> 0/28 | 0.82 -> 0.51 | 1.00 -> 0.19 | 0.94 -> 0.77; 0.98 -> 0.96 |
+| shelter | 0/28 -> 0/28 | -0.03 -> -0.04 | 0.98 -> 0.05 | -0.01 -> -0.02; 0.71 -> 0.40 |
+| nurse | 0/28 -> 0/28 | 0.09 -> -0.02 | 1.00 -> 0.05 | 0.19 -> 0.07; 0.53 -> 0.61 |
+| groomee (prone) | 0/6 -> 0/6 | 0.39 -> 0.55 | 0.90 -> 0.60 | 0.03 -> 0.07; 0.54 -> 0.55 |
+| guard | 0/28 -> 0/28 | 0.34 -> 0.27 | 0.62 -> 0.33 | 0.05 -> 0.04; 0.33 -> 0.22 |
+| hunt | 0/28 -> 0/28 | 0.34 -> 0.28 | 0.61 -> 0.33 | 0.11 -> 0.20; 0.63 -> 0.64 |
+| patrol | 0/28 -> 0/28 | 0.35 -> 0.28 | 0.61 -> 0.33 | 0.22 -> 0.18; 0.64 -> 0.69 |
+| clingTrunk | 0/28 -> 0/28 | 0.35 -> 0.28 | 0.60 -> 0.34 | -0.01 -> 0.02; 0.74 -> 0.63 |
+
+Every listed clip meets the registered figures (no pair identical, r0 at most 0.6 over 30 s, rBest at most 0.85 over 120 s): the highest r0 is 0.16 (sniffing), the highest rBest 0.15 (ground feeding). The clips left alone read as before. In the harness's 12 s the slow movements cannot be told apart at the best shift (an arm raised once in seven seconds, a head that turns once in eighteen); over the audit's two minutes they can.
+
+### 3.3 The harness (the pose as the layer draws it)
+
+- **Ten animals at rest for 120 s** (`h-life.json`): unchanged, as it should be: 78 idle events, 10 within 0.25 s of another's of the same kind; 230 blinks, 76 within 0.1 s of another's; 319 changes of gaze, 125 within 0.1 s; breathing 0.25 to 0.33 a second, pair correlation median 0.004. The ear flick's highest pair correlation went from 0.78 to 0.05.
+- **Four grooming pairs and four playing pairs started in the same frame** (`h-pairs.json`): the four groomers 0.73 -> 0.09 at the same instant; the players at the best shift 0.97 and 1.00 -> 0.17 and 0.17; three wrestling pairs swapped roles 14, 14 and 14 times in 40 s before, 14, 17 and 13 times now.
+- **Clips forced on ten animals in one frame** (`h-clips.json`; the last column of the tables above): `nestBuild` 1.00 -> 0.11, `groom` 0.99 -> 0.01, `display` 0.99 -> 0.08, `wrestle` 0.96 -> 0.11, `drum` 0.96 -> 0.06, `defend` 0.95 -> 0.08, `share` 0.92 -> -0.02, `pantGrunt` 0.88 -> 0.00, `charge` 0.69 -> 0.07. Pictures of the ten in `nestBuild`: `before/h-clips-nestBuild.png` (ten right arms up) and `after/h-clips-nestBuild.png`.
+
+### 3.4 Idle events after a common release
+
+Twelve animals held and released in the same frame (`settle.mts`):
+
+| Held | Before: first event after | After |
+| --- | --- | --- |
+| 45 s (a walk, a time-lapse) | 3.00 s for all twelve | 4.9 to 12.0 s; two of twelve within 0.25 s of another |
+| 2.4 s after 20 s of idling (a call listened to) | 3.00 s for seven of twelve | 3.4 to 11.3 s; six of twelve within 0.25 s of another (three pairs), no three together |
+
+### 3.5 The registered statements, one by one
+
+1. **The opening: met.** Nobody is drawn building in a finished nest; all sleep with the lids shut; no turns; full-size nests from the first frame.
+2. **Builders: met.** `C`: wrist r 0.09 (under 0.5), rhythm r 0.39 (under 0.85), same arm 61% over 60 s (under 80%). `B` and `E`: rhythm r 0.35 and 0.64 (under 0.85). Both builders build until the simulation finishes their nests and lie down two ticks later.
+3. **Sleepers stay asleep: met.**
+4. **The audit: met for the clips, not as worded for the turns.** Every listed clip: no pair identical, r0 at most 0.16 over 30 s (0.6 allowed), rBest at most 0.15 over 120 s (0.85 allowed). Eight builders: no two have the same bar or the same sequence of arms. The clause "no pair has more than one of its turns within 2% of the build of a turn of the other" does not hold and could not: each turn's moment is spread over 18% of the build, so one same-numbered turn in five falls within 2% of the other animal's by chance, and about one pair in five shares two. Read on the build: of 28 pairs, 14 share no turn, 8 share one and 6 share two; none shares three or four (among the 49 ids of this world, 1,176 pairs: 467, 476, 203, 29 and 1). Before, every pair shared all four, in the same frame, by the same angle. The clause was set without working out what chance gives; that was the registration's mistake, not something to tune toward. The small slow sines: no two of eight animals share a tempo. `pantHoot` and the gaits read as before.
+5. **The same animal twice: met** (a test over every changed clip; no `Math.random` in the files).
+6. **After a common release: met in the film, met for the long hold, not as worded for the short one.** Film `G`: no two within 0.25 s (before, three within 0.15 s). Twelve animals held 45 s: two within 0.25 s of another (at most two allowed). Held 2.4 s: six, in three pairs. Twelve independent starts spread over nine seconds fall within a quarter second of another about half the time, so "at most two" asked for less than chance gives there too; what changed is that no three start together, where all twelve or seven did. The spread was left at 3 to 12 s: a wider one would leave a party that has just stopped without idle life for too long.
+7. **Nothing else moves: met.** `git diff --stat track-e` names `src/render/` (six files), `tests/render-{step,nests,groom}.test.ts` and this document; the goldens and `tests/sim-track-e.test.ts` are untouched and pass; the checks of section 5 pass.
+
+## 4. The three runs
+
+- **Run 1 (21:25 EDT).** The new tests on the first build: 8 of 11 passed. (a) The turns: two animals shared three of four turns. The moments were drawn with `util.ts` `hash01`, whose draws for ids 1, 3, 5, 7 and 9 at those salts fell within a tenth of each other; they are now drawn with `secondary.ts` `hashUnit`, the hash of the idle schedules. The registered clause about turns was also found to ask for less than chance gives (section 3.5, item 4); the test now holds what can be held (no pair shares all its turns, the median pair shares one at most, at most four pairs in ten share two). (b) The idle release: the same kind of clause (item 6); the test now holds the size of the largest group that starts together. (c) A tolerance of the test's own (how far apart two poses are on average) was set too high for the alarm clip, whose arm is up a fifth of the time; lowered. One older test failed in the render tests: the grooming test filmed 14 s on the old fixed 9 s at a site; its window is now 28 s.
+- **Run 2 (21:33 to 21:56).** All tests passed; every film, the audit and the harness were taken (`run2/`). Every figure of sections 3.1 to 3.4 already read as it does now. The film that follows two builders to the end showed one of them pressing its nest down for five bars on end, 16 s without a reach, and starting its building with two presses: by the draws alone one builder in twenty has such a run.
+- **Run 3 (21:58 to 22:22).** `nestBeat` limits a builder to two bars in a row without a reach and to no press in its first two bars. Tests, films, audit and harness again (`after/`): the figures above.
+
+## 5. Tests and checks
+
+At the head (b7cd0b9 plus this document), 12 October 2026, 22:12 to 22:25 EDT:
+
+- `tsc --noEmit`: clean. The new and changed tests and the harness were type-checked by hand with the project's strict options: clean.
+- `scripts/gen-params.ts --check`: valid, 1,050 entries, `params.gen.ts` up to date, lint clean.
+- The render and interface tests (`tests/render-*.test.ts`, `tests/ui-*.test.ts`): 310 tests, all pass.
+- The whole suite, once: 1,469 tests, 1,468 pass, none fails, 1 is skipped as on `track-e` (it needs `artifacts/validation/c7a-field1y.json`, which is not on this computer). It took 7 minutes and held the 1-minute load at 13 to 16 from about 2; no model process was running.
+- `pnpm build`: passes.
+- `tests/fixtures/golden-world.json`, `tests/sim-track-e.test.ts`, `src/sim`, `data` and `src/types.ts`: no difference from `track-e`.
+- New tests, `tests/render-step.test.ts` (11): animals that enter a clip in the same frame do not move in step (21 variants, the registered r0); nor on one rhythm started apart (the registered rBest, and solo play by variant); drinkers; what animals do together stays together (the chorus, the blow and the flinch, the pair's one tempo); the same animal moves the same way on every run; every animal has its own tempo and start; nest builders keep their own bar, arms and pauses, with hands that never jump; their turns; building or asleep (the rule, and a new field world and a new 160 m world, in which every animal is drawn asleep); animals released together; no `Math.random` in the files.
+
+## 6. Not done, and what is left
+
+- **Frame time on the graphics card** was not measured (no probe of it may run beside the other workflow today). The change adds no draw call, texture, pass or material; per animal and frame it adds a few sines. The films' frame intervals read medians of 16.7 to 19.7 ms before and 16.7 to 19.8 ms after, film by film (headless, with a screenshot every few seconds): no difference that can be read.
+- **Not seen with a live model**, on a second seed or on the 160 m map in the app (the tests open both maps; the films are the field map, seed 48, day 1).
+- **The simulation's "back in its nest"** (`execution.ts`, "Stayed in its nest: nobody came along") did not occur in the first 1,300 ticks of this world, so no film shows it. The rule covers it (a nest that is there when the body is first drawn in the act) and a test holds the rule, not that moment in the app.
+- **A builder's turns can still coincide by chance** (section 3.5, item 4), and at Watch 4x and above the building is short, so two turns within a second or two of each other will be seen now and then.
+- **The pant-hoot chorus** was left: callers that start together climax within three seconds of each other. If a chorus should spread more, that is a choice about the chorus (below).
+- **The gaits** were left: the feet are tied to the ground covered, and two animals of one size walking at one speed keep one cadence, each at its own phase and footfall order.
+- **The colobus** (tail sway and breathing on one tempo, each at its own phase) were not touched.
+- **A clip that changes on one frame for many animals** still shows the same blend out of the old pose for all of them (the tail of a transition): the new clips differ from their first frame, so it lasts a third of a second.
+- **`hash01` of `util.ts`** drew near-equal values for the odd small ids at four neighbouring salts. Over 200 salts it shows no bias (measured: correlation between neighbouring ids 0.02), so nothing else was moved off it; a new per-animal draw for a handful of animals is worth a look at its values.
+- **Builders that the camera is not on** end their building on the pose rate of animals out of view (four times a second), like everything else about them.
+
+## 7. For the integrator
+
+### Commits (on `w12-out-of-step`, from `track-e` at 4ecd1a3)
+
+- 0a2947b: the registration (section 0), before any changed code ran.
+- 972e923: the change and its tests (runs 1 and 2).
+- b7cd0b9: run 3, the two limits on a builder's bars.
+- this commit: sections 1 to 7 of this document.
+
+### Checks at the head
+
+Section 5. The probe server of this stage (port 5197) is stopped; nothing of this stage is left running.
+
+### Merge notes
+
+- Touches `src/render/creatures.ts`, `src/render/creatures/{poses,perch,nests,secondary,harness}.ts`, `tests/render-{step,nests,groom}.test.ts` and this document. Nothing under `src/sim`, `data/`, `tests/fixtures`, `src/types.ts` or the interface.
+- `PoseCtx` has one new optional field (`pairSeed`). `nestTurn` has one new optional argument. `NEST_BUILD_S` moved from `creatures.ts` to `perch.ts`.
+- Every animal's poses differ from the build before in the clips named in section 2, so any picture comparison against an older build will differ wherever those clips play (and by a hair in every still pose: the breathing sine's tempo). The harness's `&idle=0` does not switch that off.
+- If another branch adds a clip: see the first proposed line for `AGENTS.md` below.
+
+### Lines proposed for AGENTS.md (not edited on this branch)
+
+Under "Gotchas":
+
+- Each animal's own rhythm (stage W12, `render/creatures/poses.ts`): a clip's cycle never runs on `PoseCtx.t` alone. `t` is 0 for every animal that enters the clip in the same frame, so they would move as one (a whole community was drawn building nests in step). A cyclic movement takes its clock from `ownClock(c.t, c.seed, k)` or its rate from `ownTempo(c.seed, k)` (k: a number no other movement uses); a movement with pauses runs on bars of the animal's own length (`barProgress`; `nestBuild` and ground `forage` show how, with hands that leave a rest place and come back to it so nothing jumps between bars); what two partners do to each other runs on `c.pairT` at `ownTempo(c.pairSeed ?? c.seed, k)`. A start of its own is not enough: one tempo for all still reads as a machine. `tests/render-step.test.ts` holds it: add a new moving clip to its `OUT_OF_STEP` list, or say why its animals move together (a pant-hoot chorus does; the gaits are tied to the ground). All stylizations.
+- Building or asleep in a nest is the simulation's word (stage W12, `perch.ts` `nestProgress`): `Chimp.nest` is published when the building ends. The renderer draws building only while there is none, and never in a nest that was there when the body was first drawn in the act (a new world opens with every animal in a finished nest and the act's clock at 0). `nests.ts` draws a listed nest finished. A harness builder needs no nest and its tree as target (`&action=nest&build[=seconds]`).
+- Whatever holds the idle life of several animals at once lets it go at once: a wait after it must be the animal's own (`secondary.ts` `idleSettle`), and an offset "by id" must not be the id itself (a whole number shifts nothing: the drinkers' rings).
+
+Under "Verifying a change", the list of harnesses: the stage's probes are in `…/watch-2026-10-12/w12-out-of-step/` (server on 5197): `film.mjs '<json spec>'` films one moment and reads every animal near the camera every frame (`an.mjs` gives wrist r, same arm and rhythm r for the animals in one clip; `an-build.mjs` follows builders to the end; `an-idle.mjs` lists idle starts), `audit.mts` evaluates every clip for eight animals entered in the same frame with no browser, `hprobe.mjs clips|life|pairs` does the same in the creature harness on the pose as drawn.
+
+### Block proposed for IMPLEMENTATION_PLAN.md
+
+```
+## Stage W12: out of step (render only)
+**Goal**: the user's report of 12 October 2026: "all the chimps nesting are moving in sync doing the same exact movement". Animals in the same clip must not move in step unless they do the thing together, and an animal the simulation has in a finished nest is drawn asleep in it.
+**Status**: Built on branch `w12-out-of-step` from `track-e` at 4ecd1a3 (12 October 2026; `docs/staging/w12-out-of-step.md`, registered before any changed code ran, three runs). Not merged. Nothing under `src/sim`, `data`, `tests/fixtures` or the contract changed; no pass, target or material was added; the world's hash at every filmed tick is the same before and after. Field map, seed 48. Cause: a clip's cycle ran on the clip's own clock, which has nothing of the animal in it, and a new world drew every animal building for four minutes because the renderer went by "fewer than 240 s in the nest act" and never asked the simulation whether the nest was finished. At a new world's opening 41 of 41 animals were drawn building in finished nests, in step (wrist height correlated 0.98 between neighbours, the same arm in 99% of frames, all turning 1.9 rad within a third of a second); now none builds, all sleep in full-size nests. Two builders after a jump of the clock into dusk: 0.99 and the same arm always, now 0.09 and 61%; watched or after a time-lapse they made the same movement a second apart (0.997 at the best shift), now 0.35 and 0.64. A builder builds until the simulation finishes its nest and lies down two ticks later. Every clip that was in step or on one loop for all (nest building, solo play, wrestling, display, charge, pant-grunt, drumming, mating, fights, ground feeding, drinking, sharing, grooming, alarm, sniffing), for animals entered in the same frame, now reads at most 0.16 at the same instant (eleven of the 22 variants read 0.92 to 1.00) and at most 0.15 at the best shift over two minutes (they read 0.74 to 1.00, drinking aside). Animals whose idle life is released together (a time-lapse stops) no longer all start an event 3.00 s later.
+**Open**: two registered clauses asked for less than chance gives and do not hold as worded (a pair of builders shares two of four turn moments about one time in five; six of twelve released animals start within a quarter second of another, in pairs); frame time on the graphics card is not measured; nothing was seen with a model, on a second seed, or on the 160 m map in the app; the pant-hoot chorus, the gaits and the colobus were left as they were.
+**The user's**: whether a pant-hoot chorus should stay as close as it is (callers that start together climax within three seconds); the look of the new building (bars of 2.6 to 4.0 s, one bar in four a look round or a press); whether builders should end with the simulation, as now, or after a fixed four minutes as before.
+```
+
+### Decisions that are the user's
+
+- The pant-hoot chorus: left together on purpose. It is the one clip in which several animals still rise and call within seconds of each other.
+- The share of a builder's bars that are not a reach (about a quarter) and the 3 to 12 s an animal waits before its first idle event after it becomes still: set by reasoning, not by eye on a long watch.
