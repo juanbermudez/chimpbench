@@ -162,14 +162,18 @@ export async function main() {
     const adapter = identity(ready.evidence.identity); report.identity = adapter; save(); record({ kind: 'ready', ...ready });
     await page.screenshot({ path: resolve(out, 'model-ready.png') });
     await page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
-    await page.keyboard.press('2'); // Existing UI shortcut: Watch 4×.
-    assert.equal((await read()).snapshot.clock.speedId, 'watch');
     await page.evaluate(end => {
       window.setInterval(() => { const s = window.__MGOGO__.snapshot();
         if (s.clock.playing && (s.tick >= 1300 || Date.now() >= end || s.clock.speedId !== 'watch')) document.querySelector('.tc-play')?.click();
       }, 100);
     }, deadline);
-    await page.locator('.tc-play').click();
+    await page.keyboard.press('2'); // The existing Watch shortcut also resumes playback.
+    await page.evaluate(() => {
+      if (!window.__MGOGO__.snapshot().clock.playing) document.querySelector('.tc-play')?.click();
+    });
+    const playback = (await read()).snapshot;
+    assert.equal(playback.clock.speedId, 'watch'); assert.equal(playback.clock.playing, true);
+    record({ kind: 'playback-start', tick: playback.tick, clock: playback.clock });
     let blocked = false, proofId = null;
     for (;;) {
       check(); const state = await read(), s = state.snapshot, e = state.evidence;
