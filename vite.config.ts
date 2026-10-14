@@ -1,6 +1,6 @@
-import { defineConfig, loadEnv, type Plugin } from 'vite';
+import { defineConfig, loadEnv, searchForWorkspaceRoot, type Plugin } from 'vite';
 import { resolve } from 'node:path';
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import { setupDecideMiddleware } from './server/decide.ts';
 import { setupR15Middleware } from './server/r15.ts';
 import { setupJevMiddleware } from './server/jev.ts';
@@ -35,6 +35,7 @@ export default defineConfig(({ mode }) => {
     // the store runs as a module worker. opfs-sahpool needs no COOP/COEP headers.
     optimizeDeps: { exclude: ['@sqlite.org/sqlite-wasm'] },
     worker: { format: 'es' },
-    server: { port: 5173, strictPort: true },
+    // Worktrees share node_modules; SQLite's relative WASM URL resolves outside the worktree through that symlink.
+    server: { port: 5173, strictPort: true, fs: { allow: [searchForWorkspaceRoot(process.cwd()), realpathSync(resolve(process.cwd(), 'node_modules/@sqlite.org/sqlite-wasm/dist'))] } },
   };
 });
