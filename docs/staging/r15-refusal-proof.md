@@ -11,3 +11,7 @@ Each case has a 30-second startup/UI budget plus exactly two seconds observing t
 Preparation budget: two syntax/pure fixture rounds, no browser/server/model/build/full suite. Real execution requires the parent's serial verification slot. Screenshots must be visually inspected after capture. No model-quality or biological-validity claim follows from these refusal checks.
 
 Preparation result: first syntax/pure-fixture round and diff check passed. Fixtures distinguish both expected errors from an unrelated active-process refusal, reject a ready provider, and reject a changed world hash or playing clock. No browser, server, model, build or suite ran. The two real cases and visual inspection remain pending the serial execution slot.
+
+Before the second allowed syntax/pure round, review requested an explicit fresh GET/status after the UI enters failed. The controller currently refreshes status after Start, but asynchronous response capture need not finish in arrival order. The verifier now validates one real GET directly, with an abort timeout equal to the remaining 30-second budget, and preserves both its ordinary HTTP capture and explicit status record. No startup retry or fabricated response is introduced.
+
+Second syntax/pure-fixture round and diff check passed after that correction. Both registered preparation rounds are now used. Real execution remains pending; no server/browser/model was launched.

@@ -84,9 +84,15 @@ export async function main() {
     await page.keyboard.press('m'); await page.locator('.mp-status [data-act="retry"]').click();
     record({ kind: 'one-start-click' });
     await page.waitForFunction(() => window.__MGOGO__.snapshot().model.phase === 'failed', null, { timeout: Math.max(1, deadline - Date.now()) });
+    check();
+    // Read the real endpoint after the UI transition; response-event parsing can finish out of order.
+    const failed = await page.evaluate(async remaining => {
+      const response = await fetch('/api/providers/r15/status', { cache: 'no-store', signal: AbortSignal.timeout(remaining) });
+      return { status: response.status, body: await response.json() };
+    }, Math.max(1, deadline - Date.now()));
+    record({ kind: 'explicit-failed-status', ...failed });
     check(); await Promise.all([...tasks]);
-    const statuses = wire.filter(x => x.path.endsWith('/status')); const failed = statuses.at(-1);
-    assert.ok(failed); assert.equal(failed.status, 200); refused(failed.body, testCase);
+    assert.equal(failed.status, 200); refused(failed.body, testCase);
     const starts = wire.filter(x => x.path.endsWith('/start')); assert.equal(starts.length, 1); assert.equal(starts[0].status, 202);
     await page.locator('.mp-status .err').waitFor(); assert.match(await page.locator('.mp-status .err').innerText(), expected[testCase]);
     assert.equal((await page.locator('.mp-led b').innerText()).toLowerCase(), 'failed');
