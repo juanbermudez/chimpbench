@@ -211,13 +211,16 @@ export async function main() {
       assert.ok(wire.answer.probabilities.every((p, i) => Math.abs(p - call.probabilities[i]) < 1e-6), 'trace agrees with wire distribution');
     }
     await page.locator(`.mp-roster [data-select="${proofId}"]`).click();
-    await page.locator('[data-tab="mind"]').click();
-    const row = page.locator(`[data-trace="${report.twoStageTrace}"]`);
+    await page.locator('button#tab-mind').click();
+    const mind = page.locator('#ch-body .mind');
+    const row = mind.locator(`button[data-trace="${report.twoStageTrace}"]`);
     await row.waitFor(); await row.click();
-    await page.locator('.r15-choices').waitFor();
-    assert.equal(await page.locator('.r15-choices li').count(), 2, 'Mind shows both recorded stages');
+    const choices = mind.locator('.r15-choices');
+    await choices.waitFor(); await choices.scrollIntoViewIfNeeded();
+    assert.equal(await choices.locator('ol > li').count(), 2, 'Mind shows both recorded stages');
+    await page.waitForTimeout(1500); check();
     await page.screenshot({ path: resolve(out, 'app-mind.png') });
-    record({ kind: 'mind-text', selectedId: proofId, text: await page.locator('.mind').innerText() });
+    record({ kind: 'mind-text', selectedId: proofId, text: await mind.innerText() });
     report.status = 'passed'; report.applied = seen.size; report.liveMatches = matched.size; report.httpCalls = http.length;
   } catch (error) { report.status = 'failed'; report.error = error.stack ?? String(error); process.exitCode = 1;
   } finally {
