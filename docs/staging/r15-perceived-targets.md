@@ -94,6 +94,8 @@ Browser preparation was integrated at `91acf04`: three syntax/pure fixture round
 
 R14 Stage A stopped with an incomplete third collection and a recorded inference timeout, before assembly or training. Its processes have exited and its lock is released. Preserve that failed experiment without extending its cap. Proceed with the independently registered R15 route and fresh development-seed data; do not consume partial R14 evaluation data or imply that R14 succeeded. Complete the deferred integrated checks serially before model work. The small initial 16-decision-per-seed collection is a coverage/cost pilot; review phase and split coverage before deciding and registering any larger collection. No R15 model quality or app result is claimed.
 
-## Bounded integrated-check correction (14 October 2026)
+## Bounded integrated-check correction (13 October 2026)
 
 The first deferred full suite on `410ed6d` passed 1,538 tests and failed three: two ledger checks still matched the old whole threshold guard, and the parameter-documentation check found `resourceTargets` missing from simulation section 17. Correct only the ledger's source extraction to read the existing `score > -0.4` comparison inside its resource-aware guard, and document the switch's default, prerequisites and bounded target scope. Preserve simulator code, thresholds and golden data. Verify with `tests/r7-ledger.test.ts`, `tests/sim-params.test.ts` and scoped strict TypeScript, serially with the integrator's heavier checks. This is an integration correction, not a change to the scientific design or R15 behavior.
+
+Correction verified with Node 22.22.3: all 27 tests in the two focused files passed in 18.0 seconds, including registry documentation coverage and the original golden-world hashes. Strict TypeScript checking of the ledger and those tests passed. No simulator source or golden data changed.

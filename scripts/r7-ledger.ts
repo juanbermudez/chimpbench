@@ -278,7 +278,7 @@ export function handNumbers(overrides: Overrides, valuation: Valuation | null): 
   out.push({ name: 'patch ratio: feeding is reconsidered when another place pays this many times more', value: String(GATE.patchRatio), where: 'src/decide/gate.ts GATE.patchRatio', read: 'gate on' });
   out.push({ name: 'a trip counts as arrived, and becomes feeding without asking, within this many metres', value: String(GATE.arriveM), where: 'src/decide/gate.ts GATE.arriveM', read: 'gate on' });
   // what it is offered
-  out.push({ name: 'score threshold: an option at or below it is never offered', value: at('src/sim/candidates.ts', /if \(!\(score > (-?[\d.]+)\)\)/).value, where: 'src/sim/candidates.ts offer', read: 'always' });
+  out.push({ name: 'rules score threshold: an option at or below it is not offered (R15 resource enumeration bypasses it)', value: at('src/sim/candidates.ts', /!\(score > (-?[\d.]+)\)/).value, where: 'src/sim/candidates.ts offer', read: 'always' });
   out.push({ name: 'slot caps: targets kept per action (feeding; the multi-target acts; every other act)', value: `${P.slotsForage}; ${P.slotsMulti}; 1`, where: `${reg('slotsForage')}, slotsMulti; src/sim/candidates.ts offer`, read: 'always' });
   out.push({ name: 'trip shortlist: remembered or listed trees that reach the scoring of a trip', value: at('src/sim/candidates.ts', /for \(let k = 0; k < (\d+) && _mem\.length/).value, where: 'src/sim/candidates.ts computeCandidates', read: 'always' });
   out.push({ name: 'pool of options per decision', value: at('src/sim/candidates.ts', /const pool: Slot\[\] = Array\.from\(\{ length: (\d+) \}/).value, where: 'src/sim/candidates.ts', read: 'always' });
