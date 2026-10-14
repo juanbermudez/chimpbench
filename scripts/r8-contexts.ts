@@ -19,6 +19,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { buildOwnQuestion, decisionContextError, neutralized, withoutOwn, type LocalPacket } from '../server/decide';
 import { optionKey } from '../src/kernel/decode';
+import type { KernelRequest } from '../src/kernel/types';
 import { candidateMeta, computeCandidates, V } from '../src/sim/candidates';
 import { rulesTap } from '../src/sim/decide';
 import { dayPhase } from '../src/sim/environment';
@@ -76,17 +77,24 @@ export function packetsOf(ctx: DecisionContext): R8Rec['packets'] {
   return { state, neutral: neutralized(ctx, state), own: buildOwnQuestion(ctx), ownShort: buildOwnQuestion(ctx, { variant: 'short' }) };
 }
 
-export interface SampleOpts { seed: number; base: string; params: Record<string, number>; burnIn: number; days: number; p: number; check?: boolean; log?: (s: string) => void;
+interface SampleBase { seed: number; base: string; params: Record<string, number>; burnIn: number; days: number; p: number; check?: boolean; log?: (s: string) => void;
   /** The name the sampling hash is keyed by (default 'r8'; 'r4' samples the decision points scripts/r4-contexts.ts samples at the same rate). A hook after every tick, burn-in included (read only). */
   tag?: string; onTick?: (w: World, tick: number) => void;
-  /**
-   * Stage R11 (scripts/r11-contexts.ts): a hook at every record, while the world still stands at the decision: the rules'
-   * candidate list, the menu they drew from (empty for a kept or arrived act), the option they took, and the world's random
-   * state just before the decision. It may add fields to the record; it must only read the world. Absent: the records are stage R8's, unchanged.
-   */
-  extend?: (rec: R8Rec, live: { w: World; c: Chimp; list: Candidate[]; menu: Candidate[]; chosen: Candidate; rngBefore: number }) => void }
+}
+export interface CapturedDecision { id: string; label: R8Rec['label']; request: KernelRequest }
+export interface LiveDecision { w: World; c: Chimp; list: Candidate[]; menu: Candidate[]; chosen: Candidate; rngBefore: number }
+export type SampleOpts = SampleBase & (
+  | { capture?: never;
+      /** R11 extends a full historical R8 record. Only read the live world. */
+      extend?: (rec: R8Rec, live: LiveDecision) => void }
+  | { extend?: never;
+      /** Export a distinct packet contract at the same sampled decision, without rendering historical R8 variants. Only read the live world. */
+      capture: (decision: CapturedDecision, live: LiveDecision) => void }
+);
+
 
 export function sampleR8(o: SampleOpts): { recs: R8Rec[]; hash: string; decisions: Record<string, number>; seconds: number; skipped: Record<string, number> } {
+  if (o.capture && o.extend) throw new Error('capture and extend are mutually exclusive');
   if (![...TRAIN_SEEDS, ...TEST_SEEDS].includes(o.seed)) throw new Error(`seed ${o.seed}: 48 and 7 (train, dev) and 21 (test) only (docs/staging/r4-prereg.md §3)`);
   const t0 = Date.now(), params = { ...o.params, observeV5: 1, menuParity: 1 };
   const w = createWorld(o.seed, { profile: 'field', params });
@@ -114,6 +122,11 @@ export function sampleR8(o: SampleOpts): { recs: R8Rec[]; hash: string; decision
     const ctx = p.req.context, bad = decisionContextError(ctx);
     if (bad !== '') return skip(`invalid-context: ${bad}`);
     if (ctx.packet !== 5) throw new Error('the context is not the packet 5 observation');
+    const id = `${o.seed}-${o.base}-${w.tick}-${c.id}`, label = why === 'kept' ? 'kept' : why === 'arrived' ? 'arrived' : 'fresh';
+    if (o.capture) {
+      o.capture({ id, label, request: p.req }, { w, c, list, menu, chosen, rngBefore: p.rng });
+      return;
+    }
     const all = computeCandidates(w, c, []);
     const metaOf = (k: Candidate) => candidateMeta.get(k) ?? candidateMeta.get(all.find(a => key(a) === key(k)) as Candidate) ?? { v: V.NONE, aux: -1 };
     const options: R8Option[] = p.req.options.map((k, i) => {
@@ -127,8 +140,8 @@ export function sampleR8(o: SampleOpts): { recs: R8Rec[]; hash: string; decision
       const found = removedWordingsIn(packet);
       if (found.length) throw new Error(`the ${name} packet holds a removed wording (${found.join(', ')}) at tick ${w.tick}, chimp ${c.id}`);
     }
-    const rgIndex = p.req.options.findIndex(k => key(k) === key(chosen)), label = why === 'kept' ? 'kept' : why === 'arrived' ? 'arrived' : 'fresh';
-    recs.push({ id: `${o.seed}-${o.base}-${w.tick}-${c.id}`, split: splitOf(o.seed, c.id), seed: o.seed, base: o.base, tick: w.tick, time: +w.time.toFixed(4), hour: +w.hour.toFixed(3), phase: dayPhase(w),
+    const rgIndex = p.req.options.findIndex(k => key(k) === key(chosen));
+    recs.push({ id, split: splitOf(o.seed, c.id), seed: o.seed, base: o.base, tick: w.tick, time: +w.time.toFixed(4), hour: +w.hour.toFixed(3), phase: dayPhase(w),
       daylight: +w.environment.daylight.toFixed(3), chimpId: c.id, name: c.name, cls: classOf(c), age: +c.age.toFixed(2), sex: c.sex,
       why, label, draw: label === 'fresh', rgIndex, pick: rgIndex >= 0 ? `c${rgIndex}` : null, rulesIndex: p.req.rulesIndex,
       opened: p.opened, asked: ctx.own?.asked ?? null, options, context: ctx, act: p.act, packets,

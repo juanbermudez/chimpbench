@@ -3,7 +3,6 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { buildRequest } from '../src/sim/request';
 import { record, validateDecisionContext } from '../src/sim/context-check';
 import { splitOf } from './r4-contexts';
 import { sampleR8 } from './r8-contexts';
@@ -77,10 +76,10 @@ if (process.argv[1]?.endsWith('r15-contexts.ts')) {
     const rows: object[] = [], exclusions: Record<string, number> = {}; let selected = 0;
     const started = Date.now(), maxSeconds = 1800;
     const result = sampleR8({ onTick() { if ((Date.now() - started) / 1000 > maxSeconds) throw new Error('R15 collection exceeded 30-minute wall budget'); }, seed, base: 'W50', params: { ...params, resourceTargets: 1, activityFirst: 2, observeV5: 1, menuParity: 1 }, burnIn: 30, days: ticks / 5760, p: .02, tag: 'r15',
-      extend(rec, live) {
+      capture(rec, live) {
         if (rec.label !== 'fresh' || selected >= limit) return;
         selected++;
-        const labelled = r15TrainingRows(live.w, live.c, buildRequest(live.w, live.c), `r15:${rec.id}`);
+        const labelled = r15TrainingRows(live.w, live.c, rec.request, `r15:${rec.id}`);
         rows.push(...labelled.rows);
         for (const reason of labelled.exclusions) exclusions[reason] = (exclusions[reason] ?? 0) + 1;
       } });

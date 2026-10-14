@@ -131,7 +131,7 @@ export function labelData(rec: Pick<R8Rec, 'id' | 'options' | 'rgIndex'>, live: 
   return { n: made, same, counts, raw, jit, bel, b, order, span: P.candidateJitterSpan, rngOk: stream.state() === (w.rng >>> 0), pickOk: pick === rec.rgIndex && optionKey(chosen) === keys[pick], listOk };
 }
 
-export function sampleR11(o: Omit<SampleOpts, 'tag' | 'extend'> & { redraws?: Redraws }): { recs: R11Rec[]; hash: string; decisions: Record<string, number>; seconds: number; skipped: Record<string, number> } {
+export function sampleR11(o: Omit<SampleOpts, 'tag' | 'extend' | 'capture'> & { redraws?: Redraws }): { recs: R11Rec[]; hash: string; decisions: Record<string, number>; seconds: number; skipped: Record<string, number> } {
   if (!(o.burnIn >= 1)) throw new Error('never a first simulated day: --burn-in must be at least 1 (docs/staging/r11-prereg.md §3)');
   const r = sampleR8({ ...o, tag: SAMPLE_TAG, extend: (rec, live) => {
     const x = rec as R11Rec;
