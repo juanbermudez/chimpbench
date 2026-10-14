@@ -1,6 +1,6 @@
 # R15 development results
 
-Updated 14 October 2026. Both newly trained adapters have passed real serving and headless recurrent-loop checks. The final integrated suite/build and visible browser demonstration are still pending. Nothing has been pushed or deployed.
+Updated 14 October 2026. Both newly trained adapters have passed real serving and headless recurrent-loop checks. The final integrated suite passed all 1,544 tests with no failures or skips, and the production build passed. The visible browser demonstration is running. Nothing has been pushed or deployed.
 
 ## What was trained
 
