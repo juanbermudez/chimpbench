@@ -1,4 +1,4 @@
-# ChimpBench: handoff (13 October 2026, New York time)
+# ChimpBench: handoff (14 October 2026, New York time)
 
 This file is the entry point for whoever opens this repository next, a person or an agent. Read it first. Then read
 [AGENTS.md](AGENTS.md) (binding conventions, commands, gotchas), [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
@@ -10,6 +10,10 @@ first push: `public/audio/` (sound cut from the owner's Epidemic Sound files, no
 removed from every commit, and the author email was replaced by a GitHub no-reply address. Every commit hash changed:
 translate older hashes with [docs/staging/commit-map.tsv](docs/staging/commit-map.tsv) and `commit-map-2026-10-06.tsv`.
 A fresh clone has no sound until `node scripts/build-audio.mjs` rebuilds it locally from the owner's own downloads.
+
+**Current continuation complete, 14 October 2026:** two new R15 adapters are trained and audited, both passed real serving and720-tick exact-replay loops, and primary s7 passed the visible app demonstration. Final suite:1,544 passed,0 failures/skips; build passed. See [R15 development results](docs/staging/r15-development-results.md). R14 remains a preserved operational failure, not a successful repair. The heartbeat `finish-r14-and-bring-r15-into-chimpbench` is paused after completion. Nothing was pushed or deployed.
+
+**Live local demo:** `http://127.0.0.1:5182/?r15=1`, opens unsaved and paused; choose Watch4× to start. Frozen app `bench-r15-data` at e792b7e, serverPID88641 and scorerPID88732 intentionally remain ready with the shared `R15-app` lock owned by88641. Stop this owned server/worker before another model or heavy check, and let the server release its lock through normal exit. The overnight caffeinatePID60113 was stopped. Do not kill unrelated Vite services.
 
 ## 1. What this project is and where it is going
 
@@ -123,6 +127,10 @@ Continuation registration35378a65 precedes verifier-only correctionb89fd7fa. The
 **00:58 EDT real browser control demonstrated, final UI check still pending:** proof002 reached tick90 with19 actual HTTP200 stage responses and18 applied decisions, each matched to the live animal action/target/version. Koruza(id3) sampled `go_to_food` then concrete tree107090 from8 targets in trace `90-3-18`. Allfive animals had later requests with changed body and own inputs;0 fallbacks/discards/errors. Independent audit passed tokens221–491, identities, probabilities, draws, legal target choice and unchanged served-module hashes. The final screenshot visibly shows the two-stage applied choice and ready s7 identity. The run nevertheless correctly remains failed: generic `[data-tab="mind"]` matched both tab button and panel before final history selection/capture. Evidence002 is preserved.
 
 Registration18a156a5 authorizes one third/final attempt after verifier-only correction8acf355e. It targets `button#tab-mind`, scopes history/stage text to the Mind panel, scrolls the stage card into view and allows1.5seconds paused UI settling before capture. Syntax and existing pure fixtures passed. New frozen verifier is `bench-r15-app-final`; app runtime remains e792b7e on5182 with the same ready s7worker. Fresh output is `bench-r15-data/artifacts/r15/browser-real-s7-003/`. No further automatic retry on failure. Fullapp acceptance and heartbeat pause still await this final run and visualreview.
+
+**01:08 EDT final browser acceptance complete:** third proof003 passed in361.53seconds using verifier8acf355e and unchanged app runtimee792b7e. It captured19 real HTTP calls and18 applied/live-matched decisions, including Koruza's two-stage food choice to tree107090. Allfive animals had changed body and own inputs;0 errors, fallbacks or discards. Actual per-stage token counts were221–491; UI744 for the two-stage trace is253+491, not one overlong packet. Separate independent `audit.json` and `visual-review.md` passed. Screenshots show Koruza's rendered body and about-to-travel tag, the pinned applied activity/target and loaded s7 identity. The paused tick90 screenshot proves the accepted choice, not completion of the travel. Original run/evidence files and both failed attempts remain unchanged.
+
+All requested training/app integration acceptance checks are now complete. The existing heartbeat was updated toPAUSED and read back as paused. The app tab was queued in Codex for this chat, and the ready primary worker remains available as described at the top. Further work must be separately scoped: broader training coverage, real water choices, causal input-use probes and long-run population viability remain unproven; animation and120-animal performance limits remain recorded.
 
 R14 run root: `/Volumes/Drive/chimpbench/MGOGO/.claude/worktrees/bench-r14/artifacts/r14`. Read `state`, `status.log`, `steps/*.json` and `logs/learner-s48.log`, or run `python3 -B scripts/r14.py status` from that frozen checkout. The chain retains cumulative caps and stops on execution failure or scientific futility; do not restart blindly, edit its checkout, launch another model, or run heavy verification beside it. Stage B is not queued automatically. The application remains on its existing default adapter.
 

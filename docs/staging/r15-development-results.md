@@ -1,6 +1,6 @@
 # R15 development results
 
-Updated 14 October 2026. Both newly trained adapters have passed real serving and headless recurrent-loop checks. The final integrated suite passed all 1,544 tests with no failures or skips, and the production build passed. The visible browser demonstration is running. Nothing has been pushed or deployed.
+Updated 14 October 2026. Both newly trained adapters passed real serving and headless recurrent-loop checks. The final integrated suite passed all 1,544 tests with no failures or skips, and the production build passed. The trained s7 adapter also passed the visible browser demonstration. Nothing has been pushed or deployed.
 
 ## What was trained
 
@@ -52,8 +52,20 @@ This is a recurrent simulation loop: perceived state and stored experience enter
 
 Evidence: `loop-s7/`, `loop-s11/`, `logs/replay-s7.log` and `logs/replay-s11.log`.
 
+## Visible app demonstration
+
+The final browser check passed at tick90 in361.5seconds. It reused the verified s7 worker on the unchanged `e792b7e` app runtime. The corrected verifier was frozen at `8acf355ed568f1232a211514b45424238495df15` and retained the original caps and acceptance checks.
+
+There were19 actual HTTP stage calls and18 applied decisions, each with a matching live animal action, target and decision version. Koruza selected `go_to_food` and then tree107090 from8 concrete targets. The target's sampled probability was10.34%; it was not the highest-scoring target. The simulation accepted the choice. Later calls contained changed body and own-experience inputs. No fallback, discard, HTTP or page error occurred.
+
+The paused Mind panel shows the pinned decision `90-3-18`, the activity and target stages, the applied adapter identity and the selected target. Visual inspection of `app-mind.png` also shows Koruza's rendered body, the matching about-to-travel tag and the ready model panel. These are current model decisions, not injected answers. The earlier missing-artifact and invalid-name browser checks verified refusal without advancing the world; loaded-hash mismatch is covered by focused tests rather than a claimed live browser case.
+
+Evidence: `../browser-real-s7-003/` relative to the collection root, including `run.json`, `evidence.jsonl`, `app-mind.png` and `final.png`. Attempts001 and002 remain preserved as failures. The first verifier toggled playback off after a speed shortcut that already resumed it. The second completed the control gates but used an ambiguous Mind selector. Both corrections were registered before changed-code execution; they did not change model, app or simulation behavior.
+
+The local demo is available at `http://127.0.0.1:5182/?r15=1`. It opens an unsaved, paused world. Choosing Watch4× starts playback. The existing s7 worker stays available under the shared model lock; stop it before starting another model or heavy check.
+
 ## Remaining limits
 
-The visible app demonstration is pending. No actual water choice, long-run population viability, or improvement against wild behavior has been established. The default-off simulation metrics matched the pre-R15 baseline exactly. Ordinary save/reload and invalid-adapter refusal checks passed separately. The 120-animal performance bound was inconsistent on both the earlier baseline and current code and remains unresolved. Earlier animation checks retain their documented near-extension joint-step and fast trunk-approach limits.
+No actual water choice, long-run population viability, or improvement against wild behavior has been established. The default-off simulation metrics matched the pre-R15 baseline exactly. Ordinary save/reload and invalid-adapter refusal checks passed separately. The 120-animal performance bound was inconsistent on both the earlier baseline and current code and remains unresolved. Earlier animation checks retain their documented near-extension joint-step and fast trunk-approach limits. The missing generated audio assets are a separate existing limitation; this demonstration makes no audio claim.
 
 R14 remains a failed operational experiment: its third collection stopped incomplete after an inference timeout and recovery costs exhausted its day-fit budget. It produced no R14 training run. Its partial evaluation data was preserved and was not used for R15.
