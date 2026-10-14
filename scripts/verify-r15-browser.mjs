@@ -79,6 +79,11 @@ export function recurrent(traces) {
   }
   return null;
 }
+export function readinessAction(model, startAttempted) {
+  if (model.ready) return 'ready';
+  assert.ok(model.phase === 'loading' || model.phase === 'stopped', `provider cannot become ready: ${model.phase}: ${model.status}`);
+  return model.phase === 'stopped' && !startAttempted ? 'start' : 'wait';
+}
 export async function main() {
   const args = process.argv.slice(2), outIndex = args.indexOf('--out');
   assert.ok(outIndex >= 0 && args[outIndex + 1], 'a new --out directory is required');
@@ -136,14 +141,22 @@ export async function main() {
     await page.keyboard.press('m');
     await page.locator('input[name="provider"][value="r15"]').waitFor();
     assert.ok(await page.locator('input[name="provider"][value="r15"]').isChecked());
-    if (!s.model.ready && s.model.phase !== 'loading') { await page.locator('[data-act="retry"]').click(); report.start = 'UI start'; } else report.start = s.model.ready ? 'reused already-ready provider' : 'waited for existing startup';
     const readyDeadline = Math.min(deadline, Date.now() + 660_000);
-    let ready;
+    let ready, startAttempted = false;
     for (;;) {
       check(); const state = await read(); assert.equal(state.snapshot.clock.playing, false); assert.equal(state.snapshot.tick, 0);
-      if (state.snapshot.model.ready) { ready = state; break; }
+      const action = readinessAction(state.snapshot.model, startAttempted);
+      if (action === 'ready') { ready = state; report.start ??= 'reused provider without issuing start'; break; }
       assert.ok(Date.now() < readyDeadline, 'provider readiness exceeded 660 seconds');
-      assert.notEqual(state.snapshot.model.phase, 'failed', state.snapshot.model.status);
+      if (action === 'start') {
+        // Status can change between the Node observation and this browser task. Recheck at the actual UI click.
+        const clicked = await page.evaluate(() => {
+          const model = window.__MGOGO__.snapshot().model, button = document.querySelector('[data-act="retry"]');
+          if (model.ready || model.phase !== 'stopped' || !(button instanceof HTMLButtonElement) || button.disabled) return false;
+          button.click(); return true;
+        });
+        if (clicked) { startAttempted = true; report.start = 'one UI start'; record({ kind: 'provider-start-click' }); save(); }
+      }
       await page.waitForTimeout(500);
     }
     const adapter = identity(ready.evidence.identity); report.identity = adapter; save(); record({ kind: 'ready', ...ready });
@@ -215,6 +228,14 @@ export async function main() {
   console.log(JSON.stringify(report));
 }
 function selfTest() {
+  assert.equal(readinessAction({ ready: false, phase: 'loading' }, false), 'wait');
+  assert.equal(readinessAction({ ready: false, phase: 'stopped' }, false), 'start');
+  assert.equal(readinessAction({ ready: false, phase: 'loading' }, true), 'wait');
+  assert.equal(readinessAction({ ready: false, phase: 'stopped' }, true), 'wait');
+  assert.equal(readinessAction({ ready: true, phase: 'ready' }, false), 'ready');
+  assert.equal(readinessAction({ ready: true, phase: 'ready' }, true), 'ready');
+  assert.throws(() => readinessAction({ ready: false, phase: 'failed', status: 'warmup failed' }, true));
+  assert.throws(() => readinessAction({ ready: false, phase: 'unavailable' }, false));
   assert.throws(() => checkIdle([['R14', 'day9']], null, () => true));
   assert.throws(() => checkIdle([], { pid: 1, stage: 'R14' }, () => true));
   assert.throws(() => checkIdle([], { pid: 1, stage: 'R15-app' }, () => false));
