@@ -93,6 +93,35 @@ export type SampleOpts = SampleBase & (
 );
 
 
+/** What the rules' taps give for one decision the caller wanted: the request a kernel would be sent there, built before the rules chose, and what they chose. */
+export interface RulesDecision { c: Chimp; req: KernelRequest; tick: number; opened: number; act: R8Rec['act']; rng: number; list: Candidate[]; menu: Candidate[]; chosen: Candidate; why: string }
+/**
+ * Sets the simulation's rules taps (src/sim/decide.ts rulesTap, src/sim/rg.ts rgTap): at every rules decision of a living
+ * animal aged `minAge` or over that `want` accepts, the request a kernel would be sent there is built before the rules
+ * choose, and `onDecision` receives it with the rules' menu and choice; `onWhy` sees every RG verdict. Read only: building
+ * the request must not draw from world.rng or write the animal's own record (both checked). Returns the function that
+ * takes the taps off again; call it in a `finally`. Shared by sampleR8 and stage R16's census (scripts/lib/r16-collect.ts).
+ */
+export function tapRulesDecisions(w: World, o: { minAge: number; want: (c: Chimp) => boolean; onDecision: (d: RulesDecision) => void; onWhy?: (why: string) => void }): () => void {
+  let pending: Omit<RulesDecision, 'list' | 'menu' | 'chosen' | 'why'> | null = null;
+  rulesTap.fn = (c, list, policy) => {
+    pending = null;
+    if (!policy || !c.alive || c.age < o.minAge) return;
+    if (!o.want(c)) return;
+    const rng = w.rng, before = JSON.stringify(ix(c).own ?? null);
+    pending = { c, req: buildRequest(w, c), tick: w.tick, opened: ix(c).own?.ask?.[1] ?? -1, act: { action: c.action, targetId: c.targetId, seconds: c.actionTime, finished: ix(c).finished, onMenu: list.some(k => k.action === c.action && k.targetId === c.targetId) }, rng };
+    if (w.rng !== rng) throw new Error('building a request drew from world.rng');
+    if (JSON.stringify(ix(c).own ?? null) !== before) throw new Error('building a request wrote the animal\'s own record');
+  };
+  rgTap.fn = (c, list, menu, _probs, chosen, why) => {
+    o.onWhy?.(why);
+    const p = pending; pending = null;
+    if (!p || p.c !== c || p.tick !== w.tick) return;
+    o.onDecision({ ...p, list, menu, chosen, why });
+  };
+  return () => { rulesTap.fn = null; rgTap.fn = null; };
+}
+
 export function sampleR8(o: SampleOpts): { recs: R8Rec[]; hash: string; decisions: Record<string, number>; seconds: number; skipped: Record<string, number> } {
   if (o.capture && o.extend) throw new Error('capture and extend are mutually exclusive');
   if (![...TRAIN_SEEDS, ...TEST_SEEDS].includes(o.seed)) throw new Error(`seed ${o.seed}: 48 and 7 (train, dev) and 21 (test) only (docs/staging/r4-prereg.md §3)`);
@@ -104,20 +133,8 @@ export function sampleR8(o: SampleOpts): { recs: R8Rec[]; hash: string; decision
   // an option's stable key is the decode's (stage R9, src/kernel/decode.ts optionKey: the act and its target, the pair applyDecision re-checks by)
   const key = optionKey;
   const skip = (why: string) => { skipped[why] = (skipped[why] ?? 0) + 1; };
-  let pending: { c: Chimp; req: ReturnType<typeof buildRequest>; tick: number; opened: number; act: R8Rec['act']; rng: number } | null = null;
-  rulesTap.fn = (c, list, policy) => {
-    pending = null;
-    if (!policy || !c.alive || c.age < P.rgMinAge) return;
-    if (u01(`${o.tag ?? 'r8'}:${o.seed}:${w.tick}:${c.id}`) >= o.p) return;
-    const rng = w.rng, before = JSON.stringify(ix(c).own ?? null);
-    pending = { c, req: buildRequest(w, c), tick: w.tick, opened: ix(c).own?.ask?.[1] ?? -1, act: { action: c.action, targetId: c.targetId, seconds: c.actionTime, finished: ix(c).finished, onMenu: list.some(k => k.action === c.action && k.targetId === c.targetId) }, rng };
-    if (w.rng !== rng) throw new Error('building a request drew from world.rng');
-    if (JSON.stringify(ix(c).own ?? null) !== before) throw new Error('building a request wrote the animal\'s own record');
-  };
-  rgTap.fn = (c, list, menu, _probs, chosen, why) => {
-    decisions[why] = (decisions[why] ?? 0) + 1;
-    const p = pending; pending = null;
-    if (!p || p.c !== c || p.tick !== w.tick) return;
+  const untap = tapRulesDecisions(w, { minAge: P.rgMinAge, want: c => u01(`${o.tag ?? 'r8'}:${o.seed}:${w.tick}:${c.id}`) < o.p, onWhy: why => { decisions[why] = (decisions[why] ?? 0) + 1; }, onDecision: p => {
+    const { c, list, menu, chosen, why } = p;
     if (p.req.options.length < 2) return skip('fewer-than-two-options');
     const ctx = p.req.context, bad = decisionContextError(ctx);
     if (bad !== '') return skip(`invalid-context: ${bad}`);
@@ -147,9 +164,9 @@ export function sampleR8(o: SampleOpts): { recs: R8Rec[]; hash: string; decision
       opened: p.opened, asked: ctx.own?.asked ?? null, options, context: ctx, act: p.act, packets,
       tokens: { state: tokensOf(packets.state), neutral: tokensOf(packets.neutral), own: tokensOf(packets.own), ownShort: tokensOf(packets.ownShort) } });
     o.extend?.(recs[recs.length - 1], { w, c, list, menu, chosen, rngBefore: p.rng });
-  };
+  } });
   try { for (let i = 0; i < Math.round(o.days * DAY); i++) { tickWorld(w); o.onTick?.(w, w.tick); if (o.log && i > 0 && i % (DAY / 4) === 0) o.log(`sampled day ${(i / DAY).toFixed(2)}: ${recs.length} records`); } }
-  finally { rulesTap.fn = null; rgTap.fn = null; }
+  finally { untap(); }
   const hash = hashWithoutOwn(w);
   if (o.check) {
     const v = createWorld(o.seed, { profile: 'field', params: o.params });   // the base alone: no observeV5, no menuParity, no taps

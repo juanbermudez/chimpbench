@@ -41,7 +41,7 @@ export function distribution(p, n) {
   assert.ok(Math.abs(p.reduce((a, b) => a + b, 0) - 1) < 1e-5, 'normalized probabilities');
 }
 export function identity(x) {
-  assert.ok(x && /^r15-resources-s(7|11)$/.test(x.adapter) && /^[a-f0-9]{64}$/.test(x.sha256) && x.packetVersion === 'resource-targets-v1', 'verified adapter identity');
+  assert.ok(x && /^(r15-resources|r16-zero|r16-agg)-s(7|11)$/.test(x.adapter) && /^[a-f0-9]{64}$/.test(x.sha256) && x.packetVersion === 'resource-targets-v1', 'verified adapter identity');
   return x;
 }
 export function appliedTrace(t, adapter) {

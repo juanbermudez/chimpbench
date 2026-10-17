@@ -20,11 +20,31 @@ def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+# Stage R16 (docs/staging/r16-prereg.md §8) trains the same contract on its own files, under its own adapter names.
+STAGES = {'R15': ('r15-resources',), 'R16': ('r16-zero', 'r16-agg')}
+CHAIN_TOKEN = 'MGOGO_MODEL_LOCK_TOKEN'
+
+
+def adapter_name(manifest, seed):
+    """The adapter a dataset may train: stage R15's name, or stage R16's for the round its manifest names."""
+    prefix = 'r15-resources' if manifest.get('stage') == 'R15' else 'r16-' + str(manifest.get('round'))
+    if prefix not in STAGES.get(manifest.get('stage'), ()): raise ValueError('incompatible R15 dataset manifest')
+    return f'{prefix}-s{seed}'
+
+
+def stage_of(name):
+    """The stage whose manifest an adapter of this name must carry (None: not a registered name)."""
+    for stage, prefixes in STAGES.items():
+        if any(re.fullmatch(prefix + r'-s(7|11)', name or '') for prefix in prefixes): return stage
+    return None
+
+
 def validate(root):
     manifest = json.loads((root / 'contexts/manifest.json').read_text())
-    required = {'stage': 'R15', 'packetVersion': VERSION, 'kindTeacher': 'r11-original-menu-kind-marginal-v1',
+    required = {'packetVersion': VERSION, 'kindTeacher': 'r11-original-menu-kind-marginal-v1',
                 'targetTeacher': 'counterfactual-resource-valuation-v1', 'labels': 'soft'}
-    if any(manifest.get(k) != v for k, v in required.items()): raise ValueError('incompatible R15 dataset manifest')
+    if manifest.get('stage') not in STAGES or any(manifest.get(k) != v for k, v in required.items()): raise ValueError('incompatible R15 dataset manifest')
+    adapter_name(manifest, 7)
     for path, digest in manifest['outputs'].items():
         if sha(path) != digest: raise ValueError('R15 dataset output changed: ' + path)
     for kind in ('train', 'dev'):
@@ -53,8 +73,8 @@ def main():
     parser.add_argument('--root', type=Path, required=True)
     parser.add_argument('--seed', type=int, choices=(7, 11), default=7)
     parser.add_argument('--run', action='store_true')
-    args = parser.parse_args(); root = args.root.resolve(); validate(root)
-    name = f'r15-resources-s{args.seed}'
+    args = parser.parse_args(); root = args.root.resolve(); manifest = validate(root)
+    name = adapter_name(manifest, args.seed)
     if (root / 'adapters' / name).exists(): raise ValueError('adapter directory already exists; inspect without overwriting')
     command = [str(ROOT / 'training/decide_ft/r4_py.sh'), 'train_r11.py', '--name', name,
                '--train', 'contexts/train.jsonl', '--dev', 'contexts/dev.jsonl', '--extra', 'contexts/training-manifest.json',
@@ -81,7 +101,7 @@ def complete_adapter(root, name):
     path = folder / 'manifest.json'
     manifest = json.loads(path.read_text())
     history = manifest.get('history', [])
-    if manifest.get('stage') != 'R15' or manifest.get('adapter') != name or manifest.get('labels') != 'soft' or manifest.get('hyperparameters', {}).get('epochs') != 3:
+    if manifest.get('stage') != stage_of(name) or manifest.get('adapter') != name or manifest.get('labels') != 'soft' or manifest.get('hyperparameters', {}).get('epochs') != 3:
         raise ValueError('training did not produce the registered R15 adapter')
     if len(history) != 3 or [row.get('epoch') for row in history] != [1, 2, 3]: raise ValueError('incomplete R15 training history')
     if manifest.get('adapter_sha256') != sha(folder / 'adapter_model.safetensors') or manifest.get('preflight', {}).get('receipt_sha256') != sha(root / 'preflight/result.json'):
@@ -103,11 +123,36 @@ def stop_group(process):
         process.wait()
 
 
+def ancestors(pid):
+    """This process's ancestors from the process list (pid, ppid), nearest first."""
+    parent = {}
+    for line in subprocess.check_output(['ps', '-axo', 'pid=,ppid='], text=True).splitlines():
+        parts = line.split()
+        if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit(): parent[int(parts[0])] = int(parts[1])
+    out, p = [], parent.get(pid)
+    while p is not None and p > 1 and p not in out:
+        out.append(p); p = parent.get(p)
+    return out
+
+
+def chain_owned():
+    """Stage R16 (docs/staging/r16-prereg.md §17.2): True when a chain that started this process holds the shared lock and
+    passed its token down; then the lock is neither taken nor released here. Without the token: False, as before."""
+    token = os.environ.get(CHAIN_TOKEN)
+    if not token: return False
+    owner = json.loads(MODEL_LOCK.read_text()) if MODEL_LOCK.exists() else {}
+    if owner.get('stage') != 'R16-chain' or owner.get('token') != token or owner.get('pid') not in ancestors(os.getpid()):
+        raise ValueError('the shared model lock is not held by the chain that started this process')
+    return True
+
+
 def run_guarded(command, root, *, timeout_seconds=MAX_SECONDS, purpose='training', before_launch=None, after_success=None):
-    idle()
-    MODEL_LOCK.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(MODEL_LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-    os.write(fd, json.dumps({'pid': os.getpid(), 'stage': 'R15', 'root': str(root), 'purpose': purpose}).encode()); os.close(fd)
+    owned = chain_owned()
+    if not owned:
+        idle()
+        MODEL_LOCK.parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(MODEL_LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+        os.write(fd, json.dumps({'pid': os.getpid(), 'stage': 'R15', 'root': str(root), 'purpose': purpose}).encode()); os.close(fd)
     process = None
     previous = signal.getsignal(signal.SIGTERM)
     def interrupted(signum, frame): raise KeyboardInterrupt('R15 training interrupted')
@@ -128,7 +173,7 @@ def run_guarded(command, root, *, timeout_seconds=MAX_SECONDS, purpose='training
     finally:
         if process is not None and process.poll() is None: stop_group(process)
         signal.signal(signal.SIGTERM, previous)
-        MODEL_LOCK.unlink()
+        if not owned: MODEL_LOCK.unlink()
 
 
 if __name__ == '__main__':

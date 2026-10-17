@@ -167,7 +167,7 @@ export function meterStart(w: World): MeterState {
 }
 
 /** After a tick and its answers: every living animal's minute. Reads only. */
-function meterTick(w: World, st: MeterState): void {
+export function meterTick(w: World, st: MeterState): void {
   const P = paramsOf(w), idx = index(w), env = w.environment, light = env.daylight >= 0.5, night = env.daylight <= 0.03;
   for (const c of idx.alive) {
     const s = st[c.id] ??= newAnimal(c), x = ix(c);
@@ -194,7 +194,7 @@ function meterTick(w: World, st: MeterState): void {
 }
 
 /** The day's rows, then the counters start again. An animal that died during the day gets its last row and leaves the meter. */
-function meterDayEnd(w: World, st: MeterState, day: number, kernelArm: boolean, minAge: number): Row[] {
+export function meterDayEnd(w: World, st: MeterState, day: number, kernelArm: boolean, minAge: number): Row[] {
   const P = paramsOf(w), idx = index(w), rows: Row[] = [];
   for (const key of Object.keys(st)) {
     const c = idx.byId.get(+key), s = st[key];

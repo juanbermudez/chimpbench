@@ -4,7 +4,8 @@ import { ProviderError, type DecisionProvider, type ProviderAnswer, type Adapter
 
 export function adapterIdentity(value: unknown): AdapterIdentity | undefined {
   if (typeof value !== 'object' || value === null || !('adapter' in value) || !('sha256' in value) || !('packetVersion' in value)) return undefined;
-  if (typeof value.adapter !== 'string' || !/^r15-resources-s(7|11)$/.test(value.adapter) || typeof value.sha256 !== 'string'
+  // stage R15's adapters and stage R16's (the same packet identity; docs/staging/r16-prereg.md §14), as scripts/lib/r15-training.ts ADAPTER_NAME
+  if (typeof value.adapter !== 'string' || !/^(r15-resources|r16-zero|r16-agg)-s(7|11)$/.test(value.adapter) || typeof value.sha256 !== 'string'
     || !/^[a-f0-9]{64}$/.test(value.sha256) || value.packetVersion !== R15_PACKET_VERSION) return undefined;
   return { adapter: value.adapter, sha256: value.sha256, packetVersion: value.packetVersion };
 }

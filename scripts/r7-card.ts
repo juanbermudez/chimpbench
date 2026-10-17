@@ -102,9 +102,14 @@ export interface ArmFile {
   counts?: Record<string, number>;
 }
 
-/** Runs one arm at one unit and returns everything its file holds but the run's identity. */
-export function runArm(base: World, spec: ArmSpec, unit: Unit, days: number, focal: { id: number; cls: string }[], params: Record<string, number>, log: (s: string) => void = () => {}): Pick<ArmFile, 'startHash' | 'endHash' | 'seconds' | 'living' | 'deaths' | 'card' | 'rows' | 'perAnimal' | 'follows' | 'counts' | 'rgMinAge'> {
+/**
+ * Runs one arm at one unit and returns everything its file holds but the run's identity. `attach` (stage R16; absent: as
+ * before): called once with the arm's world before its first tick; what it returns is called after every tick, after the
+ * card, with the tick's index. It must only read.
+ */
+export function runArm(base: World, spec: ArmSpec, unit: Unit, days: number, focal: { id: number; cls: string }[], params: Record<string, number>, log: (s: string) => void = () => {}, attach?: (w: World) => { after(i: number): void }): Pick<ArmFile, 'startHash' | 'endHash' | 'seconds' | 'living' | 'deaths' | 'card' | 'rows' | 'perAnimal' | 'follows' | 'counts' | 'rgMinAge'> {
   const focalIds = focal.map(f => f.id), w = armWorld(base, spec, unit, focalIds), P = paramsOf(w), t0 = Date.now(), startHash = worldHash(w);
+  const extra = attach?.(w);
   const alive0 = w.chimps.filter(c => c.alive);
   const tracked = unit === 'F' ? focalIds : alive0.filter(c => c.age >= P.rgMinAge).map(c => c.id);
   const driven = spec.share === null ? 0 : unit === 'F' ? focalIds.filter(id => { const c = index(w).byId.get(id); return !!c && c.alive && c.age >= P.rgMinAge; }).length : tracked.length;
@@ -112,12 +117,12 @@ export function runArm(base: World, spec: ArmSpec, unit: Unit, days: number, foc
   let out: Pick<ArmFile, 'rows' | 'perAnimal' | 'follows' | 'counts'>;
   if (unit === 'P') {
     const r = popStart(w, w.seed, days);
-    try { for (let i = 0; i < days * DAY_TICKS; i++) { popBefore(r, w); tickWorld(w); popAfter(r, w); cardStep(card, w); if ((i + 1) % (5 * DAY_TICKS) === 0) log(`day ${(i + 1) / DAY_TICKS}/${days}: ${Math.round((Date.now() - t0) / 1000)} s`); } }
+    try { for (let i = 0; i < days * DAY_TICKS; i++) { popBefore(r, w); tickWorld(w); popAfter(r, w); cardStep(card, w); extra?.after(i); if ((i + 1) % (5 * DAY_TICKS) === 0) log(`day ${(i + 1) / DAY_TICKS}/${days}: ${Math.round((Date.now() - t0) / 1000)} s`); } }
     finally { popStop(); }
     out = popFinish(r, w, params);
   } else {
     const r = focalStart(w, w.seed, days, focalIds);
-    for (let i = 0; i < days * DAY_TICKS; i++) { tickWorld(w); focalAfter(r, w); cardStep(card, w); }
+    for (let i = 0; i < days * DAY_TICKS; i++) { tickWorld(w); focalAfter(r, w); cardStep(card, w); extra?.after(i); }
     const f = focalFinish(r, params);
     out = { rows: f.truth, perAnimal: f.perAnimal, follows: f.follows };
   }

@@ -36,6 +36,7 @@ from pathlib import Path
 import torch
 import torch.nn.functional as F
 
+from epochs import rows_seen, shown_in
 from common import FT, REVISION, action_logits, collate, example, load_base, permuted, read_jsonl, score, sha256_file
 from soft_loss import argmax, cross_entropy_of_probs, entropy, permuted_soft, soft_cross_entropy, target_vector
 from train import autocast, lora_model
@@ -102,7 +103,7 @@ def main(args: dict) -> None:
     params = [p for p in model.parameters() if p.requires_grad]
     print(f"[{name}] trainable {sum(p.numel() for p in params):,} parameters in {len(targets)} modules", flush=True)
     opt = torch.optim.AdamW(params, lr=args["lr"], weight_decay=0.0)
-    per_epoch = [sum(1 for d in data if d[6] is None or d[6] == e) for e in range(args["epochs"])]
+    per_epoch = [sum(1 for d in data if shown_in(d[6], e)) for e in range(args["epochs"])]
     steps = sum(math.ceil(n / (args["batch"] * args["accum"])) for n in per_epoch)
     warm = max(1, int(0.1 * steps))
     sched = torch.optim.lr_scheduler.LambdaLR(opt, lambda s: min((s + 1) / warm, max(0.0, (steps - s) / max(1, steps - warm))))
@@ -143,7 +144,7 @@ def main(args: dict) -> None:
 
     for epoch in range(args["epochs"]):
         model.train()
-        shown = [d for d in data if d[6] is None or d[6] == epoch]
+        shown = [d for d in data if shown_in(d[6], epoch)]
         order = [(p, k, s) if rng.random() < 0.5 else (pp, pk, ps) for p, k, s, pp, pk, ps, _ in shown]
         rng.shuffle(order)
         running, seen, e0 = 0.0, 0, time.time()
@@ -204,6 +205,8 @@ def main(args: dict) -> None:
         "loss": ("soft cross-entropy over the offered options (minus the sum of the label times log-softmax)" if labels == "soft" else "softmax cross-entropy over the offered options, one-hot on the realised pick")
                 + ", weight 1 per example, no class weight, prior or temperature; each epoch shows a context in its own or a shuffled option order; the saved epoch has the lowest development loss of the same kind",
         "targets": len(targets), "untuned_dev": before, "best_dev": best, "history": history,
+        # stage R16 (rows carrying their epochs): what the saved epoch had seen, and how many examples each epoch showed
+        **({"epochs_shown": {"per_epoch": per_epoch, "rows_seen_by_saved_epoch": rows_seen([d[6] for d in data], best["epoch"] - 1), "rows": len(data)}} if by_epoch else {}),
         "cost": {"device": device, "training_seconds": round(train_seconds), "wall_seconds": round(time.time() - t0), "examples_shown": examples,
                  "seconds_per_example": round(train_seconds / max(1, examples), 3), "peak_mps_driver_gib": round(peak_mps, 2),
                  "peak_footprint_gib": round(peak_foot, 2), "mps_out_of_memory_retries": oom, "max_rss_gib": round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 2**30, 2)},

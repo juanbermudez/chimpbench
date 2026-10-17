@@ -61,6 +61,8 @@ export interface LabelData {
   order: number[]; span: number;
   /** (a) the replay of the belief draws ended on the world's random state after the decision; (b) the published score plus the belief draw has its first maximum at the option the rules took; (c) the list and menu built again at the true decision version are the rules' own. */
   rngOk: boolean; pickOk: boolean; listOk: boolean;
+  /** Stage R16 (the teacher-half check, docs/staging/r16-prereg.md §5.4), only when asked for: `counts` split by the parity of the redraw's number (odd, even). */
+  halves?: [number[], number[]];
 }
 /** A record of this stage: stage R8's, with the label on a fresh draw that has one, or why it has none. */
 export type R11Rec = R8Rec & { lab?: LabelData; noLabel?: string };
@@ -91,7 +93,7 @@ function streamFrom(state: number): { next: () => number; state: () => number } 
 
 const _scratch: Candidate[] = [];
 /** The label of a fresh draw, computed at the decision (the sampler's `extend` hook). `redraws`: how many other decision versions. */
-export function labelData(rec: Pick<R8Rec, 'id' | 'options' | 'rgIndex'>, live: { w: World; c: Chimp; list: Candidate[]; menu: Candidate[]; chosen: Candidate; rngBefore: number }, redraws: Redraws = REDRAWS): LabelData | string {
+export function labelData(rec: Pick<R8Rec, 'id' | 'options' | 'rgIndex'>, live: { w: World; c: Chimp; list: Candidate[]; menu: Candidate[]; chosen: Candidate; rngBefore: number }, redraws: Redraws = REDRAWS, halves = false): LabelData | string {
   const { w, c, list, menu, chosen } = live, P = paramsOf(w);
   if (P.choiceBelief !== 2 || P.redecideValue >= 1 || P.rgOn !== 1) return 'the rules of this world do not draw as the working base does';
   if (menu.length < 2) return 'fewer than two options on the rules\' menu';
@@ -111,7 +113,7 @@ export function labelData(rec: Pick<R8Rec, 'id' | 'options' | 'rgIndex'>, live: 
   let best = -Infinity, pick = -1;
   for (let j = 0; j < menu.length; j++) { const v = menu[j].score + b[order[j]]; if (v > best) { best = v; pick = order[j]; } }
   // the same decision built again, then with the jitter redrawn: another decision version is another draw of every option's jitter
-  const v0 = c.decisionVersion, counts = new Array<number>(n).fill(0), rnd = seeded(`r11-label:${rec.id}`);
+  const v0 = c.decisionVersion, counts = new Array<number>(n).fill(0), rnd = seeded(`r11-label:${rec.id}`), half: [number[], number[]] = [new Array<number>(n).fill(0), new Array<number>(n).fill(0)];
   let same = 0, made = 0, listOk = false;
   try {
     const again = computeCandidates(w, c, _scratch), m0 = rgMenu(w, c, again);
@@ -125,10 +127,10 @@ export function labelData(rec: Pick<R8Rec, 'id' | 'options' | 'rgIndex'>, live: 
       for (let j = 0; j < m.length && ok; j++) if (!at.has(optionKey(m[j]))) ok = false;
       if (!ok) continue;
       for (let j = 0; j < m.length; j++) { const i = at.get(optionKey(m[j]))!, t = bel[i], v = m[j].score + (t ? beliefDraw(t, rnd(), rnd()) : 0); if (v > top) { top = v; win = i; } }
-      same++; counts[win]++;
+      same++; counts[win]++; half[r % 2 === 1 ? 0 : 1][win]++;
     }
   } finally { c.decisionVersion = v0; }
-  return { n: made, same, counts, raw, jit, bel, b, order, span: P.candidateJitterSpan, rngOk: stream.state() === (w.rng >>> 0), pickOk: pick === rec.rgIndex && optionKey(chosen) === keys[pick], listOk };
+  return { n: made, same, counts, raw, jit, bel, b, order, span: P.candidateJitterSpan, rngOk: stream.state() === (w.rng >>> 0), pickOk: pick === rec.rgIndex && optionKey(chosen) === keys[pick], listOk, ...(halves ? { halves: half } : {}) };
 }
 
 export function sampleR11(o: Omit<SampleOpts, 'tag' | 'extend' | 'capture'> & { redraws?: Redraws }): { recs: R11Rec[]; hash: string; decisions: Record<string, number>; seconds: number; skipped: Record<string, number> } {
