@@ -126,8 +126,8 @@ Nothing allocates per frame (the director's group and the pools' lookups use fix
 | 1. Alpha off screen, T2 / O1 / O3 | 1.6 / 5.1 / 15.7 s | 0 / 3.4 / 2.3 s | 0 / 0 / 0 s | 0 / 0 / 0 s |
 | 1. Camera to alpha at Watch 4x (T1), median | 8.8 m (8.7 to 9.8) | 10.3 m | 10.3 m | 10.3 m (10.1 to 10.3) |
 | 2. Rate when each party body starts down, O1 | 596 to 616 s/s (all eight) | 48 to 70 | 48 to 70 | 48 to 70 |
-| 2. Largest body move in a frame on the way down, O1 / O3 | 16.5 / 9.0 m | 0.73 / 0.67 m | 0.73 / 0.67 m | as run 2 |
-| 2. Dawn at 10 min/s, O1 / O3 | 2.8 / 2.6 s | 2.1 / 2.1 s | 2.0 / 2.1 s | as run 2 |
+| 2. Largest body move in a frame on the way down, O1 / O3 | 16.5 / 9.0 m | 0.73 / 0.67 m | 0.73 / 0.67 m | 0.73 / 0.67 m |
+| 2. Dawn at 10 min/s, O1 / O3 | 2.8 / 2.6 s | 2.1 / 2.1 s | 2.0 / 2.1 s | 2.0 / 2.2 s |
 | 3. Pool bouts with water under the drinker's mouth | 0 of 10 | 10 of 10, drinker standing in the pool | 10 of 10, standing in it | 10 of 10, at the rim |
 | 3. Drinker placed at the water's edge (pools and stream) | 0 of 13 | 0 of 13 | 0 of 13 | 13 of 13 |
 | 4. Field map: named animal on screen and within 40 m, C3 / CI2 | 0 / 50% | 100 / 80.3% | 100 / 80.9% | 100 / 80.3% |
@@ -153,7 +153,7 @@ Frame time in every film held at a median of 16.6 to 16.7 ms (p95 17 to 18.5 ms)
 
 1. **Camera.** No jump over 3 m in a frame: met in all three runs. Off screen under 2%: not met in run 1 (O1 7.5%, O3 5.1%), met in runs 2 and 3 (0%). T1's median distance within 15% of 8.8 m: **not met** (10.3 m, +17%). The probe set the orbit at 9.9 m in both builds; the old spring trailed the walkers by about a metre toward the camera, the new one holds the orbit (10.1 to 10.4 m, a narrower spread than 8.7 to 9.8). The statement was badly chosen; the reading is the fix working. Test: met.
 2. **Opening.** Met in all three runs. The 160 m map's opening was not re-filmed; its rule is unchanged in the code (`w.size > 1000` gates the new one).
-3. **Water.** Met in run 3 only: 13 of 13 sampled bouts with the mouth over drawn water, the ground under it 5 to 22 cm below the surface, the drinker at the rim or bank facing in. Nothing grew inside the pools in the shots looked at (four of ten). The 160 m map has no pool (a test; its water mesh is built by the unchanged path). Test: met.
+3. **Water.** Met in run 3 only: 13 of 13 sampled bouts with the mouth over drawn water, the ground under it 5 to 22 cm below the surface, the drinker at the rim or bank facing in. Nothing grew inside the pools in the shots looked at (three of the ten). The 160 m map has no pool (a test; its water mesh is built by the unchanged path). Test: met.
 4. **Cinematic.** Field map: met (100% and 80.3%, the camera at most 39.6 m from the selected animal). 160 m map: **not met** in any run (17%, 17%, 11%, 11%); the cause was found after run 3 and fixed in an unfilmed commit.
 5. **Experiment.** Met in all three runs. Test: met.
 6. **Glides.** No glide in the standing clip: **not met** (2 of 55 left, both young followers slid into place by the layout, a mechanism other than the moving test: section 6). At most a quarter of before: met (14 and 9 runs of 94). Field map controls at none: met. 1 min/s and faster unchanged: a test.
@@ -164,7 +164,7 @@ Frame time in every film held at a median of 16.6 to 16.7 ms (p95 17 to 18.5 ms)
 ## 6. Not done, and what is left
 
 Owned by the renderer or the interface, not taken on (the look's items 8, 10, 11, 12 and 14):
-- **Limb jumps at the start and end of a climb** (item 8). In the look's 60 films, 1,568 single-frame steps of a joint over 30 cm; 1,103 of them inside the climb clip itself, 30 at a change from clamber to climb, mostly forearms (891) and shins (291). It needs the climb clip's holds and the blend out of it studied on their own.
+- **Limb jumps at the start and end of a climb** (item 8). In the look's 60 films, 1,568 single-frame steps of a joint over 30 cm (forearms 891 of them, shins 291); 1,103 inside the climb clip itself, 30 at a change from clamber to climb. Some of those inside the clip are a time-lapse climb cycle, not a fault: they need sorting first. It needs the climb clip's holds and the blend out of it studied on their own.
 - **Play in crowns** (item 10), **fruit clusters** (item 11), **the portrait showing hands** (item 12), **long stillness** (item 14).
 - **The pool's look.** It reads as dark water in a ring of black mud; the stream reads as dark in the same light. The mud ring could be narrower and lighter.
 - **The 160 m map's cinematic view** after 4fa59b2: not filmed.
