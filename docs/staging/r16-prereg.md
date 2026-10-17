@@ -1,6 +1,6 @@
 # Stage R16: the perceived-target model at a real scale, taught on its own states, and tested as a population (pre-registration)
 
-Branch `r16-scale-and-own-states` from `track-e` b5c28eb. Registered 17 October 2026, written 14:55 to 16:40 EDT (times
+Branch `r16-scale-and-own-states` from `track-e` b5c28eb. Registered 17 October 2026, read and written 14:38 to 14:58 EDT (times
 from `date`), **before any code of this stage and before any run.** It follows the user's words of 6, 10, 13 and 17
 October (HANDOFF.md §1 and §2.0): move toward the state and perception decision model driving behaviour, with the
 training that supports it; train it and show the model driving chimps in the app; "Continue driving this forward."
