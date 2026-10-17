@@ -33,20 +33,23 @@ export interface ReadoutDay {
   tripsFall: number[]; tripsFallEnd: [number, number, number][];
   /** Drink trips begun then, by band, and those that reached the water. */ drinkFall: number[]; drinkFallArrived: number[];
   /** Feeding stretches that ended this day (a run of crown feeding and food trips) and the crowns fed in over them. */ stretches: number; stretchCrowns: number;
+  /** For the search of §13 (window tick indices): the first tick and length of the day's longest dark stretch out of a finished nest; the first full-daylight tick in a finished nest before 13:00; the starts of food trips begun in the dark (at most 20). */
+  outStart: number; outLen: number; dayNestFirst: number; darkTrips: number[];
 }
 export interface ReadoutResult { minAge: number; animals: { id: number; name: string; age: number }[]; days: ReadoutDay[]; ticks: number }
 
 interface Trip { tree: number; band: number; fall: boolean }
 interface Drink { site: number; band: number; fall: boolean; reached: boolean }
 interface Track {
-  id: number; alive: boolean; wasNest: boolean; fam: string; tgt: number; trip: Trip | null; drink: Drink | null; atW: boolean;
+  id: number; alive: boolean; wasNest: boolean; fam: string; tgt: number; trip: Trip | null; drink: Drink | null; atW: boolean; outFrom: number; outLen: number;
   stretch: number[] | null; fin: number; exit: number | null; /** A midnight has passed in the window (so this morning is read whole). */ nestSinceMidnight: boolean; d: ReadoutDay;
 }
 export interface ReadoutState { tracks: Track[]; res: ReadoutResult; tick: number; maxCall: number; lastHour: number }
 
 const blank = (id: number, day: number): ReadoutDay => ({ id, day, ticks: 0, dayNestAM: 0, dayNestPM: 0, nest0745: 0, nest0800: 0, eveDark: 0, eveOut: 0, mornDark: 0, mornOut: 0,
   earlyRises: 0, lateLeaves: 0, pantHoots: 0, groomMin: 0, kcalEarly: 0, darkTripMin: 0, rise: null, riseKind: null,
-  tripsFall: [0, 0, 0, 0], tripsFallEnd: [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]], drinkFall: [0, 0, 0, 0], drinkFallArrived: [0, 0, 0, 0], stretches: 0, stretchCrowns: 0 });
+  tripsFall: [0, 0, 0, 0], tripsFallEnd: [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]], drinkFall: [0, 0, 0, 0], drinkFallArrived: [0, 0, 0, 0], stretches: 0, stretchCrowns: 0,
+  outStart: -1, outLen: 0, dayNestFirst: -1, darkTrips: [] });
 const famNow = (c: Chimp) => familyOf(c.action, ix(c).v, ix(c).aux);
 const feedingTree = (c: Chimp) => c.action === 'forage' && isTreeId(c.targetId) && ix(c).phase >= 2;
 const finOf = (c: Chimp) => { const L = ix(c).en; return L ? (L.fin ?? L.in) : 0; };
@@ -55,7 +58,7 @@ export const failing = (w: World) => (w.hour >= 12 && w.environment.daylight < F
 
 export function readoutStart(w: World, minAge: number, ids?: number[]): ReadoutState {
   const animals = w.chimps.filter(c => c.alive && c.age >= minAge && (!ids || ids.includes(c.id)));
-  const tracks = animals.map(c => ({ id: c.id, alive: true, wasNest: inNest(c), fam: famNow(c), tgt: c.targetId, trip: null, drink: null, atW: false,
+  const tracks = animals.map(c => ({ id: c.id, alive: true, wasNest: inNest(c), fam: famNow(c), tgt: c.targetId, trip: null, drink: null, atW: false, outFrom: -1, outLen: 0,
     stretch: null, fin: finOf(c), exit: null, nestSinceMidnight: false, d: blank(c.id, 0) }));
   const maxCall = w.calls.reduce((m, k) => Math.max(m, k.id), 0);
   return { tracks, res: { minAge, animals: animals.map(c => ({ id: c.id, name: c.name, age: +c.age.toFixed(2) })), days: [], ticks: 0 }, tick: 0, maxCall, lastHour: w.hour };
@@ -75,7 +78,9 @@ export function readoutStep(st: ReadoutState, w: World): void {
     if (c && c.alive) {
       const nest = inNest(c), fam = famNow(c);
       d.ticks++;
-      if (nest && light >= FULL) { if (hour < MORNING_END_H && hour >= 6) d.dayNestAM += TICK_MIN; else d.dayNestPM += TICK_MIN; }
+      if (nest && light >= FULL) { if (hour < MORNING_END_H && hour >= 6) { d.dayNestAM += TICK_MIN; if (d.dayNestFirst < 0) d.dayNestFirst = i; } else d.dayNestPM += TICK_MIN; }
+      // the day's longest dark stretch out of a finished nest (its first tick and length), for the search of §13
+      if (dark && !nest) { if (t.outFrom < 0) { t.outFrom = i; t.outLen = 0; } t.outLen++; if (t.outLen > d.outLen) { d.outLen = t.outLen; d.outStart = t.outFrom; } } else t.outFrom = -1;
       if (nest && hour >= LATE_FROM_H && hour < MORNING_END_H) { d.nest0745 += TICK_MIN; if (hour >= LATE_RULES_H) d.nest0800 += TICK_MIN; }
       if (dark) { if (hour >= 12) { d.eveDark += TICK_MIN; if (!nest) d.eveOut += TICK_MIN; } else { d.mornDark += TICK_MIN; if (!nest) d.mornOut += TICK_MIN; } }
       if (t.wasNest && !nest) {
@@ -102,6 +107,7 @@ export function readoutStep(st: ReadoutState, w: World): void {
         const tree = idx.treeById.get(c.targetId), m = tree ? Math.hypot(tree.position[0] - c.position[0], tree.position[2] - c.position[2]) : 0;
         t.trip = { tree: c.targetId, band: bandOf(m), fall };
         if (fall) d.tripsFall[t.trip.band]++;
+        if (dark && d.darkTrips.length < 20) d.darkTrips.push(i);
       }
       // drink trips: begun when a drink act starts toward a site; reached when the animal stands at the water
       const site = c.action === 'drink' ? idx.waterById.get(c.targetId) : undefined;

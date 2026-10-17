@@ -8,6 +8,8 @@
 //   learner-labels DIR --selection FILE                 the labels at the selected asks, in a replay with a read-only hook (A0)
 //   relabel-r14 RUN --out DIR [--days N]                R14's completed learner run replayed, its development animals' asks relabelled for the R15 contract (H-S, §6)
 //   k1 MODELRUN RULESRUN --out FILE                     the new readouts on stage R13's finished runs (K1)
+//   drift RUN [--hr-scores F --hr-eval F] [--out FILE]  after a population test: its own kind asks labelled in a replay; the divergence of its journalled odds, beside H-R's (§13)
+//   trace RUN --ft FT [--card CARDDIR] [--out FILE]     after a population test: each failing unit traced to the ask before it, by cell, against the rows held (§13)
 //
 // Exit codes: 0 done, 2 refused, 3 a scientific stop (the stop check, a certain failure), 75 paused (a person resumes it), 130 interrupted.
 import { execFileSync } from 'node:child_process';
@@ -17,6 +19,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 import type { KernelRequest } from '../src/kernel/types';
+import { r15Packet } from '../src/providers/packet';
 import { buildRequest } from '../src/sim/request';
 import { index } from '../src/sim/state';
 import type { Chimp, DecisionContext, World } from '../src/types';
@@ -32,11 +35,12 @@ import { traceRun } from './lib/r14-trace';
 import { assertR15AdapterManifest } from './lib/r15-training';
 import { armReaders } from './r7-card';
 import { CONTROL_NAMES, KERNEL_ARMS, kernelArmWorld, runControlArm, runKernelArm } from './lib/r16-arms';
-import { burnIn, censusEntry, censusId, dayName, labelAt, LOOP_SWITCHES, paramsSha, PLANS, R15_SWITCHES, R16, r16Params, readJsonl, select, selectionDigest, type CensusEntry, type R16Row, type Selected } from './lib/r16-collect';
-import { readoutTap } from './lib/r16-readouts';
-import { certainFailure, DayFiles16, readRegistry16, replay16, runDay16, setAside16, Stopped16, writeRegistry16, RECEIPT_SCHEMA, RUN_TOOL, type Arm16, type Certain, type Engine16, type Registry16 } from './lib/r16-run';
+import { burnIn, censusEntry, censusId, dayName, driftPlan, labelAt, LOOP_SWITCHES, paramsSha, PLANS, R15_SWITCHES, R16, r16Params, readJsonl, select, selectionDigest, type CensusEntry, type R16Row, type Selected } from './lib/r16-collect';
+import { nightOf, readoutTap, type ReadoutDay } from './lib/r16-readouts';
+import { certainFailure, DayFiles16, readJournal, readReceipts16, readRegistry16, replay16, runDay16, setAside16, Stopped16, writeRegistry16, RECEIPT_SCHEMA, RUN_TOOL, type Arm16, type Ask16, type Certain, type Engine16, type Registry16 } from './lib/r16-run';
 import { chainGone, FakeWorker, OPS, Paused, quietRefusal, Supervisor, type FakeFaults, type Ops, type WorkerLike } from './lib/r16-worker';
-import { wordsOf } from './lib/r16-strata';
+import { cellOf, wordsOf } from './lib/r16-strata';
+import { animalInterval, kl } from './lib/r16-marks';
 
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -138,7 +142,7 @@ async function run(a: Args): Promise<number> {
   writeRegistry16(out, reg);
   const ops = { ...OPS, ...opsFlag } as Ops, arm = reg.arm, focal = reg.focal ? new Set(reg.focal) : null;
   const dry = arm.kind === 'fake' || a.has('fake-python');
-  const sup = new Supervisor({ make: workerFactory(a, arm, ops), adapter: arm.adapter ?? 'fake', ops, quiet: () => dry ? '' : quietRefusal({ out }), log });
+  const sup = new Supervisor({ make: workerFactory(a, arm, ops), adapter: arm.adapter ?? 'fake', ops, quiet: () => dry ? '' : quietRefusal({ out }), log, firstOfSession: process.env.R16_SESSION_FIRST === '1' });
   let stop = '';
   const lockPath = resolve(execFileSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], { cwd: ROOT, encoding: 'utf8' }).trim(), '..', 'artifacts', 'r14-chain.lock');
   const watch = setInterval(() => { const why = chainGone(lockPath, process.env.MGOGO_MODEL_LOCK_TOKEN ?? ''); if (why) stop ||= why; }, 10_000); watch.unref();
@@ -375,8 +379,92 @@ async function k1(a: Args): Promise<number> {
     pantHootsModel: Math.abs((m.summary.pantHoots ?? 0) - 4.19) < 0.005, pantHootsRules: Math.abs((r.summary.pantHoots ?? 0) - 2.51) < 0.005,
     kcalEarlyDifference: Math.abs(((m.summary.kcalEarly ?? 0) - (r.summary.kcalEarly ?? 0)) + 84) < 1.5,
     nest0745ShareModel: Math.abs((m.summary.nest0745Share ?? 0) - 0.264) < 0.0006, nest0800ShareRules: r.summary.nest0800Share === 0 };
+  mkdirSync(dirname(out), { recursive: true });
   writeAtomic(out, JSON.stringify({ stage: 'R16', check: 'K1', note: 'a code check: the cuts and the search were read off this very run (attack 1)', replay: { model: m.ok, rules: r.ok }, model: m.summary, rules: r.summary, checks, holds: m.ok && r.ok && Object.values(checks).every(Boolean) }, null, 1) + '\n');
   log(`K1: ${Object.entries(checks).map(([k, v]) => `${k} ${v ? 'yes' : 'NO'}`).join(', ')}`);
+  return 0;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// After a test (§13; no model; description only): the drift on the test's own states, and where its failing units sit
+// ---------------------------------------------------------------------------------------------------------------------
+
+/** Every saved kind ask of a run as a census line, read from its contexts (a test world's are all `test`). */
+function runCensus(out: string, reg: Registry16): CensusEntry[] {
+  const entries: CensusEntry[] = [];
+  for (const d of reg.days) for (const x of savedContexts(out, d.day)) {
+    if (x.context.resourceChoice !== 'kind') continue;
+    entries.push({ ...censusEntry(reg.seed, 'test', x.tick, d.day, x.id, x.v, { context: x.context, groups: (x.sizes ?? []).map(n => Array.from({ length: n })) as never }), split: 'test' });
+  }
+  return entries;
+}
+/** The teacher's divergence from the model's odds on kind rows, as an interval over animals. */
+function kindDivergence(rows: R16Row[], odds: (r: R16Row) => number[] | null) {
+  const v: { animal: string; v: number }[] = [];
+  for (const r of rows) { if (r.phase !== 'kind') continue; const p = odds(r), q = Object.keys(r.packet.questions.action.criteria).map(k => r.soft[k]); if (p && p.length === q.length) v.push({ animal: `${r.seed}:${r.chimpId}`, v: kl(q, p) }); }
+  return v;
+}
+async function drift(a: Args): Promise<number> {
+  const out = resolve(a.pos[0] ?? ''), reg = readRegistry16(out), dest = resolve(a.flag('out', resolve(out, 'drift.json')));
+  if (!reg.label.startsWith('population-') && !reg.label.startsWith('dry-')) throw new Refused('the drift is read on a population test');
+  const entries = runCensus(out, reg), sel = select(entries, driftPlan(entries.length)), want = new Map(sel.map(s => [s.id, s])), rows: R16Row[] = [], keyOf = new Map<string, string>();
+  const r = await replay16(out, { log, onKindAsk: (w, c, request, key) => {
+    const s = want.get(censusId('test', reg.seed, w.tick, c.id, request.context.version));
+    if (s) for (const x of labelAt(w, c, request, s).rows) if (x.phase === 'kind') { rows.push(x); keyOf.set(x.id, key); }
+  } });
+  const journal = readJournal(out, reg.days.length), own = kindDivergence(rows, x => journal.get(keyOf.get(x.id) ?? '')?.p ?? null), byStratum: Record<string, { animal: string; v: number }[]> = {};
+  rows.forEach(x => { const call = journal.get(keyOf.get(x.id) ?? ''); if (!x.r16.stratum || !call?.p) return; const v = kindDivergence([x], () => call.p); if (v.length) (byStratum[x.r16.stratum] ??= []).push(v[0]); });
+  // beside it, the same adapter's divergence on the held-out rules set (its scores file, when given)
+  const hrScores = a.flag('hr-scores', ''), hrEval = a.flag('hr-eval', '');
+  const hr = hrScores && hrEval && existsSync(hrScores) && existsSync(hrEval) ? (() => { const s = new Map(readJsonl<{ id: string; p: number[] | null }>(resolve(hrScores)).map(x => [x.id, x.p])); return animalInterval(kindDivergence(readJsonl<R16Row>(resolve(hrEval)), x => s.get(x.id) ?? null)); })() : null;
+  const result = { stage: 'R16', reading: 'T-after (§13): description, never rows, never a gate', name: NAME, run: out, seed: reg.seed, adapter: reg.arm.adapter, replay: r.ok, asks: entries.length, selected: sel.length, labelled: rows.length,
+    ownStates: own.length ? animalInterval(own) : null, heldOutRules: hr, byStratum: Object.fromEntries(Object.entries(byStratum).map(([k, x]) => [k, animalInterval(x)])) };
+  mkdirSync(dirname(dest), { recursive: true }); writeAtomic(dest, JSON.stringify(result, null, 1) + '\n');
+  log(`drift on ${reg.label}: ${rows.length} of its own kind asks labelled; replay ${r.ok ? 'exact' : 'NOT EXACT'}`);
+  return r.ok ? 0 : 1;
+}
+/** The longest morning in a finished nest at full daylight of any rules re-draw on this world (minutes), from the card. */
+function longestRulesMorning(card: string, seed: number): number | null {
+  let max: number | null = null;
+  for (let k = 1; k <= 8; k++) {
+    const f = resolve(card, 'P', `s${seed}`, `rules-${k}.json`);
+    if (!existsSync(f)) return null;
+    const doc = JSON.parse(readFileSync(f, 'utf8')) as { r16?: { result?: { days: ReadoutDay[] } } };
+    for (const d of doc.r16?.result?.days ?? []) max = Math.max(max ?? 0, d.dayNestAM);
+  }
+  return max;
+}
+/** The search (§13): each short night, long morning and dark food trip traced to the last ask before it; the cells of those asks against the rows the training file holds there. */
+function trace(a: Args): number {
+  const out = resolve(a.pos[0] ?? ''), reg = readRegistry16(out), rep = JSON.parse(readFileSync(resolve(out, 'replay.json'), 'utf8')) as { readouts: { result: { days: ReadoutDay[] } } | null };
+  const ft = resolve(a.flag('ft')), card = a.flag('card', ''), rulesMax = card ? longestRulesMorning(resolve(card), reg.seed) : null, tick0 = readCkpt(resolve(out, 'ckpt', 'start.json.gz')).world.tick;
+  const asks = readReceipts16(out, reg.days.length).filter((l): l is Ask16 => l.k === 'ask'), byAnimal = new Map<number, Ask16[]>();
+  for (const l of asks) (byAnimal.get(l.id) ?? byAnimal.set(l.id, []).get(l.id)!).push(l);
+  const contexts = new Map<string, DecisionContext>();
+  for (const d of reg.days) for (const x of savedContexts(out, d.day)) contexts.set(x.key, x.context);
+  const wordsCell = (w: ReturnType<typeof wordsOf>) => cellOf(w, 'any').replace(/\|any$/, '');
+  const held = new Map<string, number>();
+  for (const r of readJsonl<R16Row>(resolve(ft, 'contexts', 'train.jsonl'))) if (r.phase === 'kind') { const k = wordsCell(r.r16.words); held.set(k, (held.get(k) ?? 0) + 1); }
+  const units: { kind: string; id: number; cell: string }[] = [];
+  const locate = (kind: string, id: number, i: number) => {
+    const t = tick0 + i + 1, before = (byAnimal.get(id) ?? []).filter(l => l.tick <= t).at(-1);
+    const ctx = before ? contexts.get(before.calls.find(c => c.stage === 'kind')?.key ?? '') : undefined;
+    units.push({ kind, id, cell: ctx ? wordsCell(wordsOf(r15Packet(ctx))) : 'no kind ask before it' });
+  };
+  for (const d of rep.readouts?.result.days ?? []) {
+    const n = nightOf(d);
+    if (n?.short && d.outStart >= 0) locate('short night', d.id, d.outStart);
+    if (rulesMax !== null && d.dayNestAM > rulesMax && d.dayNestFirst >= 0) locate('long morning', d.id, d.dayNestFirst);
+    for (const s of d.darkTrips) locate('dark food trip', d.id, s);
+  }
+  const total = (c: { units: Record<string, number> }) => Object.values(c.units).reduce((s, k) => s + k, 0);
+  const cells: Record<string, { units: Record<string, number>; rowsHeld: number }> = {};
+  for (const u of units) { const c = (cells[u.cell] ??= { units: {}, rowsHeld: held.get(u.cell) ?? 0 }); c.units[u.kind] = (c.units[u.kind] ?? 0) + 1; }
+  const result = { stage: 'R16', reading: 'the search of §13: a description that names no outcome', name: NAME, run: out, longMorningOver: rulesMax, units: units.length,
+    cells: Object.fromEntries(Object.entries(cells).sort((x, y) => total(y[1]) - total(x[1])).map(([k, c]) => [k, { ...c, hardlyHeld: c.rowsHeld < 20 }])) };
+  const dest = resolve(a.flag('out', resolve(out, 'trace.json'))); mkdirSync(dirname(dest), { recursive: true });
+  writeAtomic(dest, JSON.stringify(result, null, 1) + '\n');
+  log(`trace on ${reg.label}: ${units.length} failing units in ${Object.keys(cells).length} cells${rulesMax === null ? ' (no card: long mornings not traced)' : ''}`);
   return 0;
 }
 
@@ -389,7 +477,9 @@ async function main(): Promise<number> {
   if (cmd === 'learner-labels') return learnerLabels(a);
   if (cmd === 'relabel-r14') return relabelR14(a);
   if (cmd === 'k1') return k1(a);
-  throw new Refused('usage: r16-population.ts run | replay | card | learner-census | learner-labels | relabel-r14 | k1');
+  if (cmd === 'drift') return drift(a);
+  if (cmd === 'trace') return trace(a);
+  throw new Refused('usage: r16-population.ts run | replay | card | learner-census | learner-labels | relabel-r14 | k1 | drift | trace');
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) main().then(code => { process.exitCode = code; }).catch(error => { console.error(error instanceof Refused ? `refused: ${error.message}` : error instanceof Error ? error.stack ?? error.message : error); process.exitCode = error instanceof Refused ? 2 : 1; });
 void sha; void readdirSync;

@@ -86,6 +86,8 @@ export interface SupervisorOpts {
   log: (s: string) => void; sleep?: (ms: number) => Promise<void>;
   /** Swap in use now, MB (default: the machine's). */ swap?: () => number | null;
   /** Resident memory of the worker, MB (default: ps). */ rss?: (pid: number | null | undefined) => number | null;
+  /** The session's first warm-up (§17.5): one attempt, and a worker not warm within the limit pauses the session. The chain says so (R16_SESSION_FIRST=1). */
+  firstOfSession?: boolean;
 }
 
 export class Supervisor {
@@ -95,21 +97,23 @@ export class Supervisor {
   readonly stats: SupervisorStats = { calls: 0, stalls: 0, stallsToday: 0, retries: 0, retryFailed: 0, warmups: [], recycles: [], recoveryMs: 0, workerId: 0 };
   constructor(private o: SupervisorOpts) { this.ops = { ...OPS, ...(o.ops ?? {}) } as Ops; }
   private sleep(ms: number) { return (this.o.sleep ?? sleepMs)(ms); }
-  /** The session's first warm-up: a worker that is not warm within the limit pauses the run (§17.5). */
+  /** A process's first warm-up. The session's first has one attempt: not warm within the limit pauses the session (§17.5); any other start has the attempts of a recovery. */
   async start(): Promise<void> {
     if (this.worker) return;
-    await this.warm('first start', false);
+    await this.warm(this.o.firstOfSession ? 'the session\'s first warm-up' : 'first start', false, this.o.firstOfSession ? 1 : this.ops.attempts);
   }
   private async bounded<T>(job: Promise<T>, ms: number, what: string): Promise<T> {
     let timer: ReturnType<typeof setTimeout> | undefined;
     try { return await Promise.race([job, new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error(`${what} exceeded ${ms} ms`)), ms); })]); }
     finally { if (timer) clearTimeout(timer); }
   }
-  /** Up to `attempts` warm-ups, a cool-down and a wait for a quiet machine between failures; all failing pauses the run. Booked to recovery unless it is the first start. */
-  private async warm(why: string, recovery: boolean): Promise<void> {
+  /** Up to `attempts` warm-ups, a cool-down and a wait for a quiet machine between failures; all failing pauses the run. Booked to recovery, but for a first start's first attempt (§17.7: warm-ups after the first, cool-downs, waits). */
+  private async warm(why: string, recovery: boolean, attempts: number = this.ops.attempts): Promise<void> {
     const t0 = Date.now();
+    let after: number | null = null;
     try {
-      for (let attempt = 1; attempt <= this.ops.attempts; attempt++) {
+      for (let attempt = 1; attempt <= attempts; attempt++) {
+        if (attempt === 2) after = Date.now();
         if (attempt > 1) {
           this.o.log(`worker: cool-down of ${Math.round(this.ops.coolMs / 1000)} s before warm-up attempt ${attempt}`);
           await this.sleep(this.ops.coolMs);
@@ -125,12 +129,12 @@ export class Supervisor {
         } catch (error) {
           const msg = error instanceof Error ? error.message : String(error);
           this.stats.warmups.push({ at: now(), seconds: Math.round((Date.now() - w0) / 1000), ok: false, why: `${why}: ${msg}`, worker: id });
-          this.o.log(`worker ${id} failed its warm-up (attempt ${attempt} of ${this.ops.attempts}): ${msg}`);
+          this.o.log(`worker ${id} failed its warm-up (attempt ${attempt} of ${attempts}): ${msg}`);
         }
       }
-      throw new Paused(`the worker failed ${this.ops.attempts} warm-ups in a row (${why})`);
+      throw new Paused(attempts === 1 ? `${why} failed: the worker was not warm within ${Math.round(this.ops.warmMs / 1000)} s` : `the worker failed ${attempts} warm-ups in a row (${why})`);
     } finally {
-      if (recovery) this.book(Date.now() - t0);
+      if (recovery) this.book(Date.now() - t0); else if (after !== null) this.book(Date.now() - after);
     }
   }
   private book(ms: number): void { this.stats.recoveryMs += ms; }
@@ -214,7 +218,7 @@ export class Supervisor {
 }
 
 /** Fault injection for the fake worker (dry runs and tests): shared by every worker one run makes. */
-export interface FakeFaults { warmMs?: number; callMs?: number; failWarmups?: number; stallCalls?: number[]; hangMs?: number; warmed?: number; calls?: number }
+export interface FakeFaults { warmMs?: number; callMs?: number; failWarmups?: number; failWarmupsAt?: number[]; stallCalls?: number[]; hangMs?: number; warmed?: number; calls?: number }
 /**
  * A worker that holds no model (dry runs, tests): it answers a packet with fixed odds from a hash of its option texts
  * (a deliberately arbitrary policy, as scripts/lib/r15-loop.ts r15FakeKernel), after `callMs`; the faults make chosen calls
@@ -226,7 +230,7 @@ export class FakeWorker implements WorkerLike {
   static async make(faults: FakeFaults, id: number): Promise<FakeWorker> {
     faults.warmed = (faults.warmed ?? 0) + 1;
     if (faults.warmMs) await sleepMs(faults.warmMs);
-    if (faults.warmed <= (faults.failWarmups ?? 0)) await idleMs(1e9); // never answers: the supervisor's warm-up limit fires
+    if (faults.warmed <= (faults.failWarmups ?? 0) || faults.failWarmupsAt?.includes(faults.warmed)) await idleMs(1e9); // never answers: the supervisor's warm-up limit fires
     return new FakeWorker(faults, id);
   }
   async score(batch: { adapter: string; packet: unknown }[]): Promise<number[][]> {

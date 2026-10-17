@@ -4,7 +4,8 @@
 // chain drives the real serving path: the lock the chain holds (checked here as the real scorer checks it), the adapter's
 // identity, the warm-up packet, the line protocol, the 1,280-token guard. It answers fixed odds from a hash of each
 // option's text. Faults (R16_FAKE_FAULTS, JSON, with a state file shared by every process of one run): the first
-// `failWarmups` warm-ups never answer; the calls numbered in `stallCalls` never answer. R16_FAKE_CAPTURE: every line
+// `failWarmups` warm-ups never answer, and so do the warm-ups numbered in `failWarmupsAt`; the calls numbered in
+// `stallCalls` never answer. R16_FAKE_CAPTURE: every line
 // received is appended there (the byte-for-byte packet check).
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -44,7 +45,7 @@ lines.on('line', line => {
   const msg = JSON.parse(line);
   if (first) {
     first = false; state.warmed++; save();
-    if (state.warmed <= (faults.failWarmups ?? 0)) return; // never answers: the worker's warm-up limit fires
+    if (state.warmed <= (faults.failWarmups ?? 0) || (faults.failWarmupsAt ?? []).includes(state.warmed)) return; // never answers: the worker's warm-up limit fires
     setTimeout(() => emit({ ready: true, adapters: { [name]: weights }, config_sha256: config, device: 'mps', warmup_tokens: tokens(msg.warmup) }), faults.warmMs ?? 0);
     return;
   }

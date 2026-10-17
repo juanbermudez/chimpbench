@@ -71,8 +71,9 @@ export function clampTied(values: Pick<TargetValue, 'raw'>[], span: number): boo
 export const alwaysClamped = (values: Pick<TargetValue, 'raw'>[], span: number): number => values.filter(v => v.raw + span / 2 <= 0).length;
 
 export function exportRow(world: Pick<World, 'seed'>, chimp: Pick<Chimp, 'id'>, request: KernelRequest, decisionId: string,
-  q: number[], teacher: string, diagnostics: R15Row['diagnostics']): R15Row {
-  if (![48, 7, 21].includes(world.seed)) throw new Error('R15 training worlds are 48/7; evaluation is 21');
+  q: number[], teacher: string, diagnostics: R15Row['diagnostics'], anySeed = false): R15Row {
+  // stage R16's drift reading (docs/staging/r16-prereg.md §13) labels a test world's own asks: never rows, so any seed
+  if (!anySeed && ![48, 7, 21].includes(world.seed)) throw new Error('R15 training worlds are 48/7; evaluation is 21');
   const context: unknown = JSON.parse(JSON.stringify(request.context));
   if (!validateDecisionContext(context)) throw new Error('invalid training context');
   const phase = request.context.resourceChoice;
@@ -94,6 +95,8 @@ export interface R15LabelOptions {
   clampRule?: boolean;
   /** The kind teacher's redraw rule (default R11's). */
   redraws?: typeof REDRAWS;
+  /** Stage R16's drift reading on a test world: the labels are descriptions that never become rows, so the seed check of exportRow is lifted. */
+  anySeed?: boolean;
   /** At a rules decision: the option the rules took and the world's random state before they chose, so that R11's marks (M1 a to c) check the rules' own draw. Absent: they check the menu's top option against the current state, as stage R15 does. */
   realised?: { chosen: Candidate; rngBefore: number };
 }
@@ -117,7 +120,7 @@ export function r15TrainingRows(w: World, c: Chimp, request: KernelRequest, id: 
   if (!marginal) return { rows, exclusions: ['zero-retained-kind-mass'], detail };
   const half = (k: number) => label.halves ? kindMarginal(request.context.resourceKinds!, originalKinds, label.halves[k].map(v => v + 0)) : null;
   detail.kind = { label, marginal, originalKinds, ...(opts.halves ? { halves: label.halves && label.halves.every(h => h.some(v => v > 0)) ? [half(0)?.q ?? [], half(1)?.q ?? []] as [number[], number[]] : null } : {}) };
-  rows.push(exportRow(w, c, request, id, marginal.q, R15_KIND_TEACHER, { redraws: label.n, matchedMenus: label.same, excludedKindMass: marginal.excluded }));
+  rows.push(exportRow(w, c, request, id, marginal.q, R15_KIND_TEACHER, { redraws: label.n, matchedMenus: label.same, excludedKindMass: marginal.excluded }, !!opts.anySeed));
   const targets = request.groups.map((group, i) => ({ group, i, kind: request.context.resourceKinds?.[i] }))
     .filter(g => g.kind && isResourceKind(g.kind) && g.group.length > 1)
     .sort((a, b) => digest(`${id}:${a.kind}`).localeCompare(digest(`${id}:${b.kind}`)));
@@ -134,7 +137,7 @@ export function r15TrainingRows(w: World, c: Chimp, request: KernelRequest, id: 
     const t = targetCounts(values, P.candidateJitterSpan, id), q = normalize(t.counts), tied = clampTied(values, P.candidateJitterSpan);
     detail.target = { kind: chosen.kind!, group: chosen.i, request: target, values, q, ...(opts.halves ? { halves: t.halves } : {}), clampTied: tied, clamped: alwaysClamped(values, P.candidateJitterSpan) };
     if (opts.clampRule && tied) exclusions.push('clamp-tied target');
-    else rows.push(exportRow(w, c, target, id, q, R15_TARGET_TEACHER, { redraws: R15_TARGET_REDRAWS, matchedMenus: R15_TARGET_REDRAWS, excludedKindMass: 0 }));
+    else rows.push(exportRow(w, c, target, id, q, R15_TARGET_TEACHER, { redraws: R15_TARGET_REDRAWS, matchedMenus: R15_TARGET_REDRAWS, excludedKindMass: 0 }, !!opts.anySeed));
   }
   if (w.rng !== rng || c.decisionVersion !== version) throw new Error('teacher changed live random state or decision version');
   return { rows, exclusions, detail };

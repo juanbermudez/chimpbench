@@ -44,6 +44,7 @@ FAKE_SCORER = str(ROOT / 'scripts' / 'lib' / 'r16-fake-scorer.mjs')
 OPS = {'cap_factor': 2.5, 'quiet_load': 6.0, 'quiet_wait_s': 1800, 'quiet_poll_s': 60, 'free_gb': 5, 'session_swap_mb': 6144}
 CUTS = set(filter(None, os.environ.get('R16_CUTS', '').split(',')))
 DRY = False
+SESSION_WARMED = False  # a serving worker has been warm in this session (§17.5: the session's first warm-up has one attempt)
 PAUSED, STOPPED, INTERRUPTED = 75, 3, 130
 
 
@@ -238,6 +239,9 @@ def step(name, command, hours, model=False, outputs=(), ok=(0,), env_extra=None)
     if LOCK: LOCK.write(name)
     env = environment(model)
     if env_extra: env.update(env_extra)
+    global SESSION_WARMED
+    supervised = model and any(str(c) in ('scripts/r16-score.ts', 'scripts/r16-population.ts') for c in command)
+    if supervised and not SESSION_WARMED: env['R16_SESSION_FIRST'] = '1'
     logfile = chain_dir() / 'logs' / (name + '.log'); logfile.parent.mkdir(parents=True, exist_ok=True)
     cap = hours * 3600 * OPS['cap_factor']
     attempt = {'start': now(), 'cap_seconds': round(cap)}
@@ -261,6 +265,7 @@ def step(name, command, hours, model=False, outputs=(), ok=(0,), env_extra=None)
         missing = [str(p) for p in outputs if not Path(p).exists()]
         if missing: atomic(record, state); raise RuntimeError(f'{name}: missing outputs {missing}')
         state.update(done=True, code=code, outputs={str(p): sha(p) for p in outputs if Path(p).is_file()})
+        if supervised: SESSION_WARMED = True
         atomic(record, state); log(f'END {name} ({state["seconds"] / 60:.1f} min)')
         return code
     atomic(record, state)
@@ -491,6 +496,12 @@ def gate_g9(seed):
     return v
 
 
+def after(out, adapter, name):
+    """§13, no model, description only: the drift on the test's own kind asks (beside H-R's) and the search of its failing units."""
+    step(f'drift-{name}', tsx('r16-population.ts', 'drift', out, '--hr-scores', OUT / 'scores' / f'{adapter}-hr.jsonl', '--hr-eval', OUT / 'eval' / 'hr.jsonl', '--out', OUT / 'after' / f'drift-{name}.json'), 1.0, outputs=[OUT / 'after' / f'drift-{name}.json'])
+    step(f'trace-{name}', tsx('r16-population.ts', 'trace', out, '--ft', OUT / 'ft1', '--card', OUT / 'card', '--out', OUT / 'after' / f'trace-{name}.json'), 0.1, outputs=[OUT / 'after' / f'trace-{name}.json'])
+
+
 def session3():
     session_start(True)
     ft1 = OUT / 'ft1'
@@ -501,6 +512,7 @@ def session3():
         code = step(f'population-s{seed}', run_args(f'population-s{seed}', seed, 20, adapter, ft1, out, certain=OUT / 'marks' / f'certain-s{seed}.json'), 20 * 0.35 + 0.3, model=True, outputs=[out / 'run.json'], ok=(0, STOPPED))
         step(f'replay-population-s{seed}', tsx('r16-population.ts', 'replay', out, '--card', OUT / 'card'), 1.0, outputs=[out / 'replay.json'])
         step(f'report-population-s{seed}', TSX + ['scripts/r16-report.ts', 'population', str(OUT), str(seed)], 0.2, outputs=[OUT / 'marks' / f'population-s{seed}.json'])
+        after(out, adapter, f's{seed}')
         v = read(OUT / 'marks' / f'population-s{seed}.json')
         log(f'POPULATION {seed}: {v.get("outcome")}')
         if not v.get('viable'): log('the s11 population does not run: one training of the recipe on one world is not viable (§12.1)'); break
@@ -529,13 +541,15 @@ def dry():
     OUT, DRY = OUT / 'dry', True
     OUT.mkdir(parents=True, exist_ok=True)
     session0(); session1(); between1(); session2()
-    # a population day through the serving worker with faults: the first two warm-ups never answer (the third holds), and
-    # the call numbered 40 hangs, then its retry on a fresh worker (41) hangs too, so the rules settle that ask
+    # a population day through the serving worker with faults, its first warm-up held to one attempt as the session's
+    # first: the call numbered 40 hangs; the fresh worker's warm-up (the second) never answers, and after a cool-down the
+    # third holds; the retry (call 41) hangs too, so a fourth worker is warmed and the rules settle that ask
     out = OUT / 'population' / 'faults'
-    faults = {'state': str(OUT / 'faults-state.json'), 'failWarmups': 2, 'stallCalls': [40, 41]}
+    faults = {'state': str(OUT / 'faults-state.json'), 'failWarmupsAt': [2], 'stallCalls': [40, 41]}
     step('dry-faults-run', tsx('r16-population.ts', 'run', '--label', 'dry-faults', '--seed', 48, '--days', 1, '--burn-in', 2, '--adapter', 'r16-agg-s7', '--root', OUT / 'ft1', '--out', out, '--fake-python', FAKE_SCORER,
-         '--ops', json.dumps({'callMs': 3000, 'warmMs': 4000, 'coolMs': 500})), 0.2, outputs=[out / 'run.json'], env_extra={'R16_FAKE_FAULTS': json.dumps(faults)})
-    step('dry-faults-replay', tsx('r16-population.ts', 'replay', out), 0.1, outputs=[out / 'replay.json'])
+         '--ops', json.dumps({'callMs': 3000, 'warmMs': 4000, 'coolMs': 500})), 0.2, outputs=[out / 'run.json'], env_extra={'R16_FAKE_FAULTS': json.dumps(faults), 'R16_SESSION_FIRST': '1'})
+    step('dry-faults-replay', tsx('r16-population.ts', 'replay', out, '--card', OUT / 'card'), 0.1, outputs=[out / 'replay.json'])
+    after(out, 'r16-agg-s7', 'dry-faults')
     log('DRY done: ' + json.dumps({'faults': read(out / 'run.json').get('supervisor')}))
 
 

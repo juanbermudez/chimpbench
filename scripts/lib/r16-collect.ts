@@ -56,7 +56,7 @@ export function burnIn(seed: number, switched: boolean, burnInDays = R16.burnInD
 /** The window day (1-based) a world time falls in: whole days since the end of the burn-in. */
 export const windowDay = (w: World, burnInDays: number): number => Math.floor(w.time / 24) - burnInDays + 1;
 
-export type Source = 'rules' | 'learner' | 'sibling';
+export type Source = 'rules' | 'learner' | 'sibling' | 'test';
 export type Split = 'train' | 'dev' | 'test';
 export interface CensusEntry {
   id: string; seed: number; source: Source; tick: number; day: number; chimpId: number; version: number; split: Split; h: string;
@@ -87,6 +87,8 @@ export const PLANS: Record<'zero' | 'heldOut' | 'one' | 'evalLearner', Plan> = {
   one: { name: 'one', cap: 2, quotas: { train: ONE_TRAIN, dev: tenth(ONE_TRAIN) } },
   evalLearner: { name: 'evalLearner', cap: 2, quotas: { dev: { plain: 400, 'NEST-DAY-CO': 100, 'DUSK-LATE-ALONE': 100, 'DUSK-CO': 100, 'NEST-RISE-CO': 100, 'DARK-OUT-EVENING': 100 } } },
 };
+/** The drift reading on a population test's own asks (§13): one in ten in hash order, and up to 300 in each named kind stratum. */
+export const driftPlan = (asks: number): Plan => ({ name: 'drift', cap: 2, quotas: { test: { plain: Math.ceil(asks / 10), ...Object.fromEntries((['NEST-DAY-CO', 'NEST-RISE-ALONE', 'NEST-RISE-CO', 'DUSK-EARLY-ALONE', 'DUSK-LATE-ALONE', 'DUSK-CO', 'NEST-DARK', 'DARK-OUT-EVENING', 'DARK-OUT-MORNING'] as const).map(k => [k, 300])) } } });
 /** Which target row a selected decision gives: R15's hash choice (plain), none (a kind top-up), or the stratum's own group. */
 export type TargetChoice = 'hash' | 'none' | { kinds: Kind[] };
 export type Selected = CensusEntry & { via: Group; target: TargetChoice };
@@ -158,7 +160,7 @@ const distOf = (k: Candidate): number => k.about?.distM ?? k.value?.distM ?? 0;
  */
 export function labelAt(w: World, c: Chimp, request: KernelRequest, sel: Pick<Selected, 'id' | 'source' | 'via' | 'day' | 'tick' | 'words' | 'kind' | 'targets' | 'target'>, live?: { chosen: Candidate; rngBefore: number }): LabelOutcome {
   const rng = w.rng, version = c.decisionVersion;
-  const got = r15TrainingRows(w, c, request, sel.id, { target: sel.target, halves: true, clampRule: true, ...(live ? { realised: live } : {}) });
+  const got = r15TrainingRows(w, c, request, sel.id, { target: sel.target, halves: true, clampRule: true, ...(live ? { realised: live } : {}), ...(sel.source === 'test' ? { anySeed: true } : {}) });
   const kinds = request.context.resourceKinds ?? [], list = computeCandidates(w, c, []);
   const cur = list.find(k => k.action === c.action && k.targetId === c.targetId), curKind = cur ? optionKind(cur) : null;
   const carry = { kind: curKind, finished: ix(c).finished, index: curKind ? kinds.indexOf(curKind) : -1 };

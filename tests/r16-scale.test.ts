@@ -110,6 +110,17 @@ test('the supervisor: a stall is retried once on a fresh worker; a failed retry 
   assert.equal(sup2.stats.warmups.filter(w => !w.ok).length, 3);
   const two: FakeFaults = { failWarmups: 2 }, sup3 = new Supervisor({ make: id => FakeWorker.make(two, id), adapter: 'fake', ops: { warmMs: 30, coolMs: 1 }, quiet: () => '', log: () => {}, sleep: async () => {} });
   await sup3.start(); assert.equal(sup3.stats.warmups.filter(w => w.ok).length, 1); await sup3.close();
+  assert.ok(sup3.stats.recoveryMs >= 25, 'the warm-ups after a start\'s first are booked to recovery');
+  // the session's first warm-up has one attempt (§17.5)
+  const once: FakeFaults = { failWarmups: 1 }, sup4 = new Supervisor({ make: id => FakeWorker.make(once, id), adapter: 'fake', ops: { warmMs: 30, coolMs: 1 }, quiet: () => '', log: () => {}, sleep: async () => {}, firstOfSession: true });
+  await assert.rejects(sup4.start(), (e: unknown) => e instanceof Paused && /session's first warm-up/.test(e.reason));
+  assert.equal(sup4.stats.warmups.length, 1);
+  // a recovery whose first warm-up fails holds on the next, and the retry answers
+  const rec: FakeFaults = { stallCalls: [2], failWarmupsAt: [2], hangMs: 10_000 }, sup5 = new Supervisor({ make: id => FakeWorker.make(rec, id), adapter: 'fake', ops: { callMs: 50, warmMs: 30, coolMs: 1 }, quiet: () => '', log: () => {}, sleep: async () => {}, firstOfSession: true });
+  await sup5.start(); await sup5.ask(packetOf);
+  const after = await sup5.ask(packetOf);
+  assert.equal(after.retry, 1); assert.equal(sup5.stats.workerId, 3); assert.deepEqual(sup5.stats.warmups.map(w => w.ok), [true, false, true]);
+  assert.ok(sup5.stats.recoveryMs >= 25); await sup5.close();
   const slow = new Supervisor({ make: id => FakeWorker.make({}, id), adapter: 'fake', ops: { recoveryMs: 0 }, quiet: () => '', log: () => {} });
   slow.stats.recoveryMs = 1;
   assert.throws(() => slow.checkAllowance(), (e: unknown) => e instanceof Paused);
@@ -255,4 +266,34 @@ test('a rules world\'s census and its label pass: each day segment meets exactly
   assert.equal(m1.labelled, 4); assert.equal(m2.labelled, 1);
   assert.equal(m1.hash, doc.days[0].hash); assert.equal(m2.hash, doc.days[1].hash);
   assert.equal(m1.m1.pickOk, m1.m1.of, 'the realised rules pick is reproduced');
+});
+
+test('the drift reading on a test world: one in ten of its asks and up to 300 a named stratum; its rows lift only the seed check', async () => {
+  const { driftPlan } = await import('../scripts/lib/r16-collect');
+  const { exportRow } = await import('../scripts/lib/r15-training');
+  const p = driftPlan(95);
+  assert.equal(p.quotas.test?.plain, 10); assert.equal(p.quotas.test?.['DUSK-CO'], 300); assert.equal(p.quotas.train, undefined);
+  const entries = Array.from({ length: 95 }, (_, i) => entry(i, { seed: 3701, source: 'test', split: 'test' }));
+  assert.equal(select(entries, p).filter(s => s.via === 'plain').length, 10);
+  const w = smallWorld(), c = w.chimps.find(x => x.alive && x.age >= 15 && buildRequest(w, x).context.resourceChoice === 'kind')!, req = buildRequest(w, c);
+  const q = req.options.map(() => 1 / req.options.length), diag = { redraws: 1, matchedMenus: 1, excludedKindMass: 0 };
+  assert.throws(() => exportRow({ seed: 3701 }, c, req, 'x', q, 't', diag), /48\/7/);
+  assert.equal(exportRow({ seed: 3701 }, c, req, 'x', q, 't', diag, true).seed, 3701);
+  assert.equal(exportRow({ seed: 48 }, c, req, 'x', q, 't', diag).seed, 48);
+});
+
+test('the readouts mark where the search of §13 starts: the longest dark stretch out of a nest, the first daytime nest tick, the dark food trips', async () => {
+  const { readoutStart, readoutStep, DAY_TICKS } = await import('../scripts/lib/r16-readouts');
+  const { tickWorld } = await import('../src/simulation');
+  const w = createWorld(48), st = readoutStart(w, 8);
+  for (let i = 0; i < 2 * DAY_TICKS; i++) { tickWorld(w); readoutStep(st, w); }
+  assert.ok(st.res.days.length > 0);
+  for (const d of st.res.days) {
+    assert.equal(d.dayNestFirst >= 0, d.dayNestAM > 0);
+    if (d.dayNestFirst >= 0) assert.equal(Math.floor(d.dayNestFirst / DAY_TICKS), d.day);
+    assert.equal(d.outStart >= 0, d.outLen > 0);
+    if (d.eveOut + d.mornOut > 0) assert.ok(d.outLen > 0);
+    assert.ok(d.darkTrips.length <= Math.min(20, d.tripsFall.reduce((s, x) => s + x, 0)));
+    assert.ok(d.darkTrips.every(i => Math.floor(i / DAY_TICKS) === d.day));
+  }
 });

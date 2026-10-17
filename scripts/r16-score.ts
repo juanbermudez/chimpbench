@@ -43,7 +43,7 @@ export async function scoreMain(argv: string[]): Promise<number> {
       return { score: b => w.score(b), close: () => w.close(), status: () => w.status(), pid: () => w.pid() };
     };
   }
-  const sup = new Supervisor({ make, adapter: fake ? 'fake' : adapter, ops, quiet: () => dry ? '' : quietRefusal({ out }), log });
+  const sup = new Supervisor({ make, adapter: fake ? 'fake' : adapter, ops, quiet: () => dry ? '' : quietRefusal({ out }), log, firstOfSession: process.env.R16_SESSION_FIRST === '1' });
   let stop = '';
   const lockPath = resolve(execFileSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], { encoding: 'utf8' }).trim(), '..', 'artifacts', 'r14-chain.lock');
   const watch = setInterval(() => { const why = chainGone(lockPath, process.env.MGOGO_MODEL_LOCK_TOKEN ?? ''); if (why) stop ||= why; }, 10_000); watch.unref();

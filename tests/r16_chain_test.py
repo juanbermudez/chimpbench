@@ -109,6 +109,15 @@ class Steps(unittest.TestCase):
         with self.assertRaises(self.chain.Pause): self.chain.step('h', [sys.executable, '-c', 'import time; time.sleep(30)'], 0.5 / 3600)
         self.assertLess(time.time() - t0, 20)
 
+    def test_only_the_sessions_first_serving_step_holds_its_warm_up_to_one_attempt(self):
+        self.chain.wait_quiet = lambda: None
+        seen = self.root / 'seen.txt'
+        probe = f'import os; open({str(seen)!r}, "a").write(os.environ.get("R16_SESSION_FIRST", "-") + "\\n")'
+        self.chain.step('t', [sys.executable, '-c', probe, 'training/decide_ft/train_r15.py'], 0.01, model=True)  # a training warms no serving worker
+        self.chain.step('a', [sys.executable, '-c', probe, 'scripts/r16-score.ts'], 0.01, model=True)
+        self.chain.step('b', [sys.executable, '-c', probe, 'scripts/r16-population.ts'], 0.01, model=True)
+        self.assertEqual(seen.read_text().split(), ['-', '1', '-'])
+
     def test_a_gate_that_does_not_hold_is_a_scientific_stop_outside_a_dry_run(self):
         marks = self.root / 'out' / 'marks'; marks.mkdir(parents=True)
         (marks / 'g2.json').write_text(json.dumps({'holds': False, 'stop': 'g2: Z2'}))
