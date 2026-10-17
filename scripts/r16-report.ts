@@ -20,6 +20,7 @@ import { animalInterval, armValues, baseline, carryOn, divergenceVs, exposed, fa
 import { READOUTS } from './lib/r16-readouts';
 import { KIND_STRATA, type KindStratum } from './lib/r16-strata';
 import type { Registry16 } from './lib/r16-run';
+import { STOP } from './lib/r10-run';
 
 const NAME = 'Every number of an adapter is a rules-taught model on the R15 menu: the rules\' activity kinds, then the trees and waters the animal itself perceives or remembers, taught by the rules\' activity odds and by their counterfactual valuation of those targets. Nothing here is about wild chimpanzees. Animals under 8 years stay on the rules.';
 const CHANGES = 'What R16 changes against R13: the menu (two stages), the packet (resource-targets-v1: no option words or social-timing lines on the kind stage), the data window (whole days 30 to 40 on two worlds), one round of aggregation, the decode (one draw per stage). No result here reads as R13\'s failure repaired by aggregation.';
@@ -362,9 +363,15 @@ function population(out: string, seed: number): void {
   for (const k of ['kmFixPerDay', 'tripsBegun', 'tripsDone', 'actChanges', 'kcalEatenPerDay']) { const y = yardstick(red, k, 0); md.push(`| ${k} | ${fx(arm[k] ?? null)} | ${fx(y.mean)} ± ${fx(y.d)} | ${told(arm[k] ?? null, y) || 'no'} |`); }
   const led = reg.days.reduce((s, d) => ({ kindOnly: s.kindOnly + d.ledger.kindOnly, kindAndTarget: s.kindAndTarget + d.ledger.kindAndTarget, rulesFallback: s.rulesFallback + d.ledger.rulesFallback, held: s.held + d.ledger.held }), { kindOnly: 0, kindAndTarget: 0, rulesFallback: 0, held: 0 });
   md.push('', `Who decided (§12.4): ${led.kindAndTarget} decisions by a kind call and a target call, ${led.kindOnly} by a kind call with the rules' representative target, ${led.held} acts held by the gate, ${led.rulesFallback} rules fallbacks; animals under 8 on the rules; endings always by the rules.`);
-  const outcome = stopped ? `STOPPED: ${reg.reason}` : !via.viable ? `NOT VIABLE (${[!via.v1 && 'V1', !via.v2 && 'V2', !via.v3 && 'V3'].filter(Boolean).join(', ')})` : !toldHarmful.length ? 'VIABLE, AT THE RULES\' LEVEL ON MORNINGS AND NIGHTS' : `VIABLE, NOT AT THE RULES' LEVEL ON ${toldHarmful.join('; ')}`;
-  md.push('', `**Outcome for ${reg.arm.adapter} on ${seed}: ${outcome}.**`, '', !stopped && via.viable && !toldHarmful.length ? 'In the registered words: on this world, under the draw, a population on the R16 recipe on the R15 menu kept nights and mornings at the rules\' level. It does not mean the model is better than the rules, nearer to wild chimpanzees, or that aggregation repaired R13.' : '');
-  write(out, label, { holds: !stopped && via.viable, viable: !stopped && via.viable, outcome, toldHarmful, underPowered: g.underPowered, adapter: reg.arm.adapter, values: arm }, md);
+  // amendment A4 (docs/staging/r16-prereg.md §23): over the whole run, the share of asks the rules settled and of asks that
+  // timed out, against stage R10's S4 limits; above either, the run is not read (a population the model drove less would
+  // otherwise look more like the rules)
+  const asks = reg.days.reduce((s2, d) => s2 + d.asks, 0), fell = reg.days.reduce((s2, d) => s2 + d.asks - d.kernel, 0), timeouts = reg.days.reduce((s2, d) => s2 + d.timeouts, 0);
+  const fellShare = asks ? fell / asks : 0, timeoutShare = asks ? timeouts / asks : 0, unread = fellShare > STOP.fallbacks ? `the rules settled ${(100 * fellShare).toFixed(1)}% of asks over the run (above ${100 * STOP.fallbacks}%)` : timeoutShare > STOP.timeouts ? `${(100 * timeoutShare).toFixed(1)}% of asks timed out over the run (above ${100 * STOP.timeouts}%)` : '';
+  md.push('', `Over the whole run: ${asks} asks, the rules settled ${(100 * fellShare).toFixed(2)}% (R10's limit ${100 * STOP.fallbacks}%), ${(100 * timeoutShare).toFixed(2)}% timed out (limit ${100 * STOP.timeouts}%).`);
+  const outcome = stopped ? `STOPPED: ${reg.reason}` : unread ? `NOT READ: ${unread}` : !via.viable ? `NOT VIABLE (${[!via.v1 && 'V1', !via.v2 && 'V2', !via.v3 && 'V3'].filter(Boolean).join(', ')})` : !toldHarmful.length ? 'VIABLE, AT THE RULES\' LEVEL ON MORNINGS AND NIGHTS' : `VIABLE, NOT AT THE RULES' LEVEL ON ${toldHarmful.join('; ')}`;
+  md.push('', `**Outcome for ${reg.arm.adapter} on ${seed}: ${outcome}.**`, '', !stopped && !unread && via.viable && !toldHarmful.length ? 'In the registered words: on this world, under the draw, a population on the R16 recipe on the R15 menu kept nights and mornings at the rules\' level. It does not mean the model is better than the rules, nearer to wild chimpanzees, or that aggregation repaired R13.' : '');
+  write(out, label, { holds: !stopped && !unread && via.viable, viable: !stopped && !unread && via.viable, outcome, toldHarmful, underPowered: g.underPowered, adapter: reg.arm.adapter, values: arm, fellShare, timeoutShare }, md);
 }
 /** K0 (§7.2): the old paths unmoved: stage R10's argmax-gate arm on its recorded hashes and receipt count, and R13's model arm regenerated into its R7 arm file, byte for byte but for the fields that name the checkout and the time. */
 function k0(out: string): void {
