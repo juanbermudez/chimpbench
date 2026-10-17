@@ -241,3 +241,18 @@ test('a census line is read from the packet\'s words and the kind menu only', ()
   assert.equal(e.menu.kinds.length, req.options.length);
   assert.equal(JSON.stringify(e).includes('score'), false, 'no score in a census line');
 });
+
+test('a rules world\'s census and its label pass: each day segment meets exactly its selected decisions, at the day boundary too, and lands on the census hash', async () => {
+  const { rulesCensus, readCensus, labelRulesDay } = await import('../scripts/lib/r16-collect');
+  const dir = mkdtempSync(join(tmpdir(), 'r16-census-'));
+  const doc = rulesCensus(dir, 48, { days: 2, burnInDays: 0, commit: 'test' });
+  const { entries } = readCensus(dir);
+  assert.equal(doc.days.length, 2);
+  const last1 = entries.filter(e => e.day === 1).sort((a, b) => b.tick - a.tick)[0], first2 = entries.filter(e => e.day === 2).sort((a, b) => a.tick - b.tick)[0];
+  const pick = [last1, first2, ...entries.filter(e => e.day === 1).slice(0, 3)].map(e => ({ ...e, via: 'plain' as const, target: 'hash' as const }));
+  const sel = new Map(pick.map(s => [s.id, s]));
+  const m1 = labelRulesDay(dir, 48, 1, sel, { burnInDays: 0 }), m2 = labelRulesDay(dir, 48, 2, sel, { burnInDays: 0 });
+  assert.equal(m1.labelled, 4); assert.equal(m2.labelled, 1);
+  assert.equal(m1.hash, doc.days[0].hash); assert.equal(m2.hash, doc.days[1].hash);
+  assert.equal(m1.m1.pickOk, m1.m1.of, 'the realised rules pick is reproduced');
+});

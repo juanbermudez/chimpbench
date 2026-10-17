@@ -2,7 +2,7 @@
 // verdict the chain reads by machine (marks/<name>.json, with `holds` and, where a mark can stop the stage, `stop`) and a
 // table for people (tables/<name>.md). No number in a table is typed: every one is computed here from the run's files.
 //
-//   d0 OUT            the instruments of the collection (§5.3)
+//   d0 OUT [SEEDS]    the instruments of the collection (§5.3; the registered seeds 48, 7, 21 unless named)
 //   readings OUT      coverage, floors, baselines, P1, P2 and the teacher-half check (§5.4)
 //   cards OUT         I0 and K5 on 48 and 7, and the allowances of the offline marks (§7.2)
 //   g2|g3 OUT         round zero's marks for r16-zero-s7 | -s11 (§9.1)
@@ -39,12 +39,12 @@ const halfOf = (k: 0 | 1) => (r: R16Row) => r.r16.halves?.[k] ?? null;
 // ---------------------------------------------------------------------------------------------------------------------
 // D0 (§5.3)
 // ---------------------------------------------------------------------------------------------------------------------
-function d0(out: string): void {
+function d0(out: string, seeds: number[] = [48, 7, 21]): void {
   const md = ['# R16 D0: the instruments of the collection', '', NAME, ''], verdict: Record<string, unknown> = {};
   let holds = true;
   const twins: Record<number, string> = { 48: 'rules-s48', 7: 'rules-s7' };
   md.push('| World | Days | Census and label hashes equal | R14 rules twin\'s day hashes | R11 marks M1 (a, b, c) of labelled decisions | Kind: mean label on the realised kind against its expectation | Target: realised target from the teacher\'s arithmetic |', '| --- | --- | --- | --- | --- | --- | --- |');
-  for (const seed of [48, 7, 21]) {
+  for (const seed of seeds) {
     const dir = resolve(out, 'collect', `s${seed}`), census = json<CensusFile>(resolve(dir, 'census.json'));
     const metas = census.days.map(d => json<LabelDayMeta>(resolve(dir, 'labels', `d${String(d.day).padStart(3, '0')}.jsonl.meta.json`)));
     const equal = metas.every((m, i) => m.hash === census.days[i].hash);
@@ -363,7 +363,7 @@ function numbers(out: string): void {
 
 export function reportMain(argv: string[]): number {
   const [cmd, outArg, extra] = argv, out = resolve(outArg ?? '');
-  if (cmd === 'k0') k0(out); else if (cmd === 'd0') d0(out); else if (cmd === 'readings') readings(out); else if (cmd === 'cards') cards(out);
+  if (cmd === 'k0') k0(out); else if (cmd === 'd0') d0(out, extra ? extra.split(',').map(Number) : undefined); else if (cmd === 'readings') readings(out); else if (cmd === 'cards') cards(out);
   else if (cmd === 'g2' || cmd === 'g3' || cmd === 'g6' || cmd === 'g7') offline(out, cmd);
   else if (cmd === 'a0') a0(out); else if (cmd === 'g8') g8(out); else if (cmd === 'g9') g9(out, +extra); else if (cmd === 'population') population(out, +extra); else if (cmd === 'numbers') numbers(out);
   else { console.error('usage: r16-report.ts d0|readings|cards|g2|g3|g6|g7|a0|g8|numbers OUT | g9|population OUT SEED'); return 2; }

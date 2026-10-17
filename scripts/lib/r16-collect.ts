@@ -202,7 +202,7 @@ function writeNewAtomic(file: string, text: string): void {
   writeFileSync(tmp, text);
   renameSync(tmp, file);
 }
-export interface CensusDay { day: number; hash: string; entries: number; adults: number; seconds: number }
+export interface CensusDay { day: number; hash: string; entries: number; adults: number; seconds: number; /** Second rules decisions of one animal at one tick and decision version (the first is kept). */ repeats?: number }
 export interface CensusFile {
   stage: 'R16'; tool: 'r16-census'; seed: number; source: 'rules'; params: string; paramsSha256: string; switches: Record<string, number>; commit: string;
   burnInDays: number; daysAsked: number; burnInHash: string; days: CensusDay[];
@@ -231,16 +231,21 @@ export function rulesCensus(out: string, seed: number, o: { days?: number; burnI
   }
   const w = e.world, P = paramsOf(w);
   for (let d = e.day + 1; d <= days; d++) {
-    const t0 = Date.now(), entries: CensusEntry[] = [];
+    const t0 = Date.now(), entries: CensusEntry[] = [], seen = new Set<string>();
+    let repeats = 0;
     const untap = tapRulesDecisions(w, { minAge: P.rgMinAge, want: () => true, onDecision: p => {
       if (p.why === 'kept' || p.why === 'arrived' || p.req.options.length < 2 || p.req.context.resourceChoice !== 'kind') return;
-      entries.push(censusEntry(seed, 'rules', p.tick, windowDay(w, burnInDays), p.c.id, p.req.context.version, p.req));
+      // the day is the segment's own (a decision in a day's last tick has the next day's clock time): the label pass runs that segment
+      const e = censusEntry(seed, 'rules', p.tick, d, p.c.id, p.req.context.version, p.req);
+      // the rules can decide twice for one animal in one tick at one decision version: the first decision is the one kept
+      if (seen.has(e.id)) { repeats++; return; }
+      seen.add(e.id); entries.push(e);
     } });
     try { for (let k = 0; k < DAY; k++) tickWorld(w); } finally { untap(); }
     e.day = d;
     writeNewAtomic(resolve(out, 'census', `${dayName(d)}.jsonl`), entries.map(x => JSON.stringify(x)).join('\n') + (entries.length ? '\n' : ''));
     const ck = writeCkpt(resolve(out, 'ckpt', `${dayName(d)}.json.gz`), e as never);
-    doc.days.push({ day: d, hash: ck.hash, entries: entries.length, adults: w.chimps.filter(c => c.alive && c.age >= P.rgMinAge).length, seconds: Math.round((Date.now() - t0) / 1000) });
+    doc.days.push({ day: d, hash: ck.hash, entries: entries.length, adults: w.chimps.filter(c => c.alive && c.age >= P.rgMinAge).length, seconds: Math.round((Date.now() - t0) / 1000), repeats });
     writeAtomic(file, JSON.stringify(doc, null, 1) + '\n');
     log(`seed ${seed}: census day ${d}/${days}: ${entries.length} fresh decisions, hash ${ck.hash}, ${doc.days[doc.days.length - 1].seconds} s`);
   }
@@ -271,11 +276,13 @@ export function labelRulesDay(out: string, seed: number, day: number, selected: 
   const r = readCkpt(resolve(out, 'ckpt', day === 1 ? 'start.json.gz' : `${dayName(day - 1)}.json.gz`)), w = r.world, P = paramsOf(w), t0 = Date.now();
   const rows: R16Row[] = [], exclusions: Record<string, number> = {}, clamp: Record<string, number> = {}, m1 = { rngOk: 0, pickOk: 0, listOk: 0, of: 0 };
   let labelled = 0, want = 0;
+  const done = new Set<string>();
   for (const s of selected.values()) if (s.day === day) want++;
   const untap = tapRulesDecisions(w, { minAge: P.rgMinAge, want: c => selected.has(censusId('rules', seed, w.tick, c.id, c.decisionVersion)), onDecision: p => {
     const id = censusId('rules', seed, p.tick, p.c.id, p.req.context.version), sel = selected.get(id);
-    if (!sel || p.why === 'kept' || p.why === 'arrived') return;
-    labelled++;
+    // the census kept an animal's first decision at a tick and version; a second one there is not the selected decision
+    if (!sel || done.has(id) || p.why === 'kept' || p.why === 'arrived' || p.req.options.length < 2 || p.req.context.resourceChoice !== 'kind') return;
+    done.add(id); labelled++;
     const got = labelAt(w, p.c, p.req, sel, { chosen: p.chosen, rngBefore: p.rng });
     rows.push(...got.rows);
     for (const x of got.exclusions) { const k = `${sel.split}:${sel.via}:${x}`; exclusions[k] = (exclusions[k] ?? 0) + 1; }
