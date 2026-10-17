@@ -1169,3 +1169,166 @@ of asks over the run" (or the timeouts), and no viability word is given; it is n
     changed; session 0 reads both again on the frozen checkout.
 19. **Development animals.** R4's split leaves 5 development animals on seed 48 and 10 on seed 7, so every in-sample
     reading on development animals (H-S, H-L, TAKE, A2) rests on about 15 animals, 5 of them on seed 48 (attack 1).
+
+## 24. The second reading (17 October 2026, 17:20 to 18:50 EDT)
+
+The second reader read the registration, the attacks and every changed line, and ran the build without a model: no
+Python worker, no tokenizer, no training, no scoring, no browser, no dev server. Everything ran from this branch's
+worktree into a scratch folder; nothing was written to a frozen checkout or to the main checkout but the shared lock file
+of the dry chain, held and released by the chain as §17.2 says. Seed 21 was not opened (the dry chain's two-day stand-in
+of it excepted, as the builder's).
+
+### 24.1 The registration
+
+- **Order.** The registration (7d9a316, 14:58:34) is the first commit of the stage; the first code is 15:04:35. No later
+  commit touched §0 to §20: the log commit replaced only the two placeholder lines of §21 and §22. The amendment of §23 is
+  committed before the code that carries it out.
+- **Numbers chosen after a result.** None of the builder's: I0's five of eight, K5's six of eight, the arm counts and the
+  allowances' source were registered before the early arms ran (16:03), and the commits after them change trace fields,
+  warm-up booking and process checks only. One reading of the second reader's was settled with figures in view, and §23 A1
+  says so: D0's kind check, read over the three worlds as §5.3 (a) words it.
+- **Seeds.** A search on 17 October, 17:29 to 17:40 EDT: `git grep` of all 193 trees of the 198 branch and tag heads and
+  `git log -G` over the whole history; the names of every file and folder, and the contents of 14,847 text files under
+  2 MB, under the `artifacts/` of the main checkout and of all 71 worktrees, under `/Volumes/Drive/chimpbench/shots` and
+  in this session's scratch folder. 3701, 3187, 3079, 3517, 3011 and 3643 occur only in stage R16's own files and drafts,
+  in an unregistered R14 memo of 17 October that proposed 3079 and 3517 (sealed) and 3011 and 3643 (spare) and never ran
+  them, and as unrelated numbers (tick indices, coordinates, counts, decision versions). No run folder, registry, state
+  file or log names any of them. 3457 and 3823 stay R14's.
+- **Leaks into a training file.** Tried from the command line on the build (24.2): a census, a selection, a learner
+  selection, the two assemblies, the runs, the H-S relabelling, the drift and the scoring. Every path that could carry a
+  test or sealed seed's state, a seed-21 row, a seed-3613 row, an R14 sibling row or a row with a flipped split into a
+  training or development file is refused, and an assembly that refuses leaves no partial root. Two holes were not about
+  rows: the card arms could be run on a sealed or reserved seed with `--dry`, and a registered run started by hand in a
+  frozen checkout would have burned in its test world before asking for the chain's token (both closed, §23 clarifications
+  14 and 15).
+- **One reading per rule.** Three rules could be read two ways and were fixed before any run: D0's kind check (A1), a
+  forecast with a thin stratum (A2), and whether K5 can strike V3 (clarification 13).
+- **A population that does less.** Two ways in which doing less could look better were closed: rules fallbacks after
+  day 5 (A4) and the certain-failure stop's count (A3, which could have stopped a run falsely). Left as registered and
+  named here: a morning whose animal left its nest in the dark "rises" at that hour, which lowers the mean hour of rising
+  (K5 already strikes the mean; the 90th percentile is the one read), and mornings with no nest are counted apart.
+- **What the attacks struck.** Gone: 3613 as an allowance (D is taken from the controls on 48 and 7), the R15 smoke adapter
+  as a falsifier, the causal outcome sentences, the spare-seed swap (the world is never swapped), "not read" as a pass, CPU
+  work beside a model step, memo 1's "s7 drives both", H-S as a gate, the unnamed paired interval, D2 as a gate, the
+  word "settle" for probes (no probes), the single dark-out stratum, scheduled recycling and the two-night plan. Kept with
+  a narrower role, as the registration says: P4 (b) (clamp-tied rows out; the strand question goes to the population
+  readouts and §15).
+
+### 24.2 The code, run without a model
+
+- **The dry chain**, twice: on the build (17:28 to 17:51, 22 minutes) and on the repaired code (18:07 to 18:30, 23 minutes). Every step ran
+  under the chain's lock, and the lock was gone at the end both times. D0, the readings and the cards held on dry data;
+  G2, G3, G6, G7 and A0 did not, as expected (A0 because a one-day roll-out is under the five usable days; its replays
+  were exact and every rebuilt kind and target packet equalled the journal's). The day with faults reproduced: the call
+  numbered 40 hung, the fresh worker's warm-up failed at 4 s, a cool-down, the next warm-up held, the retry hung too, the
+  rules settled that ask, a fourth worker was warm, and the day's replay was exact. Recovery booked: 8.65 s on the build,
+  7.92 s on the repaired code (the cool-down and the later warm-up are no longer counted twice).
+- **D0 at full scale on both training worlds** (seed 48 is the builder's collection, seed 7 the second reader's, 17:33 to
+  17:40): both census worlds land on R14's rules twins' burn-in and all ten day hashes; R11's marks hold at 1,423 of 1,423
+  and 1,346 of 1,346 labelled decisions; the target teacher gives the rules' realised target 97 of 97 and 95 of 95 times;
+  the kind label on the realised kind: −0.0004 and −0.0006 against three standard errors of 0.0112 and 0.0118, and over the
+  two worlds together −0.0005 against 0.0081, every stratum with 100 rows or more within (§23 A1 for seed 48's dawn stratum
+  alone).
+- **Packet parity, byte for byte**: R15's own serving worker on the fake scorer process (its lock in the scratch folder),
+  1,500 rows: 250 kind and 250 target rows from each of seed 48's and seed 7's full-scale collections and the dry chain's
+  held-out set. Every packet the scorer read is the row's own packet and the packet the R15 path renders from the row's
+  context, and every row passes R15's own row check.
+- **Refusals from the command line** (25 on the build, 6 more on the repaired code): the census on 3701, 3011 (with `--dry`), 3613 and an unregistered window; the
+  held-out plan on 48 and the training plan on 21; a learner selection on a test world's census; assemblies with a seed-21,
+  3701 or 3613 row, a flipped split, a sibling row or a test-world row; dry runs on 3701, on 21, of three days or without
+  the `dry-` label; the population run outside the chain, on the other test seed, on 3011, and a roll-out with round
+  one's adapter; H-S on R14's partial seed-21 run and on a rules twin; scoring outside the chain; a model session from a
+  branch checkout. On the repaired code also: card arms on 3011 (with and without `--dry`), on reserved 1111, on R12's
+  4333, unit F on 3701, and a run with a worker without the chain's token. Each refused before any world was built.
+- **Kill and resume** (`r16-proofs.ts kill-resume`): the whole process group killed inside day 2 after 681 calls; a twin
+  on the same folder refused while it lived; the resume reused all 681 calls and ended on the uninterrupted run's hashes
+  (000e73a1081abd58, d5b45379946ecb44) with the same receipts and an exact replay.
+- **Old arms and tables (K0)**: stage R10's argmax-gate arm landed on 4b5cc61f8ad797e0, 95bfc1fd4e6ddfda and
+  07ec9b9f26b64f60 with 6,423 receipt lines; R13's model arm replayed on all 20 day hashes (0 of 68,656 lines different)
+  and its R7 arm file came out byte for byte but for the commit, the time and the run path. No file of `bench-r13` or
+  `bench-r14` was modified.
+- **The new readouts against the diagnosis (K1) on R13's run**: all eleven checks hold (21 short nights against 0; 13 by
+  the evening alone and 8 together; early-rise nights 172 against 224; pant-hoots 4.19 against 2.51; 375 against 460 kcal
+  eaten from 06:30 to 09:00; a nest at 07:45 or later on 26.4% of the model arm's mornings, none after 08:00 on the rules).
+  A code check, as §7.2 says.
+- **The teacher's own halves on stand-ins for the held-out set** (the held-out plan's quotas applied to the censuses of 48
+  and 7, labelled; seed 21 untouched): with §23 A2 every forecast reads, and the halves pass with room (night 0.25 and
+  0.12 against 1.16; dawn 0.62 and 0.11 against 1.16; stay 0.001 and 0.03 against 1 minute). On the seed-7 stand-in
+  DUSK-EARLY-ALONE has 17 rows: as built, Z2 would have been a description there.
+- **Every changed line under `src`**: one, the app's adapter-identity pattern (`src/providers/http.ts`), which now also
+  accepts the R16 names with the same packet identity. No switch, default, parameter or simulation file changed;
+  `tests/fixtures/golden-world.json` and `tests/sim-track-e.test.ts` are untouched (24.7).
+
+### 24.3 What the readings before any model already say (for the user)
+
+- On seed 7 the perfect imitator of the R15 menu (the rules' own kind, the target teacher's draw, through the loop with
+  the gate) is not viable in 3 of 8 arms, all on reserves (V3), against 0 of 8 on seed 48; the stage stops at 5. So a
+  population result "NOT VIABLE (V3)" may belong to the menu and the gate, not to the model: the imitator's range is
+  printed beside it (§12.5).
+- K5: the planted R13 failure is seen by nights in a nest, daylight minutes in a nest, the late end of the hour of rising,
+  evening dark minutes out and days with a short night; reserves are seen on seed 7 (8 of 8) but not on 48 (5 of 8).
+- P1 on the seed-48 stand-in: in NEST-RISE-ALONE ("alone" in the packet, in a nest as the light rises) the teacher stays
+  0.885 when the rules count a sleeping nest-mate the packet does not list, and 0.004 when there is none; 53 of 89 rows
+  have one. That part of the label cannot be learnt from the packet; §5.4 reads the stratum on the other rows.
+- P2 on the same stand-in: the teacher's mass on "Go and drink" falls from 0.30 (nearest known water under 150 m) to
+  0.14, 0.05 and 0 (1 km or more). The kind packet does not show that distance (the user's question on packet v2, §20).
+
+### 24.4 The cost, counted from the records
+
+| Piece | From the records | Model hours |
+| --- | --- | --- |
+| a training of round zero | 4,402 training rows and 456 development rows (48 and 7 at full scale) × 3 epochs at 0.6 s, four development passes at 0.77 s, a load of 3 to 9 minutes | 2.7 to 2.9 |
+| a scoring of round zero (H-R and H-S, two processes) | about 3,750 held-out packets (the stand-ins: 3,794 and 3,705) and about 1,900 H-S rows at 0.32 to 0.5 s, two loads | 0.6 to 1.0 |
+| a training of round one (equal exposure) | the same 13,200 examples shown, about 1,000 development rows | 3.0 to 3.3 |
+| the scorings of round one, per adapter (four processes) | about 11,000 packets, four loads | 1.3 to 1.8 |
+| a population day | R14's 20 completed learner days: 561 to 1,070 s (mean 774 s) for 1,950 to 2,970 asks at 0.27 to 0.36 s a call; R15 makes 1.12 to 1.19 calls a decision on shorter kind packets | 0.21 to 0.3 |
+| session 1 (tokens, preflight, two trainings and scorings, two 10-day roll-outs) | | about 12.5 (16 at worst) |
+| session 2 (tokens, preflight, two trainings, eight scorings, four ten-animal runs) | | about 10.5 (12.5) |
+| session 3 (two 20-day populations, the demo) | | about 10.3 (5.2 if s7's is not viable) |
+
+About 33 to 35 model hours with about 28 model loads; 28 to 30 if s7's population is not viable. **The chain does not fit
+two nights if everything runs.** It fits two nights only if s7's population is not viable or with the registered cuts
+(1) to (4) of §16 (about 26 hours, the s11 population moved to a later session, the recipe statement waiting). Planned
+as three sessions, as the registration says; the first is a long night (12.5 hours).
+
+### 24.5 Still open
+
+- Seed 21's own strata are unknown until session 0; A2 makes a thin stratum visible rather than silent, but a forecast
+  with every stratum thin is still not read.
+- §23 A1 is a reading settled with seed 48's per-world value in view; the per-world value is printed beside D0.
+- Z2 is strict: in DUSK-CO alone (about 2 asks a night) a model whose upper interval end lies 0.6 percentage points
+  below the teacher's Nest mass reaches the allowance. It is registered so; a stop there is a true statement about the
+  forecast, which counts departures, not short nights.
+- The decode, packet v2, water choice and the unseen nest-mates remain the user's (§20).
+
+### 24.6 For the integrator: the final chain
+
+The frozen checkout is this branch's last commit, the one that adds this section (its code is that of c111969e), or its merge into `track-e`: the chain pins the registration file too. The sessions, the environment,
+the commands and the states are §22's, unchanged; only the commit differs.
+
+```sh
+cd /Volumes/Drive/chimpbench/MGOGO
+git worktree add --detach .claude/worktrees/bench-r16 <this branch's last commit>
+cd .claude/worktrees/bench-r16 && ln -s /Volumes/Drive/chimpbench/MGOGO/node_modules node_modules && git status --short   # prints nothing
+export MGOGO_GHN_ROOT=/Volumes/Drive/chimpbench/GHN MGOGO_DECIDE_PYTHON=/Volumes/Drive/chimpbench/decide-env/bin/python HF_HOME=/Volumes/Drive/chimpbench/hf-cache HF_HUB_CACHE=/Volumes/Drive/chimpbench/hf-cache/hub R16_OUT=/Volumes/Drive/chimpbench/MGOGO/.claude/worktrees/bench-r16/artifacts/r16
+python3 -B scripts/r16.py check                     # seconds
+python3 -B scripts/r16.py dry                       # about 22 minutes, no model; last status line "dry DONE"
+screen -dmS r16-s0 sh -c '<cd and exports> && python3 -B scripts/r16.py session0 > artifacts/r16-session0.out 2>&1'   # by day, no model, about 2 h; stops on K0, D0, I0, K5
+# a person reads $R16_OUT/tables (d0, readings, cards) and the state, then:
+screen -dmS r16-s1 sh -c '<…> && python3 -B scripts/r16.py session1 > artifacts/r16-session1.out 2>&1'   # a night, about 12.5 h; restart the Mac first if swap is above 6 GB
+screen -dmS r16-b1 sh -c '<…> && python3 -B scripts/r16.py between1 > artifacts/r16-between1.out 2>&1'   # no model, about 30 min
+screen -dmS r16-s2 sh -c '<…> && python3 -B scripts/r16.py session2 > artifacts/r16-session2.out 2>&1'   # a night, about 10.5 h
+screen -dmS r16-d2 sh -c '<…> && python3 -B scripts/r16.py day2 > artifacts/r16-day2.out 2>&1'           # no model; the arms on 3701 and 3187
+screen -dmS r16-s3 sh -c '<…> && python3 -B scripts/r16.py session3 > artifacts/r16-session3.out 2>&1'   # a night, about 10.3 h (5.2 if s7's population is not viable)
+python3 -B scripts/r16.py publish docs/staging      # the tables only
+```
+
+### 24.7 Checks on this commit
+
+`tsc --noEmit`, the strict type-check of the R16 scripts and tests, the R16 unit tests (19, two of them extended), the
+Python tests of R14, R15 and R16, and the whole suite run once on this commit after it was written; their result goes
+to the integrator with the commit's hash. Before them, on the repaired code: the R16 unit tests pass, the two extended
+tests fail on the build's code (290 ms booked for a 209 ms recovery; a late adult's nights counted), and the strict
+type-check is clean.
+
+Before session 1: the user's word on the decode (§20 item 1) is still the one open question that changes the runs.
