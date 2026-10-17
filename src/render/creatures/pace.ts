@@ -40,3 +40,12 @@ export const referenceRate = (P: Params): number => SMALL_MAP_RATE * (SMALL_MAP_
  * map, 82 s/s on the 160 m map. Derived from the gait table; no new constant.
  */
 export const lapseRate = (P: Params, bodyM = ADULT_BODY_M): number => GAITS.walk.fCap * GAITS.walk.strideMax * bodyM / walkPace(P);
+
+/**
+ * Stage W14: the rate (ecological hours per real second, as the layer's pbRate) at which the moving test and the
+ * heading read an animal's simulated path: the playback rate, or the reference rate when the playback is slower. On
+ * every map: the 160 m map used to read the drawn speed alone, tuned at 1 min/s, so at Watch 4x and Real time a walk
+ * read as standing and the body glided over the ground in the standing clip. At the reference rate and faster it is
+ * the playback rate itself, so nothing changes there. A stylization (stage W1's thresholds carried over).
+ */
+export const movingK = (pbRate: number, refK: number): number => pbRate > refK ? pbRate : refK;

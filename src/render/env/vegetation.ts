@@ -811,6 +811,8 @@ export function* vegetationSteps(world: World, terrain: Terrain, uniforms: Share
     dummy.scale.set(s * (1 + r01() * 0.4), s * 0.8, s * (1 + r01() * 0.4));
     dummy.updateMatrix();
     color.setHSL(0.24 + r01() * 0.06, 0.32 + r01() * 0.15, 0.36 + r01() * 0.14, THREE.SRGBColorSpace);
+    // (Stage W14: nothing grows in a pool. Tested after the draws, so the rest of the tile is placed as before.)
+    if (terrain.poolDistance(x, z) < s * 0.5) return;
     shrubs.push({ m: dummy.matrix.clone(), c: color.clone(), crown: [x, y - s * 0.3, z, s * 0.9] });
   }
   function placeFern(r01: () => number, x: number, z: number) {
@@ -823,12 +825,14 @@ export function* vegetationSteps(world: World, terrain: Terrain, uniforms: Share
     const fronds_ = 5 + Math.floor(r01() * 4);
     const phase = r01() * Math.PI * 2;
     color.setHSL(0.22 + r01() * 0.07, 0.4 + r01() * 0.15, 0.38 + r01() * 0.12, THREE.SRGBColorSpace);
+    const dry = terrain.poolDistance(x, z) >= 0.4 * scale;   // (stage W14: no fern in a pool; the draws go on as before)
     for (let f = 0; f < fronds_; f++) {
       dummy.position.set(x, y + 0.02, z);
       dummy.rotation.set(-0.15 - r01() * 0.35, phase + f / fronds_ * Math.PI * 2 + r01() * 0.3, 0, 'YXZ');
       dummy.scale.setScalar(scale * (0.8 + r01() * 0.35));
       dummy.updateMatrix();
-      fronds.push({ m: dummy.matrix.clone(), c: color.clone().multiplyScalar(0.9 + r01() * 0.2) });
+      const c = color.clone().multiplyScalar(0.9 + r01() * 0.2);
+      if (dry) fronds.push({ m: dummy.matrix.clone(), c });
     }
   }
   function placeHerb(r01: () => number, x: number, z: number) {
@@ -840,6 +844,7 @@ export function* vegetationSteps(world: World, terrain: Terrain, uniforms: Share
     dummy.scale.set(s, s * (0.8 + r01() * 0.5), s);
     dummy.updateMatrix();
     color.setHSL(0.23 + r01() * 0.06, 0.38 + r01() * 0.15, 0.34 + r01() * 0.14, THREE.SRGBColorSpace);
+    if (terrain.poolDistance(x, z) < 0.3) return;   // (stage W14: no herb in a pool; after the draws)
     herbs.push({ m: dummy.matrix.clone(), c: color.clone() });
   }
 

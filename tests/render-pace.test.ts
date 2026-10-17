@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { SPEED_PRESETS } from '../src/clock';
 import { GAITS, Regime, solveClimb, solveGait, type GaitSolve } from '../src/render/creatures/gait';
-import { ADULT_BODY_M, SMALL_MAP_RATE, lapseRate, referenceRate, smallMapPace, walkPace } from '../src/render/creatures/pace';
+import { ADULT_BODY_M, SMALL_MAP_RATE, lapseRate, movingK, referenceRate, smallMapPace, walkPace } from '../src/render/creatures/pace';
 import { CLIPS, Pw, type PoseCtx } from '../src/render/creatures/poses';
 import { LIMB, PI, createPose } from '../src/render/creatures/rig';
 import { DEFAULT_PARAMS, resolveParams } from '../src/sim/params';
@@ -116,4 +116,18 @@ test('a stopped biped (the swagger of a display) puts its raised foot down too',
     }
   }
   assert.ok(airborne > 0);
+});
+
+// Stage W14: the moving test reads the path at the faster of the playback and the reference rate on every map.
+test('on the 160 m map a walker at Watch 4x and Real time reads as moving; at 1 min/s and faster nothing changes', () => {
+  const refK = referenceRate(DEFAULT_PARAMS) / 3600, walk = DEFAULT_PARAMS.walkMps;
+  const reads160 = (playback: number) => walk * movingK(playback / 3600, refK) * 3600 / ADULT_BODY_M;
+  for (const pb of [1, 4]) {
+    assert.ok(walk * pb / ADULT_BODY_M < 0.3, `drawn alone, a walk at ${pb} s/s reads as standing (the glide)`);
+    assert.ok(reads160(pb) > 0.3, `read at the reference rate, a walk at ${pb} s/s is moving`);
+  }
+  for (const pb of [60, 240, 600, 3600]) assert.equal(movingK(pb / 3600, refK), pb / 3600, `at ${pb} s/s the playback rate itself`);
+  // The field map's own reading (stage W1) is the same rule with its own reference rate.
+  const fk = referenceRate(FIELD) / 3600;
+  assert.equal(movingK(4 / 3600, fk), fk); assert.equal(movingK(60 / 3600, fk), 60 / 3600);
 });

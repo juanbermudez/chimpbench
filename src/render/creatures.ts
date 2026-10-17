@@ -39,14 +39,14 @@ import { bodyStateOf } from '../simulation';
 import { paramsOf } from '../sim/params';
 import { sampleSmooth } from './creatures/motion';
 import { GAITS, Regime, advancePhase, createLock, limbPhase, resetLock, solveClimb, solveGait, stepLock, type ContactLock, type GaitSolve } from './creatures/gait';
-import { referenceRate, smallMapPace } from './creatures/pace';
+import { movingK, referenceRate, smallMapPace } from './creatures/pace';
 import {
   BLINK_SLOW, IDLE, SCRATCH, applyInertia, blinkAt, createAttention, createBlink, createIdle, createInertia, headLook, idleBit, idleCancel, idleLean, idleRate, idleSpend, idleStep,
   scanAngles, selectAttention, springStep, startInertia, type AttnCand, type Attention, type Blink, type Idle, type Inertia,
 } from './creatures/secondary';
 import type { KeepCandidate } from './env/occluders';
 import { createTreeIndex, type TreeIndex } from './creatures/tree-index';
-import { CROWN_JUMP_M, NEST_BUILD_S, PERCH, boughStem, clamberSpeed, clambering, crownStep, nestArrive, nestProgress, nestTurnReset, nestTurnState, nestTurnStep, pairReach, perchBout, perchLies, perchPosture, seatAllowed, seatGroups, slewHeading, trunkBound, type NestTurnState, type SeatPairs } from './creatures/perch';
+import { CROWN_JUMP_M, NEST_BUILD_S, PERCH, boughStem, crownTurn, clamberSpeed, clambering, crownStep, nestArrive, nestProgress, nestTurnReset, nestTurnState, nestTurnStep, pairReach, perchBout, perchLies, perchPosture, seatAllowed, seatGroups, slewHeading, trunkBound, type NestTurnState, type SeatPairs } from './creatures/perch';
 import { endHeard, heardTakesHead, holding, listening } from './creatures/heard';
 import {
   Listen, PatrolCode, RELEASE_BRISTLE_TAU, RELEASE_DRUM_REACH, RELEASE_WINDOW_H, backSide, createFileCue, createPatrolLook, fileCue, listenVariant,
@@ -67,8 +67,9 @@ export interface CreatureContext {
   limbNear?(treeId: number, x: number, y: number, z: number, out: THREE.Vector4): boolean;
   /** Optional (stage W11): the colour the tree's limbs read as, linear RGB, for the bough and the perch stick. */
   barkColor?(treeId: number, out: THREE.Color): boolean;
-  /** Optional: nearest waterline point (drinkers lean over the water instead of drinking ~2 m from it). */
-  waterEdge?(x: number, z: number, out: THREE.Vector3): boolean;
+  /** Optional: nearest waterline point (drinkers lean over the water instead of drinking ~2 m from it); into, when given,
+   * receives the unit direction from it into the water (stage W14). */
+  waterEdge?(x: number, z: number, out: THREE.Vector3, into?: THREE.Vector3): boolean;
   /** Optional: a ripple source on the water surface (drinking lips, wading limbs); strength 0..1. */
   ripple?(x: number, z: number, strength: number): void;
   /** Filled in by the layer: bucketed nearest-tree lookups (the field profile has ~43,000 trees). */
@@ -161,7 +162,8 @@ export interface Anim {
   // Motion (rendered ground point, heading).
   x: number; y: number; z: number; heading: number; speed: number; vel: number; inited: boolean;
   /** Stage W1, maps that do not walk at the 160 m map's speed (creatures/pace.ts): the drawn speed with the path read at
-   * the reference rate (refSpeed), and at the faster of that and the playback rate (moveSpeed); m/s. Unused on the 160 m map. */
+   * the reference rate (refSpeed; unused on the 160 m map), and at the faster of that and the playback rate (moveSpeed;
+   * every map since stage W14); m/s. */
   refSpeed: number; moveSpeed: number;
   /** Stage W1: 0..1, a stopped walker lowering its swinging limb (poses.ts PoseCtx.settle); exactly 0 while it walks. */
   settle: number;
@@ -254,11 +256,15 @@ export interface Anim {
    * since the last pose (clamberD), and the heading and pitch of its line of travel. */
   cx: number; cy: number; cz: number; cFrame: number; qx: number; qy: number; qz: number;
   clamber: boolean; clamberK: number; clamberV: number; clamberD: number; clamberYaw: number; clamberPitch: number;
+  /** Stage W14: the heading the body was drawn at in its last frame in a tree (perch.ts crownTurn). */
+  crownH: number;
   ownFrame: number; ownX: number; ownY: number; ownZ: number; ownYaw: number; ownLimb: boolean; ownTop: number; ownSrc: number; ownCut: number;
   deadCarried: boolean; deadDrop: boolean; dropX: number; dropZ: number; // a dead infant on its mother, then put down
   climbTree: number;               // tree whose trunk the animal is on this frame (−1 none)
   drumTree: number;                // tree a drummer faces and slaps (−1 none)
   drinkSimX: number; drinkSimZ: number; drinkOk: boolean; drinkX: number; drinkZ: number; // waterline spot cache
+  /** Stage W14: the drawn path stands in the water (a pool): the drinker faces along (drinkIx, drinkIz) into it. */
+  drinkWet: boolean; drinkIx: number; drinkIz: number;
   // Border patrol (creatures/patrol.ts): drawn leg code (0 none) and animation time it began, the latest published
   // leg and its world time (stepLeg), file position and the animals ahead and behind, the listening variant and
   // back-look side, the ecological hour of the last patrol leg (release window) and the slowly settling
@@ -507,9 +513,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       up: false, seatHost: -1, seatX: 0, seatY: 0, seatZ: 0, seatFace: NaN, sx: 0, sy: 0, sz: 0, seated: false, glide: 0, perchRole: 0, lies: false,
       gFrame: -1, gx: 0, gy: 0, gz: 0, gyaw: 0, gt0: 0, gt1: 0, gOn: false, wasHost: false, g0: 0, g1: 0, gm: 0, gr: 0.1, gJoin: -1, nursed: false, holdsBack: false,
       ownFrame: -1, ownX: 0, ownY: 0, ownZ: 0, ownYaw: 0, ownLimb: false, ownTop: Infinity, ownSrc: -1, ownCut: -1,
-      cx: 0, cy: 0, cz: 0, cFrame: -9, qx: 0, qy: 0, qz: 0, clamber: false, clamberK: 0, clamberV: 0, clamberD: 0, clamberYaw: 0, clamberPitch: 0,
+      cx: 0, cy: 0, cz: 0, cFrame: -9, qx: 0, qy: 0, qz: 0, clamber: false, clamberK: 0, clamberV: 0, clamberD: 0, clamberYaw: 0, clamberPitch: 0, crownH: 0,
       deadCarried: false, deadDrop: false, dropX: 0, dropZ: 0, climbTree: -1, drumTree: -1,
-      drinkSimX: NaN, drinkSimZ: NaN, drinkOk: false, drinkX: 0, drinkZ: 0,
+      drinkSimX: NaN, drinkSimZ: NaN, drinkOk: false, drinkX: 0, drinkZ: 0, drinkWet: false, drinkIx: 0, drinkIz: 0,
       pCode: 0, pSince: 0, pPub: 0, pPubAt: 0, pIndex: 0, pCount: 0, pAhead: -1, pBehind: -1, pVariant: Listen.wait, pSide: 1, patrolAt: -1e9, relBristle: 0,
       tg: createChannels(), ch: { belly: 0, flank: 0, lid: 0, arousal: 0, fear: 0, breath: 0 }, stateAt: -1,
       breathPh: hash01(chimp.id, 53), breathAmp: 1, idle: createIdle(chimp.id), scratchK: 0, leanK: 0, glanceId: -1, bears: 0,
@@ -1398,21 +1404,20 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     // Rendered velocity: the path's analytic velocity × playback rate, plus the easing of layout offsets.
     const ex = dt > 0 && !cut ? (a.ox - ox0) / dt : 0, ez = dt > 0 && !cut ? (a.oz - oz0) / dt : 0;
     const vx = tr.vx * pbRate + ex, vz = tr.vz * pbRate + ez;
-    let pathSpeed = hyp2(tr.vx, tr.vz) * pbRate;
     const flat = hyp2(vx, vz);
     a.speed = cut ? 0 : dt > 0 ? damp(a.speed, flat, 14, dt) : a.speed;
     a.vel = cut ? 0 : dt > 0 ? damp(a.vel, hyp2(flat, tr.vy * pbRate), 8, dt) : a.vel;
-    let turnSpeed = a.speed;
-    if (refMode) {
-      // W1: the same velocity with the sim path read at the reference rate (refSpeed: the choice of clip) and at the
-      // faster of that and the playback rate (moveSpeed: the moving test and the heading, so nothing that counts as
-      // moving today stops counting). The easing of layout offsets is real time and enters as drawn: a partner
-      // sliding into place reads exactly as it does at 1 min/s, at every speed.
-      const km = Math.max(pbRate, refK);
-      a.refSpeed = cut ? 0 : dt > 0 ? damp(a.refSpeed, hyp2(tr.vx * refK + ex, tr.vz * refK + ez), 14, dt) : a.refSpeed;
-      a.moveSpeed = cut ? 0 : dt > 0 ? damp(a.moveSpeed, hyp2(tr.vx * km + ex, tr.vz * km + ez), 14, dt) : a.moveSpeed;
-      turnSpeed = a.moveSpeed; pathSpeed = hyp2(tr.vx, tr.vz) * km;
-    }
+    // W1: the same velocity with the sim path read at the faster of the reference rate and the playback rate
+    // (moveSpeed: the moving test and the heading, so nothing that counts as moving today stops counting) and, on a map
+    // that does not walk at the 160 m map's speed, at the reference rate (refSpeed: the choice of clip). The easing of
+    // layout offsets is real time and enters as drawn: a partner sliding into place reads exactly as it does at 1 min/s,
+    // at every speed. (Stage W14: moveSpeed on the 160 m map too. There the moving test read the drawn speed, tuned at
+    // 1 min/s, so at Watch 4x a walk drawn at 0.16 m/s read as standing and the body glided over the ground in the
+    // standing clip: 94 glides in twelve films. At 1 min/s and faster it equals the drawn speed, as before.)
+    const km = movingK(pbRate, refK);
+    a.moveSpeed = cut ? 0 : dt > 0 ? damp(a.moveSpeed, hyp2(tr.vx * km + ex, tr.vz * km + ez), 14, dt) : a.moveSpeed;
+    const turnSpeed = a.moveSpeed, pathSpeed = hyp2(tr.vx, tr.vz) * km;
+    if (refMode) a.refSpeed = cut ? 0 : dt > 0 ? damp(a.refSpeed, hyp2(tr.vx * refK + ex, tr.vz * refK + ez), 14, dt) : a.refSpeed;
     // Heading: travel direction when moving (from the C1 path, so it turns smoothly), else the pairing/sim heading.
     const c = a.chimp;
     let target = a.headingTarget ?? c.heading ?? a.heading;
@@ -1454,8 +1459,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     const wasMoving = a.moving;
     // Moving state with hysteresis; a walker must also be still for 0.8 s before it stands (it pauses mid-stride:
     // foragers stop and go every few ticks).
-    // (W1: on a map that does not walk at the 160 m map's speed the test reads moveSpeed; see updateMotion.)
-    const um = refMode ? a.moveSpeed / s : u;
+    // (W1: the test reads moveSpeed, the walk at the reference rate or faster; see updateMotion. Stage W14: on the 160 m
+    // map too, where at 1 min/s and faster it is the drawn speed u.)
+    const um = refMode || !a.clamber ? a.moveSpeed / s : u;
     if (a.carry !== 0) a.moving = false;
     else if (a.moving) { a.stillT = um > MOVE_EXIT ? 0 : a.stillT + dtReal; a.moving = a.stillT < 0.8; }
     else { a.moving = um > MOVE_ENTER; a.stillT = 0; }
@@ -1941,7 +1947,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
    * Drinkers (render-only layout): the sim's water sites sit ~2 m back on the bank, so the rendered animal moves
    * to the waterline (at most 3 m) and faces the water with its lips at the surface. Cached per sim position.
    */
-  const EDGE = new THREE.Vector3();
+  const EDGE = new THREE.Vector3(), INTO = new THREE.Vector3();
   function drinkSpot(a: Anim) {
     if (!ctx.waterEdge) return;
     // (W6: from where the drawn body is. A drinker whose next act has begun in the simulation stays at the waterline
@@ -1949,11 +1955,15 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     const px = a.track.x, pz = a.track.z;
     if (hyp2(px - a.drinkSimX, pz - a.drinkSimZ) > 0.3) {
       a.drinkSimX = px; a.drinkSimZ = pz;
-      a.drinkOk = ctx.waterEdge(px, pz, EDGE) && hyp2(EDGE.x - px, EDGE.z - pz) < 3.2;
-      if (a.drinkOk) { a.drinkX = EDGE.x; a.drinkZ = EDGE.z; }
+      a.drinkOk = ctx.waterEdge(px, pz, EDGE, INTO) && hyp2(EDGE.x - px, EDGE.z - pz) < 3.2;
+      // Stage W14: where the drawn path stands in the water (a pool's site is at its middle), the drinker goes to the
+      // rim and faces in, along the way into the water; from the bank it faces the waterline from where it is, as before.
+      a.drinkWet = a.drinkOk && ctx.groundHeight(px, pz) < EDGE.y - 0.02;
+      if (a.drinkOk) { a.drinkX = EDGE.x; a.drinkZ = EDGE.z; a.drinkIx = INTO.x; a.drinkIz = INTO.z; }
     }
     if (!a.drinkOk) return;
-    const dx = a.drinkX - a.track.x, dz = a.drinkZ - a.track.z, d = hyp2(dx, dz);
+    let dx = a.drinkX - a.track.x, dz = a.drinkZ - a.track.z, d = hyp2(dx, dz);
+    if (a.drinkWet) { dx = a.drinkIx; dz = a.drinkIz; d = hyp2(dx, dz); }
     if (d < 1e-3) return;
     const back = 0.36 * a.morph.size; // body origin behind the waterline; the drinking lean puts the lips over it
     a.tx = a.drinkX - dx / d * back; a.tz = a.drinkZ - dz / d * back;
@@ -2352,10 +2362,13 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       // distance: with a seat 4 m from the trunk that moved the body 0.6 to 0.8 m in a frame. Drawn at once, as the
       // seat is: a first frame in a tree, a relocation, the frame the forest window gives or takes the tree's limbs,
       // time-lapse, and a place further off than a crown is wide. A body that is at its place is exactly there.
+      // Stage W14: whether this frame follows on from the last in the tree (as the clamber's own step test reads it).
+      let steady = false;
       {
         const tr = a.track;
         let sx = 0, sy = 0, sz = 0;
-        if (a.cFrame === frameNo - 1 && !tr.jumped && a.ownCut !== frameNo && curSimRate <= ABOUT_MAX_RATE) {
+        steady = a.cFrame === frameNo - 1 && !tr.jumped && a.ownCut !== frameNo && curSimRate <= ABOUT_MAX_RATE;
+        if (steady) {
           const dx = x - a.cx, dy = y - a.cy, dz = z - a.cz, d = hyp2(hyp2(dx, dz), dy);
           if (d > 1e-6 && d <= CROWN_JUMP_M) {
             const k = crownStep(d, curDt, curSimRate, hyp2(hyp2(tr.x - a.qx, tr.z - a.qz), tr.y - a.qy));
@@ -2387,6 +2400,11 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         } else { a.clamberV = 0; a.clamberD = 0; }
         a.clamberK = a.clamber || a.clamberK > 1e-3 ? damp(a.clamberK, a.clamber ? 1 : 0, 8, curDt) : 0;
       }
+      // Stage W14 (perch.ts crownTurn): whatever turned it this frame (the clamber's line of travel, the seat's facing,
+      // the bark), a body in a crown turns no faster than a turn is read. Not on a frame drawn at once (a first frame in
+      // the tree, a relocation, a window change, time-lapse) and not in a nest, which has its own lower limit.
+      if (steady && !a.nestSlew) a.heading = crownTurn(a.crownH, a.heading, curDt);
+      a.crownH = a.heading;
       // Branch placement is render-only: a.x/a.z keep tracking the sim so speed estimates stay clean.
       bodyFrame(a, x, z, y, 0);
       if (a.clamberK > 0) { E.set(a.clamberPitch * a.clamberK, a.heading, 0, 'YXZ'); Q.setFromEuler(E); a.bodyQ[0] = Q.x; a.bodyQ[1] = Q.y; a.bodyQ[2] = Q.z; a.bodyQ[3] = Q.w; }

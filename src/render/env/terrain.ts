@@ -22,6 +22,14 @@ const DETAIL = 512;                      // ground data texels across ±GROUND_H
 export interface RiverInfo { points: THREE.Vector3[]; tangents: THREE.Vector3[]; lengths: number[]; halfWidth: number[]; width: number; }
 /** A stream crossing: log bridge or ford (riffle with stepping stones); id = index in the stream's crossing list. */
 export interface Crossing { x: number; z: number; tangent: THREE.Vector3; kind: 'log' | 'ford'; arc: number; id: number }
+/** Stage W14: a pool at a water site off the stream: centre, radius of open water and surface height (m). */
+export interface Pool { x: number; z: number; r: number; level: number }
+/** A pool's open water radius, its depth at the centre and how far around it the ground is levelled to its rim (m). The
+ * simulation gives a water site a radius of 1.2 m; how the pool looks is a stylization. */
+export const POOL_R = 1.5, POOL_DEPTH = 0.35, POOL_FLAT_M = 1.2, POOL_BLEND_M = 2.5;
+/** A site within this distance of the stream's edge is a bank site: the stream is its water (the simulation puts the
+ * stream's own drinking spots 1.5 m out from its edge). */
+export const POOL_BANK_M = 3;
 /** A worn trail between two points (field view: precomputed for the whole map, stamped into each window). */
 export interface TrailSegment { ax: number; az: number; bx: number; bz: number; width: number; seed: number }
 
@@ -35,8 +43,14 @@ export interface Terrain {
   fordStones: number[];
   /** Arc length along the river (m) of each ford. */
   fordArc: number[];
-  /** Nearest waterline point to (x, z) within ~8 m of the stream (out.y = water level); false when none. */
-  waterEdge(x: number, z: number, out: THREE.Vector3): boolean;
+  /** Nearest waterline point to (x, z) within ~8 m of the stream or of a pool (out.y = water level); false when none.
+   * into (optional): the unit direction in the plane from that point into the water (stage W14). */
+  waterEdge(x: number, z: number, out: THREE.Vector3, into?: THREE.Vector3): boolean;
+  /** Stage W14: the field map's pools in this window (the simulation's water sites off the stream), hollowed into the
+   * ground; water.ts draws their surface at `level`. Empty on the 160 m map. */
+  pools: readonly Pool[];
+  /** Distance (m) from (x, z) to the edge of the nearest pool (negative inside it); Infinity without a pool. */
+  poolDistance(x: number, z: number): number;
   trailAt(x: number, z: number): number;
   coverAt(x: number, z: number): number;
   river: RiverInfo;
@@ -521,13 +535,54 @@ export function* terrainSteps(world: World, uniforms: SharedUniforms, owner: Own
     }
     if (field && z % 16 === 15) yield;
   }
+  // --- Stage W14: pools. On the field map the simulation places most of its water sites in the forest, off the stream
+  // ("pools and tree holes", sim/generation.ts), and three drinks in four of a day were drunk there; nothing was drawn,
+  // so animals drank with their lips to a dry trail. Each site off the stream inside this window gets a small pool: the
+  // ground is levelled to the height at the site and hollowed, and water.ts draws its surface. Field map only: the
+  // 160 m map's sites are all on the stream's bank.
+  const pools: Pool[] = [];
+  if (field) for (const w of world.water) {
+    const px = w.position[0], pz = w.position[2];
+    if (Math.abs(px - ox) > FIELD_GROUND_HALF - 6 || Math.abs(pz - oz) > FIELD_GROUND_HALF - 6) continue;   // on this window's ground
+    if (riverDistance(px, pz) < halfWidthM + POOL_BANK_M) continue;
+    const rim = sampleGrid(heightGrid, px, pz, 0), reach = POOL_R + POOL_FLAT_M + POOL_BLEND_M;
+    const cx = Math.round(px - ox + HEIGHT_HALF), cz = Math.round(pz - oz + HEIGHT_HALF), n = Math.ceil(reach) + 1;
+    for (let z = Math.max(0, cz - n); z <= Math.min(GRID - 1, cz + n); z++) for (let x = Math.max(0, cx - n); x <= Math.min(GRID - 1, cx + n); x++) {
+      const d = Math.hypot(x - HEIGHT_HALF + ox - px, z - HEIGHT_HALF + oz - pz), i = z * GRID + x;
+      if (d >= reach) continue;
+      const level = 1 - THREE.MathUtils.smoothstep(d, POOL_R + POOL_FLAT_M, reach);
+      let h = heightGrid[i] + (rim - heightGrid[i]) * level;
+      if (d < POOL_R + 0.3) h = Math.min(h, rim - 0.04 - POOL_DEPTH * Math.max(0, 1 - (d / (POOL_R + 0.3)) ** 2));
+      heightGrid[i] = h;
+    }
+    // The open water's radius is where the hollow, as the 1 m height grid draws it, comes up through the surface: read
+    // back along eight directions (a drinker is placed at that edge).
+    const level = rim - 0.05;
+    let r = 0;
+    for (let k = 0; k < 8; k++) {
+      const ux = Math.cos(k * Math.PI / 4), uz = Math.sin(k * Math.PI / 4);
+      let t = 0; while (t < reach && sampleGrid(heightGrid, px + ux * t, pz + uz * t, 0) < level) t += 0.05;
+      r += t / 8;
+    }
+    pools.push({ x: px, z: pz, r, level });
+  }
+  const poolDistance = (x: number, z: number) => {
+    let best = Infinity;
+    for (const p of pools) { const d = Math.hypot(x - p.x, z - p.z) - p.r; if (d < best) best = d; }
+    return best;
+  };
   const height = (x: number, z: number) => {
     const gx = x - ox + HEIGHT_HALF, gz = z - oz + HEIGHT_HALF;
     if (gx < 0 || gz < 0 || gx >= GRID - 1 || gz >= GRID - 1) return Math.max(1.0, baseHeight(x, z));
     return sampleGrid(heightGrid, x, z, 0);
   };
-  // Animals wade at most ~20 cm deep; the sim keeps them out of the channel except at crossings.
-  const walkable = (x: number, z: number) => Math.max(height(x, z), WATER_LEVEL - 0.2);
+  // Animals wade at most ~20 cm deep; the sim keeps them out of the channel except at crossings. (Stage W14: and a body
+  // crossing a pool wades in it, at most 20 cm below its surface.)
+  const walkable = (x: number, z: number) => {
+    let w = Math.max(height(x, z), WATER_LEVEL - 0.2);
+    for (const p of pools) { const dx = x - p.x, dz = z - p.z; if (dx * dx + dz * dz < (p.r + 0.3) ** 2 && p.level - 0.2 > w) w = p.level - 0.2; }
+    return w;
+  };
 
   // --- Worn trails between water, sleeping areas and big fruit trees (bare soil, fewer plants).
   const trail = new Float32Array(DETAIL * DETAIL);
@@ -589,8 +644,10 @@ export function* terrainSteps(world: World, uniforms: SharedUniforms, owner: Own
     for (let i = 0; i < DETAIL; i++) {
       const x = ox - GROUND_HALF + (i + 0.5) * texel, z = oz - GROUND_HALF + (j + 0.5) * texel;
       const k = j * DETAIL + i;
-      groundData[k * 4] = (1 - THREE.MathUtils.smoothstep(riverDistance(x, z), halfWidthM + 0.2, halfWidthM + 3.4)) * 255;
-      groundData[k * 4 + 1] = trail[k] * 255;
+      // (Stage W14: a pool's muddy rim in R, and bare ground where nothing grows in G, under and just round its water.)
+      const dp = pools.length ? poolDistance(x, z) : Infinity;
+      groundData[k * 4] = Math.max(1 - THREE.MathUtils.smoothstep(riverDistance(x, z), halfWidthM + 0.2, halfWidthM + 3.4), 1 - THREE.MathUtils.smoothstep(dp, -0.2, 1.6)) * 255;
+      groundData[k * 4 + 1] = Math.max(trail[k], 1 - THREE.MathUtils.smoothstep(dp, 0.2, 0.9)) * 255;
       groundData[k * 4 + 2] = Math.min(1, cover[k]) * 255;
       // A: broad river valley (banks up to ~14 m out) — vegetated and never bare rock.
       groundData[k * 4 + 3] = (1 - THREE.MathUtils.smoothstep(riverDistance(x, z), halfWidthM + 6, halfWidthM + 15)) * 255;
@@ -896,7 +953,18 @@ export function* terrainSteps(world: World, uniforms: SharedUniforms, owner: Own
 
   return {
     height, walkable, riverDistance, fordStones, fordArc: crossings.filter(c => c.kind === 'ford').map(c => c.arc),
-    waterEdge(x, z, out) {
+    pools, poolDistance,
+    waterEdge(x, z, out, into) {
+      // Stage W14: a pool's edge, toward where (x, z) is from its centre (a drinker the simulation puts inside the pool
+      // drinks from the rim nearest it, facing in).
+      let pool: Pool | null = null, pd = 8;
+      for (const p of pools) { const d = Math.hypot(x - p.x, z - p.z) - p.r; if (d < pd) { pd = d; pool = p; } }
+      if (pool) {
+        const dx = x - pool.x, dz = z - pool.z, l = Math.hypot(dx, dz), ux = l > 1e-3 ? dx / l : 1, uz = l > 1e-3 ? dz / l : 0;
+        out.set(pool.x + ux * pool.r * 0.92, pool.level, pool.z + uz * pool.r * 0.92);
+        if (into) into.set(-ux, 0, -uz);
+        return true;
+      }
       const d0 = riverDistance(x, z);
       if (d0 > 8) return false;
       // Walk down the distance gradient toward the channel until the bank drops below the water.
@@ -907,7 +975,7 @@ export function* terrainSteps(world: World, uniforms: SharedUniforms, owner: Own
       gx /= gl; gz /= gl;
       for (let t = 0; t <= d0 + 1; t += 0.1) {
         const px = x - gx * t, pz = z - gz * t;
-        if (height(px, pz) < WATER_LEVEL) { out.set(px, WATER_LEVEL, pz); return true; }
+        if (height(px, pz) < WATER_LEVEL) { out.set(px, WATER_LEVEL, pz); if (into) into.set(-gx, 0, -gz); return true; }
       }
       return false;
     },

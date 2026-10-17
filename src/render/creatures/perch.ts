@@ -389,3 +389,18 @@ export function boughStem(fx: number, fy: number, fz: number, r: number, limb: b
   out[0] = tx + dx / d * tr * 0.85; out[2] = tz + dz / d * tr * 0.85; out[1] = fy - Math.min(1.2, 0.5 * run); out[3] = Math.min(1.6 * r, 0.6 * tr);
   return 2;
 }
+
+/**
+ * Stage W14: the fastest a body in a crown turns (rad/s). The heading of a body that starts to clamber is its line of
+ * travel, up to half a turn from where it faced; a seated body turns to its seat's facing, a body reaching the bark to
+ * the trunk; each was eased by an exponential damper, so a half turn began at 16 to 25 rad/s (films: 68 turns faster
+ * than 6 rad/s in ten scenes, up to 16 rad/s: a spin). An animal in its nest has its own, lower limit (NEST_TURN_MAX).
+ * About half a turn a second; a drawing rule (stylization).
+ */
+export const CROWN_TURN_MAX = 3;
+/** The heading a body in a crown is drawn at this frame, from last frame's (prev): the one it was given, turned there no
+ * faster than `max`. Pure. */
+export function crownTurn(prev: number, heading: number, dt: number, max = CROWN_TURN_MAX): number {
+  const d = Math.atan2(Math.sin(heading - prev), Math.cos(heading - prev)), lim = max * Math.max(0, dt);
+  return d > lim ? prev + lim : d < -lim ? prev - lim : heading;
+}
