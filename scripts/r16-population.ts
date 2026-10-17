@@ -57,7 +57,7 @@ export const REGISTERED: { label: string; seed: number; adapter: string; days: n
 /** Why a run may not start or resume, or ''. Pure. */
 export function runRefusal(x: { label: string; seed: number; days: number; arm: 'model' | 'fake'; adapter: string | null; unit: 'P' | 'F'; burnInDays: number; fakePython: boolean }): string {
   if (R16.refused.includes(x.seed)) return `seed ${x.seed} is not this stage's to run (docs/staging/r16-prereg.md §3)`;
-  if (x.arm === 'fake' || x.fakePython) return x.seed === 48 && x.days <= 2 && x.label.startsWith('dry-') ? '' : 'a dry run: seed 48, at most two days, a label beginning dry-';
+  if (x.arm === 'fake' || x.fakePython) return [48, 7].includes(x.seed) && x.days <= 2 && x.label.startsWith('dry-') ? '' : 'a dry run: a development seed (48, 7), at most two days, a label beginning dry-';
   const r = REGISTERED.find(k => k.label === x.label);
   if (!r) return `no registered run is labelled ${x.label}`;
   if (r.seed !== x.seed || r.adapter !== x.adapter || !r.days.includes(x.days) || r.unit !== x.unit || x.burnInDays !== R16.burnInDays) return `the registered run ${x.label} is seed ${r.seed}, adapter ${r.adapter}, ${r.days.join(' or ')} days, unit ${r.unit}, a ${R16.burnInDays}-day burn-in`;
