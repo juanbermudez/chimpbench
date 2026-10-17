@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import type { Interaction, InteractionKind, ViewMode, World } from '../../types';
-import { axisSide, crossesLine, outsideDeadZone, pushOutOfTrunks, tooSimilar, trunkBlocks } from './camera-rules';
+import { axisSide, crossesLine, groupFrame, outsideDeadZone, pushOutOfTrunks, tooSimilar, trunkBlocks } from './camera-rules';
 import { rtsDistanceFor } from './field';
 import {
   CLOSE_FOV, ORBIT_MAX, ORBIT_MIN, ORBIT_NOTCH, RTS_DISTANCE, RTS_NOTCH, RTS_ZOOM_MAX, RTS_ZOOM_MIN, ZOOM_TAU,
@@ -415,7 +415,6 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
   const tmp = new THREE.Vector3();
   const probe = new THREE.Vector3();
   const probeLook = new THREE.Vector3();
-  const anchor = new THREE.Vector3();
   const tmp2 = new THREE.Vector3();
   let nextCheck = 0;
   // G3 shot grammar: the last cut's subject, its side of the actor–target axis and the camera angle around it.
@@ -432,25 +431,21 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
     return (KIND_WEIGHT[it.kind] ?? 1.5) * (0.6 + Math.min(1, it.intensity ?? 0.5)) * live / (1 + age * 6);
   }
   /** Subject centre (out) and visual size in metres (participant spread, at least one animal). */
+  // Stage W14 (camera-rules.ts groupFrame): positions are read into scratch of their own, never into `out` (callers pass
+  // tmp, which the loop used to overwrite with each participant while summing into it).
+  const gfV = new THREE.Vector3(), GF = new Float64Array(3), GF_PAIR = [-1, -1];
+  const posInto = (id: number, o: Float64Array) => { if (!getPosition(id, gfV)) return false; o[0] = gfV.x; o[1] = gfV.y; o[2] = gfV.z; return true; };
   function subjectOf(s: { interactionId: number; chimpId: number }, out: THREE.Vector3): number {
     const interactions = (world as Partial<World>).interactions;
     if (s.interactionId >= 0 && interactions) {
       const it = interactions.find(i => i.id === s.interactionId);
       if (it) {
-        let n = 0; out.set(0, 0, 0);
-        const ids = it.participants?.length ? it.participants.slice(0, 6) : [it.actorId, it.targetId];
-        let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
-        // Stage W14: the actor and those of the others near it. A display aimed at a rival 90 m off, or a grooming
-        // partner still walking up, put the subject in the empty ground between them: the camera filmed forest floor
-        // from overhead while the caption named the actor.
-        const anchored = getPosition(it.actorId, anchor);
-        for (const id of ids) if (id >= 0 && getPosition(id, tmp)) {
-          if (anchored && hyp2(tmp.x - anchor.x, tmp.z - anchor.z) > CINE_GROUP_M) continue;
-          out.add(tmp); n++;
-          minX = Math.min(minX, tmp.x); maxX = Math.max(maxX, tmp.x); minZ = Math.min(minZ, tmp.z); maxZ = Math.max(maxZ, tmp.z);
-        }
-        if (n) { out.divideScalar(n); return Math.max(1.6, hyp2(maxX - minX, maxZ - minZ) * 1.15); }
-        if (anchored) { out.copy(anchor); return 1.6; }   // (an actor away from every listed participant)
+        // The actor and those of the others within CINE_GROUP_M of it (stage W14): a display aimed at a rival 90 m off,
+        // or a grooming partner still walking up, is framed on the actor, not on the empty ground between them.
+        let ids: readonly number[] = it.participants ?? [];
+        if (!ids.length) { GF_PAIR[0] = it.actorId; GF_PAIR[1] = it.targetId; ids = GF_PAIR; }
+        const size = groupFrame(ids, it.actorId, posInto, CINE_GROUP_M, GF, 6);
+        if (size > 0) { out.set(GF[0], GF[1], GF[2]); return size; }
         out.set(it.position[0], height(it.position[0], it.position[2]), it.position[2]);
         return 3;
       }

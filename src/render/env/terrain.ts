@@ -538,7 +538,7 @@ export function* terrainSteps(world: World, uniforms: SharedUniforms, owner: Own
     if (field && z % 16 === 15) yield;
   }
   // --- Stage W14: pools. On the field map the simulation places most of its water sites in the forest, off the stream
-  // ("pools and tree holes", sim/generation.ts), and three drinks in four of a day were drunk there; nothing was drawn,
+  // ("pools and tree holes", sim/generation.ts), and about seven drinks in ten of a first day were drunk there; nothing was drawn,
   // so animals drank with their lips to a dry trail. Each site off the stream inside this window gets a small pool: the
   // ground is levelled to the height at the site and hollowed, and water.ts draws its surface. Field map only: the
   // 160 m map's sites are all on the stream's bank.

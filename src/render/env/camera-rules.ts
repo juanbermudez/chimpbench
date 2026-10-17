@@ -64,3 +64,28 @@ export function tooSimilar(prevAngle: number, nextAngle: number): boolean {
 export function outsideDeadZone(offset: number, frameHeight: number, share = 0.08): boolean {
   return offset > frameHeight * share;
 }
+
+// Stage W14: the cinematic director's subject for an episode. Its own scratch (never the caller's out): subjectOf used
+// to read each participant's position into the very vector it was summing into, so an episode of one animal was framed
+// at twice its coordinates (on the 160 m map 50 m off, on the field map kilometres off: the camera filmed empty ground
+// while the caption named the animal), and one of two at the second animal alone.
+const GF_P = new Float64Array(3), GF_A = new Float64Array(3);
+/**
+ * Centre (out[0..2]) and size (m) of an episode's group: the actor and the first `limit` listed participants within
+ * `near` m of it (in the plane), at least 1.6 m; the actor alone when none is near; 0 when nobody is drawn. pos writes a
+ * drawn position into its second argument and says whether the animal is drawn.
+ */
+export function groupFrame(ids: readonly number[], actorId: number, pos: (id: number, o: Float64Array) => boolean, near: number, out: Float64Array, limit = 6): number {
+  const anchored = actorId >= 0 && pos(actorId, GF_A);
+  let n = 0, sx = 0, sy = 0, sz = 0, minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+  for (let k = 0; k < ids.length && k < limit; k++) {
+    const id = ids[k];
+    if (id < 0 || !pos(id, GF_P)) continue;
+    if (anchored && hyp2(GF_P[0] - GF_A[0], GF_P[2] - GF_A[2]) > near) continue;
+    sx += GF_P[0]; sy += GF_P[1]; sz += GF_P[2]; n++;
+    if (GF_P[0] < minX) minX = GF_P[0]; if (GF_P[0] > maxX) maxX = GF_P[0]; if (GF_P[2] < minZ) minZ = GF_P[2]; if (GF_P[2] > maxZ) maxZ = GF_P[2];
+  }
+  if (n) { out[0] = sx / n; out[1] = sy / n; out[2] = sz / n; return Math.max(1.6, hyp2(maxX - minX, maxZ - minZ) * 1.15); }
+  if (anchored) { out[0] = GF_A[0]; out[1] = GF_A[1]; out[2] = GF_A[2]; return 1.6; }
+  return 0;
+}
