@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { record, validateDecisionContext } from '../src/sim/context-check';
 import { r15Packet } from '../src/providers/packet';
 import { R15_PACKET_VERSION } from '../src/kernel/resource-contract';
-import { assertR15AdapterManifest } from '../scripts/lib/r15-training';
+import { ADAPTER_NAME, assertR15AdapterManifest } from '../scripts/lib/r15-training';
 import type { ScoreItem } from '../scripts/ft-society';
 import { LOCAL_MODEL, LOCAL_REVISION } from './local-worker';
 
@@ -15,9 +15,32 @@ const sourceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const sha = (path: string) => createHash('sha256').update(readFileSync(path)).digest('hex');
 const json = (path: string): unknown => JSON.parse(readFileSync(path, 'utf8'));
 const message = (error: unknown) => error instanceof Error ? error.message : String(error);
-export interface R15Config { trainingRoot: string; adapter: string; repoRoot?: string; mainRoot?: string; python?: string; device?: 'mps' | 'cpu'; }
+export interface R15Config { trainingRoot: string; adapter: string; repoRoot?: string; mainRoot?: string; python?: string; device?: 'mps' | 'cpu';
+  /**
+   * Stage R16 (docs/staging/r16-prereg.md §17.2): the shared model lock is held by a chain that started this process; the
+   * worker checks that the lock names that chain (its token, stage R16-chain, an ancestor's pid) instead of taking the
+   * lock itself, and leaves it in place when it stops. Absent: the worker takes and releases the lock as before.
+   */
+  chainLock?: { token: string };
+}
 export interface R15Transport { start(packet: unknown): Promise<unknown>; score(batch: ScoreItem[]): Promise<unknown>; close(): Promise<void>; }
-export interface R15Dependencies { transport?: () => R15Transport; processes?: () => string; startupMs?: number; scoreMs?: number; }
+export interface R15Dependencies { transport?: () => R15Transport; processes?: () => string; startupMs?: number; scoreMs?: number;
+  /** This process and its ancestors' pids (tests); default from the process list. */ ancestors?: () => number[]; }
+
+/** This process and its ancestors, from the process list (pid, ppid). */
+export function processAncestors(pid = process.pid): number[] {
+  const parent = new Map<number, number>();
+  for (const line of execFileSync('ps', ['-axo', 'pid=,ppid='], { encoding: 'utf8', maxBuffer: 64 << 20 }).split('\n')) { const m = /^\s*(\d+)\s+(\d+)/.exec(line); if (m) parent.set(+m[1], +m[2]); }
+  const out = [pid];
+  for (let p = parent.get(pid); p !== undefined && p > 1 && !out.includes(p); p = parent.get(p)) out.push(p);
+  return out;
+}
+/** Stage R16: the lock file must name the chain that started this process (its token, stage R16-chain, a pid among this process's ancestors). */
+export function assertChainOwnsLock(lock: string, token: string, ancestors: number[]): void {
+  if (!token || !existsSync(lock)) throw new Error('R16 chain lock is missing');
+  const owner = json(lock);
+  if (!record(owner) || owner.stage !== 'R16-chain' || owner.token !== token || typeof owner.pid !== 'number' || !ancestors.includes(owner.pid)) throw new Error('the shared model lock is not held by the chain that started this process');
+}
 
 /** The preflight qualifies MPS without FlashDeBERTa, using this exact interpreter's environment. */
 export function r15ProcessConfig(config: R15Config, inherited: NodeJS.ProcessEnv = process.env) {
@@ -42,7 +65,7 @@ export function assertR15Idle(mainRoot: string, processes: string): void {
 
 /** Completed artifacts only: a directory or a startup hash alone is not a trained adapter. */
 export function readR15Artifact(config: R15Config) {
-  if (!/^r15-resources-s(7|11)$/.test(config.adapter)) throw new Error('Invalid R15 adapter name');
+  if (!ADAPTER_NAME.test(config.adapter)) throw new Error('Invalid R15 adapter name');
   const root = resolve(config.trainingRoot), folder = resolve(root, 'adapters', config.adapter), manifest = json(resolve(folder, 'manifest.json'));
   assertR15AdapterManifest(manifest);
   if (manifest.adapter !== config.adapter || manifest.base_model !== LOCAL_MODEL || manifest.base_revision !== LOCAL_REVISION
@@ -71,7 +94,7 @@ class PythonTransport implements R15Transport {
     const root = this.config.repoRoot ?? sourceRoot;
     const { python, env } = r15ProcessConfig(this.config);
     const child = spawn(python, ['-B', resolve(root, 'server/r15-scorer.py')], {
-      cwd: root, stdio: ['pipe', 'pipe', 'pipe'], env: { ...env, MGOGO_R15_LOCK_PATH: this.lock.path, MGOGO_R15_LOCK_TOKEN: this.lock.token, MGOGO_R15_PARENT_PID: String(process.pid) },
+      cwd: root, stdio: ['pipe', 'pipe', 'pipe'], env: { ...env, MGOGO_R15_LOCK_PATH: this.lock.path, MGOGO_R15_LOCK_TOKEN: this.lock.token, MGOGO_R15_PARENT_PID: String(process.pid), ...(this.config.chainLock ? { MGOGO_R15_CHAIN_OWNED: '1' } : {}) },
     });
     this.child = child;
     this.exited = new Promise(done => child.once('close', () => {
@@ -119,6 +142,7 @@ export class R15Worker {
   private identity: ReturnType<typeof readR15Artifact>['identity'] | null = null;
   private transport: R15Transport | null = null;
   private token = '';
+  private chainToken = '';
   private startup: Promise<void> | null = null;
   private cleanup: Promise<void> | null = null;
   private readonly mainRoot: string;
@@ -147,10 +171,11 @@ export class R15Worker {
       this.idle();
       const artifact = readR15Artifact(this.config);
       mkdirSync(dirname(this.lock), { recursive: true });
-      const token = randomUUID(); writeFileSync(this.lock, JSON.stringify({ pid: process.pid, stage: 'R15-app', token }), { flag: 'wx', mode: 0o600 }); this.token = token;
+      if (this.config.chainLock) { assertChainOwnsLock(this.lock, this.config.chainLock.token, this.dependencies.ancestors?.() ?? processAncestors()); this.token = ''; this.chainToken = this.config.chainLock.token; }
+      else { const token = randomUUID(); writeFileSync(this.lock, JSON.stringify({ pid: process.pid, stage: 'R15-app', token }), { flag: 'wx', mode: 0o600 }); this.token = token; }
       this.idle();
       this.transport = this.dependencies.transport?.() ?? new PythonTransport(this.config,
-        error => { this.error = error.message; this.phase = 'failed'; void this.release(); }, { path: this.lock, token: this.token });
+        error => { this.error = error.message; this.phase = 'failed'; void this.release(); }, { path: this.lock, token: this.chainToken || this.token });
       const ready = await this.bounded(this.transport.start(artifact.warmup), this.dependencies.startupMs ?? 600_000);
       if (!record(ready) || ready.ready !== true || !record(ready.adapters) || ready.adapters[this.config.adapter] !== artifact.identity.sha256
         || ready.config_sha256 !== artifact.configHash || ready.device !== (this.config.device ?? 'mps')) throw new Error('R15 loaded adapter identity differs from the completed manifest');

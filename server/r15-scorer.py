@@ -41,10 +41,30 @@ def require_runtime():
     os.environ['MGOGO_DECIDE_PYTHON'] = sys.executable
 
 
+def ancestors(pid):
+    """This process's ancestors from the process list (pid, ppid), nearest first."""
+    import subprocess
+    parent = {}
+    for line in subprocess.check_output(['ps', '-axo', 'pid=,ppid='], text=True).splitlines():
+        parts = line.split()
+        if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit(): parent[int(parts[0])] = int(parts[1])
+    out, p = [], parent.get(pid)
+    while p is not None and p > 1 and p not in out:
+        out.append(p); p = parent.get(p)
+    return out
+
+
 def require_lock():
     owner = json.loads(Path(os.environ['MGOGO_R15_LOCK_PATH']).read_text())
     parent = int(os.environ['MGOGO_R15_PARENT_PID'])
-    if owner.get('stage') != 'R15-app' or owner.get('pid') != parent or parent != os.getppid() or owner.get('token') != os.environ['MGOGO_R15_LOCK_TOKEN']:
+    if parent != os.getppid() or owner.get('token') != os.environ['MGOGO_R15_LOCK_TOKEN']:
+        raise ValueError('R15 scorer requires its launching process to hold the exclusive model lock')
+    if os.environ.get('MGOGO_R15_CHAIN_OWNED') == '1':
+        # Stage R16 (docs/staging/r16-prereg.md §17.2): the lock is held by the chain that started the launching process.
+        if owner.get('stage') != 'R16-chain' or owner.get('pid') not in ancestors(os.getpid()):
+            raise ValueError('R15 scorer requires the R16 chain that started it to hold the exclusive model lock')
+        return
+    if owner.get('stage') != 'R15-app' or owner.get('pid') != parent:
         raise ValueError('R15 scorer requires its launching process to hold the exclusive model lock')
 
 

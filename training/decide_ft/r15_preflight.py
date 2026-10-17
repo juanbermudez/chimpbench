@@ -19,7 +19,7 @@ SOURCES = ('src/providers/packet.ts', 'src/kernel/resource-contract.ts', 'src/si
            'scripts/lib/r15-training.ts', 'scripts/r15-preflight.ts', 'training/decide_ft/common.py',
            'training/decide_ft/soft_loss.py', 'training/decide_ft/train.py', 'training/decide_ft/train_r11.py',
            'training/decide_ft/train_r15.py', 'training/decide_ft/adapters.py', 'training/decide_ft/r8_tokens.py',
-           'training/decide_ft/r15_preflight.py', 'training/decide_ft/r15_preflight_worker.py')
+           'training/decide_ft/r15_preflight.py', 'training/decide_ft/r15_preflight_worker.py', 'training/decide_ft/epochs.py')
 
 
 def sha(path): return hashlib.sha256(Path(path).read_bytes()).hexdigest()
