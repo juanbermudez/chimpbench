@@ -752,9 +752,354 @@ after any result.
 
 ## 21. Iteration log and results
 
-*(Filled in by the builder after the code is committed; nothing here changes §0 to §20.)*
+The build (17 October 2026, 14:58 to 17:20 EDT, branch `r16-scale-and-own-states`). No model process of any kind was
+started: no Python worker, no tokenizer, no training, no scoring, no browser and no dev server. This is not one of the
+three iterations of §18: no adapter exists.
+
+### 21.1 What was built
+
+| File | What it does |
+| --- | --- |
+| `scripts/lib/r16-strata.ts` | the strata and search cells from the kind packet's shared words and the kind menu only (§4.3) |
+| `scripts/lib/r16-collect.ts`, `scripts/r16-collect.ts` | the census of every fresh rules decision with a checkpoint a day, the registered selections (§5.2, §10), the label pass in one-day segments that land on the census hash, the learner selections, the assembly of both rounds, the token inputs |
+| `scripts/lib/r16-assemble.ts` | the leak checks (R15's own row check, then R16's roles), equal exposure by hash (§8) |
+| `scripts/lib/r16-readouts.ts` | the new readouts of §12.4 as a read-only tap, for every arm |
+| `scripts/lib/r16-run.ts` | whole days on the R15 path: a two-call journal, receipts with both calls and the decode records, kind contexts, a checkpoint a day, resume, exact replay, the certain-failure stop |
+| `scripts/lib/r16-worker.ts` | the supervisor of §17.4 to §17.6, the quiet-machine check, the chain watch, a fake worker with faults |
+| `scripts/lib/r16-arms.ts` | the imitator, planted and half-fault kernels; R7's controls with the readouts attached |
+| `scripts/r16-population.ts` | registered runs only (roll-outs, ten animals, populations; dry runs on 48 and 7; one process per run folder), replay into R7 arm files, the arms of a world, the learner census and labels, H-S, K1, the drift and the search after a test (§13) |
+| `scripts/r16-score.ts` | an adapter's odds on the reading sets through the supervised serving worker, resumable |
+| `scripts/lib/r16-marks.ts`, `scripts/r16-report.ts` | every registered mark and statement, read from files (K0, D0, readings and the teacher-half check, I0 and K5, G2/G3, G6/G7, A0, G8, G9, the population outcome), and the numbers file |
+| `scripts/r16.py` | the chain: sessions, the flock-held lock with stale detection and release on SIGINT, SIGTERM, SIGHUP, the quiet machine, budgets and hang guards, gates read by machine, the orphan guard, the dry path |
+| `scripts/lib/r16-fake-scorer.mjs`, `scripts/lib/r16-fake-train.mjs` | the dry chain's stand-ins for the scorer process and for the preflight and trainer |
+| `scripts/r16-proofs.ts` | the serving path's bytes; kill and resume |
+| `tests/r16-scale.test.ts`, `tests/r16_chain_test.py` | the unit tests |
+
+Shared code changed, each default-off (the earlier stages' tests pass unedited): `scripts/r8-contexts.ts` (the rules
+taps as one helper), `scripts/r11-contexts.ts` (the label's redraws split by parity, on request), `scripts/r15-contexts.ts`
+(its row check exported), `scripts/lib/r15-training.ts` (the labeler's options and detail, the R16 adapter names),
+`server/r15-worker.ts` and `server/r15-scorer.py` (a lock held by the chain; the worker's pid), `training/decide_ft/train_r15.py`
+and `r15_preflight.py` (R16 datasets and names; the chain's lock), `training/decide_ft/train_r11.py` and the new
+`epochs.py` (rows that carry their epochs), `scripts/lib/r10-run.ts` (the meter exported), `scripts/r7-card.ts` (an
+optional read-only tap), `src/providers/http.ts` and `scripts/verify-r15-browser.mjs` (the R16 adapter names).
+Nothing under `src/sim` changed; no parameter, switch or default.
+
+### 21.2 Clarifications made while building (before any run; none moves a statement of §5 to §15)
+
+1. **The census dates a decision by its day segment**, not by its clock time: a decision in a day's last tick carries the
+   next day's clock time, and the label pass that runs that segment must meet it (found by the full-scale proof below:
+   one segment met 138 of 137 selected decisions before the fix). The census keeps an animal's first decision at one tick
+   and decision version (none repeated in ten days of seed 48).
+2. **The recovery allowance of §17.7 (45 minutes) is per process**: each start or resume of a step has its own; a
+   resume follows a person's look, and the time already booked is in the run's registry.
+3. **The rules' stop check ending a roll-out does not end the session** (§10: its days are kept and labelled); the
+   session goes on to the other world. A focal run that paused is not "gross harm" (G8 names operational states apart).
+4. **Token counts are taken per round**: round zero's reading sets before session 1, round one's H-L before session 2
+   (the tokenizer alone, `r8_tokens.py`); the preflight counts the training files as R15 registered.
+5. **Two short-night classes are printed**: the registered one (which half of the dark is under 0.9 in a nest) and the
+   diagnosis's (which half alone would make the night short), so that K1 can be read against `r14-diag-nights.md`.
+6. **The app's identity check and R15's browser verifier accept the R16 adapter names** (`src/providers/http.ts`,
+   `scripts/verify-r15-browser.mjs`): §14 needs it; nothing else in the proof changes.
+7. **A step stops when the chain that started it is gone** (the lock no longer names it, or its process is dead), and
+   a new session refuses while a step of its run root is still alive without its chain: a chain killed outright cannot
+   stop its own steps.
+8. **The budget, from the measured file sizes** (seed 48's full collection below gave 2,240 training and 229
+   development rows): round one's development file will hold about 960 rows, so each round-one training is about 3.2
+   hours rather than 2.9, and session 2 about 9.5 model hours rather than 8.9; the stage about 33 hours if everything
+   runs.
+9. **The search (§13) cuts its cells by the packet's words alone** (light word and trend, the half of the dark, in a
+   nest or out, company), without the act in progress, so that the cells of traced units and of training rows are read
+   alike.
+10. **The search's long morning** is one longer than the longest morning in a finished nest at full daylight on any day of
+   the eight rules re-draws of that same world (§7's arms, read from the card); each unit is traced to the last kind ask
+   of that animal at or before the unit's first tick. The drift's labels lift R15's seed check for test worlds only
+   (they never become rows; the assembler still refuses any row outside 48 and 7).
+11. **The session's first warm-up has one attempt** (§17.5): the chain marks the first step of a session that warms a
+   serving worker (`R16_SESSION_FIRST=1`), and a worker not warm within ten minutes there pauses the session. Every later
+   start has the three attempts of a recovery, and its attempts after the first, with their cool-downs, are booked to
+   recovery (§17.7). Before this, every start had three attempts and none of a start's were booked; the dry chain's
+   third run showed it.
+12. **One process per run folder**: a run refuses to start or resume while the process that last wrote its folder still
+   lives (the kill proof below found that killing `tsx` alone leaves the script running in its child).
+
+### 21.3 The proofs without a model (17 October 2026; CPU only, on this branch; the registered readings are the frozen checkout's)
+
+**Labels of a sample against the teachers' realised picks on a rules world; the collection at full scale (seed 48,
+15:51 to 15:57 EDT).** `r16-collect.ts census`, `select --plan zero`, `labels` on seed 48, as session 0 runs them:
+
+- The census world (the R15 switches from the first tick, 30 rules days of burn-in) is R14's rules twin: the burn-in
+  `b35818060f2fe16b` and all ten day hashes (`1dc33e48…` to `0ac76e10…`) equal `bench-r14/artifacts/r14/runs/rules-s48`.
+  So the R15 switches change nothing in a rules world, and this source replays R14's frozen commit (D0, K3 and K4 at once).
+- 21,905 fresh decisions in ten days (1,913 to 2,771 a day; 38 adults); no decision counted twice.
+- The selection, from the census alone: training animals 780 plain, NEST-DAY-CO 80 (the rules supply the state, rarely:
+  the ceiling of 130 was not reached), DUSK-ALONE 112, DARK-OUT-EVENING 5 (attack 1 expected 3 to 5), DARK-OUT-MORNING 65
+  (its ceiling), FOOD-FALL 130, WATER 130; development animals 78, 12, 10, 0, 7, 13, 13.
+- The labels: 2,469 rows (1,423 kind, 1,046 target): 2,240 training and 229 development rows from this one world; each
+  day segment 21 to 34 s and on the census's day hash.
+- Exclusions: 12 kind labels from fewer than 100 matching menus; 12 clamp-tied target rows (7 at full daylight, 5 at
+  failing light). Kind labels at the 20,000-redraw cap: 49 of 1,423 (3.4%); 4,298 redraws on average.
+- **R11's marks M1 a, b, c held at all 1,423 labelled decisions** (the replay of the rules' belief draws ends on the
+  world's random state, the first maximum with the realised draws is the rules' pick, the menu rebuilt at the true
+  version is the rules' own).
+- **The kind label against the rules' realised kind**: the mean label mass on the kind the rules took is 0.8288, against
+  0.8293 expected if the realised kind is a draw from the label (difference −0.0004; three standard errors 0.0112).
+- **The target teacher against the rules' realised target**: wherever the rules took a target of the row's kind that is
+  on its bounded menu and no option carries a belief draw, the teacher's arithmetic with the realised jitter gives the
+  rules' target: 97 of 97.
+- The floors: the teacher's entropy 0.289 nats on kind rows (uniform 1.581) and 0.799 on target rows (uniform 1.466).
+- P1: 536 kind rows in a finished nest, 120 of them with a nest-mate the rules count that the packet does not list.
+- Packets: the longest about 608 tokens by the characters-over-four estimate (median 287); R15 measured 615 real tokens.
+
+**R14's completed learner run relabelled (H-S; seed 48, 15:44 to 15:48 EDT).** `r16-population.ts relabel-r14` on
+`bench-r14/artifacts/r14/runs/learner-s48` (read only): the replay under this source landed on all ten of R14's day
+hashes, twice (the census pass and the label pass); 24,199 asks in the census (R14's own count); 582 asks of development
+animals selected by packet words and relabelled on copies with the R15 switches; 947 rows; 7 exclusions (5 too few
+matching menus, 2 clamp-tied); no kind mass outside the R15 menu at any row. The R15 kind teacher's Nest mass at these
+P5b-learner states: 0.021 in NEST-DAY-CO (47 rows: the rules leave), 1.000 in DUSK-LATE-ALONE (16), 0.936 in DUSK-CO (78),
+0.528 in NEST-RISE-CO (107), 1.000 in DARK-OUT-EVENING (4). Few development-animal rows reach the rare strata: most H-S
+readings will be "not read" by the exposure floor, as §6 expected.
+
+**Old arms and old tables unchanged (K0; 15:57 to 16:01 EDT).** The commands session 0 runs, into a scratch folder:
+stage R10's arm `argmax-gate` for two days on seed 48 (`r10-night.ts run`) landed on the burn-in `4b5cc61f8ad797e0` and the
+day hashes `95bfc1fd4e6ddfda` and `07ec9b9f26b64f60` with 6,423 receipt lines, R10's record; stage R13's model arm
+(`bench-r13/artifacts/r13/model-s3613`, read only) replayed through this source landed on all 20 day hashes with none of
+its 68,656 receipt lines different, and its stage R7 arm file came out byte for byte the file on record
+(`bench-r13/artifacts/r13/card/P/s3613/p5b-s7-draw-1-s3613.json`), but for the commit, the time and the run path.
+
+**The new readouts on stage R13's run reproduce the diagnosis (K1; 16:01 to 16:02 EDT).** `r16-population.ts k1` on
+`bench-r13/artifacts/r13/model-s3613` and `rules-s3613` (read only; both replays exact): of 760 animal-nights, 21 short
+nights on the model arm and none on the rules; of the 21, 13 short by the evening alone and 8 only together (the
+registered classes: 13 evening, 3 morning, 5 both); nights with a rise in the dark 172 on the model arm against 224 on the
+rules; pant-hoots 4.19 against 2.51 a day; the energy eaten from 06:30 to 09:00 about 85 kcal lower on the model arm; a
+finished nest at 07:45 or later on 26.4% of the model arm's mornings and on none of the rules' after 08:00. Each of the
+eleven checks holds (`r14-diag-nights.md`, `r14-diag-energy.md`). A code check only: the cuts were read off this run.
+The command's first attempt died at its last write (the output's folder did not exist); the command now makes it.
+
+**The serving path's bytes (packet parity; 16:16 EDT).** `r16-proofs.ts packets` on the dry chain's round-zero files:
+R15's own worker (`server/r15-worker.ts`) was started on the fake scorer process in place of Python, holding the shared
+lock as R15's app does, and asked for the first 60 rows of the held-out rules set (35 kind and 25 target rows). Every
+one of the 60 packets the scorer received is byte for byte the row's own packet and the packet the R15 path renders
+from the row's saved context; the warm-up packet is the first development row's, as R15's worker sends it.
+
+**Kill and resume (16:18 EDT).** `r16-proofs.ts kill-resume`: a dry run of two days on seed 48 (one-day burn-in) was
+killed with SIGKILL to its whole process group inside its second day, after 774 calls of that day were journalled.
+While it lived, a second process on the same folder was refused. The resume started from day 1's checkpoint, set the
+three day-2 files aside, reused all 774 journalled calls, and ended on the uninterrupted run's two day hashes
+(`000e73a1081abd58`, `d5b45379946ecb44`) with the same receipts line for line; its replay was exact.
+
+**The dry chain (16:19 to 16:43 EDT, on the build's commit before this record; 24 minutes beside a card run).**
+`python3 -B scripts/r16.py dry` ran sessions 0, 1, between 1 and 2 on 48, 7 and 21 with a 2-day burn-in and one-day
+windows. It used fake trainers and the fake scorer process behind R15's real serving worker. Then it ran a population
+day with faults and the two readings after a test. Every step ran under the chain's lock, and the chain released the
+lock at the end.
+- D0, the readings and the cards held on dry data.
+- G2, G3, G6 and G7 did not hold on the fake odds, as expected, and the dry chain went on.
+- A0 did not hold only because a one-day roll-out is under the five days that make a world usable. Its label machine
+  held: both replays were exact; every rebuilt kind packet equalled the journal's (1,054 and 1,027); and every rebuilt
+  target packet did too (255 and 198).
+- Round zero's dry file has 3,440 training and 406 development rows; round one's has 6,914 and 815.
+- The day with faults ran 3,132 calls. The session's first warm-up held. Call 40 hung. The fresh worker's warm-up never
+  answered (the dry run's limit is 4 s), and after a cool-down the next one held. The retry (call 41) hung too, so the
+  rules settled that ask and a fourth worker was warmed. 8.6 s were booked to recovery, under the allowance, and the
+  day's replay was exact.
+- The drift labelled 383 of that run's own kind asks in an exact replay, and the search traced 80 units into 20 cells.
+
+The earlier runs of the dry chain found two faults, and both are fixed. Run 1: assembly hashed a folder it was writing
+into. Run 2: the census and the label pass disagreed at a day's last tick (found at full scale, above); it was stopped
+with SIGTERM, and the lock was released as registered. Run 3 completed and showed the warm-up booking of clarification 11.
+
+**I0 and K5 as a development reading (16:03 to 17:18 EDT).** These are the arms of §7 that session 0 runs:
+`r16-population.ts card --seed 48|7 --days 20` into a scratch folder, read by `r16-report.ts cards`. Each world took
+37 to 38 minutes beside other jobs. They are no-model gates on the training worlds, read early so that a stop would
+show before the integrator's night. Session 0 reads them again on the frozen checkout, and the card's code is unchanged
+since.
+- **I0 holds.** The perfect imitator of the R15 menu is not viable in 0 of 8 arms on 48 and in 3 of 8 on 7 (the stage
+  stops at 5). Seed 7 is closer to the line than 48.
+- **K5 holds.** Five readouts see R13's planted failure on both worlds: nights in a nest, daylight minutes in a nest
+  before 13:00, the 90th percentile of the hour of rising, evening dark minutes out of a nest, and days with a short
+  night. Five do not, and are struck from every later statement and kept as description: reserves, the mean hour of
+  rising, morning dark minutes out of a nest, early rises, and late leaves.
+- No readout is moved by the R15 menu itself (none is told in 5 of 8 imitator arms on both worlds).
+
+### 21.4 Tests and checks (on the build's last code commit)
+
+- `tests/r16-scale.test.ts`: 19 tests. They cover the strata, the selection, equal exposure, the assembler's refusals,
+  the supervisor (stalls, retries, the session's first warm-up, a failed recovery warm-up, booking, recycling), the
+  two-call day runner (exact replay, a crash resumed), the certain-failure stop, the arms, the marks, the readouts and
+  their trace fields, the chain's lock check in the worker, the registered runs, the census line, a census and label
+  pass that land on the census hash, and the drift's plan and seed rule.
+- `tests/r16_chain_test.py`: 9 tests. They cover the lock under a flock, stale locks, release on SIGINT, SIGTERM and
+  SIGHUP, the flock dying with a killed process, steps that resume, pause, stop and hit the hang guard, gates, the
+  session's first warm-up flag, and the trainer's epoch rule.
+- The R16 scripts and tests were type-checked by hand with the project's strict options: clean. `tsc --noEmit`: clean.
+  `scripts/gen-params.ts --check`: valid, up to date, lint clean.
+- The whole suite once (16:45 to 16:51 EDT, beside a no-model card run): 1,563 tests, 1,562 pass, 1 skipped (a
+  validation file not on this computer), none failed. The earlier stages' tests pass unedited. The Python tests of
+  R14, R15 and R16 pass on the system interpreter (35 tests). `pnpm build`: passes.
+
+### 21.5 Not done
+
+- **No model step**, by the rules of this build. Not run: token counts, preflights, trainings, scorings, roll-outs,
+  ten animals, populations and the app demo. Every mark after D0, I0 and K5 is unread, and no statement of §9 to §14
+  has a value.
+- **Session 0 was not run as a session.** Its pieces were run on this branch as proofs: K0, K1, the collection and
+  H-S of seed 48, and the arms of §7 on 48 and 7. The collection of 7 and 21 at full scale and H-S on 7 run first in
+  session 0, on the frozen checkout.
+- **Packet lengths are estimates only** (characters over four). The real counts are taken by the tokenizer in
+  sessions 1 and 2.
+- **`IMPLEMENTATION_PLAN.md`, `AGENTS.md` and `HANDOFF.md` are unedited.** The proposed lines are in §22.
+- **Nothing was pushed or merged.**
 
 ## 22. For the integrator
 
-*(Written after the build: the exact chain, its environment and the time of each step, the proposed plan block and
-lines for AGENTS.md and HANDOFF.md.)*
+**Read first.** (1) Nothing in this file is a result about the model: the builder started no model process. (2) The
+stage runs in six pieces, and a person reads the state between each one: session 0 (no model, by day), session 1 (model,
+a night), between 1 (no model), session 2 (model, a night), day 2 (no model), session 3 (model, a night). (3) The decode
+stands as registered (§20 item 1) unless the user rules otherwise before session 1. The other questions of §20 block
+nothing. (4) Seeds 3701 and 3187 (populations) and 3079 and 3517 (ten animals) are fresh. Seeds 3011 and 3643 are
+sealed. Seeds 3457 and 3823 stay R14's.
+
+**The environment** (every shell that starts a session):
+
+```sh
+export MGOGO_GHN_ROOT=/Volumes/Drive/chimpbench/GHN
+export MGOGO_DECIDE_PYTHON=/Volumes/Drive/chimpbench/decide-env/bin/python
+export HF_HOME=/Volumes/Drive/chimpbench/hf-cache
+export HF_HUB_CACHE=/Volumes/Drive/chimpbench/hf-cache/hub
+export R16_OUT=/Volumes/Drive/chimpbench/MGOGO/.claude/worktrees/bench-r16/artifacts/r16
+```
+
+The chain finds Node 22.22.3 at fnm's path (set `R16_NODE` if it moved) and runs itself on the system `python3` (standard
+library only). The trainer and the serving worker start `MGOGO_DECIDE_PYTHON` themselves.
+
+**The chain, in order.** Each step shows its planned time; the worst case is in brackets. One model process runs at a
+time. Every session runs from the frozen checkout in a detached `screen` session. The chain holds the shared lock, keeps
+the Mac awake with `caffeinate -i -m`, and releases the lock on every exit. "Stops" names the marks that end a session.
+
+```sh
+# 0. The frozen checkout (a minute): this branch's last commit, or its merge into track-e.
+cd /Volumes/Drive/chimpbench/MGOGO
+git worktree add --detach .claude/worktrees/bench-r16 <the commit>
+cd .claude/worktrees/bench-r16
+ln -s /Volumes/Drive/chimpbench/MGOGO/node_modules node_modules
+git status --short          # must print nothing
+
+# 1. Check (seconds; starts nothing): identity, older chains, a quiet machine, swap, the lock.
+python3 -B scripts/r16.py check
+
+# 2. The dry chain (no model; 21 to 24 minutes measured): the whole path against a fake scorer on 48, 7 and 21 with a
+#    2-day burn-in and 1-day runs, plus a day with a stall, a failed warm-up and a failed retry. Its gates are printed
+#    and never stop it; A0, G2, G3, G6 and G7 do not hold on dry data, as expected.
+python3 -B scripts/r16.py dry      # writes $R16_OUT/dry; the last line of $R16_OUT/dry/chain/status.log is "dry DONE"
+
+# 3. Session 0 (no model, by day; about 2 hours, from the pieces measured). Steps: K0 and K1 (5 minutes); the census,
+#    selection and labels of 48, 7 and 21 (about 6 minutes each); H-S from R14's two completed runs (4 minutes each);
+#    round zero's files (a minute); the 38 arms of §7 on 48 and 7 for 20 days (30 to 40 minutes a world); then D0,
+#    the readings, I0 and K5. Stops on K0, D0, I0 or K5 (state scientific-stop).
+screen -dmS r16-s0 sh -c 'cd /Volumes/Drive/chimpbench/MGOGO/.claude/worktrees/bench-r16 && export MGOGO_GHN_ROOT=/Volumes/Drive/chimpbench/GHN MGOGO_DECIDE_PYTHON=/Volumes/Drive/chimpbench/decide-env/bin/python HF_HOME=/Volumes/Drive/chimpbench/hf-cache HF_HUB_CACHE=/Volumes/Drive/chimpbench/hf-cache/hub R16_OUT=/Volumes/Drive/chimpbench/MGOGO/.claude/worktrees/bench-r16/artifacts/r16 && python3 -B scripts/r16.py session0 > artifacts/r16-session0.out 2>&1'
+
+# 4. Session 1 (model, a night; 12.6 hours planned [16.3]). Restart the Mac first if swap is above 6 GB.
+#    Token counts and round zero's preflight (0.3 h [0.5]); train r16-zero-s7 (2.9 [3.4]); score it on H-R and H-S
+#    (0.65 [0.8]); G2 stops here at about 3.9 model hours. Then train r16-zero-s11 and score it (3.55 [4.2]); G3 stops
+#    here. Then the roll-out of r16-zero-s7 on 48 for 10 days (2.6 [3.7]; 7 days if G2 measured more than 0.40 s a kind
+#    call), and the roll-out of r16-zero-s11 on 7 (2.6 [3.7]).
+screen -dmS r16-s1 sh -c '<the same cd and exports> && python3 -B scripts/r16.py session1 > artifacts/r16-session1.out 2>&1'
+
+# 5. Between 1 (no model; about 30 minutes). The learner census, selections and labels of both roll-outs, their replays
+#    read as populations, and round one's file at equal exposure. Stops on A0.
+screen -dmS r16-b1 sh -c '<the same cd and exports> && python3 -B scripts/r16.py between1 > artifacts/r16-between1.out 2>&1'
+
+# 6. Session 2 (model, a night; 9.5 hours planned [11.7]). Token counts of H-L and round one's preflight (0.3 [0.5]);
+#    train r16-agg-s7 (3.2 [3.8]); score it on H-R, H-S and H-L, and r16-zero-s7 on H-L (0.95 [1.2]); G6 stops here.
+#    Then train r16-agg-s11 and score (4.15 [5.0]); G7 stops here. R7's focal controls on 3079 and 3517 (no model,
+#    minutes). Ten animals: r16-agg-s7 on 3079 and 3517 (0.45 [0.6]), then r16-agg-s11 (0.45 [0.6]). G8 stops here.
+screen -dmS r16-s2 sh -c '<the same cd and exports> && python3 -B scripts/r16.py session2 > artifacts/r16-session2.out 2>&1'
+
+# 7. Day 2 (no model; about 30 minutes). The arms of §7 on 3701 and 3187 for 20 days. G9 stops on either world.
+screen -dmS r16-d2 sh -c '<the same cd and exports> && python3 -B scripts/r16.py day2 > artifacts/r16-day2.out 2>&1'
+
+# 8. Session 3 (model, a night; 10.5 hours planned [14.7]; 5.4 if s7's population is not viable). The population of
+#    r16-agg-s7 on 3701 for 20 days (5.1 [7.2]), its replay, its reading, the drift (no model, about 20 minutes) and
+#    the search (no model, a minute).
+#    Only if that population is viable: r16-agg-s11 on 3187 (5.1 [7.2]) and the same readings. Then the numbers file.
+#    A certain failure (V2 or V1 can no longer hold) ends a population early with exit 3.
+screen -dmS r16-s3 sh -c '<the same cd and exports> && python3 -B scripts/r16.py session3 > artifacts/r16-session3.out 2>&1'
+
+# 9. The tables, copied for a commit on a branch. Never publish a run folder: run folders carry this machine's host name and paths.
+python3 -B scripts/r16.py publish docs/staging
+```
+
+Model hours in total: about 33 if everything runs (12.6 + 9.5 + 10.5), and 27 if s7's population is not viable. The
+registered cuts of §16 are taken before a session with `R16_CUTS=s11-focal,rollout-8,hs-scoring,s11-population-later`
+(any subset), never after its results.
+
+**Watching (read only).** `python3 -B scripts/r16.py status` prints the state, the model hours charged and the last
+lines of the status log. `cat $R16_OUT/chain/state` reads `running`, `<session>-done`, `paused`, `scientific-stop`,
+`failed` or `interrupted`, and `$R16_OUT/chain/state-note` says why. Every step's log is
+`$R16_OUT/chain/logs/<step>.log`. A run's own `run.json` lists its days and its supervisor's warm-ups, stalls and
+recovery time. `$R16_OUT/chain/monitor.jsonl` logs load, swap, free memory and the drive's I/O once a minute during
+model steps.
+
+**If it stops.**
+- `paused` means one of these happened: a stalled worker went past its recovery allowance; three warm-ups failed; three
+  stalls came in one simulated day; the machine did not quiet down in 30 minutes; or a step went past its hang guard.
+  Nothing is lost, because each day's checkpoint and journal stand. Read the reason, quiet the machine (restart it if
+  swap is high), then run the same session again. It resumes.
+- `interrupted` means a signal ended it. Run the same session again.
+- `scientific-stop` means a registered mark did not hold, and the note names it. No further model step of this stage
+  runs, and the result is that mark's sentence.
+- `failed` means a step failed. Read the step's log. A training that ended without its manifest is retried once from
+  base automatically, and its folder is kept under `adapters-failed/`. A second failure is `failed` and needs a person.
+  A preflight that failed leaves its folder, and the next attempt refuses. A person moves that folder aside after reading it.
+- A session refuses to start while a step of the run is still alive without its chain: `kill` that step, or let it end.
+  A session moves a stale lock aside by itself.
+
+**The app demo.** Run it only if `$R16_OUT/marks/population-s3701.json` or `-s3187.json` reads `"viable": true`. Use
+the better adapter by §14's rule, and start only after the chain has ended and released the lock.
+
+```sh
+cd /Volumes/Drive/chimpbench/MGOGO/.claude/worktrees/bench-r16
+MGOGO_R15_ENABLED=1 MGOGO_R15_ROOT=$R16_OUT/ft1 MGOGO_R15_ADAPTER=<r16-agg-s7 or r16-agg-s11> fnm exec --using=22.22.3 -- pnpm dev --port 5182 --strictPort
+node scripts/verify-r15-browser.mjs http://127.0.0.1:5182 --out $R16_OUT/browser-proof   # R15's registered proof; only the adapter names it accepts changed
+```
+
+Then look at the whole scene in the film. Lockstep or mechanical movement is a defect even when the checks pass. The
+world is R15's day-0 world, which lies outside every training state. Say so beside the demo.
+
+### The lines proposed for the shared files (not edited by this build)
+
+**Proposed block for `IMPLEMENTATION_PLAN.md`** (after "Stage R15"):
+
+> ## Stage R16: The perceived-target model at a real scale, taught on its own states, tested as a population
+> **Goal**: stage R15's two-stage model (the kind of act, then a tree or water source the animal perceives or
+> remembers) taught at a real scale on whole-day rules states (round zero), then one round on the states its own
+> population reaches (round one, equal exposure), and tested where it has never been: offline on held-out rules states,
+> at ten animals, and as a whole population for 20 days with R13's viability readouts and the readouts the diagnosis
+> found missing. A rules-taught model on the R15 menu; nothing about wild chimpanzees.
+> **Success Criteria** (registered in `docs/staging/r16-prereg.md` before any code or run): no-model gates first (D0:
+> the collection lands on R14's rules twins' day hashes and reproduces the rules' own picks; I0: the perfect imitator of
+> the R15 menu is viable on 48 and 7; K5: the readouts see R13's planted failure); G2/G3 (each round-zero training below
+> the state-blind baselines and within the night forecast's allowance, D from the training worlds' controls); A0 (the
+> learner labels land on every day hash); G6/G7 (R14's harm guards against round zero, carrying on within 0.05,
+> absolute harm forecasts, strand marks); G8 (no gross harm at ten animals); G9 (the test world reads alike; power and
+> false alarms printed); the population read by R13 §8.1 word for word, then mornings, nights and the target stage; the
+> recipe named only when both trainings agree; the app demo only on a viable adapter.
+> **Tests**: `tests/r16-scale.test.ts` (19), `tests/r16_chain_test.py` (9); the earlier stages' tests unedited.
+> **Status**: Registered and built on branch `r16-scale-and-own-states` (17 October 2026); **not run: no model process
+> was started**. The integrator runs it in three model sessions (about 33 model hours; 27 if s7's population is not
+> viable) from a frozen checkout, `docs/staging/r16-prereg.md` §22.
+
+**Proposed line for `AGENTS.md`, Commands** (after the R15 lines):
+
+```
+python3 -B scripts/r16.py check | dry | session0 | session1 | between1 | session2 | day2 | session3 | report | status | publish DEST   # stage R16 (docs/staging/r16-prereg.md; launch order §22): R15's two-stage model at a real scale (round zero: census of every fresh rules decision on 48, 7, 21, selection by packet words and hash, labels in day segments), one round on its own population's states at equal exposure, ten animals on 3079/3517, populations on 3701/3187 (3011/3643 sealed). One chain holds artifacts/r14-chain.lock under a flock for a whole session and releases it on every exit; steps resume; exit 75 pauses (resume by running the session again), 3 or a gate is a scientific stop. Pieces: scripts/r16-collect.ts (census, select, labels, assemble), scripts/r16-population.ts (registered runs only, one process per run folder, replay, card arms, learner labels, relabel-r14, k1, drift, trace), scripts/r16-score.ts, scripts/r16-report.ts (every mark from files), scripts/r16-proofs.ts. Model steps only from a frozen detached checkout in screen; dry: the whole path against a fake scorer process (scripts/lib/r16-fake-scorer.mjs), no model
+```
+
+**Proposed lines for `HANDOFF.md`**: §2.0: "**Stage R16** registered and built on `r16-scale-and-own-states`
+(17 October 2026; no model process was started). It needs the integrator: the dry chain, session 0 by day, then three
+model sessions (§22 of `docs/staging/r16-prereg.md`), each read by a person before the next. Open for the user before
+session 1: the decode (a draw, as ruled on 10 October; it sets aside R13's 'next population run is on the top pick'),
+packet v2, water choice, the unseen nest-mates, the order of cuts." §4 (branch map): "`r16-scale-and-own-states`: stage
+R16 registered and built, not run." §5 (next tasks): "R16: merge, freeze, `check`, `dry`, `session0`; then `session1`
+in screen on a quiet machine." AGENTS.md "Gotchas": "R16's seeds: 3701 and 3187 (population tests), 3079 and 3517 (ten
+animals) are R16's; 3011 and 3643 are sealed for an R16 iteration 2; 3457 and 3823 stay R14's."
