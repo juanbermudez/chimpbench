@@ -637,9 +637,12 @@ export function* terrainSteps(world: World, uniforms: SharedUniforms, owner: Own
     for (let i = 0; i < DETAIL; i++) {
       const x = ox - GROUND_HALF + (i + 0.5) * texel, z = oz - GROUND_HALF + (j + 0.5) * texel;
       const k = j * DETAIL + i;
-      // (Stage W14: a pool's muddy rim in R, and bare ground where nothing grows in G, under and just round its water.)
+      // (Stage W14: a pool's muddy margin in R, a ring from just inside its edge to a metre out, and bare ground where
+      // nothing grows in G, under and just round its water: its bed reads as soil through the water, as the stream's
+      // silt does, not as black mud.)
       const dp = pools.length ? poolDistance(x, z) : Infinity;
-      groundData[k * 4] = Math.max(1 - THREE.MathUtils.smoothstep(riverDistance(x, z), halfWidthM + 0.2, halfWidthM + 3.4), 1 - THREE.MathUtils.smoothstep(dp, 0.2, POOL_HOLLOW_M + 0.5)) * 255;
+      const poolMud = THREE.MathUtils.smoothstep(dp, -0.6, -0.15) * (1 - THREE.MathUtils.smoothstep(dp, 0.3, POOL_HOLLOW_M + 0.5));
+      groundData[k * 4] = Math.max(1 - THREE.MathUtils.smoothstep(riverDistance(x, z), halfWidthM + 0.2, halfWidthM + 3.4), poolMud) * 255;
       groundData[k * 4 + 1] = Math.max(trail[k], 1 - THREE.MathUtils.smoothstep(dp, POOL_HOLLOW_M, POOL_HOLLOW_M + 0.6)) * 255;
       groundData[k * 4 + 2] = Math.min(1, cover[k]) * 255;
       // A: broad river valley (banks up to ~14 m out) — vegetated and never bare rock.

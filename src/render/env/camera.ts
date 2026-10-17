@@ -39,6 +39,9 @@ const MIN_FRAME_SHARE = 0.08;   // subject height / frame height
 /** Field map, stage W14: with an animal selected the cinematic director films it and the episodes within this distance
  * of it (m): its party, in the streamed forest window. A drawing rule. */
 const CINE_NEAR_M = 60;
+/** Stage W14: an episode is framed on its actor and the participants within this distance of it (m): a close group, not
+ * the span of a call across a valley. A drawing rule. */
+const CINE_GROUP_M = 12;
 // (Stage W14: the close camera's speed cap and cut distance live with its tracking step, follow.ts TRACK_MAX_REL and
 // TRACK_CUT. The cap now holds the spring's own correction, not the camera's whole speed.)
 /** The close camera's lead ahead of a moving subject is at most this share of the frame height (stage W14: 0.3 s ahead
@@ -412,6 +415,7 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
   const tmp = new THREE.Vector3();
   const probe = new THREE.Vector3();
   const probeLook = new THREE.Vector3();
+  const anchor = new THREE.Vector3();
   const tmp2 = new THREE.Vector3();
   let nextCheck = 0;
   // G3 shot grammar: the last cut's subject, its side of the actor–target axis and the camera angle around it.
@@ -436,11 +440,17 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
         let n = 0; out.set(0, 0, 0);
         const ids = it.participants?.length ? it.participants.slice(0, 6) : [it.actorId, it.targetId];
         let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+        // Stage W14: the actor and those of the others near it. A display aimed at a rival 90 m off, or a grooming
+        // partner still walking up, put the subject in the empty ground between them: the camera filmed forest floor
+        // from overhead while the caption named the actor.
+        const anchored = getPosition(it.actorId, anchor);
         for (const id of ids) if (id >= 0 && getPosition(id, tmp)) {
+          if (anchored && hyp2(tmp.x - anchor.x, tmp.z - anchor.z) > CINE_GROUP_M) continue;
           out.add(tmp); n++;
           minX = Math.min(minX, tmp.x); maxX = Math.max(maxX, tmp.x); minZ = Math.min(minZ, tmp.z); maxZ = Math.max(maxZ, tmp.z);
         }
         if (n) { out.divideScalar(n); return Math.max(1.6, hyp2(maxX - minX, maxZ - minZ) * 1.15); }
+        if (anchored) { out.copy(anchor); return 1.6; }   // (an actor away from every listed participant)
         out.set(it.position[0], height(it.position[0], it.position[2]), it.position[2]);
         return 3;
       }

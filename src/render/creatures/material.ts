@@ -103,19 +103,7 @@ const SKIN_VERTEX = /* glsl */`
  * saturation; the outline pass expands the same skinned mesh a few pixels in screen space and draws it
  * dark first. A view-space bias keeps an animal's own limbs from triggering it.
  */
-/**
- * Stage W14: how the see-through fill is blended. In the strategy view it is the community colour laid over the canopy
- * (normal blending). In the close and cinematic views it is meant to be faint (uFillK 0.14), but every part of the hidden
- * body that overlaps another (an arm over the chest, a leg over the belly) laid its own 14% over the last, and three or
- * four of them read as a solid orange plank across the bough, or a slab on the back of the mother hiding a selected
- * infant. There it is blended by maximum: the faint colour, premultiplied, over whatever is behind, the same however
- * many parts overlap. Sets the material's blend state only (no new program); `uMax` tells the shader to premultiply.
- */
-export function silhouetteBlend(m: THREE.Material, close: boolean, uMax: { value: number }): void {
-  if (close) { m.blending = THREE.CustomBlending; m.blendEquation = THREE.MaxEquation; uMax.value = 1; }
-  else { m.blending = THREE.NormalBlending; m.blendEquation = THREE.AddEquation; uMax.value = 0; }
-}
-export function createSilhouetteMaterial(texture: THREE.DataTexture, outline: boolean, uniforms: { uOpacity: { value: number }; uViewport: { value: THREE.Vector2 }; uBias: { value: number }; uLine: { value: THREE.Color }; uFillK: { value: number }; uLens?: { value: THREE.Vector4 }; uLensAspect?: { value: number }; uMax?: { value: number } }) {
+export function createSilhouetteMaterial(texture: THREE.DataTexture, outline: boolean, uniforms: { uOpacity: { value: number }; uViewport: { value: THREE.Vector2 }; uBias: { value: number }; uLine: { value: THREE.Color }; uFillK: { value: number }; uLens?: { value: THREE.Vector4 }; uLensAspect?: { value: number } }) {
   const m = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, depthFunc: THREE.GreaterDepth, fog: false });
   m.onBeforeCompile = shader => {
     shader.uniforms.uBones = { value: texture };
@@ -126,7 +114,6 @@ export function createSilhouetteMaterial(texture: THREE.DataTexture, outline: bo
     shader.uniforms.uFillK = uniforms.uFillK;
     shader.uniforms.uLens = uniforms.uLens ?? { value: new THREE.Vector4() };
     shader.uniforms.uLensAspect = uniforms.uLensAspect ?? { value: 1.6 };
-    shader.uniforms.uMax = uniforms.uMax ?? { value: 0 };
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', `#include <common>
 ${PARS_VERTEX}
@@ -148,13 +135,12 @@ varying vec3 vTint; varying float vRim; varying float vLens;`)
   gl_Position.xy += sn * 2.6 * 2.0 / uViewport * gl_Position.w;` : ''}`);
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
-uniform float uOpacity; uniform vec3 uLine; uniform float uFillK; uniform float uMax; varying vec3 vTint; varying float vRim; varying float vLens;`)
+uniform float uOpacity; uniform vec3 uLine; uniform float uFillK; varying vec3 vTint; varying float vRim; varying float vLens;`)
       .replace('#include <opaque_fragment>', outline
         ? 'gl_FragColor = vec4(uLine, uOpacity * 0.9 * mix(smoothstep(0.6, 0.92, vRim), 1.0, step(0.99, uFillK)));'
-        : `float xa = uOpacity * uFillK * (1.0 - 0.86 * vLens);
-  gl_FragColor = vec4(vTint * (0.85 + 0.35 * vRim) * mix(1.0, xa, uMax), xa);`);
+        : `gl_FragColor = vec4(vTint * (0.85 + 0.35 * vRim), uOpacity * uFillK * (1.0 - 0.86 * vLens));`);
   };
-  m.customProgramCacheKey = () => `mgogo-chimp-xray-v9-${outline ? 1 : 0}`;
+  m.customProgramCacheKey = () => `mgogo-chimp-xray-v8-${outline ? 1 : 0}`;
   return m;
 }
 
