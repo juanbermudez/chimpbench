@@ -224,6 +224,30 @@ function offline(out: string, gate: 'g2' | 'g3' | 'g6' | 'g7'): void {
     marks['P4 (a) target below uniform, failing light'] = { holds: exposed(fu) && fu.hi < 0, value: ci(fu), description: half.p4a === false };
     marks['P4 (b) far mass at failing light not above the teacher\'s'] = { holds: exposed(far) && !(far.lo > 0), value: ci(far), description: half.p4b === false };
   }
+  // descriptions, never a stop (§9.1 the "before" reading on H-S; §9.2 TAKE and A2 on the in-sample learner sets)
+  const nestMass = (rows: R16Row[], m: (r: R16Row) => number[] | null, st: KindStratum) => { const v = rows.filter(r => r.phase === 'kind' && r.r16.stratum === st).map(r => { const i = (r.context.resourceKinds ?? []).indexOf('nest'), p = m(r); return i < 0 || !p ? null : { animal: `${r.seed}:${r.chimpId}`, v: p[i] }; }).filter((x): x is { animal: string; v: number } => x !== null); return animalInterval(v); };
+  const described: string[] = [];
+  const hsF = resolve(out, 'eval', 'hs.jsonl'), hs = existsSync(hsF) ? readJsonl<R16Row>(hsF) : [];
+  if (round === 'zero' && hs.length) {
+    const ms = modelOf(scoresOf(resolve(out, 'scores', `${adapter}-hs.jsonl`)));
+    for (const [st, p5b] of [['NEST-DAY-CO', 0.94], ['DUSK-LATE-ALONE', 0.77], ['DARK-OUT-EVENING', 0.59]] as [KindStratum, number][]) { const x = nestMass(hs, ms, st); described.push(`${st}: Nest mass ${exposed(x) ? ci(x) : `not read (${x.n} rows, ${x.animals} animals)`} on H-S (in-sample, development animals), the P5b line's ${p5b}`); }
+  }
+  if (round === 'agg') {
+    const z = (set: string) => modelOf(scoresOf(resolve(out, 'scores', `${zero}-${set}.jsonl`))), m = (set: string) => modelOf(scoresOf(resolve(out, 'scores', `${adapter}-${set}.jsonl`)));
+    for (const set of ['hs', 'hl']) {
+      const f = resolve(out, 'eval', `${set}.jsonl`); if (!existsSync(f)) continue;
+      const rows = readJsonl<R16Row>(f);
+      for (const [st, want] of [['NEST-DAY-CO', -1], ['DUSK-LATE-ALONE', 1], ['DARK-OUT-EVENING', 1]] as [KindStratum, number][]) {
+        const v: { animal: string; v: number }[] = [];
+        for (const r of rows) { if (r.phase !== 'kind' || r.r16.stratum !== st) continue; const i = (r.context.resourceKinds ?? []).indexOf('nest'), a = m(set)(r), b = z(set)(r); if (i < 0 || !a || !b) continue; v.push({ animal: `${r.seed}:${r.chimpId}`, v: a[i] - b[i] }); }
+        const x = animalInterval(v), shown = exposed(x) && (want < 0 ? x.hi < 0 : x.lo > 0);
+        described.push(`TAKE ${set.toUpperCase()} ${st}: round one less round zero, Nest mass ${exposed(x) ? ci(x) : `not read (${x.n} rows)`}: ${shown ? 'shown' : 'not shown'} (${want < 0 ? 'less staying' : 'more nesting'} wanted)`);
+      }
+      for (const phase of ['kind', 'target'] as const) { const d = divergenceVs(rows.filter(r => r.phase === phase && r.r16.via === 'plain'), m(set), z(set)); described.push(`A2 ${set.toUpperCase()} ${phase}: divergence round one less round zero ${exposed(d) ? ci(d) : 'not read'}${exposed(d) && d.hi < 0 ? ' (lower)' : ''}`); }
+    }
+    const man = existsSync(resolve(out, 'ft1', 'adapters', adapter, 'manifest.json')) ? json<{ best_dev?: { epoch: number }; epochs_shown?: { rows_seen_by_saved_epoch: number; rows: number } }>(resolve(out, 'ft1', 'adapters', adapter, 'manifest.json')) : null;
+    if (man) described.push(`A3: the kept epoch ${man.best_dev?.epoch} had seen ${man.epochs_shown?.rows_seen_by_saved_epoch} of ${man.epochs_shown?.rows} rows. At equal exposure the rounds differ by the file, by passes per row and by what the kept epoch saw: a difference may be called "the round-one file at the same number of optimizer steps", never "the learner's own states" alone and never a repair of R13.`);
+  }
   // readings beside the marks
   const c = carryOn(plainKind, model), trip = (() => { const v = plainKind.map(r => { const i = (r.context.resourceKinds ?? []).indexOf('go_to_food'), p = model(r); return i < 0 || !p ? null : p[i] - labelOf(r)[i]; }).filter((x): x is number => x !== null); return v.reduce((a, b) => a + b, 0) / Math.max(1, v.length); })();
   const sure: string[] = [];
@@ -232,6 +256,7 @@ function offline(out: string, gate: 'g2' | 'g3' | 'g6' | 'g7'): void {
   const failed = Object.entries(marks).filter(([, m]) => !m.holds && !m.description).map(([k]) => k), holds = failed.length === 0;
   md.push('| Mark | Value | Holds |', '| --- | --- | --- |', ...Object.entries(marks).map(([k, m]) => `| ${k} | ${m.value} | ${m.holds ? 'yes' : 'NO'}${m.description ? ' (description: it fails on the teacher\'s own halves)' : ''} |`),
     '', `Readings: carrying on (kind level) ${fx(c.model)} against the teacher's ${fx(c.teacher)}; trip mass less the teacher's ${fx(trip, 4)}; seconds per call: kind ${fx((summary.msKind ?? NaN) / 1000)}, target ${fx((summary.msTarget ?? NaN) / 1000)}; mass on the teacher's sure option by stratum: ${sure.join('; ')}.`,
+    '', ...(described.length ? ['Descriptions (no stop rests on them):', '', ...described.map(d => `- ${d}`), ''] : []),
     '', holds ? `**${gate.toUpperCase()} holds.**` : `**${gate.toUpperCase()} FAILS: ${failed.join('; ')}.** ${round === 'zero' ? 'The stage stops: "the round-zero recipe is not established".' : 'No ten-animal test and no population test.'}`);
   write(out, gate, { holds, stop: holds ? null : `${gate}: ${failed.join('; ')}`, adapter, marks, msKind: summary.msKind, msTarget: summary.msTarget, speedRule: summary.msKind !== null && summary.msKind / 1000 > 0.4 ? 7 : 10 }, md);
 }
@@ -306,9 +331,29 @@ function population(out: string, seed: number): void {
     if (toldHarm(k, t) && (group === 'morning' || group === 'night') && !struck) toldHarmful.push(`${READOUTS[k].label} (${t})`);
     md.push(`| ${READOUTS[k]?.label ?? k} | ${fx(arm[k] ?? null)} | ${fx(y.mean)} ± ${fx(y.d)} (${fx(y.allowance)}) | ${t || 'no'}${struck ? ' (struck by K5: description)' : ''}${cards_.imitatorMoves[k] ? ' (moved by the R15 menu itself)' : ''} | ${iv.length ? `${fx(Math.min(...iv))} to ${fx(Math.max(...iv))}` : 'not run'} | ${plant.filter(v => toldHarm(k, told(v[k] ?? null, y))).length} of 8 | ${cards_.sees[k] === undefined ? '' : cards_.sees[k] ? 'yes' : 'no'} |`);
   }
+  md.push('', '## The level against the same world on the rules (R13 §8.2\'s rows; description)', '', '| Readout | This run | Rules mean ± D | Told |', '| --- | --- | --- | --- |');
+  for (const k of ['kmFixPerDay', 'tripsBegun', 'tripsDone', 'actChanges', 'kcalEatenPerDay']) { const y = yardstick(red, k, 0); md.push(`| ${k} | ${fx(arm[k] ?? null)} | ${fx(y.mean)} ± ${fx(y.d)} | ${told(arm[k] ?? null, y) || 'no'} |`); }
+  const led = reg.days.reduce((s, d) => ({ kindOnly: s.kindOnly + d.ledger.kindOnly, kindAndTarget: s.kindAndTarget + d.ledger.kindAndTarget, rulesFallback: s.rulesFallback + d.ledger.rulesFallback, held: s.held + d.ledger.held }), { kindOnly: 0, kindAndTarget: 0, rulesFallback: 0, held: 0 });
+  md.push('', `Who decided (§12.4): ${led.kindAndTarget} decisions by a kind call and a target call, ${led.kindOnly} by a kind call with the rules' representative target, ${led.held} acts held by the gate, ${led.rulesFallback} rules fallbacks; animals under 8 on the rules; endings always by the rules.`);
   const outcome = stopped ? `STOPPED: ${reg.reason}` : !via.viable ? `NOT VIABLE (${[!via.v1 && 'V1', !via.v2 && 'V2', !via.v3 && 'V3'].filter(Boolean).join(', ')})` : !toldHarmful.length ? 'VIABLE, AT THE RULES\' LEVEL ON MORNINGS AND NIGHTS' : `VIABLE, NOT AT THE RULES' LEVEL ON ${toldHarmful.join('; ')}`;
   md.push('', `**Outcome for ${reg.arm.adapter} on ${seed}: ${outcome}.**`, '', !stopped && via.viable && !toldHarmful.length ? 'In the registered words: on this world, under the draw, a population on the R16 recipe on the R15 menu kept nights and mornings at the rules\' level. It does not mean the model is better than the rules, nearer to wild chimpanzees, or that aggregation repaired R13.' : '');
   write(out, label, { holds: !stopped && via.viable, viable: !stopped && via.viable, outcome, toldHarmful, underPowered: g.underPowered, adapter: reg.arm.adapter, values: arm }, md);
+}
+/** K0 (§7.2): the old paths unmoved: stage R10's argmax-gate arm on its recorded hashes and receipt count, and R13's model arm regenerated into its R7 arm file, byte for byte but for the fields that name the checkout and the time. */
+function k0(out: string): void {
+  const reg = json<{ burnInHash: string; days: { hash: string }[] }>(resolve(out, 'k0', 'argmax', 'run.json'));
+  const receipts = readdirSync(resolve(out, 'k0', 'argmax', 'receipts')).filter(f => f.endsWith('.jsonl')).reduce((s, f) => s + readFileSync(resolve(out, 'k0', 'argmax', 'receipts', f), 'utf8').split('\n').filter(Boolean).length, 0);
+  const argmax = { burnIn: reg.burnInHash, days: reg.days.map(d => d.hash), receipts, holds: reg.burnInHash === '4b5cc61f8ad797e0' && reg.days[0]?.hash === '95bfc1fd4e6ddfda' && reg.days[1]?.hash === '07ec9b9f26b64f60' && receipts === 6423 };
+  const strip = (f: string) => { const a = json<Record<string, unknown>>(f); delete a.head; delete a.dirty; delete a.seconds; const spec = a.spec as Record<string, unknown> | undefined; if (spec) { delete spec.run; delete spec.runCommit; } return JSON.stringify(a); };
+  const mine = resolve(out, 'k0', 'card', 'P', 's3613', 'p5b-s7-draw-1-s3613.json'), theirs = '/Volumes/Drive/chimpbench/MGOGO/.claude/worktrees/bench-r13/artifacts/r13/card/P/s3613/p5b-s7-draw-1-s3613.json';
+  const card = { equal: existsSync(mine) && existsSync(theirs) && strip(mine) === strip(theirs) };
+  const k1f = resolve(out, 'marks', 'k1.json'), k1 = existsSync(k1f) ? json<{ holds: boolean; checks: Record<string, boolean> }>(k1f) : null;
+  const holds = argmax.holds && card.equal;
+  write(out, 'k0', { holds, stop: holds ? null : 'K0: an old path moved; nothing is read until it is repaired', argmax, card, k1 }, ['# R16 K0 and K1: the old paths, and the new readouts on R13\'s finished runs', '', NAME, '',
+    `- Stage R10's argmax-gate arm, two days on seed 48: burn-in ${argmax.burnIn}, days ${argmax.days.join(', ')}, ${receipts} receipt lines: ${argmax.holds ? 'the recorded hashes and count (4b5cc61f8ad797e0; 95bfc1fd4e6ddfda, 07ec9b9f26b64f60; 6,423)' : 'DIFFERENT from the record'}.`,
+    `- Stage R13's model arm replayed through this source into its R7 arm file: ${card.equal ? 'byte for byte the file on record (bench-r13), but for the commit, the time and the run path' : 'DIFFERENT from the file on record'}.`,
+    `- K1 (a code check, not a test of power): ${k1 ? Object.entries(k1.checks).map(([k, v]) => `${k} ${v ? 'yes' : 'NO'}`).join('; ') : 'not on file'}.`,
+    '', holds ? '**K0 holds.**' : '**K0 FAILS: nothing is read until it is repaired.**']);
 }
 function numbers(out: string): void {
   const files = readdirSync(resolve(out, 'tables')).filter(f => f.endsWith('.md') && f !== 'r16-numbers.md').sort();
@@ -318,7 +363,7 @@ function numbers(out: string): void {
 
 export function reportMain(argv: string[]): number {
   const [cmd, outArg, extra] = argv, out = resolve(outArg ?? '');
-  if (cmd === 'd0') d0(out); else if (cmd === 'readings') readings(out); else if (cmd === 'cards') cards(out);
+  if (cmd === 'k0') k0(out); else if (cmd === 'd0') d0(out); else if (cmd === 'readings') readings(out); else if (cmd === 'cards') cards(out);
   else if (cmd === 'g2' || cmd === 'g3' || cmd === 'g6' || cmd === 'g7') offline(out, cmd);
   else if (cmd === 'a0') a0(out); else if (cmd === 'g8') g8(out); else if (cmd === 'g9') g9(out, +extra); else if (cmd === 'population') population(out, +extra); else if (cmd === 'numbers') numbers(out);
   else { console.error('usage: r16-report.ts d0|readings|cards|g2|g3|g6|g7|a0|g8|numbers OUT | g9|population OUT SEED'); return 2; }

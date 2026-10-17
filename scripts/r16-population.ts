@@ -35,7 +35,7 @@ import { CONTROL_NAMES, KERNEL_ARMS, kernelArmWorld, runControlArm, runKernelArm
 import { burnIn, censusEntry, censusId, dayName, labelAt, LOOP_SWITCHES, paramsSha, PLANS, R15_SWITCHES, R16, r16Params, readJsonl, select, selectionDigest, type CensusEntry, type R16Row, type Selected } from './lib/r16-collect';
 import { readoutTap } from './lib/r16-readouts';
 import { certainFailure, DayFiles16, readRegistry16, replay16, runDay16, setAside16, Stopped16, writeRegistry16, RECEIPT_SCHEMA, RUN_TOOL, type Arm16, type Certain, type Engine16, type Registry16 } from './lib/r16-run';
-import { FakeWorker, OPS, Paused, quietRefusal, Supervisor, type FakeFaults, type Ops, type WorkerLike } from './lib/r16-worker';
+import { chainGone, FakeWorker, OPS, Paused, quietRefusal, Supervisor, type FakeFaults, type Ops, type WorkerLike } from './lib/r16-worker';
 import { wordsOf } from './lib/r16-strata';
 
 
@@ -140,11 +140,13 @@ async function run(a: Args): Promise<number> {
   const dry = arm.kind === 'fake' || a.has('fake-python');
   const sup = new Supervisor({ make: workerFactory(a, arm, ops), adapter: arm.adapter ?? 'fake', ops, quiet: () => dry ? '' : quietRefusal({ out }), log });
   let stop = '';
+  const lockPath = resolve(execFileSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], { cwd: ROOT, encoding: 'utf8' }).trim(), '..', 'artifacts', 'r14-chain.lock');
+  const watch = setInterval(() => { const why = chainGone(lockPath, process.env.MGOGO_MODEL_LOCK_TOKEN ?? ''); if (why) stop ||= why; }, 10_000); watch.unref();
   const onSignal = (sig: string) => () => { stop ||= `interrupted by ${sig}`; };
   const handlers: [NodeJS.Signals, () => void][] = (['SIGINT', 'SIGTERM', 'SIGHUP'] as NodeJS.Signals[]).map(s => [s, onSignal(s)]);
   for (const [s, h] of handlers) process.on(s, h);
   const finish = async (state: Registry16['state'], reason: string, code: number): Promise<number> => {
-    await sup.close(); reg.state = state; reg.reason = reason; reg.ended = new Date().toISOString(); reg.supervisor = sup.stats; writeRegistry16(out, reg);
+    clearInterval(watch); await sup.close(); reg.state = state; reg.reason = reason; reg.ended = new Date().toISOString(); reg.supervisor = sup.stats; writeRegistry16(out, reg);
     for (const [s, h] of handlers) process.off(s, h);
     log(`${reg.label}: ${state}${reason ? ` (${reason})` : ''}`);
     return code;

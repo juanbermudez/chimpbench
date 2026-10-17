@@ -6,13 +6,19 @@
 // seed-21 run, no animal in two splits, no id twice, no clamp-tied target row in a training file. Round one's rows carry
 // the epochs that show them (equal exposure, §8), chosen by a hash of their id before any training.
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { checkR15Row } from '../r15-contexts';
 import { R15_KIND_TEACHER, R15_PACKET_VERSION, R15_TARGET_TEACHER } from './r15-training';
 import { readJsonl, type R16Row } from './r16-collect';
 
 export const sha256File = (f: string): string => createHash('sha256').update(readFileSync(f)).digest('hex');
+/** A file's hash, or for a folder the hash of its files' names and hashes in order (a collection's label segments). */
+export function inputHash(path: string): string {
+  if (!existsSync(path)) return 'in memory';
+  if (!statSync(path).isDirectory()) return sha256File(path);
+  return createHash('sha256').update(JSON.stringify(readdirSync(path).sort().filter(f => statSync(resolve(path, f)).isFile()).map(f => [f, sha256File(resolve(path, f))]))).digest('hex');
+}
 const writeNew = (file: string, text: string): void => { mkdirSync(dirname(file), { recursive: true }); const tmp = `${file}.tmp-${process.pid}`; writeFileSync(tmp, text, { flag: 'wx' }); renameSync(tmp, file); };
 const jsonl = (rows: object[]): string => rows.map(r => JSON.stringify(r)).join('\n') + (rows.length ? '\n' : '');
 
@@ -89,10 +95,11 @@ export function writeTrainingRoot(out: string, round: 'zero' | 'agg', inputs: { 
     exp = exposure(grouped.train.map(r => r.id), 3 * o.roundZeroTrain);
   }
   const trainRows = exp ? grouped.train.map(r => ({ ...r, epoch: exp!.epochs.get(r.id)! })) : grouped.train;
+  const inputHashes = Object.fromEntries(inputs.map(i => [i.file, inputHash(i.file)])); // before any file is written: a failure leaves no partial root
   writeNew(files[0], jsonl(trainRows)); writeNew(files[1], jsonl(grouped.dev));
   const manifest: FtManifest = { stage: 'R16', round, packetVersion: R15_PACKET_VERSION, kindTeacher: R15_KIND_TEACHER, targetTeacher: R15_TARGET_TEACHER, labels: 'soft',
     name_of_results: 'rules-taught model on the R15 menu', input: 'two explicit resource-targets-v1 phases',
-    inputs: Object.fromEntries(inputs.map(i => [i.file, existsSync(i.file) ? sha256File(i.file) : 'in memory'])), commit, counts: { train: grouped.train.length, dev: grouped.dev.length },
+    inputs: inputHashes, commit, counts: { train: grouped.train.length, dev: grouped.dev.length },
     phaseCounts, outputs: Object.fromEntries(files.map(f => [f, sha256File(f)])), bySource: tally([...grouped.train, ...grouped.dev], r => `${r.split}:${r.r16.source}`),
     byVia: tally([...grouped.train, ...grouped.dev], r => `${r.split}:${r.r16.source}:${r.r16.via}:${r.phase}`), animals: { train: new Set(grouped.train.map(r => `${r.seed}:${r.chimpId}`)).size, dev: new Set(grouped.dev.map(r => `${r.seed}:${r.chimpId}`)).size },
     ...(exp ? { exposure: { roundZeroTrain: o.roundZeroTrain, target: 3 * o.roundZeroTrain!, rows: grouped.train.length, shown: exp.shown, rowsShownOnce: exp.counts[1], twice: exp.counts[2], thrice: exp.counts[3], perEpoch: [0, 1, 2].map(e => trainRows.filter(r => (r as unknown as { epoch: number[] }).epoch.includes(e)).length) } } : {}),

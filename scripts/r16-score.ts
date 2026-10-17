@@ -6,6 +6,7 @@
 //
 //   score --root FT --adapter A --in FILE[,FILE] --out SCORES.jsonl [--tokens TOKENS.jsonl] [--fake | --fake-python F]
 // Exit codes: 0 done, 2 refused, 75 paused, 130 interrupted.
+import { execFileSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -14,7 +15,7 @@ import { R15Worker } from '../server/r15-worker';
 import { writeAtomic } from './lib/checkpoint';
 import { assertR15AdapterManifest } from './lib/r15-training';
 import { readJsonl, type R16Row } from './lib/r16-collect';
-import { FakeWorker, OPS, Paused, quietRefusal, Supervisor, type FakeFaults, type Ops, type WorkerLike } from './lib/r16-worker';
+import { chainGone, FakeWorker, OPS, Paused, quietRefusal, Supervisor, type FakeFaults, type Ops, type WorkerLike } from './lib/r16-worker';
 
 const log = (s: string) => console.log(`[${new Date().toLocaleTimeString('en-GB', { hour12: false })}] ${s}`);
 export interface Score16 { id: string; phase: 'kind' | 'target'; p: number[] | null; skipped?: string; ms: number; worker: number; retry: number }
@@ -26,7 +27,7 @@ export async function scoreMain(argv: string[]): Promise<number> {
   const ops = { ...OPS, ...(has('ops') ? JSON.parse(flag('ops')) as Partial<Ops> : {}) } as Ops, fake = has('fake'), dry = fake || has('fake-python');
   const rows = inputs.flatMap(f => readJsonl<R16Row>(f));
   const tokens = new Map<string, number>();
-  if (has('tokens')) for (const t of readJsonl<{ id: string; tokens: number }>(resolve(flag('tokens')))) tokens.set(t.id, t.tokens);
+  if (has('tokens')) for (const f of flag('tokens').split(',').filter(Boolean)) for (const t of readJsonl<{ id: string; tokens: number }>(resolve(f))) tokens.set(t.id, t.tokens);
   const done = new Set(existsSync(out) ? readJsonl<Score16>(out).map(s => s.id) : []);
   mkdirSync(dirname(out), { recursive: true });
   let make: (id: number) => Promise<WorkerLike>;
@@ -44,6 +45,8 @@ export async function scoreMain(argv: string[]): Promise<number> {
   }
   const sup = new Supervisor({ make, adapter: fake ? 'fake' : adapter, ops, quiet: () => dry ? '' : quietRefusal({ out }), log });
   let stop = '';
+  const lockPath = resolve(execFileSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], { encoding: 'utf8' }).trim(), '..', 'artifacts', 'r14-chain.lock');
+  const watch = setInterval(() => { const why = chainGone(lockPath, process.env.MGOGO_MODEL_LOCK_TOKEN ?? ''); if (why) stop ||= why; }, 10_000); watch.unref();
   const handlers = (['SIGINT', 'SIGTERM', 'SIGHUP'] as NodeJS.Signals[]).map(s => [s, () => { stop ||= `interrupted by ${s}`; }] as const);
   for (const [s, h] of handlers) process.on(s, h);
   const t0 = Date.now(), ms: Record<string, number[]> = { kind: [], target: [] };
@@ -72,6 +75,6 @@ export async function scoreMain(argv: string[]): Promise<number> {
   } catch (error) {
     if (error instanceof Paused) { summary('paused', error.reason); return 75; }
     summary('failed', error instanceof Error ? error.message : String(error)); throw error;
-  } finally { await sup.close(); for (const [s, h] of handlers) process.off(s, h); }
+  } finally { clearInterval(watch); await sup.close(); for (const [s, h] of handlers) process.off(s, h); }
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) scoreMain(process.argv.slice(2)).then(c => { process.exitCode = c; }).catch(e => { console.error(e instanceof Error ? e.stack ?? e.message : e); process.exitCode = 1; });

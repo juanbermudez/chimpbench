@@ -6,6 +6,7 @@
 // at a day checkpoint only when it has measurably degraded. The worker itself (server/r15-worker.ts R15Worker, or a fake
 // for the dry runs) is unchanged: this file only drives it.
 import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { loadavg } from 'node:os';
 import { unit } from '../../src/kernel/decode';
 import { diskRefusal, runningModelProcesses, swapUsedMB } from './r10-run';
@@ -57,6 +58,19 @@ export function quietRefusal(o: { out: string; load?: number; maxLoad?: number; 
   const heavy = heavyProcesses(execFileSync('ps', ['-axo', 'pid=,command='], { encoding: 'utf8', maxBuffer: 256 << 20 }), [process.pid]);
   if (heavy.length) return `a heavy process: ${heavy.join(' | ')}`;
   return '';
+}
+/**
+ * Why a step started by the chain must stop because the chain is gone ('' while it lives): the lock file no longer holds
+ * the token the chain passed down, or its owner's process is dead (a chain killed outright cannot stop its steps itself).
+ */
+export function chainGone(lockPath: string, token: string): string {
+  if (!token) return '';
+  try {
+    const owner = JSON.parse(readFileSync(lockPath, 'utf8')) as { token?: string; pid?: number };
+    if (owner.token !== token) return 'the shared lock no longer names the chain that started this step';
+    try { process.kill(owner.pid ?? -1, 0); } catch (error) { if ((error as NodeJS.ErrnoException).code === 'ESRCH') return `the chain (pid ${owner.pid}) that started this step is gone`; }
+    return '';
+  } catch { return 'the shared lock is gone'; }
 }
 /** Resident memory of a process, MB (null when it cannot be read). */
 export function rssMB(pid: number | null | undefined): number | null {
@@ -211,15 +225,15 @@ export class FakeWorker implements WorkerLike {
   constructor(private faults: FakeFaults, readonly id: number) {}
   static async make(faults: FakeFaults, id: number): Promise<FakeWorker> {
     faults.warmed = (faults.warmed ?? 0) + 1;
-    await idleMs(faults.warmMs ?? 0);
-    if (faults.warmed <= (faults.failWarmups ?? 0)) await idleMs(1e9);
+    if (faults.warmMs) await sleepMs(faults.warmMs);
+    if (faults.warmed <= (faults.failWarmups ?? 0)) await idleMs(1e9); // never answers: the supervisor's warm-up limit fires
     return new FakeWorker(faults, id);
   }
   async score(batch: { adapter: string; packet: unknown }[]): Promise<number[][]> {
     if (this.closed) throw new Error('fake worker stopped');
     const n = (this.faults.calls = (this.faults.calls ?? 0) + 1);
-    if (this.faults.stallCalls?.includes(n)) await idleMs(this.faults.hangMs ?? 1e9);
-    await idleMs(this.faults.callMs ?? 0);
+    if (this.faults.stallCalls?.includes(n)) await idleMs(this.faults.hangMs ?? 1e9); // hangs: the supervisor's watchdog fires
+    if (this.faults.callMs) await sleepMs(this.faults.callMs);
     return batch.map(({ packet }) => fakeOdds(packet));
   }
   async close(): Promise<void> { this.closed = true; }

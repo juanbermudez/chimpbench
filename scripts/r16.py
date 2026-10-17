@@ -66,7 +66,8 @@ def atomic(path, value):
 def chain_dir(): return OUT / 'chain'
 def log(message):
     line = f'{now()} {message}'
-    print(line, flush=True)
+    try: print(line, flush=True)
+    except (BrokenPipeError, OSError): pass  # a closed terminal must not end the chain: the status log below is the record
     chain_dir().mkdir(parents=True, exist_ok=True)
     with (chain_dir() / 'status.log').open('a') as f: f.write(line + '\n')
 def set_state(state, note=''):
@@ -333,7 +334,13 @@ def seed_provenance(seed):
             if dirpath.count(os.sep) - str(root).count(os.sep) >= 5: dirnames[:] = []
             for name in dirnames + filenames:
                 if pat.search(name) and not str(Path(dirpath, name)).startswith(str(OUT)): raise Refused(f'seed {seed} already has a run folder outside this stage: {Path(dirpath, name)}')
+def orphans():
+    """Steps of this run root still alive though no chain owns them (a chain killed outright cannot stop its steps)."""
+    rows, mine = own_tree()
+    return [f'{r[0]} {r[2][:160]}' for r in rows if len(r) >= 3 and int(r[0]) not in mine and str(OUT) in r[2]]
 def session_start(model):
+    left = orphans()
+    if left: raise Refused(f'a step of this run is still running without its chain: {left}; let it end or stop it before a new session')
     pin()
     others = older_chains()
     if others: raise Refused(f'another chain is not finished: {others}')
@@ -371,7 +378,7 @@ def session0():
     gate('d0')
     gate('readings')
     gate('cards')
-    step('tokens-input-zero', tsx('r16-collect.ts', 'tokens-input', '--out', OUT, *(['--dry'] if DRY else [])), 0.1, outputs=[OUT / 'eval/token-packets.jsonl'])
+    step('tokens-input-zero', tsx('r16-collect.ts', 'tokens-input', '--out', OUT, '--label', 'zero', *(['--dry'] if DRY else [])), 0.1, outputs=[OUT / 'eval/token-packets-zero.jsonl'])
 
 
 def train(root, round_, seed):
@@ -393,7 +400,8 @@ def score(root, adapter, sets):
     for s in sets:
         if s == 'hs' and ('hs-scoring' in CUTS or not (OUT / 'eval' / 'hs.jsonl').exists()): continue
         extra = ['--fake-python', FAKE_SCORER] if DRY else []
-        tokens = ['--tokens', OUT / 'eval' / 'tokens.jsonl'] if (OUT / 'eval' / 'tokens.jsonl').exists() or not DRY else []
+        files = [str(OUT / 'eval' / f'tokens-{label}.jsonl') for label in ('zero', 'one') if (OUT / 'eval' / f'tokens-{label}.jsonl').exists()]
+        tokens = ['--tokens', ','.join(files)] if files else []
         step(f'score-{adapter}-{s}', tsx('r16-score.ts', '--root', root, '--adapter', adapter, '--in', OUT / 'eval' / f'{s}.jsonl', '--out', OUT / 'scores' / f'{adapter}-{s}.jsonl', *tokens, *extra), 0.8, model=not DRY, outputs=[OUT / 'scores' / f'{adapter}-{s}.jsonl.summary.json'])
 
 
@@ -403,8 +411,9 @@ def preflight(root, label):
 
 
 def tokens(label):
+    """The real token counts of a round's reading-set packets, by the tokenizer alone (no weights; R8's r8_tokens.py)."""
     if DRY: return
-    step(f'tokens-{label}', [str(ROOT / 'training/decide_ft/r4_py.sh'), 'r8_tokens.py', '--in', str(OUT / 'eval/token-packets.jsonl'), '--packets', 'r15', '--out', str(OUT / 'eval' / 'tokens.jsonl')], 0.3, model=True, outputs=[OUT / 'eval/tokens.jsonl'])
+    step(f'tokens-{label}', [str(ROOT / 'training/decide_ft/r4_py.sh'), 'r8_tokens.py', '--in', str(OUT / 'eval' / f'token-packets-{label}.jsonl'), '--packets', 'r15', '--out', str(OUT / 'eval' / f'tokens-{label}.jsonl')], 0.3, model=True, outputs=[OUT / 'eval' / f'tokens-{label}.jsonl'])
 
 
 def rollout_days():
@@ -444,7 +453,7 @@ def between1():
         step(f'replay-rollout-s{seed}', tsx('r16-population.ts', 'replay', out, '--card', OUT / 'card'), 0.5, outputs=[out / 'replay.json'])
     gate('a0')
     step('assemble-one', tsx('r16-collect.ts', 'assemble-one', '--out', OUT, *(['--dry'] if DRY else [])), 0.2, outputs=[OUT / 'ft1/contexts/manifest.json'])
-    step('tokens-input-one', tsx('r16-collect.ts', 'tokens-input', '--out', OUT, *(['--dry'] if DRY else [])), 0.1)
+    step('tokens-input-one', tsx('r16-collect.ts', 'tokens-input', '--out', OUT, '--label', 'one', *(['--dry'] if DRY else [])), 0.1, outputs=[OUT / 'eval/token-packets-one.jsonl'])
 
 
 def session2():

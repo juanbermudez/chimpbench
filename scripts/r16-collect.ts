@@ -6,16 +6,15 @@
 //   learner-select --run DIR --plan one|evalLearner [--exclude FILE]  a roll-out's selection from its own census (training animals; or development animals, H-L)
 //   assemble-zero --out OUT                                           ft0 (round zero), eval/hr.jsonl, eval/hs.jsonl
 //   assemble-one --out OUT                                            ft1 (round one, equal exposure), eval/hl.jsonl
-//   tokens-input --out OUT                                            eval/token-packets.jsonl for training/decide_ft/r8_tokens.py (the tokenizer alone)
+//   tokens-input --out OUT --label zero|one                           eval/token-packets-<label>.jsonl for training/decide_ft/r8_tokens.py (the tokenizer alone)
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { writeAtomic } from './lib/checkpoint';
-import { exposure as _e, readRows, writeReadingSet, writeTrainingRoot } from './lib/r16-assemble';
+import { readRows, rowRefusal, writeReadingSet, writeTrainingRoot } from './lib/r16-assemble';
 import { labelRulesDay, PLANS, R16, readCensus, readJsonl, readLabels, readSelection, rulesCensus, select, selectionDigest, type CensusEntry, type Selected } from './lib/r16-collect';
 
-void _e;
 const git = (...a: string[]) => execFileSync('git', a, { encoding: 'utf8' }).trim();
 const log = (s: string) => console.log(`[${new Date().toLocaleTimeString('en-GB', { hour12: false })}] ${s}`);
 
@@ -62,9 +61,11 @@ export function collectMain(argv: string[]): number {
   if (cmd === 'assemble-zero') {
     const out = resolve(flag('out')), commit = git('rev-parse', 'HEAD');
     const zero = [48, 7].map(s => ({ file: resolve(out, 'collect', `s${s}`, 'labels'), rows: readLabels(resolve(out, 'collect', `s${s}`)) }));
+    const hrRows = readLabels(resolve(out, 'collect', 's21')), hsIn = [48, 7].map(s => resolve(out, 'hs', `s${s}`, 'hs.jsonl')).filter(existsSync);
+    // every reading-set row is checked before anything is written, so that a refusal leaves no partial training root
+    for (const [role, rows] of [['hr', hrRows], ['hs', hsIn.flatMap(f => readRows(f))]] as const) for (const r of rows) { const why = rowRefusal(r, role, role); if (why) { console.error(`refused: ${r.id}: ${why}`); return 2; } }
     const m = writeTrainingRoot(resolve(out, 'ft0'), 'zero', zero, commit);
-    const hr = writeReadingSet(resolve(out, 'eval', 'hr.jsonl'), 'hr', [{ file: resolve(out, 'collect', 's21', 'labels'), rows: readLabels(resolve(out, 'collect', 's21')) }]);
-    const hsIn = [48, 7].map(s => resolve(out, 'hs', `s${s}`, 'hs.jsonl')).filter(existsSync);
+    const hr = writeReadingSet(resolve(out, 'eval', 'hr.jsonl'), 'hr', [{ file: resolve(out, 'collect', 's21', 'labels'), rows: hrRows }]);
     const hs = hsIn.length ? writeReadingSet(resolve(out, 'eval', 'hs.jsonl'), 'hs', hsIn.map(f => ({ file: f, rows: readRows(f) }))) : null;
     writeAtomic(resolve(out, 'eval', 'manifest-zero.json'), JSON.stringify({ stage: 'R16', ft0: m.counts, hr, hs: hs ?? 'H-S was dropped or not made' }, null, 1) + '\n');
     log(`ft0: ${JSON.stringify(m.counts)}; held-out rules set ${hr.rows} rows (${hr.animals} animals); H-S ${hs ? `${hs.rows} rows` : 'none'}`);
@@ -83,10 +84,12 @@ export function collectMain(argv: string[]): number {
     return 0;
   }
   if (cmd === 'tokens-input') {
-    const out = resolve(flag('out')), sets = ['hr', 'hs', 'hl'].map(s => resolve(out, 'eval', `${s}.jsonl`)).filter(existsSync);
+    // round zero's reading sets (H-R, H-S) before session 1; round one's (H-L) before session 2
+    const out = resolve(flag('out')), label = flag('label', 'zero'), names = label === 'one' ? ['hl'] : ['hr', 'hs'];
+    const sets = names.map(s => resolve(out, 'eval', `${s}.jsonl`)).filter(existsSync);
     const rows = sets.flatMap(f => readRows(f)).map(r => ({ id: r.id, packets: { r15: r.packet } }));
-    writeAtomic(resolve(out, 'eval', 'token-packets.jsonl'), rows.map(r => JSON.stringify(r)).join('\n') + '\n');
-    log(`eval/token-packets.jsonl: ${rows.length} packets of ${sets.length} reading sets`);
+    writeAtomic(resolve(out, 'eval', `token-packets-${label}.jsonl`), rows.map(r => JSON.stringify(r)).join('\n') + '\n');
+    log(`eval/token-packets-${label}.jsonl: ${rows.length} packets of ${sets.length} reading sets`);
     return 0;
   }
   console.error('usage: r16-collect.ts census | select | labels | learner-select | assemble-zero | assemble-one | tokens-input');
