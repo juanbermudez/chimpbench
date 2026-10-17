@@ -125,6 +125,14 @@ async function run(a: Args): Promise<number> {
     const refusal = runRefusal({ label, seed, days, arm: kind, adapter, unit, burnInDays, fakePython: a.has('fake-python') });
     if (refusal) throw new Refused(refusal);
     if (kind === 'model' && !a.has('fake-python')) { const f = frozenRefusal(); if (f) throw new Refused(f); }
+    // a run with a worker is the chain's: its token and lock are checked before the world is built, so that no test world
+    // is burned in by a run started by hand (second reader, §23: the token was read only after the 30-day burn-in)
+    if (kind === 'model' || a.has('fake-python')) {
+      const token = process.env.MGOGO_MODEL_LOCK_TOKEN ?? '', lock = resolve(git('rev-parse', '--path-format=absolute', '--git-common-dir'), '..', 'artifacts', 'r14-chain.lock');
+      if (!token) throw new Refused('a run with a worker needs the chain\'s lock token (MGOGO_MODEL_LOCK_TOKEN): it runs only under scripts/r16.py');
+      const gone = chainGone(lock, token);
+      if (gone) throw new Refused(`the chain's lock: ${gone}`);
+    }
     let adapterSha: string | null = null;
     if (adapter && root) { const m = JSON.parse(readFileSync(resolve(root, 'adapters', adapter, 'manifest.json'), 'utf8')) as Record<string, unknown>; assertR15AdapterManifest(m); adapterSha = String(m.adapter_sha256); }
     else if (kind === 'model') throw new Refused('a model run needs --adapter and --root');
@@ -245,7 +253,10 @@ async function replay(a: Args): Promise<number> {
 async function card(a: Args): Promise<number> {
   const seed = +a.flag('seed', 'NaN'), days = +a.flag('days', 'NaN'), unit = a.flag('unit', 'P') as 'P' | 'F', out = resolve(a.flag('out')), burnInDays = +a.flag('burn-in', String(R16.burnInDays));
   if (!Number.isInteger(seed) || !Number.isInteger(days)) throw new Refused('card --seed S --days N --out DIR');
-  if (R16.refused.includes(seed) && !a.has('dry')) throw new Refused(`seed ${seed} is not this stage's to run`);
+  // the registered card worlds only, by unit (§7, §11, §12.2); no flag lifts it (second reader, §23: a sealed, reserved or
+  // other stage's seed was refused only without --dry, and a reserved seed of AGENTS.md not at all)
+  const cardSeeds = unit === 'F' ? R16.focalSeeds : [...R16.trainSeeds, ...Object.values(R16.population)];
+  if (!cardSeeds.includes(seed)) throw new Refused(`seed ${seed}: the arms of unit ${unit} run on ${cardSeeds.join(', ')} only (docs/staging/r16-prereg.md §3)`);
   const dir = resolve(out, unit, `s${seed}`); mkdirSync(dir, { recursive: true });
   const t0 = Date.now(), plain = burnIn(seed, false, burnInDays), switched = burnIn(seed, true, burnInDays);
   const k3 = { plain: worldHash(plain), switched: worldHash(switched) };
