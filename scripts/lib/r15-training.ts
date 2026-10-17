@@ -10,7 +10,7 @@ import { paramsOf } from '../../src/sim/params';
 import { targetRequest } from '../../src/sim/request';
 import { rgMenu } from '../../src/sim/rg';
 import { validateDecisionContext, record } from '../../src/sim/context-check';
-import type { Chimp, DecisionContext, World } from '../../src/types';
+import type { Candidate, Chimp, DecisionContext, World } from '../../src/types';
 import { splitOf } from '../r4-contexts';
 import { beliefOf, labelData, REDRAWS, SAME_MIN } from '../r11-contexts';
 import { beliefDraw, published, seeded, type Belief } from './soft-labels';
@@ -94,6 +94,8 @@ export interface R15LabelOptions {
   clampRule?: boolean;
   /** The kind teacher's redraw rule (default R11's). */
   redraws?: typeof REDRAWS;
+  /** At a rules decision: the option the rules took and the world's random state before they chose, so that R11's marks (M1 a to c) check the rules' own draw. Absent: they check the menu's top option against the current state, as stage R15 does. */
+  realised?: { chosen: Candidate; rngBefore: number };
 }
 /** What the labeler computed beyond the rows (stage R16's readings and checks; never in a packet). */
 export interface R15LabelDetail {
@@ -106,9 +108,10 @@ export function r15TrainingRows(w: World, c: Chimp, request: KernelRequest, id: 
   const rows: R15Row[] = [], exclusions: string[] = [], detail: R15LabelDetail = {}, rng = w.rng, version = c.decisionVersion;
   const list = computeCandidates(w, c, []), menu = rgMenu(w, c, list);
   if (menu.length < 2) return { rows, exclusions: ['fewer than two original teacher options'], detail };
-  const best = menu.reduce((b, k, i) => k.score > menu[b].score ? i : b, 0);
+  const best = menu.reduce((b, k, i) => k.score > menu[b].score ? i : b, 0), real = opts.realised ? menu.findIndex(k => optionKey(k) === optionKey(opts.realised!.chosen)) : -1;
+  const pickAt = opts.realised && real >= 0 ? real : best;
   const options = menu.map((k, i) => ({ alias: `c${i}`, action: k.action, targetId: k.targetId, variant: '', family: '', score: k.score }));
-  const label = labelData({ id, options, rgIndex: best }, { w, c, list, menu, chosen: menu[best], rngBefore: rng }, opts.redraws ?? REDRAWS, !!opts.halves);
+  const label = labelData({ id, options, rgIndex: pickAt }, { w, c, list, menu, chosen: menu[pickAt], rngBefore: opts.realised ? opts.realised.rngBefore : rng }, opts.redraws ?? REDRAWS, !!opts.halves);
   if (typeof label === 'string' || !label.listOk || label.same < SAME_MIN) return { rows, exclusions: [typeof label === 'string' ? label : 'insufficient original-menu label reconstruction'], detail };
   const originalKinds = menu.map(optionKind), marginal = kindMarginal(request.context.resourceKinds, originalKinds, label.counts);
   if (!marginal) return { rows, exclusions: ['zero-retained-kind-mass'], detail };
