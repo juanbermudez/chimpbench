@@ -554,6 +554,29 @@ Item 4 (the general model the outside plan calls "Luna") was answered later the 
 **Verification:** nine Python pipeline tests, four selection/real-packet tests, eight existing R13 compatibility tests and strict script typechecking pass. The independent reader also checked eleven collector refusal cases. The no-model dry run produced eight accepted labels per learner/rules source, 38 matched adult-night and timing rows in each, exact selection/label/timing replay hashes, and no-op completion resumes. Evidence: `r14-own-states/artifacts/r14-verified/dry/`. These validate the pipeline, not a trained repair.
 **Operation:** `python3 -B scripts/r14.py check|stage-a|stage-b|status` from the frozen runner. Approximately 12–14 model hours plus CPU work for Stage A, with per-step caps and retained budgets. Missing exposure or scientific stops produce an explicit failure outcome; a rehearsal passing its futility stop is not population viability.
 
+
+## Stage R15: Decisions over perceived resource targets
+**Goal**: the user's direction of 13 October 2026 (to Codex): move toward the state and perception decision model driving behaviour, with training. A default-off two-stage path (`resourceTargets=1`, `activityFirst=2`, `observeV5=1`): the model chooses the kind of act, then, for food and water, the concrete tree or water source among those the animal itself perceives or remembers (food bounded to eight, water to four; no scores shown).
+**Status**: Built, trained and shown in the app by Codex on 13 and 14 October 2026 (`docs/staging/r15-perceived-targets.md`, `r15-training-contract.md`, `r15-development-results.md`, `r15-browser-proof.md`; HANDOFF §2.0). Two adapters trained on 62 rows (86 rows from 43 fresh decisions, one short daytime window, one drinking row): development agreement 5 or 6 of 12 for the kind and 3 or 4 of 12 for the target, so a wiring proof, not a trained model; real serving, 720-tick loops with exact replay, and the app demonstration passed. The user answered menu ruling 2 ("Which tree") yes on 17 October ("the model picks the tree"). Water was built under the same contract and is not separately ruled. Stage R16 scales it. (This block was added by the integrator on 17 October; the stage itself kept its record in the documents named.)
+
+## Stage R16: The perceived-target model at a real scale, taught on its own states, tested as a population
+**Goal**: stage R15's two-stage model (the kind of act, then a tree or water source the animal perceives or
+remembers) taught at a real scale on whole-day rules states (round zero), then one round on the states its own
+population reaches (round one, equal exposure), and tested where it has never been: offline on held-out rules states,
+at ten animals, and as a whole population for 20 days with R13's viability readouts and the readouts the diagnosis
+found missing. A rules-taught model on the R15 menu; nothing about wild chimpanzees.
+**Success Criteria** (registered in `docs/staging/r16-prereg.md` before any code or run): no-model gates first (D0:
+the collection lands on R14's rules twins' day hashes and reproduces the rules' own picks; I0: the perfect imitator of
+the R15 menu is viable on 48 and 7; K5: the readouts see R13's planted failure); G2/G3 (each round-zero training below
+the state-blind baselines and within the night forecast's allowance, D from the training worlds' controls); A0 (the
+learner labels land on every day hash); G6/G7 (R14's harm guards against round zero, carrying on within 0.05,
+absolute harm forecasts, strand marks); G8 (no gross harm at ten animals); G9 (the test world reads alike; power and
+false alarms printed); the population read by R13 §8.1 word for word, then mornings, nights and the target stage; the
+recipe named only when both trainings agree; the app demo only on a viable adapter.
+**Tests**: `tests/r16-scale.test.ts` (19), `tests/r16_chain_test.py` (9); the earlier stages' tests unedited.
+**Status**: Registered and built on branch `r16-scale-and-own-states` (17 October 2026), reviewed by a second reader (eight defects repaired, §23 and §24), merged into `track-e` (6c72d70). Frozen checkout `bench-r16` at 2971e14; the no-model dry chain and session 0 started at 18:39 EDT on 17 October; **no model step has run**. The integrator runs it in three model sessions (about 33 model hours; 27 if s7's population is not
+viable) from a frozen checkout, `docs/staging/r16-prereg.md` §22.
+
 ## Stage R12 (design only): The menu by what is possible
 **Goal**: the table the user must sign off before any hand rule in front of an option leaves code, and the design of a menu built from what the animal can do with what it sees or remembers, asked as "what kind of thing next" and then "which one".
 **Status**: Documents and a read-only script on branch `r12-menu-design`, reviewed; merged into `track-e` on 11 October 2026 (`docs/staging/r12-menu-table.md` with a first page for the user, `docs/staging/r12-prereg.md`, `scripts/r12-offer-table.ts`). Of the 94 places where the rules offer an option, 19 are unreachable on the working base, 6 are reached only by animals under 8 and 69 are live; of the live ones 6 are open by physical or perceptual possibility alone, 2 more depend only on whom the act is addressed to, and 61 sit behind a hand rule (advice at 58, a quota or timer at 25, dice at 3). Nothing is built: ten rulings are the user's (first page of the table), the speed estimate for two short calls is unmeasured, and the review found one way a held draw can still switch across the two calls.

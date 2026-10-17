@@ -53,6 +53,12 @@ decisions (17 October 2026)"). In work, no model process: **stage R16** (R15's t
 round on its own population's states, then a population test; design, attack, registration and build on branch
 `r16-scale-and-own-states`) and **stage W14** (a whole-scene look at the app at its defaults and fixes of what the
 renderer owns; branch `w14-whole-scene`).
+**Stage R16 (written 18:40 EDT, 17 October):** registered, built and reviewed with no model (eight defects repaired by the
+second reader), merged into `track-e` (6c72d70) and frozen as `.claude/worktrees/bench-r16` at 2971e14. The no-model
+dry chain and session 0 run in the detached screen session `r16-s0` (outputs `bench-r16/artifacts/r16-dry.out`,
+`r16-session0.out`; state under `bench-r16/artifacts/r16`). Then three model sessions, each read by a person first
+(`docs/staging/r16-prereg.md` §22 and §24.6); about 33 model hours. The decode is a draw, by the user's ruling of 10
+October, unless the user rules otherwise before session 1 (§20).
 
 The user asked Codex to take over Claude's interrupted work, finish and verify the animation fixes, and continue the model training repair in parallel. The full-project takeover note is `/Volumes/Drive/chimpbench/CODEX-TAKEOVER-2026-10-13.md`.
 
