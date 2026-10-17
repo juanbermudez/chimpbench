@@ -23,7 +23,7 @@ export interface R15Config { trainingRoot: string; adapter: string; repoRoot?: s
    */
   chainLock?: { token: string };
 }
-export interface R15Transport { start(packet: unknown): Promise<unknown>; score(batch: ScoreItem[]): Promise<unknown>; close(): Promise<void>; }
+export interface R15Transport { start(packet: unknown): Promise<unknown>; score(batch: ScoreItem[]): Promise<unknown>; close(): Promise<void>; /** The worker process's id, where there is one (stage R16's memory check). */ pid?(): number | null; }
 export interface R15Dependencies { transport?: () => R15Transport; processes?: () => string; startupMs?: number; scoreMs?: number;
   /** This process and its ancestors' pids (tests); default from the process list. */ ancestors?: () => number[]; }
 
@@ -121,6 +121,7 @@ class PythonTransport implements R15Transport {
     });
   }
   score(batch: ScoreItem[]) { return this.exchange({ batch: batch.map(({ adapter, packet }) => ({ adapter, packet })) }); }
+  pid(): number | null { return this.child?.pid ?? null; }
   async close(): Promise<void> {
     const child = this.child; this.child = null;
     this.pending?.reject(new Error('R15 worker stopped')); this.pending = null;
@@ -218,4 +219,6 @@ export class R15Worker {
     this.token = ''; this.ready = {}; this.identity = null;
   }
   async close(): Promise<void> { this.phase = 'stopped'; await this.release(); }
+  /** The worker process's id while it runs (stage R16's memory check), else null. */
+  pid(): number | null { return this.transport?.pid?.() ?? null; }
 }

@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 import { record, validateDecisionContext } from '../src/sim/context-check';
 import { splitOf } from './r4-contexts';
 import { sampleR8 } from './r8-contexts';
-import { digest, normalize, r15Packet, r15TrainingRows, R15_KIND_TEACHER, R15_PACKET_VERSION, R15_TARGET_TEACHER } from './lib/r15-training';
+import { digest, normalize, r15Packet, r15TrainingRows, R15_KIND_TEACHER, R15_PACKET_VERSION, R15_TARGET_TEACHER, type R15Row } from './lib/r15-training';
 
 const hashFile = (path: string) => createHash('sha256').update(readFileSync(path)).digest('hex');
 const json = (path: string): unknown => JSON.parse(readFileSync(path, 'utf8'));
@@ -22,6 +22,26 @@ function idleForCollection(): void {
   const state = `${root}/.claude/worktrees/bench-r14/artifacts/r14/state`;
   if (existsSync(`${root}/artifacts/r14-chain.lock`) || (existsSync(state) && readFileSync(state, 'utf8').trim() === 'running')) throw new Error('R14 is active; do not start teacher collection alongside it');
 }
+/**
+ * One exported row checked against the R15 contract (shared with stage R16's assembler): its identity, its exact packet
+ * (re-rendered from its context, byte for byte), its hashes, its teacher, its split by animal, and a normalized label over
+ * the packet's own aliases. `seed`: the seed the row's part says it came from.
+ */
+export function checkR15Row(row: unknown, seed: number): R15Row {
+  if (!record(row) || row.seed !== seed || typeof row.id !== 'string' || typeof row.decisionId !== 'string' || ![48, 7, 21].includes(Number(row.seed)) || typeof row.seed !== 'number' || typeof row.chimpId !== 'number'
+    || row.packetVersion !== R15_PACKET_VERSION || !validateDecisionContext(row.context) || row.context.chimpId !== row.chimpId || row.phase !== row.context.resourceChoice || row.contextHash !== digest(row.context)
+    || row.packetHash !== digest(row.packet) || JSON.stringify(row.packet) !== JSON.stringify(r15Packet(row.context)) || !record(row.soft) || typeof row.pick !== 'string'
+    || row.teacher !== (row.phase === 'kind' ? R15_KIND_TEACHER : R15_TARGET_TEACHER)) throw new Error('invalid R15 row or packet parity');
+  const split = splitOf(row.seed, row.chimpId);
+  if (row.split !== split || row.id !== `${row.decisionId}/${row.phase}`) throw new Error('duplicate row, identity mismatch or split leak');
+  const aliases = Object.keys(r15Packet(row.context).questions.action.criteria), soft = row.soft;
+  const values = aliases.map(k => soft[k]);
+  if (Object.keys(soft).length !== aliases.length || !values.every((v): v is number => typeof v === 'number') || !aliases.includes(row.pick)) throw new Error('label aliases differ');
+  const normalized = normalize(values);
+  if (values.some((v, i) => Math.abs(v - normalized[i]) > 1e-8)) throw new Error('label is not normalized');
+  if (row.phase !== 'kind' && row.phase !== 'target') throw new Error('invalid phase');
+  return row as unknown as R15Row;
+}
 export function assembleR15(parts: string[], out: string): void {
   if (!parts.length) throw new Error('provide one or more parts');
   const seen = new Set<string>(), grouped = { train: [] as object[], dev: [] as object[], test: [] as object[] };
@@ -33,20 +53,9 @@ export function assembleR15(parts: string[], out: string): void {
       || meta.output !== hashFile(part) || meta.rows !== lines.length || ![48, 7, 21].includes(Number(meta.seed))) throw new Error('invalid R15 collection provenance');
     inputs[resolve(part)] = hashFile(part); inputs[resolve(metaPath)] = hashFile(metaPath);
     for (const line of lines) {
-    const row: unknown = JSON.parse(line);
-    if (!record(row) || row.seed !== meta.seed || typeof row.id !== 'string' || typeof row.decisionId !== 'string' || ![48, 7, 21].includes(Number(row.seed)) || typeof row.seed !== 'number' || typeof row.chimpId !== 'number'
-      || row.packetVersion !== R15_PACKET_VERSION || !validateDecisionContext(row.context) || row.context.chimpId !== row.chimpId || row.phase !== row.context.resourceChoice || row.contextHash !== digest(row.context)
-      || row.packetHash !== digest(row.packet) || JSON.stringify(row.packet) !== JSON.stringify(r15Packet(row.context)) || !record(row.soft) || typeof row.pick !== 'string'
-      || row.teacher !== (row.phase === 'kind' ? R15_KIND_TEACHER : R15_TARGET_TEACHER)) throw new Error('invalid R15 row or packet parity');
-    const split = splitOf(row.seed, row.chimpId);
-    if (row.split !== split || seen.has(row.id) || row.id !== `${row.decisionId}/${row.phase}`) throw new Error('duplicate row, identity mismatch or split leak');
-    const aliases = Object.keys(r15Packet(row.context).questions.action.criteria), soft = row.soft;
-    const values = aliases.map(k => soft[k]);
-    if (Object.keys(soft).length !== aliases.length || !values.every((v): v is number => typeof v === 'number') || !aliases.includes(row.pick)) throw new Error('label aliases differ');
-    const normalized = normalize(values);
-    if (values.some((v, i) => Math.abs(v - normalized[i]) > 1e-8)) throw new Error('label is not normalized');
-    if (row.phase !== 'kind' && row.phase !== 'target') throw new Error('invalid phase');
-    seen.add(row.id); grouped[split].push(row); phaseCounts[split][row.phase]++;
+    const row = checkR15Row(JSON.parse(line) as unknown, Number(meta.seed));
+    if (seen.has(row.id)) throw new Error('duplicate row, identity mismatch or split leak');
+    seen.add(row.id); grouped[row.split].push(row); phaseCounts[row.split][row.phase]++;
     }
   }
   const files = ['train', 'dev', 'test'].map(s => resolve(out, 'contexts', `${s}.jsonl`));

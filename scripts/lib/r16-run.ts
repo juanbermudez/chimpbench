@@ -53,7 +53,7 @@ export interface Day16 extends DaySummary {
 export type Asker = (request: KernelRequest, packet: LocalPacket, w: World) => Promise<Answer>;
 export interface DayOpts16 {
   ask: Asker | null; decoder: ReturnType<typeof newDecoder>; journal: Map<string, Call16>; replayOnly?: boolean;
-  sink?: { call?(c: Call16): void; lines?(l: Line16[]): void; context?(x: { key: string; tick: number; t: number; id: number; v: number; day: number; ctx: string; context: DecisionContext }): void };
+  sink?: { call?(c: Call16): void; lines?(l: Line16[]): void; context?(x: { key: string; tick: number; t: number; id: number; v: number; day: number; ctx: string; context: DecisionContext; sizes: number[] }): void };
   taps?: Tap[]; minAge?: number; driven?: (c: Chimp) => boolean; stop?: () => string; ticks?: number;
   /** Read-only hook at every kind ask, before its answer (the label pass of a learner run). */ onKindAsk?: (w: World, c: Chimp, request: KernelRequest, key: string, packetHash: string) => void;
   /** Read-only hook at every target ask (checks a rebuilt target packet against the journal). */ onTargetAsk?: (w: World, c: Chimp, request: KernelRequest, key: string, packetHash: string) => void;
@@ -140,7 +140,7 @@ export async function runDay16(e: Engine16, o: DayOpts16): Promise<{ summary: Da
         lines.push({ k: 'ask', tick: w.tick, t, day, id: r.chimpId, v: req.context.version, trig: { why: !pt ? 'waiting' : pt.intr ? 'interrupt' : pt.finished ? 'finished' : 'bout-end', intr: pt?.intr ?? '', gate: opened.get(r.chimpId) ?? '' },
           calls: mine.map(x => ({ key: x.key, stage: x.stage, p: x.p, err: x.err })), dec, by: r.by, refusal: r.refusal, detail: r.detail, picked: r.by === 'kernel' ? r.index : -1, act: [c.action, c.targetId], ctx });
         const kindKey = mine.find(x => x.stage === 'kind')?.key ?? r15CallKey(w, req).key;
-        o.sink?.context?.({ key: kindKey, tick: w.tick, t, id: r.chimpId, v: req.context.version, day, ctx, context: req.context });
+        o.sink?.context?.({ key: kindKey, tick: w.tick, t, id: r.chimpId, v: req.context.version, day, ctx, context: req.context, sizes: (req.groups ?? []).map(g => g.length) });
       }
     }
     if (lines.length) o.sink?.lines?.(lines);

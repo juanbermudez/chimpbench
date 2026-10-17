@@ -53,8 +53,8 @@ const finOf = (c: Chimp) => { const L = ix(c).en; return L ? (L.fin ?? L.in) : 0
 /** Light falling or dark, for a readout (afternoon light below full daylight, or dark). */
 export const failing = (w: World) => (w.hour >= 12 && w.environment.daylight < FULL) || w.environment.daylight <= DARK;
 
-export function readoutStart(w: World, minAge: number): ReadoutState {
-  const animals = w.chimps.filter(c => c.alive && c.age >= minAge);
+export function readoutStart(w: World, minAge: number, ids?: number[]): ReadoutState {
+  const animals = w.chimps.filter(c => c.alive && c.age >= minAge && (!ids || ids.includes(c.id)));
   const tracks = animals.map(c => ({ id: c.id, alive: true, wasNest: inNest(c), fam: famNow(c), tgt: c.targetId, trip: null, drink: null, atW: false,
     stretch: null, fin: finOf(c), exit: null, nestSinceMidnight: false, d: blank(c.id, 0) }));
   const maxCall = w.calls.reduce((m, k) => Math.max(m, k.id), 0);
@@ -193,8 +193,8 @@ export function readoutSummary(r: ReadoutResult, keep: (id: number) => boolean =
 }
 
 /** A read-only tap for scripts/lib/r10-run.ts runDay and stage R16's runner: `start` on the window's first world. */
-export function readoutTap(minAge: number) {
+export function readoutTap(minAge: number, ids?: number[]) {
   let st: ReadoutState | null = null;
-  return { name: 'r16', start(w: World) { st = readoutStart(w, minAge); }, tick(w: World) { if (st) readoutStep(st, w); },
+  return { name: 'r16', start(w: World) { st = readoutStart(w, minAge, ids); }, tick(w: World) { if (st) readoutStep(st, w); },
     end(): { result: ReadoutResult; summary: Record<string, number | null> } | null { return st ? { result: readoutFinish(st), summary: readoutSummary(readoutFinish(st)) } : null; } };
 }

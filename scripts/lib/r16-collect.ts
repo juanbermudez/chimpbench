@@ -127,8 +127,8 @@ export interface R16Meta {
   company: { counted: number; unseen: number } | null;
   /** This row's teacher label from each half of its draws (the teacher-half check). */
   halves: [number[], number[]] | null;
-  /** Kind rows: the kind mass outside the R15 menu. Target rows: per option the distance, how many options the clamp holds at 0. */
-  excludedKindMass?: number; dist?: number[]; clamped?: number;
+  /** Kind rows: the kind mass outside the R15 menu. Target rows: per option the distance, how many options the clamp holds at 0, and the position of the act in progress on the target menu (-1: not on it). */
+  excludedKindMass?: number; dist?: number[]; clamped?: number; carryTarget?: number;
   /** Rules worlds: the rules' realised kind on this menu, and where it applies the realised target and whether the teacher's arithmetic with the realised jitter gives it. */
   realised?: { kindIndex: number; targetIndex: number | null; targetArgmax: boolean | null };
 }
@@ -183,7 +183,7 @@ export function labelAt(w: World, c: Chimp, request: KernelRequest, sel: Pick<Se
       return { ...r, r16: { ...base, halves: h && h[0].length && h[1].length ? h : null, excludedKindMass: r.diagnostics.excludedKindMass, ...(realised ? { realised } : {}) } };
     }
     const t = got.detail.target!, half = t.halves ? [normalize(t.halves[0]), normalize(t.halves[1])] as [number[], number[]] : null;
-    return { ...r, r16: { ...base, halves: half, dist: t.request.options.map(distOf), clamped: t.clamped, ...(realised ? { realised } : {}) } };
+    return { ...r, r16: { ...base, halves: half, dist: t.request.options.map(distOf), clamped: t.clamped, carryTarget: t.request.options.findIndex(o => o.action === c.action && o.targetId === c.targetId), ...(realised ? { realised } : {}) } };
   });
   if (w.rng !== rng || c.decisionVersion !== version) throw new Error('labelling changed the world\'s random state or the decision version');
   return { rows, exclusions: got.exclusions, detail: got.detail, clampTied: !!got.detail.target?.clampTied };
