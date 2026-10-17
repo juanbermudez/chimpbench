@@ -173,7 +173,9 @@ export class Supervisor {
     if (!this.worker) await this.warm('no worker before a call', true);
     try { return await this.once(packet, 0); }
     catch (first) {
-      const msg = first instanceof Error ? first.message : String(first), t0 = Date.now();
+      // the whole of a stall's recovery is booked once: what its warm-ups booked themselves (attempts after the first,
+      // cool-downs) is taken off the time booked below (second reader, §23: it was counted twice)
+      const msg = first instanceof Error ? first.message : String(first), t0 = Date.now(), booked0 = this.stats.recoveryMs;
       this.stats.stalls++; this.stats.stallsToday++;
       this.o.log(`stall: ${msg}; a fresh worker and one retry`);
       try {
@@ -189,7 +191,7 @@ export class Supervisor {
           await this.warm(`failed retry: ${why}`, false);
           throw new Error(`stall and failed retry: ${why}`);
         }
-      } finally { this.book(Date.now() - t0); }
+      } finally { this.book(Math.max(0, Date.now() - t0 - (this.stats.recoveryMs - booked0))); }
     }
   }
   /** At a day checkpoint: why the worker should be replaced (§17.6), or ''. */

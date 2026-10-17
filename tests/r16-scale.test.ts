@@ -121,6 +121,12 @@ test('the supervisor: a stall is retried once on a fresh worker; a failed retry 
   const after = await sup5.ask(packetOf);
   assert.equal(after.retry, 1); assert.equal(sup5.stats.workerId, 3); assert.deepEqual(sup5.stats.warmups.map(w => w.ok), [true, false, true]);
   assert.ok(sup5.stats.recoveryMs >= 25); await sup5.close();
+  // second reading: a stall's recovery is booked once, cool-down and later warm-ups included (it was booked twice)
+  const once2: FakeFaults = { stallCalls: [2], failWarmupsAt: [2], hangMs: 10_000 }, sup6 = new Supervisor({ make: id => FakeWorker.make(once2, id), adapter: 'fake', ops: { callMs: 40, warmMs: 40, coolMs: 120 }, quiet: () => '', log: () => {} });
+  await sup6.start(); await sup6.ask(packetOf);
+  const t6 = Date.now(); await sup6.ask(packetOf); const spent = Date.now() - t6; await sup6.close();
+  assert.ok(sup6.stats.recoveryMs >= 120, 'the cool-down is booked');
+  assert.ok(sup6.stats.recoveryMs <= spent + 15, `booked ${sup6.stats.recoveryMs} ms of a recovery that took ${spent} ms, the stalled call included`);
   const slow = new Supervisor({ make: id => FakeWorker.make({}, id), adapter: 'fake', ops: { recoveryMs: 0 }, quiet: () => '', log: () => {} });
   slow.stats.recoveryMs = 1;
   assert.throws(() => slow.checkAllowance(), (e: unknown) => e instanceof Paused);
