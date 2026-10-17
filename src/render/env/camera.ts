@@ -555,7 +555,11 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
     evalPair = hasPair;
     const samePair = hasPair && best!.id === lastInteraction;
     const sameSubj = (ids.interactionId >= 0 && ids.interactionId === lastInteraction) || (ids.chimpId >= 0 && ids.chimpId === lastChimp);
-    let chosen: ShotState | null = null; let chosenScore = -1;
+    // (Stage W14: from minus infinity. From −1, a moment when every candidate was rejected (−1: the camera in a crown or
+    // a hill, the subject too small, terrain in the way) chose nothing and set no shot, so the overhead fallback below
+    // never came: the director had no shot for 33 s of a 40 s film on the 160 m map, the camera stood where it was and
+    // the caption named the selected animal.)
+    let chosen: ShotState | null = null; let chosenScore = -Infinity;
     for (let attempt = 0; attempt < 16 && chosenScore < 0.95; attempt++) {
       let kind = kinds[Math.floor(rand() * kinds.length)];
       if (current && kind === current.kind && attempt < 4) kind = kinds[(kinds.indexOf(kind) + 1) % kinds.length];

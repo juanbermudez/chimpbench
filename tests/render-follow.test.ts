@@ -138,6 +138,16 @@ test('the close camera travels with a subject drawn faster than its cap, without
   assert.ok(oc >= 3, `the old spring cut ${oc} times in 10 s`);
 });
 
+test('the close camera comes down a trunk with a body climbing down at 1 min/s', () => {
+  // About 20 m/s down for 0.9 s, then on the ground: the soft vertical spring alone trailed it by more than 15 m.
+  const dt = 1 / 60, t = createTrack();
+  trackReset(t, 0, 20, 0);
+  let y = 20, worst = 0;
+  for (let f = 0; f < 120; f++) { y = Math.max(1, y - 20 * dt); trackStep(t, 0, y, 0, dt); worst = Math.max(worst, Math.abs(t.p[1] - y)); }
+  assert.ok(worst < 2.5, `it stays within 2.5 m of the body's height (${worst.toFixed(2)})`);
+  assert.ok(Math.abs(t.p[1] - 1) < 0.3, 'and settles at the ground');
+});
+
 test('the tracking step is unchanged for a subject at rest, and a teleport still cuts', () => {
   const dt = 1 / 60, t = createTrack();
   trackReset(t, 0, 0, 0);

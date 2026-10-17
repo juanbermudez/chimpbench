@@ -49,12 +49,13 @@ export function createWater(terrain: Terrain, uniforms: SharedUniforms, owner: O
     if (rows > 0 && (joined || !field)) { const k = rows * 2; index.push(k - 2, k - 1, k, k - 1, k + 1, k); }
     rows++; joined = true;
   }
-  // Stage W14: the pools of the field map (terrain.ts) in the same mesh: a disc over each hollow at its own surface
-  // height (aLevel), with still water (a flow of almost nothing). Its edge lies past the waterline, under the rim: the
-  // shader's depth from the height texture fades it out where the ground rises above the surface.
-  const POOL_SEGS = 24;
+  // Stage W14: the pools of the field map (terrain.ts) in the same mesh: a round disc of the pool's radius over its
+  // hollow, at its own surface height (aLevel), with still water (a flow of almost nothing, which the shader also reads
+  // as "a pool": its uv is metres from the centre and its edge fades over the last 35 cm). The hollow is wider than the
+  // disc, so the outline is this circle and not the 1 m height grid's polygon.
+  const POOL_SEGS = 32;
   for (const pool of terrain.pools ?? []) {
-    const base = positions.length / 3, R = pool.r + 0.8;
+    const base = positions.length / 3, R = pool.r + 0.02;
     positions.push(pool.x, pool.level, pool.z); uvs.push(0, 0); flows.push(1e-3, 0); extra.push(0, pool.r); levels.push(pool.level);
     for (let k = 0; k < POOL_SEGS; k++) {
       const t = k / POOL_SEGS * Math.PI * 2, dx = Math.cos(t) * R, dz = Math.sin(t) * R;
@@ -174,6 +175,9 @@ export function createWater(terrain: Terrain, uniforms: SharedUniforms, owner: O
         float foam = clamp( lap * ( 0.2 + 0.25 * uPersp ) + collar * 0.75 + streak * 0.4 * smoothstep( 0.1, 0.3, wDepth ), 0.0, 0.8 );
         diffuseColor.rgb = mix( wCol, vec3( 0.52, 0.53, 0.48 ), foam );
         diffuseColor.a = max( ( 1.0 - Tr ) * 0.94 + 0.05, foam * 0.9 ) * smoothstep( 0.0, 0.03, wDepth );
+        // (Stage W14: a pool's round edge, soft over its last 35 cm; vRiver.y is its radius. The stream's flow is a unit
+        // vector, a pool's almost nothing.)
+        if ( length( vFlow ) < 0.5 ) diffuseColor.a *= 1.0 - smoothstep( vRiver.y - 0.35, vRiver.y, length( vRiverUv ) );
       `)
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor = mix( 0.035 + riffle * 0.04, 0.5, foam );')
       .replace('#include <normal_fragment_maps>', 'normal = normalize( ( viewMatrix * vec4( wN, 0.0 ) ).xyz );')

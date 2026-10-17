@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import type { Action, BodyPercept, Chimp, Quality, World } from '../types';
 import { buildChimpGeometry } from './creatures/body';
-import { createChimpMaterials, createSilhouetteMaterial } from './creatures/material';
+import { createChimpMaterials, createSilhouetteMaterial, silhouetteBlend } from './creatures/material';
 import { PORTRAIT_LAYER, type PortraitSubject } from './creatures/portrait';
 import {
   B, LIMB, PI, PARAM_TEXEL, POSE_SIZE, ROW_TEXELS, boneWorld, computeMorph, copyPose, createFK, createMorph, createPose,
@@ -369,7 +369,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   const xraySlots = new THREE.InstancedBufferAttribute(new Float32Array(CAPACITY), 1).setUsage(THREE.DynamicDrawUsage);
   const xrayTint = new THREE.InstancedBufferAttribute(new Float32Array(CAPACITY * 3), 3).setUsage(THREE.DynamicDrawUsage);
   xrayGeo.setAttribute('aSlot', xraySlots); xrayGeo.setAttribute('aTint', xrayTint);
-  const xray = { uniforms: { uOpacity: { value: 0 }, uViewport: { value: new THREE.Vector2(1440, 900) }, uBias: { value: 0.9 }, uLine: { value: new THREE.Color(0.015, 0.02, 0.018) }, uFillK: { value: 1 }, uLens: { value: new THREE.Vector4() }, uLensAspect: { value: 1.6 } } };
+  const xray = { uniforms: { uOpacity: { value: 0 }, uViewport: { value: new THREE.Vector2(1440, 900) }, uBias: { value: 0.9 }, uLine: { value: new THREE.Color(0.015, 0.02, 0.018) }, uFillK: { value: 1 }, uLens: { value: new THREE.Vector4() }, uLensAspect: { value: 1.6 }, uMax: { value: 0 } } };
   const xrayFill = createSilhouetteMaterial(mats.texture, false, xray.uniforms);
   const xrayLine = createSilhouetteMaterial(mats.texture, true, xray.uniforms);
   const xrayMesh = new THREE.InstancedMesh(xrayGeo, xrayFill, CAPACITY);
@@ -1953,7 +1953,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     // (W6: from where the drawn body is. A drinker whose next act has begun in the simulation stays at the waterline
     // until its body leaves; the simulation's position is by then metres away.)
     const px = a.track.x, pz = a.track.z;
-    if (hyp2(px - a.drinkSimX, pz - a.drinkSimZ) > 0.3) {
+    // (Stage W14: written so the first call fills the cache. The cache starts at NaN, and `NaN > 0.3` is false: the
+    // waterline was never looked up, and no drinker was ever moved to it.)
+    if (!(hyp2(px - a.drinkSimX, pz - a.drinkSimZ) <= 0.3)) {
       a.drinkSimX = px; a.drinkSimZ = pz;
       a.drinkOk = ctx.waterEdge(px, pz, EDGE, INTO) && hyp2(EDGE.x - px, EDGE.z - pz) < 3.2;
       // Stage W14: where the drawn path stands in the water (a pool's site is at its middle), the drinker goes to the
@@ -2787,6 +2789,8 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     xray.uniforms.uOpacity.value = xrayStrength;
     xray.uniforms.uBias.value = frame.closeView ? 1.2 : 0.9;
     xray.uniforms.uFillK.value = frame.closeView ? 0.14 : 1;
+    // (Stage W14, material.ts silhouetteBlend: the faint fill does not pile up where the hidden body's parts overlap.)
+    silhouetteBlend(xrayFill, frame.closeView, xray.uniforms.uMax);
     if (frame.lens) xray.uniforms.uLens.value.copy(frame.lens); else xray.uniforms.uLens.value.w = 0;
     xray.uniforms.uLensAspect.value = frame.aspect ?? 1.6;
     if (frame.closeView) xray.uniforms.uLine.value.copy(GOLD_LINE); else xray.uniforms.uLine.value.setRGB(0.015, 0.02, 0.018);

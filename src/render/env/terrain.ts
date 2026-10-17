@@ -24,9 +24,11 @@ export interface RiverInfo { points: THREE.Vector3[]; tangents: THREE.Vector3[];
 export interface Crossing { x: number; z: number; tangent: THREE.Vector3; kind: 'log' | 'ford'; arc: number; id: number }
 /** Stage W14: a pool at a water site off the stream: centre, radius of open water and surface height (m). */
 export interface Pool { x: number; z: number; r: number; level: number }
-/** A pool's open water radius, its depth at the centre and how far around it the ground is levelled to its rim (m). The
- * simulation gives a water site a radius of 1.2 m; how the pool looks is a stylization. */
-export const POOL_R = 1.5, POOL_DEPTH = 0.35, POOL_FLAT_M = 1.2, POOL_BLEND_M = 2.5;
+/** A pool's open water radius (the round, soft-edged surface water.ts draws), its depth at the centre, how much wider than
+ * the open water the hollow is, and how far around it the ground is levelled to its rim (m). The hollow is wider than
+ * the water so that the outline is the drawn circle, not the 1 m height grid's polygon. The simulation gives a water
+ * site a radius of 1.2 m; how the pool looks is a stylization. */
+export const POOL_R = 1.6, POOL_DEPTH = 0.35, POOL_HOLLOW_M = 0.7, POOL_FLAT_M = 1.2, POOL_BLEND_M = 2.5;
 /** A site within this distance of the stream's edge is a bank site: the stream is its water (the simulation puts the
  * stream's own drinking spots 1.5 m out from its edge). */
 export const POOL_BANK_M = 3;
@@ -545,26 +547,17 @@ export function* terrainSteps(world: World, uniforms: SharedUniforms, owner: Own
     const px = w.position[0], pz = w.position[2];
     if (Math.abs(px - ox) > FIELD_GROUND_HALF - 6 || Math.abs(pz - oz) > FIELD_GROUND_HALF - 6) continue;   // on this window's ground
     if (riverDistance(px, pz) < halfWidthM + POOL_BANK_M) continue;
-    const rim = sampleGrid(heightGrid, px, pz, 0), reach = POOL_R + POOL_FLAT_M + POOL_BLEND_M;
+    const rim = sampleGrid(heightGrid, px, pz, 0), hollow = POOL_R + POOL_HOLLOW_M, reach = hollow + POOL_FLAT_M + POOL_BLEND_M;
     const cx = Math.round(px - ox + HEIGHT_HALF), cz = Math.round(pz - oz + HEIGHT_HALF), n = Math.ceil(reach) + 1;
     for (let z = Math.max(0, cz - n); z <= Math.min(GRID - 1, cz + n); z++) for (let x = Math.max(0, cx - n); x <= Math.min(GRID - 1, cx + n); x++) {
       const d = Math.hypot(x - HEIGHT_HALF + ox - px, z - HEIGHT_HALF + oz - pz), i = z * GRID + x;
       if (d >= reach) continue;
-      const level = 1 - THREE.MathUtils.smoothstep(d, POOL_R + POOL_FLAT_M, reach);
-      let h = heightGrid[i] + (rim - heightGrid[i]) * level;
-      if (d < POOL_R + 0.3) h = Math.min(h, rim - 0.04 - POOL_DEPTH * Math.max(0, 1 - (d / (POOL_R + 0.3)) ** 2));
+      const flat = 1 - THREE.MathUtils.smoothstep(d, hollow + POOL_FLAT_M, reach);
+      let h = heightGrid[i] + (rim - heightGrid[i]) * flat;
+      if (d < hollow) h = Math.min(h, rim - 0.04 - POOL_DEPTH * (1 - (d / hollow) ** 2));
       heightGrid[i] = h;
     }
-    // The open water's radius is where the hollow, as the 1 m height grid draws it, comes up through the surface: read
-    // back along eight directions (a drinker is placed at that edge).
-    const level = rim - 0.05;
-    let r = 0;
-    for (let k = 0; k < 8; k++) {
-      const ux = Math.cos(k * Math.PI / 4), uz = Math.sin(k * Math.PI / 4);
-      let t = 0; while (t < reach && sampleGrid(heightGrid, px + ux * t, pz + uz * t, 0) < level) t += 0.05;
-      r += t / 8;
-    }
-    pools.push({ x: px, z: pz, r, level });
+    pools.push({ x: px, z: pz, r: POOL_R, level: rim - 0.05 });
   }
   const poolDistance = (x: number, z: number) => {
     let best = Infinity;
@@ -580,7 +573,7 @@ export function* terrainSteps(world: World, uniforms: SharedUniforms, owner: Own
   // crossing a pool wades in it, at most 20 cm below its surface.)
   const walkable = (x: number, z: number) => {
     let w = Math.max(height(x, z), WATER_LEVEL - 0.2);
-    for (const p of pools) { const dx = x - p.x, dz = z - p.z; if (dx * dx + dz * dz < (p.r + 0.3) ** 2 && p.level - 0.2 > w) w = p.level - 0.2; }
+    for (const p of pools) { const dx = x - p.x, dz = z - p.z; if (dx * dx + dz * dz < (p.r + POOL_HOLLOW_M) ** 2 && p.level - 0.2 > w) w = p.level - 0.2; }
     return w;
   };
 
@@ -646,8 +639,8 @@ export function* terrainSteps(world: World, uniforms: SharedUniforms, owner: Own
       const k = j * DETAIL + i;
       // (Stage W14: a pool's muddy rim in R, and bare ground where nothing grows in G, under and just round its water.)
       const dp = pools.length ? poolDistance(x, z) : Infinity;
-      groundData[k * 4] = Math.max(1 - THREE.MathUtils.smoothstep(riverDistance(x, z), halfWidthM + 0.2, halfWidthM + 3.4), 1 - THREE.MathUtils.smoothstep(dp, -0.2, 1.6)) * 255;
-      groundData[k * 4 + 1] = Math.max(trail[k], 1 - THREE.MathUtils.smoothstep(dp, 0.2, 0.9)) * 255;
+      groundData[k * 4] = Math.max(1 - THREE.MathUtils.smoothstep(riverDistance(x, z), halfWidthM + 0.2, halfWidthM + 3.4), 1 - THREE.MathUtils.smoothstep(dp, 0.2, POOL_HOLLOW_M + 0.5)) * 255;
+      groundData[k * 4 + 1] = Math.max(trail[k], 1 - THREE.MathUtils.smoothstep(dp, POOL_HOLLOW_M, POOL_HOLLOW_M + 0.6)) * 255;
       groundData[k * 4 + 2] = Math.min(1, cover[k]) * 255;
       // A: broad river valley (banks up to ~14 m out) — vegetated and never bare rock.
       groundData[k * 4 + 3] = (1 - THREE.MathUtils.smoothstep(riverDistance(x, z), halfWidthM + 6, halfWidthM + 15)) * 255;
@@ -961,7 +954,7 @@ export function* terrainSteps(world: World, uniforms: SharedUniforms, owner: Own
       for (const p of pools) { const d = Math.hypot(x - p.x, z - p.z) - p.r; if (d < pd) { pd = d; pool = p; } }
       if (pool) {
         const dx = x - pool.x, dz = z - pool.z, l = Math.hypot(dx, dz), ux = l > 1e-3 ? dx / l : 1, uz = l > 1e-3 ? dz / l : 0;
-        out.set(pool.x + ux * pool.r * 0.92, pool.level, pool.z + uz * pool.r * 0.92);
+        out.set(pool.x + ux * pool.r * 0.9, pool.level, pool.z + uz * pool.r * 0.9);
         if (into) into.set(-ux, 0, -uz);
         return true;
       }

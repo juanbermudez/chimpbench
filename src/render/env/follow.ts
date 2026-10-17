@@ -112,8 +112,8 @@ export function userPanned(moved: number, dragPx: number, dragging: boolean, gra
 // that does not move carries nothing forward).
 // ---------------------------------------------------------------------------------------------------------------------
 
-/** Track state: point (p), the spring's own velocity on top of what is carried (v), the goal's smoothed velocity (gv; y is
- * not carried) and the goal last frame (g). The point moves at v + gv × carry. */
+/** Track state: point (p), the spring's own velocity on top of what is carried (v), the goal's smoothed velocity (gv) and
+ * the goal last frame (g). The point moves at v + gv × carry. */
 export interface Track { p: Float64Array; v: Float64Array; gv: Float64Array; g: Float64Array; hasG: boolean }
 export function createTrack(): Track {
   return { p: new Float64Array(3), v: new Float64Array(3), gv: new Float64Array(3), g: new Float64Array(3), hasG: false };
@@ -138,13 +138,15 @@ const KH = 3.2, KV = 1.6;
  */
 export function trackStep(t: Track, gx: number, gy: number, gz: number, dt: number, carry = 1, maxRel = TRACK_MAX_REL, cut = TRACK_CUT): boolean {
   if (t.hasG && dt > 0) {
-    const vx = (gx - t.g[0]) / dt, vz = (gz - t.g[2]) / dt, k = 1 - Math.exp(-dt * TRACK_GOAL_RATE);
-    // A goal that jumped (a relocation, a new subject) carries no velocity.
-    if (vx * vx + vz * vz > 60 * 60) { t.gv[0] = 0; t.gv[2] = 0; }
-    else { t.gv[0] += (vx - t.gv[0]) * k; t.gv[2] += (vz - t.gv[2]) * k; }
+    const vx = (gx - t.g[0]) / dt, vy = (gy - t.g[1]) / dt, vz = (gz - t.g[2]) / dt, k = 1 - Math.exp(-dt * TRACK_GOAL_RATE);
+    // A goal that jumped (a relocation, a new subject) carries no velocity. (Run 2: the height is carried too. A body
+    // climbing down a trunk at 1 min/s is drawn falling at about 20 m/s; the vertical spring, the softer of the two,
+    // let it leave the frame below for a second and a half.)
+    if (vx * vx + vz * vz > 60 * 60 || Math.abs(vy) > 60) t.gv.fill(0);
+    else { t.gv[0] += (vx - t.gv[0]) * k; t.gv[1] += (vy - t.gv[1]) * k; t.gv[2] += (vz - t.gv[2]) * k; }
   }
   t.g[0] = gx; t.g[1] = gy; t.g[2] = gz; t.hasG = true;
-  const fx = t.gv[0] * carry, fz = t.gv[2] * carry;
+  const fx = t.gv[0] * carry, fy = t.gv[1] * carry, fz = t.gv[2] * carry;
   const sx = gx - t.p[0], sy = gy - t.p[1], sz = gz - t.p[2];
   if (Math.hypot(sx, sz) > cut || Math.abs(sy) > 25) {
     t.p[0] = gx; t.p[1] = gy; t.p[2] = gz; t.v.fill(0);
@@ -159,6 +161,6 @@ export function trackStep(t: Track, gx: number, gy: number, gz: number, dt: numb
   const sp = Math.hypot(rx, ry, rz);
   if (sp > maxRel) { const m = maxRel / sp; rx *= m; ry *= m; rz *= m; }
   t.v[0] = rx; t.v[1] = ry; t.v[2] = rz;
-  t.p[0] += (rx + fx) * dt; t.p[1] += ry * dt; t.p[2] += (rz + fz) * dt;
+  t.p[0] += (rx + fx) * dt; t.p[1] += (ry + fy) * dt; t.p[2] += (rz + fz) * dt;
   return false;
 }
