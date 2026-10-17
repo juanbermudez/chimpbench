@@ -46,16 +46,19 @@ async function killResume(out: string): Promise<number> {
   const base = ['run', '--seed', '48', '--days', '2', '--arm', 'fake', '--burn-in', '1'];
   const ra = runCli([...base, '--label', 'dry-kr-a', '--out', a]);
   if (ra.status !== 0) { console.error(ra.stdout, ra.stderr); return 1; }
-  // the killed run: SIGKILL once its second day's journal holds some calls
-  const child = spawn(NODE, [TSX, resolve(ROOT, 'scripts', 'r16-population.ts'), ...base, '--label', 'dry-kr-b', '--out', b], { cwd: ROOT, stdio: 'ignore' });
+  // the killed run: SIGKILL to its whole process group (tsx runs the script in a child) once its second day's journal holds some calls
+  const child = spawn(NODE, [TSX, resolve(ROOT, 'scripts', 'r16-population.ts'), ...base, '--label', 'dry-kr-b', '--out', b], { cwd: ROOT, stdio: 'ignore', detached: true });
   const journal2 = resolve(b, 'journal', 'd002.jsonl');
   const t0 = Date.now();
   while (Date.now() - t0 < 300_000) {
     await new Promise(r => setTimeout(r, 200));
     if (existsSync(journal2) && readFileSync(journal2, 'utf8').split('\n').filter(Boolean).length > 500) break;
   }
-  child.kill('SIGKILL');
-  await new Promise(r => child.once('exit', r));
+  // a second process on the same run folder is refused while the first lives
+  const twin = runCli([...base, '--label', 'dry-kr-b', '--out', b]);
+  const exited = new Promise(r => child.once('exit', r));
+  process.kill(-child.pid!, 'SIGKILL');
+  await exited;
   const killedState = readRegistry16(b).state, killedDays = readRegistry16(b).days.length;
   const rb = runCli([...base, '--label', 'dry-kr-b', '--out', b]);
   if (rb.status !== 0) { console.error(rb.stdout, rb.stderr); return 1; }
@@ -63,9 +66,9 @@ async function killResume(out: string): Promise<number> {
   const la = readReceipts16(a, 2).map(comparable16), lb = readReceipts16(b, 2).map(comparable16);
   const replay = runCli(['replay', b]);
   const result = { killedWhile: killedState, daysOnFileWhenKilled: killedDays, segments: B.segments.map(s => ({ fromDay: s.fromDay, journalCalls: s.journalCalls, setAside: s.setAside.length })),
-    hashes: { uninterrupted: A.days.map(d => d.hash), resumed: B.days.map(d => d.hash) }, receiptsEqual: la.length === lb.length && la.every((l, i) => l === lb[i]), reusedOnResume: B.days[1]?.reused ?? 0,
+    twinRefused: twin.status === 2 && /still alive/.test(twin.stderr + twin.stdout), hashes: { uninterrupted: A.days.map(d => d.hash), resumed: B.days.map(d => d.hash) }, receiptsEqual: la.length === lb.length && la.every((l, i) => l === lb[i]), reusedOnResume: B.days[1]?.reused ?? 0,
     replay: replay.status === 0, holds: false };
-  result.holds = A.days.map(d => d.hash).join() === B.days.map(d => d.hash).join() && result.receiptsEqual && (B.segments[1]?.journalCalls ?? 0) > 0 && result.replay;
+  result.holds = A.days.map(d => d.hash).join() === B.days.map(d => d.hash).join() && result.receiptsEqual && (B.segments[1]?.journalCalls ?? 0) > 0 && result.replay && result.twinRefused;
   writeAtomic(resolve(out, 'kill-resume.json'), JSON.stringify(result, null, 1) + '\n');
   console.log(JSON.stringify(result));
   return result.holds ? 0 : 1;

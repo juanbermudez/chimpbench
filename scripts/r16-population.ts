@@ -102,6 +102,12 @@ function workerFactory(a: Args, arm: Arm16, ops: Ops): (id: number) => Promise<W
   };
 }
 
+/** The pid when a process of this run (the script itself) still lives, else 0. */
+function runAlive(pid: number | undefined): number {
+  if (!pid || pid === process.pid) return 0;
+  try { process.kill(pid, 0); } catch { return 0; }
+  try { return execFileSync('ps', ['-o', 'command=', '-p', String(pid)], { encoding: 'utf8' }).includes('r16-population.ts') ? pid : 0; } catch { return 0; }
+}
 async function run(a: Args): Promise<number> {
   const out = resolve(a.flag('out')), resume = existsSync(resolve(out, 'run.json'));
   if (!a.flag('out')) throw new Refused('--out DIR');
@@ -109,6 +115,8 @@ async function run(a: Args): Promise<number> {
   const opsFlag = a.has('ops') ? JSON.parse(a.flag('ops')) as Partial<Ops> : {};
   if (resume) {
     reg = readRegistry16(out);
+    const alive = runAlive(reg.segments.at(-1)?.pid);
+    if (alive) throw new Refused(`pid ${alive} of this run is still alive: one process per run folder (let it end, or kill its process group)`);
     if (reg.state === 'done') { log(`${reg.label}: done; nothing to resume`); return 0; }
     if (reg.state === 'stopped') { log(`${reg.label}: stopped (${reg.reason}); a scientifically stopped run is never resumed`); return 3; }
   } else {
