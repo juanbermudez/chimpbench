@@ -100,3 +100,65 @@ export const DRAG_PX = 6;
 export function userPanned(moved: number, dragPx: number, dragging: boolean, grace: number, eps = 1e-4): boolean {
   return moved > eps && dragPx > DRAG_PX && (dragging || grace > 0);
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Stage W14: the close view's tracking spring (camera.ts updateFollow), after the glide has arrived. It used to be a
+// plain critically damped spring with its whole velocity capped at 12 m/s, so it trailed a moving subject by 2v/k and
+// could never keep up with one drawn faster than the cap: a field-map walker at 1 min/s is drawn at about 21 m/s, and
+// the camera fell 22 m behind and cut forward every two seconds (the followed animal off screen up to a third of the
+// time). Now the point carries its goal's own velocity (smoothed) forward and the spring and the cap act only on what is
+// left, as the chase above feeds the animal's velocity forward: it travels with any subject, and still never whips
+// across the map to correct itself. The goal itself stays the caller's (its dead zone ignores small lurches, so a goal
+// that does not move carries nothing forward).
+// ---------------------------------------------------------------------------------------------------------------------
+
+/** Track state: point (p), the spring's own velocity on top of what is carried (v), the goal's smoothed velocity (gv; y is
+ * not carried) and the goal last frame (g). The point moves at v + gv × carry. */
+export interface Track { p: Float64Array; v: Float64Array; gv: Float64Array; g: Float64Array; hasG: boolean }
+export function createTrack(): Track {
+  return { p: new Float64Array(3), v: new Float64Array(3), gv: new Float64Array(3), g: new Float64Array(3), hasG: false };
+}
+/** Restart at rest at (x, y, z) with no history of the goal. */
+export function trackReset(t: Track, x: number, y: number, z: number): void {
+  t.p[0] = x; t.p[1] = y; t.p[2] = z; t.v.fill(0); t.gv.fill(0); t.hasG = false;
+}
+/** The spring's own correction may move the camera at most this fast (m/s), on top of the goal's velocity. Design
+ * assumption (camera feel; the value the whole velocity was capped at before). */
+export const TRACK_MAX_REL = 12;
+/** Beyond this horizontal distance (or 25 m in height) the point cuts to its goal instead of travelling there (m). */
+export const TRACK_CUT = 22;
+/** Rate (1/s) at which the carried goal velocity follows the goal's own (a time constant of two frames): a stop from
+ * 21 m/s is overshot by under a metre, and a goal stepping unevenly from one frame to the next is averaged. Design
+ * assumption. */
+export const TRACK_GOAL_RATE = 30;
+const KH = 3.2, KV = 1.6;
+/**
+ * One frame toward the goal (gx, gy, gz). carry (0..1): how much of the goal's velocity is carried forward (the caller
+ * passes 0 where the goal moves in held jumps, at fast playback). Returns true when the point cut to the goal.
+ */
+export function trackStep(t: Track, gx: number, gy: number, gz: number, dt: number, carry = 1, maxRel = TRACK_MAX_REL, cut = TRACK_CUT): boolean {
+  if (t.hasG && dt > 0) {
+    const vx = (gx - t.g[0]) / dt, vz = (gz - t.g[2]) / dt, k = 1 - Math.exp(-dt * TRACK_GOAL_RATE);
+    // A goal that jumped (a relocation, a new subject) carries no velocity.
+    if (vx * vx + vz * vz > 60 * 60) { t.gv[0] = 0; t.gv[2] = 0; }
+    else { t.gv[0] += (vx - t.gv[0]) * k; t.gv[2] += (vz - t.gv[2]) * k; }
+  }
+  t.g[0] = gx; t.g[1] = gy; t.g[2] = gz; t.hasG = true;
+  const fx = t.gv[0] * carry, fz = t.gv[2] * carry;
+  const sx = gx - t.p[0], sy = gy - t.p[1], sz = gz - t.p[2];
+  if (Math.hypot(sx, sz) > cut || Math.abs(sy) > 25) {
+    t.p[0] = gx; t.p[1] = gy; t.p[2] = gz; t.v.fill(0);
+    return true;
+  }
+  // The spring keeps its own velocity (relative to what is carried), so a goal that stops takes the carried part away at
+  // once instead of leaving it in the spring to be undone.
+  let rx = t.v[0], ry = t.v[1], rz = t.v[2];
+  rx += (sx * KH * KH - rx * 2 * KH) * dt;
+  rz += (sz * KH * KH - rz * 2 * KH) * dt;
+  ry += (sy * KV * KV - ry * 2 * KV) * dt;
+  const sp = Math.hypot(rx, ry, rz);
+  if (sp > maxRel) { const m = maxRel / sp; rx *= m; ry *= m; rz *= m; }
+  t.v[0] = rx; t.v[1] = ry; t.v[2] = rz;
+  t.p[0] += (rx + fx) * dt; t.p[1] += ry * dt; t.p[2] += (rz + fz) * dt;
+  return false;
+}

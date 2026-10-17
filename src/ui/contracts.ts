@@ -69,7 +69,7 @@ export interface UiDeps {
   /** followChimp (optional extra): make the camera follow an animal without zooming; focusChimp also zooms in.
    * portrait (optional extra): draw the animal's snapshot into the bottom panel's canvas (see PortraitView).
    * drawnAct (optional extra): fill the caller's record with the act the drawn body is in (see DrawnActView). */
-  getScene(): (SceneAPI & { getFootprint?(): FootprintView; followChimp?(id: number): void; portrait?: PortraitView; drawnAct?(id: number, out: DrawnActView): boolean }) | null;
+  getScene(): (SceneAPI & { getFootprint?(): FootprintView; followChimp?(id: number): void; portrait?: PortraitView; drawnAct?(id: number, out: DrawnActView): boolean; cineSubject?(): { interactionId: number; chimpId: number } | null }) | null;
   setSpeed(id: string): void;
   /** Optional (stage W1): the playback rate (ecological seconds per real second) above which this world's walk is drawn as
    * time-lapse, because bodies cover ground faster than feet can step (render/creatures/pace.ts lapseRate). The menu bar

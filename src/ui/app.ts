@@ -25,6 +25,7 @@ import { createFruitKey } from './fruitkey';
 import { installTooltips } from './tooltip';
 import { installPopovers } from './popover';
 import { menuButton } from './menu';
+import { experimentTarget, partyWaking, wakeWatch } from './watch-rules';
 
 // UI composition root. Owns UI state and wires components; knows nothing
 // about how the world is simulated or rendered (see UiDeps). main.ts and the
@@ -154,6 +155,8 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
   };
   const ranks = createRankTracker();
   let timeOpen = false;
+  // Stage W14: the animals whose waking ends the field map's dawn fast-forward (watch-rules.ts), read every frame.
+  let prologueWatch: Chimp[] = [];
   let lastUi = 0, leftOpen = false, prologue = false, wide = window.innerWidth >= 1440, layoutQueued = false, lastInsets = '', resumed = false;
   const toastRoot = q('.toasts');
 
@@ -424,9 +427,16 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
   /** Cinematic caption: who is on screen and what is happening, from the live interaction list. */
   function updateCaption() {
     if (state.view !== 'cinematic') return;
-    const w = deps.getWorld(), c = ctx.selected(); if (!c) return;
+    const w = deps.getWorld();
+    // Stage W14: the caption names what the director films (the scene says which episode or animal), and the selected
+    // animal only when nothing else is filmed. Before, it always named the selected animal: on the field map the
+    // camera stood 400 m from it filming others, and on the 160 m map the named animal was on screen in a sixth of frames.
+    const sub = deps.getScene()?.cineSubject?.() ?? null;
+    const shotIt = sub && sub.interactionId >= 0 ? w.interactions.find(i => i.id === sub.interactionId) : undefined;
+    const c = (shotIt ? w.chimps.find(x => x.id === shotIt.actorId) : sub && sub.chimpId >= 0 ? w.chimps.find(x => x.id === sub.chimpId) : undefined) ?? ctx.selected();
+    if (!c) return;
     const name = (id: number) => w.chimps.find(x => x.id === id)?.name ?? '';
-    const live = w.interactions.filter(i => i.end === null && (i.actorId === c.id || i.targetId === c.id || i.participants?.includes(c.id))).sort((a, b) => b.intensity - a.intensity)[0];
+    const live = shotIt ?? w.interactions.filter(i => i.end === null && (i.actorId === c.id || i.targetId === c.id || i.participants?.includes(c.id))).sort((a, b) => b.intensity - a.intensity)[0];
     const t = w.troops.find(tt => tt.id === c.troopId);
     let title = `${c.name} · ${actionVerb(c.action).toLowerCase()}`;
     if (live) { const a = name(live.actorId), b = live.targetId >= 0 ? name(live.targetId) : ''; title = `${a} ${VERB[live.kind] ?? live.kind}${b && b !== a ? ` ${b}` : ''}`; }
@@ -440,11 +450,17 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     const w = deps.getWorld();
     if (resumed || w.day !== 1 || w.hour >= 7.25 || !deps.speedPresets.some(p => p.id === '10x')) return;
     prologue = true; deps.setSpeed('10x'); q('.prologue').hidden = false;
-    if (w.size > 1000) setText(q('.prologue span'), 'Fast-forwarding at 10 min/s until the party wakes');
+    if (w.size > 1000) { setText(q('.prologue span'), 'Fast-forwarding at 10 min/s until the party wakes'); prologueWatch = wakeWatch(w, ctx.selected()); }
+  }
+  /** Every frame while the dawn fast-forward runs: the 160 m map's ends at 07:15; the field map's as the first of the
+   * selected animal's party (or of those within 40 m of it) leaves its nest, before its body is drawn moving (stage W14). */
+  function checkPrologue() {
+    const w = deps.getWorld();
+    if (w.day > 1 || w.hour >= 7.25 || (w.size > 1000 && partyWaking(prologueWatch))) endPrologue(true);
   }
   function endPrologue(settle: boolean) {
     if (!prologue) return;
-    prologue = false; q('.prologue').classList.add('out');
+    prologue = false; prologueWatch = []; q('.prologue').classList.add('out');
     setTimeout(() => { q('.prologue').hidden = true; }, 900);
     if (settle && deps.clock.speedId === '10x') deps.setSpeed('1x');
   }
@@ -466,16 +482,11 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     try { stim = deps.applyIntervention(kind, { troopId, position }); }
     catch (err) { ctx.notify({ text: `${spec.label} failed: ${err instanceof Error ? err.message : String(err)}`, cat: 'system', severity: 2, title: 'Experiment' }); return; }
     if (!stim && spec.scope !== 'habitat') { ctx.notify({ text: `${spec.label}: not applicable right now (the simulation declined it).`, cat: 'system', title: 'Experiment' }); return; }
-    // Most affected model-controlled chimp: nearest to the stimulus within its radius.
+    // Who the Mind tab watches (watch-rules.ts): the selected animal when the experiment reaches it, else the most
+    // affected model-controlled chimp nearest the stimulus, else the nearest adult of the target community.
     const at = stim?.position ?? position, radius = stim?.radius ?? 40, tId = stim?.troopId ?? troopId;
-    const dist = (c: Chimp) => Math.hypot(c.position[0] - at[0], c.position[2] - at[2]);
-    const alive = w.chimps.filter(c => c.alive);
-    const modelOn = w.modelPolicy.mode !== 'off';
-    const inScope = (c: Chimp) => spec.scope === 'habitat' || (spec.scope === 'community' ? c.troopId === tId : dist(c) <= Math.max(radius, 1));
-    let target = modelOn ? alive.filter(c => c.controller === 'model' && inScope(c)).sort((a, b) => dist(a) - dist(b))[0] : undefined;
-    // With the 'selected' roster, selecting a chimp hands it to the model, so pick the nearest adult of the target community.
-    if (!target && (deps.decider.roster === 'selected' || !modelOn)) target = alive.filter(c => c.troopId === tId && c.stage !== 'infant' && c.stage !== 'juvenile').sort((a, b) => dist(a) - dist(b))[0];
-    target ??= sel;
+    const target = experimentTarget({ scope: spec.scope, selected: sel, alive: w.chimps.filter(c => c.alive), at, radius, troopId: tId,
+      modelOn: w.modelPolicy.mode !== 'off', rosterSelected: deps.decider.roster === 'selected' });
     if (target) {
       const before = tracesFor(ctx, target.id).at(-1);
       state.experiment = { kind, label: spec.label, time: w.time, chimpId: target.id, troopId: tId, beforeTraceId: before?.id ?? '' };
@@ -594,9 +605,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     force => {
       const w = deps.getWorld();
       if (state.society.open) society.update(force);
-      // Field profile: the close view follows the selected animal, and at 10 min/s a travelling party outruns the
-      // streamed forest window, so the fast-forward stops once it leaves its nest.
-      if (prologue && (w.day > 1 || w.hour >= 7.25 || (w.size > 1000 && ctx.selected()?.action !== 'nest'))) endPrologue(true);
+      // (Stage W14: the dawn fast-forward's end is checked every frame, in tick: checkPrologue.)
       updateCaption();
       syncPanels();
     },
@@ -662,6 +671,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     state.selectedId = defaultSelection(deps.getWorld()); state.highlightTroopId = null; state.experiment = null; state.pinnedTraceId = null;
     state.society.open = false; state.rightMode = 'communities'; state.panelTroopId = null;
     if (ui) { applyUi(ui); resumed = true; endPrologue(false); }
+    else if (prologue) prologueWatch = deps.getWorld().size > 1000 ? wakeWatch(deps.getWorld(), ctx.selected()) : [];
     ranks.reset(); feed.reset(); feed.prime(); applySceneState(); syncDock(); syncPanels();
     ctx.refresh();
   }
@@ -686,6 +696,10 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     viewport: q('#viewport'),
     /** Call every animation frame; DOM work runs at ~4 Hz, one panel step per frame. */
     tick(now: number) {
+      // Field profile: the close view follows the selected animal, and at 10 min/s a travelling party outruns the
+      // streamed forest window; the fast-forward stops as its party wakes. Read every frame (stage W14: at four times a
+      // second the whole party had been drawn dropping from its nests at 10 min/s before the check came round).
+      if (prologue) checkPrologue();
       if (state.view !== 'cinematic') hud.frame(now);
       scaleBar.frame();
       fruitKey.frame();

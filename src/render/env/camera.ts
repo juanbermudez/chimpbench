@@ -8,7 +8,7 @@ import {
   blendDuration, blendFrame, createThrough, distanceForFrame, easeInOut, frameHeightPersp, lensRadius, pitchForDistance,
   springStep, stepThrough, terrainLift, zoomBand, type ZoomBand,
 } from './camera-zoom';
-import { chaseArrived, chaseReset, chaseStep, createChase, jumpFor, nextFollow, userPanned, type FollowEvent } from './follow';
+import { chaseArrived, chaseReset, chaseStep, createChase, createTrack, jumpFor, nextFollow, trackReset, trackStep, userPanned, type FollowEvent } from './follow';
 import { hyp2 } from '../fastmath';
 
 // Three cameras behind one rig on one zoom axis (docs/graphics-camera-plan.md §2): the tilted orthographic strategy
@@ -36,8 +36,15 @@ const ACTION_WEIGHT: Record<string, number> = {
   groom: 2, play: 2.4, nurse: 2, climb: 1.8, forage: 1.4, travel: 1.2, drink: 1.6, nest: 2, shelter: 1.8,
 };
 const MIN_FRAME_SHARE = 0.08;   // subject height / frame height
-const FOLLOW_MAX_SPEED = 12;    // m/s the close camera may travel while tracking
-const FOLLOW_CUT_DISTANCE = 22; // beyond this the close camera cuts instead of whipping across the map
+/** Field map, stage W14: with an animal selected the cinematic director films it and the episodes within this distance
+ * of it (m): its party, in the streamed forest window. A drawing rule. */
+const CINE_NEAR_M = 60;
+// (Stage W14: the close camera's speed cap and cut distance live with its tracking step, follow.ts TRACK_MAX_REL and
+// TRACK_CUT. The cap now holds the spring's own correction, not the camera's whole speed.)
+/** The close camera's lead ahead of a moving subject is at most this share of the frame height (stage W14: 0.3 s ahead
+ * of a walker drawn at 21 m/s, at 1 min/s on the field map, was 6 m: the subject ran at the edge of the frame).
+ * Design assumption (camera feel). */
+const LEAD_MAX_FRAME = 0.1;
 const CLOSE_DEFAULT = 11;       // orbit distance (m) when entering the close view with a key
 const OFFSET_MAX = 20 * Math.PI / 180;   // the user's tilt away from the pitch curve
 const RTS_ELEVATION = Math.atan2(148, hyp2(113, 161));   // 37°: the strategy view's default pitch
@@ -64,6 +71,9 @@ export interface CameraRig {
   readonly lens: { x: number; y: number; r: number; w: number; focusY: number };
   /** True while a view blend is running (the rendered camera is the blend camera). */
   readonly blending: boolean;
+  /** Stage W14: what the cinematic director films now (an episode, or one animal when interactionId is −1), or null
+   * outside the cinematic view; the interface's caption names it. One object, rewritten in place. */
+  readonly shotSubject: { interactionId: number; chimpId: number } | null;
   /** Director and follow diagnostics (cuts with the rules they passed, occlusion re-framings, zoom-throughs). */
   readonly log: { cuts: { t: number; kind: string; interactionId: number; sameSubject: boolean; side: number; angle: number }[]; reframes: number; throughs: number };
   setView(mode: ViewMode, selectedId: number | null): void;
@@ -209,7 +219,7 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
   // Close-follow spring state.
   const followPoint = new THREE.Vector3();
   const followGoal = new THREE.Vector3();
-  const followVel = new THREE.Vector3();
+  const track = createTrack();
   let followReady = false;
   let lastRetarget = -99;
   // Look-ahead: the subject's smoothed ground velocity; host-trunk occlusion timer and a pending orbit.
@@ -297,7 +307,7 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
       placeClose(az, clampN(pitchForDistance(orbitTarget) + userOffset, 0.03, 1.5), orbitTarget);
       followId = id; gliding = false;
       followPoint.copy(controls.target);
-      followVel.set(0, 0, 0);
+      trackReset(track, followPoint.x, followPoint.y, followPoint.z);
       followReady = true;
       configureControls();
     } else if (mode === 'rts') {
@@ -342,7 +352,7 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
   // Close follow: a critically damped spring with a speed cap; big jumps cut.
   // ---------------------------------------------------------------------
   function updateFollow(dt: number, elapsed: number, desired: THREE.Vector3, simRate: number) {
-    if (!followReady) { followPoint.copy(controls.target); followGoal.copy(desired); followVel.set(0, 0, 0); followReady = true; hasLastDesired = false; }
+    if (!followReady) { followPoint.copy(controls.target); followGoal.copy(desired); trackReset(track, followPoint.x, followPoint.y, followPoint.z); followReady = true; hasLastDesired = false; }
     // G1: aim 0.3 s ahead of the subject along its smoothed ground velocity.
     if (hasLastDesired && dt > 0) {
       shift.copy(desired).sub(lastDesired).divideScalar(dt); shift.y = 0;
@@ -350,12 +360,14 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
       subjVel.lerp(shift, 1 - Math.exp(-dt * 3));
     }
     lastDesired.copy(desired); hasLastDesired = true;
-    desired.addScaledVector(subjVel, 0.3);
+    const frameH = 2 * close.position.distanceTo(controls.target) * Math.tan(THREE.MathUtils.degToRad(close.fov) / 2);
+    // (Stage W14: the lead is capped to a tenth of the frame, so a subject drawn fast stays near the middle.)
+    const lead = subjVel.length() * 0.3, leadMax = frameH * LEAD_MAX_FRAME;
+    desired.addScaledVector(subjVel, lead > leadMax ? 0.3 * leadMax / lead : 0.3);
     // At fast sim speeds animals jump metres per frame: hold framing inside a dead zone and re-target at
     // most every ~0.8 s, so the camera glides between rests instead of chasing every step. At natural speeds a
     // soft dead zone (±8% of the frame height at the subject) ignores play-bout lurches.
     const fast = THREE.MathUtils.smoothstep(simRate, 300, 3600);
-    const frameH = 2 * close.position.distanceTo(controls.target) * Math.tan(THREE.MathUtils.degToRad(close.fov) / 2);
     const deadZone = Math.max(frameH * 0.08, 0.4 + fast * 3.5);
     const hold = fast * 0.8;
     if (fast >= 0.01) { if (desired.distanceTo(followGoal) > deadZone && elapsed - lastRetarget >= hold) { followGoal.copy(desired); lastRetarget = elapsed; } }
@@ -363,20 +375,12 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
       const off = desired.distanceTo(followGoal);
       if (outsideDeadZone(off, frameH, 0.08)) followGoal.lerp(desired, (off - frameH * 0.08) / off);
     }
-    shift.copy(followGoal).sub(followPoint);
-    if (hyp2(shift.x, shift.z) > FOLLOW_CUT_DISTANCE || Math.abs(shift.y) > 25) {
-      // Teleported (fast sim, climbing, new focus): cut and keep the framing instead of whipping across the map.
-      followPoint.copy(followGoal);
-      followVel.set(0, 0, 0);
-    } else {
-      const kh = 3.2, kv = 1.6;
-      followVel.x += (shift.x * kh * kh - followVel.x * 2 * kh) * dt;
-      followVel.z += (shift.z * kh * kh - followVel.z * 2 * kh) * dt;
-      followVel.y += (shift.y * kv * kv - followVel.y * 2 * kv) * dt;
-      const sp = followVel.length();
-      if (sp > FOLLOW_MAX_SPEED) followVel.multiplyScalar(FOLLOW_MAX_SPEED / sp);
-      followPoint.addScaledVector(followVel, dt);
-    }
+    // Stage W14 (follow.ts trackStep): the point travels with its goal and the spring corrects what is left, so a subject
+    // drawn faster than the spring's cap (a walk at 1 min/s on the field map) is followed instead of lost and cut to.
+    // Where the goal moves in held jumps (fast playback) nothing is carried: the camera glides between the rests.
+    // A move beyond TRACK_CUT (teleported: fast sim, a long climb, a new focus) still cuts and keeps the framing.
+    trackStep(track, followGoal.x, followGoal.y, followGoal.z, dt, 1 - fast);
+    followPoint.set(track.p[0], track.p[1], track.p[2]);
     shift.copy(followPoint).sub(controls.target);
     controls.target.add(shift);
     close.position.add(shift);
@@ -486,6 +490,10 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
     return 1 - crowns / 5 * 0.35 - Math.min(0.9, blockers * 0.15);
   }
   let evalPair = false;
+  // Stage W14: the selected animal (field map) the director keeps to, and what it films for the caption.
+  let cineSel = -1, hasSelPos = false;
+  const selPos = new THREE.Vector3();
+  const shotView = { interactionId: -1, chimpId: -1 };
   /** Animals within 0.5 m of the segment a → b, nearer a than b by more than a metre. */
   function animalsInFront(a: THREE.Vector3, b: THREE.Vector3): number {
     const sx = b.x - a.x, sy = b.y - a.y, sz = b.z - a.z, L2 = sx * sx + sy * sy + sz * sz;
@@ -501,10 +509,13 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
     return n;
   }
   /** Field profile (C5b): episodes near the current subject win, so the director does not cut kilometres away
-   * (each cut far from the streamed window waits for a rebuild). 1 within ~250 m, falling off beyond. */
+   * (each cut far from the streamed window waits for a rebuild). 1 within ~250 m, falling off beyond.
+   * Stage W14: with an animal selected, only episodes within CINE_NEAR_M of it count, nearer ones first. Before, the
+   * director filmed episodes and animals 400 to 500 m from the selected animal while the caption named it. */
   function nearby(id: number): number {
     if (!field) return 1;
-    if (!getPosition(id, tmp2)) return 0.1;
+    if (!getPosition(id, tmp2)) return hasSelPos ? 0 : 0.1;
+    if (hasSelPos) { const d = hyp2(tmp2.x - selPos.x, tmp2.z - selPos.z) / CINE_NEAR_M; return d > 1 ? 0 : 1 / (1 + d * d); }
     const ref = hasLastSubject ? lastSubject : controls.target;
     const d = hyp2(tmp2.x - ref.x, tmp2.z - ref.z) / 250;
     return 1 / (1 + d * d * d);
@@ -512,9 +523,15 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
   function pickShot(elapsed: number, force: boolean) {
     const interactions = (world as Partial<World>).interactions ?? [];
     let best: Interaction | null = null; let bestScore = 0;
-    for (const it of interactions) { const s = interactionScore(it) * nearby(it.actorId); if (s > bestScore) { bestScore = s; best = it; } }
+    for (const it of interactions) { const s = interactionScore(it) * Math.max(nearby(it.actorId), it.targetId >= 0 && it.targetId < 100000 ? nearby(it.targetId) : 0); if (s > bestScore) { bestScore = s; best = it; } }
     let chimpId = -1;
-    if (!best) {
+    if (!best && hasSelPos && cineSel >= 0) {
+      // Stage W14: on the field map, nothing happening near the selected animal: film it.
+      chimpId = cineSel;
+      let act = '';
+      for (const c of world.chimps) if (c.id === cineSel) { act = c.action; break; }
+      bestScore = (ACTION_WEIGHT[act] ?? 1) * 0.3;
+    } else if (!best) {
       // No interaction feed: follow the most active-looking individual instead.
       let top = 0;
       for (const c of world.chimps) {
@@ -576,6 +593,7 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
     log.cuts.push({ t: elapsed, kind: chosen.kind, interactionId: chosen.interactionId, sameSubject: sameSubj, side: lastSide, angle: lastAngle });
     if (log.cuts.length > 200) log.cuts.shift();
     shot = chosen;
+    shotView.interactionId = chosen.interactionId; shotView.chimpId = chosen.chimpId;
     subject.copy(center);
     cine.fov = chosen.fov;
     cine.updateProjectionMatrix();
@@ -596,7 +614,9 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
       for (let k = 0; k < ids.length && subjectCount < 4; k++) if (ids[k] >= 0) subjectIds[subjectCount++] = ids[k];
     } else if (s.chimpId >= 0) subjectIds[subjectCount++] = s.chimpId;
   }
-  function updateCinematic(dt: number, elapsed: number) {
+  function updateCinematic(dt: number, elapsed: number, selectedId: number | null) {
+    cineSel = field && selectedId != null ? selectedId : -1;
+    hasSelPos = cineSel >= 0 && getPosition(cineSel, selPos);
     pickShot(elapsed, !shot);
     if (!shot) return;
     shotParticipants(shot);
@@ -608,6 +628,8 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
     if (elapsed > nextCheck) {
       nextCheck = elapsed + 0.5;
       if (obstacles.crownDepth(cinePos, 1.1) > 0 || cinePos.y < height(cinePos.x, cinePos.z) + 0.5) pickShot(elapsed, true);
+      // Stage W14: an episode the selected animal has left behind (it walked on) gives way to a new shot near it.
+      else if (hasSelPos && hyp2(subject.x - selPos.x, subject.z - selPos.z) > CINE_NEAR_M * 1.5) pickShot(elapsed, true);
     }
     cinePos.y = Math.max(cinePos.y, height(cinePos.x, cinePos.z) + 0.6);
     if (trunks.length && pushOutOfTrunks(cinePos.x, cinePos.z, trunks, 0.5, PUSH)) { cinePos.x = PUSH[0]; cinePos.z = PUSH[1]; }
@@ -790,7 +812,7 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
     orbitTarget = clampN(distanceForFrame(hf, CLOSE_FOV), ORBIT_MIN, ORBIT_MAX);
     orbit[0] = Math.log(orbitTarget); orbit[1] = 0;
     userOffset = 0; lift = 0; exact = false; orbitMin = ORBIT_MIN;
-    if (id !== null && getPosition(id, pos)) { followId = id; gliding = false; controls.target.set(pos.x, pos.y + 1.1, pos.z); followPoint.copy(controls.target); followVel.set(0, 0, 0); followReady = true; }
+    if (id !== null && getPosition(id, pos)) { followId = id; gliding = false; controls.target.set(pos.x, pos.y + 1.1, pos.z); followPoint.copy(controls.target); trackReset(track, followPoint.x, followPoint.y, followPoint.z); followReady = true; }
     else { followId = null; gliding = false; controls.target.set(gp.x, gp.y + 1, gp.z); }
     lift = terrainLift(controls.target.x, controls.target.y, controls.target.z, orbitTarget, az, pitchForDistance(orbitTarget), height);
     placeClose(az, pitchForDistance(orbitTarget) + lift, orbitTarget);
@@ -968,6 +990,7 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
     get followId() { return followId; },
     set followId(v) { if (v !== followId) followReady = false; followId = v; gliding = false; glideReady = false; configureControls(); },
     get followGliding() { return gliding; },
+    get shotSubject() { return mode === 'cinematic' && shot ? shotView : null; },
     setView, focusChimp, follow, panTo, reset,
     resize(width, h) {
       widthPx = width; heightPx = h;
@@ -986,7 +1009,7 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
       hasSubject = false;
       subjectCount = 0;
       cutDip = Math.max(0, cutDip - dt / 0.35);
-      if (mode === 'cinematic') updateCinematic(dt, elapsed);
+      if (mode === 'cinematic') updateCinematic(dt, elapsed, selectedId);
       else if (mode === 'close') updateClose(dt, elapsed, selectedId, simRate);
       else updateRts(dt);
       updateBlend(dt);

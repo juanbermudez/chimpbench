@@ -64,7 +64,10 @@ export interface CameraFootprint {
 /** Requested playback stays fixed while achieved throughput varies or the clock is paused. */
 export type RenderFrame = SceneFrame & { playbackRate: number };
 export type Scene = Omit<SceneAPI, 'update'> & { update(frame: RenderFrame): void; getFootprint(): CameraFootprint; followChimp(id: number): void; portrait: { request(id: number, canvas: HTMLCanvasElement, refresh?: boolean): boolean };
-  drawnAct(id: number, out: DrawnAct): boolean };
+  drawnAct(id: number, out: DrawnAct): boolean;
+  /** Stage W14: what the cinematic view films (an episode's id, or one animal's with interactionId −1), or null outside
+   * it; the interface's caption names it. The returned object is reused. */
+  cineSubject(): { interactionId: number; chimpId: number } | null };
 /** Scene options (outside the shared contract), field profile only. focusId: the animal whose party the strategy view
  * frames at start (the whole-map overview when absent, as in the env harness). view 'close': open in the close view on
  * that animal instead, at a low orbit (a new world); the strategy view keeps the party framing for the R key. */
@@ -154,7 +157,7 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
     trunkAt: (id: number, y: number, out: THREE.Vector4) => vegetation.trunkAt(id, y, out),
     limbNear: (id: number, x: number, y: number, z: number, out: THREE.Vector4) => vegetation.limbNear(id, x, y, z, out),
     barkColor: (id: number, out: THREE.Color) => vegetation.barkColor(id, out),
-    waterEdge: (x: number, z: number, out: THREE.Vector3) => terrain.waterEdge(x, z, out),
+    waterEdge: (x: number, z: number, out: THREE.Vector3, into?: THREE.Vector3) => terrain.waterEdge(x, z, out, into),
     ripple: (x: number, z: number, strength: number) => water.ripple(x, z, strength, uniforms.uTime.value) };
   try {
     creatures = createCreatures(creatureContext);
@@ -839,6 +842,7 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
     getListener,
     getZoom() { return rig.zoom(); },
     getFootprint() { return footprint; },
+    cineSubject() { return rig.shotSubject; },
     drawnAct(id: number, out: DrawnAct) { return creatures?.drawnAct?.(id, out) ?? false; },
     // A refresh (the same animal again) waits while frames run long: the readback then costs one long frame (portrait.ts).
     portrait: { request: (id: number, canvas: HTMLCanvasElement, refresh = false) => !!creatures?.portrait && quality !== 'low' && rig.mode !== 'cinematic' && !(refresh && frameEma > 0.024) && portrait.request(id, canvas) },
