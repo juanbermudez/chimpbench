@@ -231,7 +231,9 @@ export const comparable16 = (l: Line16): string => { const { re: _re, ...rest } 
 
 export interface Arm16 { kind: 'model' | 'fake' | 'imitator' | 'planted' | 'half'; adapter: string | null; root: string | null; adapterSha256: string | null; decode: HarnessDecode; worldSalt: number }
 /** The registered stops inside a population run after day 5 (§12.3): failures already certain. */
-export interface Certain { fromDay: number; nightsFloor: number; maxStarved: number; animals: number; nights: number }
+export interface Certain { fromDay: number; nightsFloor: number; maxStarved: number; animals: number; nights: number;
+  /** The animals the card reads (alive and aged 8 or over at the start of the window): only their nights count, as V2 counts them. Absent: every driven animal (as built before the second reading). */
+  ids?: number[] }
 export interface Registry16 {
   tool: typeof RUN_TOOL; version: 1; stage: 'R16'; receiptSchema: typeof RECEIPT_SCHEMA; label: string; name: string; created: string; updated: string;
   state: 'running' | 'done' | 'stopped' | 'paused' | 'interrupted'; reason: string; ended: string;
@@ -257,7 +259,10 @@ export function certainFailure(rows: Row[], days: Day16[], c: Certain): string {
   const starved = days.reduce((s, d) => s + d.deaths.filter(k => k.cause === 'starvation').length, 0);
   if (starved > c.maxStarved) return `V1 failed for certain: ${starved} deaths by starvation, more than the re-draws' largest count (${c.maxStarved})`;
   const short = new Map<number, number>();
-  for (const r of rows) if (r.driven && r.alive && r.nestShare !== null && r.nestShare < NIGHT_IN_NEST) short.set(r.id, (short.get(r.id) ?? 0) + 1);
+  // only the animals V2 reads: an animal that reaches 8 years during the run is driven but not in the card's set, and counting
+  // its short nights against the start set's denominator could fire the stop falsely (second reader, §23)
+  const counted = c.ids ? new Set(c.ids) : null;
+  for (const r of rows) if (r.driven && r.alive && r.nestShare !== null && r.nestShare < NIGHT_IN_NEST && (!counted || counted.has(r.id))) short.set(r.id, (short.get(r.id) ?? 0) + 1);
   const best = 1 - [...short.values()].reduce((s, k) => s + k / c.nights, 0) / c.animals;
   if (best < c.nightsFloor - 1e-12) return `V2 failed for certain: at best ${best.toFixed(4)} of nights in a nest, below the floor ${c.nightsFloor.toFixed(4)}`;
   return '';

@@ -333,8 +333,8 @@ function g9(out: string, seed: number): void {
   const plant = Array.from({ length: 8 }, (_, k) => armValues(readArm(out, 'P', seed, `planted-${k + 1}`))), imit = Array.from({ length: 8 }, (_, k) => armValues(readArm(out, 'P', seed, `imitator-${k + 1}`)));
   const y2 = yardstick(red, 'nightsInNest', MARK.v2Floor), power = plant.filter(v => told(v.nightsInNest ?? null, y2) === 'below').length;
   const holds = k3.equal && exact && !level.length, under = power < MARK.power;
-  const maxStarved = Math.max(...red.map(r => r.starved ?? 0)), animals = readArm(out, 'P', seed, 'rules-plain').card.animals.length;
-  const certain = { fromDay: 6, nightsFloor: y2.mean - y2.allowance, maxStarved, animals, nights: 20 };
+  const maxStarved = Math.max(...red.map(r => r.starved ?? 0)), ids = readArm(out, 'P', seed, 'rules-plain').card.animals.map(a => a.id);
+  const certain = { fromDay: 6, nightsFloor: y2.mean - y2.allowance, maxStarved, animals: ids.length, nights: 20, ids };
   mkdirSync(resolve(out, 'marks'), { recursive: true }); writeFileSync(resolve(out, 'marks', `certain-s${seed}.json`), JSON.stringify(certain, null, 1) + '\n');
   const md = [`# R16 G9: the test world ${seed} before its model arm`, '', NAME, '', `K3 (the switched burn-in is the plain one): ${k3.equal ? 'holds' : 'FAILS'}. The exact check (the paired rules arm through stage R16's runner against stage R7's rules-plain, every readout): ${exact ? 'equal' : 'DIFFERENT'}. The paired rules arm told from the re-draws on a level row: ${level.join(', ') || 'none'}.`,
     `Power: the planted arms are told on V2 in ${power} of 8${under ? ' (under 6 of 8: every result on this world carries the heading "under-powered: a pass cannot be read as repaired")' : ''}; the imitator arms: ${imit.filter(v => told(v.nightsInNest ?? null, y2) === 'below').length} of 8.`,

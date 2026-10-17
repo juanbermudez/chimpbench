@@ -189,6 +189,11 @@ test('the certain-failure stop fires only when V2 or V1 can no longer hold', () 
   assert.equal(certainFailure(rows(3), [], c), '');
   assert.match(certainFailure(rows(4), [], c), /V2 failed for certain/);
   assert.match(certainFailure(rows(0), [{ deaths: [{ cause: 'starvation' }] }] as never, c), /V1 failed/);
+  // second reading: an animal that turns 8 during the run is driven but outside the card's set; its short nights do not count
+  const late = (n: number) => Array.from({ length: n }, (_, k) => ({ id: 99, driven: true, alive: true, nestShare: 0.4, day: k })) as unknown as Row[];
+  const withIds = { ...c, ids: Array.from({ length: 10 }, (_, i) => i) };
+  assert.equal(certainFailure([...rows(3), ...late(4)], [], withIds), '');
+  assert.match(certainFailure([...rows(3), ...late(4)], [], c), /V2 failed for certain/, 'without the card\'s ids the late adult\'s nights counted against the start set');
 });
 
 test('the imitator answers the rules\' own kind, the planted arm R13\'s odds in its strata, the target the teacher\'s distribution', () => {
