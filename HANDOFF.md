@@ -44,6 +44,16 @@ and feels. A virtual field observer scores behaviour against 150 cited field tar
 
 ### 2.0 Current continuation (13 October 2026)
 
+**17 October 2026 (Claude, resumed after its weekly limit; written 13:58 EDT).** Read Codex's work of 13 and 14 October
+(this section below, and `/Volumes/Drive/chimpbench/CODEX-TAKEOVER-2026-10-13.md`). The demo server of 14 October was
+gone and had left `artifacts/r14-chain.lock` behind (owner PID 88641 not running); it was moved aside to
+`artifacts/r14-chain.lock.stale-pid88641-20261017`. At the user's word ("the model picks the tree , you can push to
+github") ruling 2 of the menu table is answered yes and `track-e` and `main` were pushed at 20efbd6 (plan, "User
+decisions (17 October 2026)"). In work, no model process: **stage R16** (R15's two-stage model at a real scale, one
+round on its own population's states, then a population test; design, attack, registration and build on branch
+`r16-scale-and-own-states`) and **stage W14** (a whole-scene look at the app at its defaults and fixes of what the
+renderer owns; branch `w14-whole-scene`).
+
 The user asked Codex to take over Claude's interrupted work, finish and verify the animation fixes, and continue the model training repair in parallel. The full-project takeover note is `/Volumes/Drive/chimpbench/CODEX-TAKEOVER-2026-10-13.md`.
 
 - **W13:** inherited changes and the verified continuation were merged from `ed57d8d` at `007a0c6`. Calls have individual sequences; nest construction uses the requested playback rate; ordinary arrival has one heading owner; call bend-plane flips and discontinuous terrain correction are repaired. Fifty focused tests, final nine scene replays (20,110 frames, no browser errors), and seven independent world-hash comparisons passed. The strict 5 cm joint-step target remains unmet near full limb extension, and fast trunk approaches at 10 min/s still exceed the nest heading limit. These are explicit open limits, not passing acceptance claims. Full evidence and failed prior captures are distinguished in `docs/staging/w13-chorus-and-spin.md` §9.7. On the combined `007a0c6` head, all 1,495 tests passed (none skipped), the production build passed, and all 17 ordinary no-model browser checks passed, including SQLite save/reload and exact continued world identity. Logs are under `artifacts/takeover-2026-10-13/`; the private verification server and browser are stopped. Missing generated sound assets remain a warning, not an audio validation result.
@@ -321,7 +331,7 @@ addresssed and we move faster parelalizing more work to get closer to the real r
 
 | Branch or checkout | Head | State |
 | --- | --- | --- |
-| `main`, and `track-e` on the remote | 7f9ec5b | Equal. Pushed on 11 October 2026 at 14:59 EDT, at the user's request. Nothing has been pushed since: a push needs the user's ask (§6) |
+| `main`, and `track-e` on the remote | 20efbd6 | Equal. Pushed on 17 October 2026 at the user's word ("you can push to github"); the push before was 7f9ec5b on 11 October |
 | `track-e` (local, the integration branch; the main checkout is on it) | 57718b5 when this was written | **191 commits ahead of the remote, not pushed:** stages RW2 and R11 with R11's results, the viewer stages W6 to W10 (`integrate-t2`, fast-forwarded at 9be7d44), the merges of `r13-population` (15798c1) and `rw3-tai-adapter` (e0fd29e). Count again before trusting this: `git rev-list --count origin/track-e..track-e` |
 | `docs-12oct` | 65d2494 | The shared documents brought up to date on 12 October; merged into `track-e` |
 | `w11-polish` | bc513ba | Stage W11, merged into `track-e` on 12 October (cafc203) |
@@ -350,10 +360,12 @@ addresssed and we move faster parelalizing more work to get closer to the real r
 Every decision open for the user on 12 October 2026, the most consequential first, each with where it is written
 and what is recommended. Where no recommendation is on file it says so, and what is built stands until a ruling.
 
-1. **The ten rulings on the menu** (first page of `docs/staging/r12-menu-table.md`, each with its recommendation;
+1. **The ten rulings on the menu**, nine still open: ruling 2 ("Which tree") was answered yes on 17 October ("the model picks
+   the tree"), as stage R15 built it behind its switch (first page of `docs/staging/r12-menu-table.md`, each with its recommendation;
    four smaller design questions follow in `r12-prereg.md`, whose fifth, on the seeds, is item 11 here): nothing of
    stage R12 is built before them.
-2. **A push, deploys and a licence:** `track-e` is 191 commits ahead of the remote, so nothing committed since the
+2. **Deploys and a licence** (the push was made on 17 October at the user's word; what follows is the item as it stood
+   on 12 October): `track-e` was 191 commits ahead of the remote, so nothing committed since the
    push of 11 October at 14:59 EDT is on the remote (stage RW2 with its model scores, stage R11 and its result, the
    viewer stages W6 to W10, stages R13 and RW3). A push needs the user's ask (before one: the privacy check of §5;
    the whole suite is on record, §3); deploys stay held; the repository has no LICENSE file and states no terms of
