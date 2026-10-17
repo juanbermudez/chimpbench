@@ -35,6 +35,8 @@ function write(out: string, name: string, verdict: object, md: string[]): void {
 const scoresOf = (file: string): Scores => new Map(existsSync(file) ? readJsonl<{ id: string; p: number[] | null }>(file).map(s => [s.id, s.p]) : []);
 const modelOf = (s: Scores) => (r: R16Row) => s.get(r.id) ?? null;
 const halfOf = (k: 0 | 1) => (r: R16Row) => r.r16.halves?.[k] ?? null;
+/** The strata a forecast left out as thin (amendment A2, docs/staging/r16-prereg.md §23), for its line in a table. */
+const thinOf = (f: { thin: string[] }) => f.thin.length ? ` (thin, left out: ${f.thin.join(', ')})` : '';
 
 // ---------------------------------------------------------------------------------------------------------------------
 // D0 (§5.3)
@@ -166,8 +168,8 @@ function readings(out: string): void {
   const far = farMass(hr, halfOf(0), halfOf(1)), tUni = divergenceVs(plainTarget.filter(r => r.r16.halves), halfOf(0), r => baseline(r, pr, 'uniform'));
   const half = { night: al ? night.read && night.total <= al.nights : null, dawn: al ? dawn.read && dawn.total <= al.nights : null, stay: al ? stay.read && stay.total <= al.stayMin : null, carry: carryHalf <= MARK.carry, p4a: tUni.hi < 0, p4b: !(far.lo > 0) };
   md.push('', '## The teacher-half check (§5.4): each absolute mark on the teacher\'s own halves (the odd redraws as the model, the even as the teacher)', '', '| Mark | Value on the halves | Allowance | Passes |', '| --- | --- | --- | --- |',
-    `| night forecast, departures per 100 animal-nights | ${fx(night.total)} | ${fx(al?.nights)} | ${half.night ?? 'not read (no controls yet)'} |`, `| dawn forecast | ${fx(dawn.total)} | ${fx(al?.nights)} | ${half.dawn ?? 'not read'} |`,
-    `| stay forecast, minutes in a nest per animal-day | ${fx(stay.total)} | ${fx(al?.stayMin)} | ${half.stay ?? 'not read'} |`, `| carrying on, difference of the halves | ${fx(carryHalf)} | ${MARK.carry} | ${half.carry} |`,
+    `| night forecast, departures per 100 animal-nights${thinOf(night)} | ${fx(night.total)} | ${fx(al?.nights)} | ${half.night ?? 'not read (no controls yet)'} |`, `| dawn forecast${thinOf(dawn)} | ${fx(dawn.total)} | ${fx(al?.nights)} | ${half.dawn ?? 'not read'} |`,
+    `| stay forecast, minutes in a nest per animal-day${thinOf(stay)} | ${fx(stay.total)} | ${fx(al?.stayMin)} | ${half.stay ?? 'not read'} |`, `| carrying on, difference of the halves | ${fx(carryHalf)} | ${MARK.carry} | ${half.carry} |`,
     `| P4 (a), target divergence against uniform | ${ci(tUni)} | below 0 | ${half.p4a} |`, `| P4 (b), far mass at failing light | ${ci(far)} | not entirely above 0 | ${half.p4b} |`,
     '', 'A mark that fails on the teacher\'s own halves becomes description for the whole stage (§5.4); it is never re-tuned.');
   write(out, 'readings', { holds: true, teacherHalf: half, beyond: [...beyond], forecasts: { night, dawn, stay }, allowances: al }, md);
@@ -223,7 +225,7 @@ function offline(out: string, gate: 'g2' | 'g3' | 'g6' | 'g7'): void {
     const tp = divergenceVs(plainTarget, model, r => baseline(r, pr, 'prior')), tu = divergenceVs(plainTarget, model, r => baseline(r, pr, 'uniform'));
     marks['Z1 kind below the kind prior'] = { holds: exposed(kp) && kp.hi < 0, value: ci(kp) }; marks['Z1 kind below uniform'] = { holds: exposed(ku) && ku.hi < 0, value: ci(ku) };
     marks['Z1 target below the position prior'] = { holds: exposed(tp) && tp.hi < 0, value: ci(tp) }; marks['Z1 target below uniform'] = { holds: exposed(tu) && tu.hi < 0, value: ci(tu) };
-    marks['Z2 night forecast within the allowance'] = { holds: night.read && night.total <= al.nights, value: `${fx(night.total)} extra departures per 100 animal-nights against ${fx(al.nights)}`, description: half.night === false };
+    marks['Z2 night forecast within the allowance'] = { holds: night.read && night.total <= al.nights, value: `${fx(night.total)} extra departures per 100 animal-nights against ${fx(al.nights)}${thinOf(night)}`, description: half.night === false };
   } else {
     const z = modelOf(scoresOf(resolve(out, 'scores', `${zero}-hr.jsonl`)));
     for (const phase of ['kind', 'target'] as const) {
@@ -241,9 +243,9 @@ function offline(out: string, gate: 'g2' | 'g3' | 'g6' | 'g7'): void {
     marks[`CARRY within ${MARK.carry} of the teacher`] = { holds: c1.n >= MARK.minRows && Math.abs(c1.model - c1.teacher) <= MARK.carry, value: `${fx(c1.model)} against the teacher's ${fx(c1.teacher)} (${c1.n} rows)`, description: half.carry === false };
     const dawn = forecast(hr, ['NEST-RISE-ALONE', 'NEST-RISE-CO', 'NEST-DARK'], rates, model, { sign: 1, per: 'night', scale: 100, beyond });
     const stay = forecast(hr, ['NEST-DAY-CO', 'NEST-RISE-ALONE'], rates, model, { sign: -1, per: 'day', scale: MARK.heldAskMin, beyond, filter: r => { const i = (r.context.resourceKinds ?? []).indexOf('nest'); return i >= 0 && labelOf(r)[i] < 0.5; } });
-    marks['harm: night forecast'] = { holds: night.read && night.total <= al.nights, value: `${fx(night.total)} against ${fx(al.nights)}`, description: half.night === false };
-    marks['harm: dawn forecast'] = { holds: dawn.read && dawn.total <= al.nights, value: `${fx(dawn.total)} against ${fx(al.nights)}`, description: half.dawn === false };
-    marks['harm: stay forecast'] = { holds: stay.read && stay.total <= al.stayMin, value: `${fx(stay.total)} min a day against ${fx(al.stayMin)}`, description: half.stay === false };
+    marks['harm: night forecast'] = { holds: night.read && night.total <= al.nights, value: `${fx(night.total)} against ${fx(al.nights)}${thinOf(night)}`, description: half.night === false };
+    marks['harm: dawn forecast'] = { holds: dawn.read && dawn.total <= al.nights, value: `${fx(dawn.total)} against ${fx(al.nights)}${thinOf(dawn)}`, description: half.dawn === false };
+    marks['harm: stay forecast'] = { holds: stay.read && stay.total <= al.stayMin, value: `${fx(stay.total)} min a day against ${fx(al.stayMin)}${thinOf(stay)}`, description: half.stay === false };
     const fall = hr.filter(r => r.r16.via === 'FOOD-FALL' && r.phase === 'target'), pu = divergenceVs(plainTarget, model, r => baseline(r, pr, 'uniform')), fu = divergenceVs(fall, model, r => baseline(r, pr, 'uniform')), far = farMass(hr, model);
     marks['P4 (a) target below uniform, plain rows'] = { holds: exposed(pu) && pu.hi < 0, value: ci(pu), description: half.p4a === false };
     marks['P4 (a) target below uniform, failing light'] = { holds: exposed(fu) && fu.hi < 0, value: ci(fu), description: half.p4a === false };

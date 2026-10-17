@@ -92,24 +92,40 @@ export function divergenceVs(rows: R16Row[], model: (r: R16Row) => number[] | nu
   for (const r of rows) { const p = model(r), o = other(r); if (!p || !o) continue; const q = labelOf(r); v.push({ animal: animalOf(r), v: kl(q, p) - kl(q, o) }); }
   return animalInterval(v);
 }
-/** A forecast in extra nest departures per 100 animal-nights (or extra minutes in a nest per animal-day): Σ over strata of the upper end of (teacher − model) Nest mass (or model − teacher) × that stratum's asks per animal-night (per animal-day) × 100 (× minutes). Not read when a stratum is short. */
+/**
+ * A forecast in extra nest departures per 100 animal-nights (or extra minutes in a nest per animal-day): Σ over strata of
+ * the upper end of (teacher − model) Nest mass (or model − teacher) × that stratum's asks per animal-night (per animal-day)
+ * × 100 (× minutes). Amendment A2 of 17 October 2026 (docs/staging/r16-prereg.md §23): a stratum whose rows on the reading
+ * set (after P1's restriction and the filter) are under the exposure floor is "thin": it is named and left out of the sum,
+ * on the model and on the teacher's halves alike (thinness is read from the rows, never from the odds), and the forecast is
+ * "not read" only when no stratum is read. Before it, one thin stratum made the whole forecast unread, which on the
+ * teacher's halves turned the mark into a description.
+ */
 export function forecast(rows: R16Row[], strata: KindStratum[], rates: StratumRate[], model: (r: R16Row) => number[] | null, o: { sign: 1 | -1; per: 'night' | 'day'; scale: number; filter?: (r: R16Row) => boolean; beyond: Set<string>; teacher?: (r: R16Row) => number[] | null }) {
-  const parts: { stratum: string; mean: number; hi: number; n: number; animals: number; rate: number; contribution: number; read: boolean }[] = [];
-  let total = 0, read = true;
+  const parts: { stratum: string; mean: number; hi: number; n: number; animals: number; rate: number; contribution: number; read: boolean; rows: number; rowAnimals: number }[] = [];
+  let total = 0;
   for (const s of strata) {
-    const v: { animal: string; v: number }[] = [];
+    const v: { animal: string; v: number }[] = [], held = new Set<string>();
+    let n = 0;
     for (const r of rows) {
       if (!inStratum(r, s, o.beyond) || (o.filter && !o.filter(r))) continue;
-      const at = nestAt(r), p = model(r), q = o.teacher ? o.teacher(r) : labelOf(r);
-      if (at < 0 || !p || !q) continue;
+      const at = nestAt(r);
+      if (at < 0) continue;
+      n++; held.add(animalOf(r));
+      const p = model(r), q = o.teacher ? o.teacher(r) : labelOf(r);
+      if (!p || !q) continue;
       v.push({ animal: animalOf(r), v: o.sign * (q[at] - p[at]) });
     }
     const ci = animalInterval(v), rate = rates.find(x => x.stratum === s), per = rate ? (o.per === 'night' ? rate.asks / Math.max(1, rate.animalNights) : rate.asks / Math.max(1, rate.animalDays)) : 0;
-    const ok = exposed(ci) && Number.isFinite(ci.hi), c = ok ? Math.max(0, ci.hi) * per * o.scale : NaN;
-    if (!ok) read = false; else total += c;
-    parts.push({ stratum: s, mean: ci.mean, hi: ci.hi, n: ci.n, animals: ci.animals, rate: per, contribution: c, read: ok });
+    const thick = n >= MARK.minRows && held.size >= MARK.minAnimals, ok = thick && exposed(ci) && Number.isFinite(ci.hi);
+    // a thick stratum whose odds are missing on too many rows is not read and is not left out: the forecast is then not read
+    const c = ok ? Math.max(0, ci.hi) * per * o.scale : NaN;
+    if (ok) total += c;
+    parts.push({ stratum: s, mean: ci.mean, hi: ci.hi, n: ci.n, animals: ci.animals, rate: per, contribution: c, read: ok, rows: n, rowAnimals: held.size });
   }
-  return { total: read ? total : NaN, read, parts };
+  const thin = parts.filter(p => !(p.rows >= MARK.minRows && p.rowAnimals >= MARK.minAnimals)).map(p => p.stratum);
+  const read = parts.some(p => p.read) && parts.every(p => p.read || thin.includes(p.stratum));
+  return { total: read ? total : NaN, read, parts, thin };
 }
 /** Carrying on at the kind level: the mass on the kind of the act in progress, at kind rows where it has not finished and is offered. */
 export function carryOn(rows: R16Row[], model: (r: R16Row) => number[] | null) {
