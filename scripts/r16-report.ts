@@ -39,9 +39,20 @@ const halfOf = (k: 0 | 1) => (r: R16Row) => r.r16.halves?.[k] ?? null;
 // ---------------------------------------------------------------------------------------------------------------------
 // D0 (§5.3)
 // ---------------------------------------------------------------------------------------------------------------------
+/**
+ * §5.3 (a) as registered: over all kind rows of the worlds read, and by stratum where 100 rows or more, the mean label mass
+ * on the rules' realised kind lies within three standard errors of the mean of Σq² (what it equals when the realised kind is
+ * a draw from the label). `d` holds, per row, q(realised) − Σq². Pure.
+ */
+export function realisedCheck(d: number[]): { rows: number; diff: number; se: number; within: boolean } {
+  const n = d.length, m = d.reduce((a, b) => a + b, 0) / Math.max(1, n), se = Math.sqrt(d.reduce((s, x) => s + (x - m) ** 2, 0) / Math.max(1, n - 1) / Math.max(1, n));
+  return { rows: n, diff: m, se, within: Math.abs(m) <= 3 * se + 1e-12 };
+}
 function d0(out: string, seeds: number[] = [48, 7, 21]): void {
   const md = ['# R16 D0: the instruments of the collection', '', NAME, ''], verdict: Record<string, unknown> = {};
   let holds = true;
+  // §5.3 (a) reads the selected decisions of all three worlds together (second reader, docs/staging/r16-prereg.md §23): pooled over the worlds, overall and by stratum
+  const pooled: { world: number; stratum: string; d: number }[] = [];
   const twins: Record<number, string> = { 48: 'rules-s48', 7: 'rules-s7' };
   md.push('| World | Days | Census and label hashes equal | R14 rules twin\'s day hashes | R11 marks M1 (a, b, c) of labelled decisions | Kind: mean label on the realised kind against its expectation | Target: realised target from the teacher\'s arithmetic |', '| --- | --- | --- | --- | --- | --- | --- |');
   for (const seed of seeds) {
@@ -60,11 +71,25 @@ function d0(out: string, seeds: number[] = [48, 7, 21]): void {
     const kr = rows.filter(r => r.phase === 'kind' && r.r16.realised && r.r16.realised.kindIndex >= 0), qr = kr.map(r => labelOf(r)[r.r16.realised!.kindIndex]), q2 = kr.map(r => labelOf(r).reduce((s, x) => s + x * x, 0));
     const diff = qr.map((x, i) => x - q2[i]), mdiff = diff.reduce((a, b) => a + b, 0) / Math.max(1, diff.length), se = Math.sqrt(diff.reduce((s, x) => s + (x - mdiff) ** 2, 0) / Math.max(1, diff.length - 1) / Math.max(1, diff.length));
     const kindOk = Math.abs(mdiff) <= 3 * se + 1e-12;
+    kr.forEach((r, i) => pooled.push({ world: seed, stratum: r.r16.stratum ?? 'none', d: diff[i] }));
     const tr = rows.filter(r => r.phase === 'target' && r.r16.realised?.targetArgmax !== null && r.r16.realised?.targetArgmax !== undefined), tOk = tr.filter(r => r.r16.realised!.targetArgmax).length;
-    const ok = equal && m1.rngOk === m1.of && m1.pickOk === m1.of && m1.listOk === m1.of && kindOk && tOk === tr.length;
+    // the kind check is read pooled below, as §5.3 (a) words it; this world's own value is printed beside it as description
+    const ok = equal && m1.rngOk === m1.of && m1.pickOk === m1.of && m1.listOk === m1.of && tOk === tr.length;
     holds &&= ok;
     verdict[`s${seed}`] = { equal, m1, kind: { rows: kr.length, meanOnRealised: qr.reduce((a, b) => a + b, 0) / Math.max(1, qr.length), expected: q2.reduce((a, b) => a + b, 0) / Math.max(1, q2.length), se, within3se: kindOk }, target: { rows: tr.length, equal: tOk }, exclusions: metas.reduce((s, m) => { for (const [k, v] of Object.entries(m.exclusions)) s[k] = (s[k] ?? 0) + v; return s; }, {} as Record<string, number>) };
-    md.push(`| ${seed} | ${census.days.length} | ${equal ? 'yes' : 'NO'} | ${twin} | ${m1.rngOk}, ${m1.pickOk}, ${m1.listOk} of ${m1.of} | ${fx((verdict[`s${seed}`] as { kind: { meanOnRealised: number } }).kind.meanOnRealised)} against ${fx((verdict[`s${seed}`] as { kind: { expected: number } }).kind.expected)} (difference ${fx(mdiff, 4)}, 3 SE ${fx(3 * se, 4)}): ${kindOk ? 'within' : 'OUTSIDE'} | ${tOk} of ${tr.length} |`);
+    md.push(`| ${seed} | ${census.days.length} | ${equal ? 'yes' : 'NO'} | ${twin} | ${m1.rngOk}, ${m1.pickOk}, ${m1.listOk} of ${m1.of} | ${fx((verdict[`s${seed}`] as { kind: { meanOnRealised: number } }).kind.meanOnRealised)} against ${fx((verdict[`s${seed}`] as { kind: { expected: number } }).kind.expected)} (difference ${fx(mdiff, 4)}, 3 SE ${fx(3 * se, 4)}): ${kindOk ? 'within' : 'outside'} (this world alone: description) | ${tOk} of ${tr.length} |`);
+  }
+  // §5.3 (a), the registered reading: all kind rows of the worlds read, then each stratum with 100 rows or more
+  const all = realisedCheck(pooled.map(p => p.d)), strata = [...new Set(pooled.map(p => p.stratum))].filter(s => s !== 'none').sort();
+  const byStratum = Object.fromEntries(strata.map(s => [s, realisedCheck(pooled.filter(p => p.stratum === s).map(p => p.d))]));
+  const gated = Object.entries(byStratum).filter(([, c]) => c.rows >= 100), kindHolds = all.within && gated.every(([, c]) => c.within);
+  holds &&= kindHolds;
+  verdict.kindPooled = { worlds: seeds, all, byStratum, gated: gated.map(([s]) => s), holds: kindHolds };
+  md.push('', `**The kind label against the rules' realised kind (§5.3 a), the ${seeds.length} worlds together:** all ${all.rows} kind rows, difference ${fx(all.diff, 4)} against 3 SE ${fx(3 * all.se, 4)}: ${all.within ? 'within' : 'OUTSIDE'}.`, '',
+    '| Stratum | Rows (worlds together) | Difference | 3 SE | Read | Per world (description): difference / 3 SE |', '| --- | --- | --- | --- | --- | --- |');
+  for (const s of strata) {
+    const c = byStratum[s], per = seeds.map(w => { const x = realisedCheck(pooled.filter(p => p.stratum === s && p.world === w).map(p => p.d)); return x.rows ? `${w}: ${fx(x.diff, 4)} / ${fx(3 * x.se, 4)} (${x.rows})` : `${w}: none`; }).join('; ');
+    md.push(`| ${s} | ${c.rows} | ${fx(c.diff, 4)} | ${fx(3 * c.se, 4)} | ${c.rows >= 100 ? (c.within ? 'within' : 'OUTSIDE') : 'under 100 rows: description'} | ${per} |`);
   }
   md.push('', `**D0 ${holds ? 'holds' : 'FAILS'}.** ${holds ? 'Training may start.' : 'Nothing is trained: a registered amendment (iteration 2), or the stage ends with "the collection could not be made exact".'}`);
   write(out, 'd0', { holds, stop: holds ? null : 'the collection could not be made exact', ...verdict }, md);
