@@ -1103,3 +1103,69 @@ packet v2, water choice, the unseen nest-mates, the order of cuts." §4 (branch 
 R16 registered and built, not run." §5 (next tasks): "R16: merge, freeze, `check`, `dry`, `session0`; then `session1`
 in screen on a quiet machine." AGENTS.md "Gotchas": "R16's seeds: 3701 and 3187 (population tests), 3079 and 3517 (ten
 animals) are R16's; 3011 and 3643 are sealed for an R16 iteration 2; 3457 and 3823 stay R14's."
+
+## 23. Amendment of 17 October 2026, before any run of the stage (the second reader; written 17:58 to 18:12 EDT)
+
+Written by the second reader before any session of the chain and before any model step, after reading the build and
+running it without a model. It changes no threshold, quota, seed, recipe or teacher. Seed 21 was not opened: every
+figure below comes from the training worlds 48 and 7 (the builder's full-scale collection of 48 and the second reader's
+of 7, both CPU only) or from R13's finished runs. It is not an iteration (§18): no adapter exists.
+
+**A1. D0's kind check is read as §5.3 (a) words it.** §5.3 (a) is run "on the selected decisions of all three worlds":
+"over all kind rows", and "the same by stratum where 100 rows or more". The build read it per world and had no stratum
+check at all. From this amendment the gate is the worded one: all kind rows of 48, 7 and 21 together, then each named
+kind stratum that holds 100 rows or more over the three worlds together; each world's own value and each world's stratum
+values are printed beside it as description. Said plainly, because the reading was settled with figures in view: on seed
+48 alone the stratum NEST-RISE-CO (in my nest, light rising, an adult listed in a nest; 134 rows) has a difference of
++0.0124 against three standard errors of 0.0095 (outside); seed 7's (124 rows) is −0.0036 against 0.0254; the two
+together (258 rows) are +0.0047 against 0.0132 (within). The words of §5.3 decide the reading; the per-world departure
+is printed in D0's table and in every report beside the dawn readings ("on seed 48 alone, the kind label at dawn in a
+nest with companions listed is flatter than the rules' realised choice by about one percentage point").
+
+**A2. A forecast is read on the strata that are not thin.** In Z2 and in the night, dawn and stay forecasts of §9.2 (and
+in their teacher-half readings), a stratum whose rows on the held-out rules set, after P1's restriction and the
+forecast's own filter, number under 30 or come from under 5 animals is "thin": it is named in the table and left out of
+the sum, on the model and on the teacher's halves alike. Thinness is read from the rows, never from any odds. The
+forecast is "not read" (not passed) only when no stratum is read, or when a stratum that is not thin has no interval.
+Why: as built, one thin stratum made the whole forecast unread; on the teacher's halves that made the mark a description
+for the whole stage (§5.4), so the early falsifier of §9.1 would have vanished without a word (under the other reading of
+§9, it would have stopped the stage with the sentence "the model still leaves at a rate that would cost nights" for a
+reason that is not about the model). It is likely, not remote: under the held-out plan's own quotas, DUSK-EARLY-ALONE
+holds 30 rows from 20 animals on seed 48 and only 18 asks from 10 animals in seed 7's whole census, and NEST-RISE-ALONE,
+which P1 reads on rows without an unseen nest-mate, keeps 36 of 89 rows on seed 48. On a seed-48 stand-in for the
+held-out set (the held-out plan's quotas applied to seed 48's census, labelled; no model), every forecast reads and the
+teacher's own halves pass with room: night 0.25 against an allowance of 1.16 extra departures per 100 animal-nights, dawn
+0.62 against 1.16, stay 0.001 against 1 minute.
+
+**A3. The certain-failure stop counts the animals V2 counts.** §12.3's stop "cannot fire falsely" only if it counts the
+animals the card reads (alive and aged 8 or over when the window opens). As built it counted every driven animal's short
+nights, so an animal that turned 8 during the run added short nights against the start set's denominator. G9 now writes
+the card's animals into the stop's file and the stop counts only them.
+
+**A4. A population run the rules settled is not read.** Stage R10's stop check limits the rules' fallbacks (10% of asks)
+and timeouts (2%) in the first five days only; after day 5 nothing did, and a population the model drove less would look
+more like the rules. Over the whole run, above either limit, the outcome of §12.5 reads "NOT READ: the rules settled …%
+of asks over the run" (or the timeouts), and no viability word is given; it is never a pass. V0 to V3 keep R13's words.
+
+**Clarifications (operational or descriptive; no statement of §5 to §15 moves).**
+
+13. **K5 never strikes V0 to V3.** §21.3 lists "reserves" among the readouts K5 strikes. V2 and V3 are R13's words (§12.3)
+    and are read in every viability statement whatever K5 finds; K5 strikes only the readouts of §12.4 from the outcome
+    lines of §12.5 (as the code always did). K5's finding that the planted arms are told on reserves in 5 of 8 arms on seed
+    48 is a power figure for V3, printed as such.
+14. **The card's worlds.** The arms of §7 run only on the registered worlds of their unit (P: 48, 7, 3701, 3187; F: 3079,
+    3517), and no flag lifts it. As built, `card` refused a sealed seed only without `--dry` and no reserved seed of
+    AGENTS.md at all, although §3 says they are refused.
+15. **A model run checks the chain's lock before its world exists.** A registered run started by hand in a frozen
+    checkout would have burned in its test world before refusing for the missing lock token; the token and the lock are
+    now read first.
+16. **Recovery time is booked once.** A stall whose fresh worker needed a second warm-up booked the cool-down and the
+    later warm-up twice, so a run paused before its 45 minutes of recovery were spent (a measured case: 290 ms booked
+    for 209 ms).
+17. **Crowns per feeding stretch** counted one crown in every stretch (the climb into the next crown ended the stretch;
+    the rules read 1.000 on every arm). The climb now belongs to the stretch. A description readout; no mark reads it.
+18. §21.3's sentence that the card's code was "unchanged since" the early I0 and K5 reading is not exact: build 7
+    (16:16) changed the readouts' trace fields while those arms ran (from 16:03). No readout value read by I0 or K5
+    changed; session 0 reads both again on the frozen checkout.
+19. **Development animals.** R4's split leaves 5 development animals on seed 48 and 10 on seed 7, so every in-sample
+    reading on development animals (H-S, H-L, TAKE, A2) rests on about 15 animals, 5 of them on seed 48 (attack 1).
