@@ -116,8 +116,10 @@ export function readoutStep(st: ReadoutState, w: World): void {
       if (site && !t.drink) { const m = Math.hypot(site.position[0] - c.position[0], site.position[2] - c.position[2]); t.drink = { site: c.targetId, band: bandOf(m), fall, reached: atW }; if (fall) d.drinkFall[t.drink.band]++; }
       if (t.drink && atW) t.drink.reached = true;
       t.atW = atW;
-      // feeding stretches: a run of crown feeding and food trips; the crowns fed in over it
-      const inStretch = feedingTree(c) || fam === 'food-trip';
+      // feeding stretches: a run of crown feeding and food trips; the crowns fed in over it. The climb into a crown (forage
+      // on a tree before its feeding phase) belongs to the stretch: without it every stretch ended at the next climb and held
+      // one crown (second reader, §23: the rules' value was 1.000 on every arm)
+      const inStretch = (c.action === 'forage' && isTreeId(c.targetId)) || fam === 'food-trip';
       if (inStretch) { t.stretch ??= []; if (feedingTree(c) && !t.stretch.includes(c.targetId)) t.stretch.push(c.targetId); }
       else if (t.stretch) { if (t.stretch.length) { d.stretches++; d.stretchCrowns += t.stretch.length; } t.stretch = null; }
       t.wasNest = nest; t.fam = fam; t.tgt = c.targetId;
