@@ -53,6 +53,13 @@ decisions (17 October 2026)"). In work, no model process: **stage R16** (R15's t
 round on its own population's states, then a population test; design, attack, registration and build on branch
 `r16-scale-and-own-states`) and **stage W14** (a whole-scene look at the app at its defaults and fixes of what the
 renderer owns; branch `w14-whole-scene`).
+**Stage W14 (written 23:18 EDT, 17 October):** the whole-scene look at the app at its defaults (60 films) and its fixes,
+reviewed by a second reader who filmed both builds (82 scenes each) and repaired four more things, are merged into
+`track-e` (71c0671): the camera keeps up at 1 min/s, the party climbs down at the opening, drinkers drink at drawn
+pools, the cinematic view films the animal it names, Storm keeps the watched animal, no standing glide or crown spin,
+no see-through slab, no seated glide, no infant put-down jump, no shelter statues. Open (plan, Stage W14): the camera
+at a sprint at 1 min/s, limb jumps at a climb's start and end, oversized fruit clusters, the portrait showing hands,
+the shelter elbow flip, the pick-up fly-in, grooming begun 11 m apart in a crown.
 **Stage R16 (written 18:40 EDT, 17 October):** registered, built and reviewed with no model (eight defects repaired by the
 second reader), merged into `track-e` (6c72d70) and frozen as `.claude/worktrees/bench-r16` at 2971e14. The no-model
 dry chain and session 0 run in the detached screen session `r16-s0` (outputs `bench-r16/artifacts/r16-dry.out`,
