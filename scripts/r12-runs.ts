@@ -260,7 +260,8 @@ export function numbersMarkdown(m1: M1Result[], m2: M2Run[]): string {
   o.push(`Every number below is read from the run files under \`artifacts/r12/\` (M1: ${m1.map(r => `seed ${r.seed} at ${r.head}`).join(', ')}; M2: ${m2.length} runs). Registration: \`docs/staging/r12-build-prereg.md\` (with amendment A1). **No model was run and nothing was trained.** M1 is a world in which every animal is on the rules ("no model: the rules"), read by a tap; M2 runs the two-call loop with control kernels ("no model: the rules' top option on the R12 menu", "no model: a random chooser on the R12 menu", and the wiring check's fake odds). These describe the instrument, not behaviour, and are compared with no field figure; nothing here is about wild chimpanzees.`, '');
   o.push('## M1: a rules world read by a tap', '');
   o.push(`The working base on the field map with R15's switches and \`menuPossible\` ${m1[0]?.level ?? M1.level} (the level only changes the requests the tap builds: no rules path reads it), ${M1.burnInDays} days of burn-in and ${M1.days} tapped days per seed. Each world was run a second time at level 0 with no tap from the same burned-in state: ${m1.map(r => `seed ${r.seed} ${r.equal ? 'ended on the same hash' : 'ENDED ON ANOTHER HASH'} (${r.endHash})`).join('; ')}.`, '');
-  o.push('| | ' + m1.map(r => `seed ${r.seed}`).join(' | ') + ' |', '|---|' + m1.map(() => '---|').join(''));
+  const header = () => o.push('| | ' + m1.map(r => `seed ${r.seed}`).join(' | ') + ' |', '|---|' + m1.map(() => '---|').join(''));
+  header();
   const row = (name: string, f: (r: M1Result) => string) => o.push(`| ${name} | ${m1.map(f).join(' | ')} |`);
   row('rules decisions of animals 8 and over; fresh asks with a kind menu of two or more', r => `${r.decisions}; ${r.asks}`);
   row('asks with "Greet or appease" on the kind menu; its group sizes', r => `${r.greet.onMenu}; ${fmtHist(r.greet.sizes)}`);
@@ -273,8 +274,10 @@ export function numbersMarkdown(m1: M1Result[], m2: M2Run[]): string {
   row('estimated tokens of the new social target packets: mean; largest (R15\'s resource target packets in the same run: mean; largest); over 1,280', r => `${r.tokens.social.mean}; ${r.tokens.social.max} (${r.tokens.resource.mean}; ${r.tokens.resource.max}); ${r.tokens.over1280}`);
   o.push('', '### The labels of the new target stages against the rules\' realised picks', '');
   o.push('At fresh rules decisions whose pick was a pant-grunt (the greeting group) or an adult male\'s grooming of an adult male (the grooming group at level 2), with a group of two or more: whether the pick is in the group, whether the teacher\'s arithmetic with the realised jitter (the published clamp of raw value plus jitter) ranks it first, whether the label (2,000 redraws of the jitter) ranks it first, and the label\'s mean mass on it against chance (one over the group\'s size). The rules pick the dominant to greet by its score before the jitter, and the grooming partner among settled partners only, so neither agreement is expected to be complete.', '');
+  header();
   for (const k of ['greet', 'groom'] as const) row(`${k === 'greet' ? 'greeting' : 'grooming among adult males'}: decisions; pick in the group; first by the realised jitter; first by the label; label mass on it (chance)`, r => { const R = r.realised[k]; return `${R.n}; ${R.inGroup}; ${R.argmaxJitter}; ${R.labelTop}; ${R.n ? (R.mass / R.n).toFixed(3) : '–'} (${R.n ? (R.chance / R.n).toFixed(3) : '–'})`; });
   o.push('', '### Ruling 3: how often the rules go to a tree from the community\'s list (A1.4)', '');
+  header();
   row('own food trips the rules started', r => String(r.ruling3.trips));
   row('… to a tree in its own memory within 240 h', r => `${r.ruling3.bySource.own} (${pct(r.ruling3.bySource.own, r.ruling3.trips)})`);
   row('… to a listed tree it never saw itself (a)', r => `${r.ruling3.bySource.never} (${pct(r.ruling3.bySource.never, r.ruling3.trips)})`);
@@ -286,6 +289,7 @@ export function numbersMarkdown(m1: M1Result[], m2: M2Run[]): string {
   o.push('', 'No threshold is set: whether this is large enough for a slot "known to my community" is the user\'s call (ruling 3), and class (c) is put to the user as a question for ruling 2.', '');
   o.push('### Possible, not offered (section 7; decisions of animals 8 and over where it held)', '');
   const P: Record<string, string> = { maleUnsettled: 'an adult male with an unsettled adult male in reach (open only at level 2, on the target call)', groomUnsettledOther: 'an unsettled community member in grooming reach, any other pair ("only a settled partner")', greetNonDominant: 'an animal in greeting reach that does not outrank it ("only to a dominant")', waterNoThirst: 'a remembered water while not thirsty (ruling 4)', nestGated: 'a nest possible but not offered (ruling 5: the nest\'s value)', shelterWarm: 'rain at or above 0.12 and not colder than neutral (ruling 5)' };
+  header();
   for (const [k, w] of Object.entries(P)) row(w, r => `${r.possible[k] ?? 0} (${pct(r.possible[k] ?? 0, r.decisions)})`);
   row('listed trees out of its own memory it could walk to, per decision of an animal 10 and over: (a), (b), (c)', r => ['never', 'old', 'unremembered'].map(k => ((r.listedNotOwn as Record<string, number>)[k] / Math.max(1, r.listedNotOwn.decisions)).toFixed(2)).join(', '));
   o.push('', '## M2: the two-call loop with control kernels', '');
