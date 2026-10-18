@@ -125,7 +125,13 @@ test('the status of a site follows from the base: legacy behind a switch that is
   assert.equal(at('nurse', 'NONE').status, 'young');
   assert.equal(at('transfer', 'NONE').plan, 'rules');
   assert.deepEqual(at('transfer', 'NONE').carried, ['DIC']);
-  assert.equal(at('pant-grunt', 'NONE').carried.includes('ADV'), true);
+  // (stage R12's build added a pant-grunt site in front of this one, legacy on every base: the rules' own site is the live one)
+  assert.equal(T.rows.find(r => r.site.action === 'pant-grunt' && r.status === 'live')!.carried.includes('ADV'), true);
+  // the build's two sites (docs/staging/r12-build-prereg.md A1.7): legacy on the working base, named as added, never live
+  const built = T.rows.filter(r => r.cls?.build);
+  assert.deepEqual(built.map(r => r.site.key).sort(), ['computeCandidates/groom/ACCEPT+COALITION+NONE#2', 'computeCandidates/pant-grunt/NONE#1']);
+  assert.ok(built.every(r => r.status === 'legacy'));
+  assert.ok(buildTable(src, classes, { ...base, resourceTargets: 1, activityFirst: 2, observeV5: 1, menuPossible: 2 }, text).rows.filter(r => r.cls?.build).every(r => r.status === 'legacy'), 'the rules\' enumeration never reaches them, whatever the level');
   assert.ok(by(T.rows.find(r => r.site.key === 'computeCandidates/forage/NONE#2')!.site.line, 'forage').carried.every(c => c === 'PHY' || c === 'PER'), 'feeding in a tree in view is gated by possibility alone');
   // a base without the pant-hoot's valuation reaches the older call sites: their status is derived, not typed
   const older = buildTable(src, classes, { ...base, callValue: 0 }, text);

@@ -44,6 +44,8 @@ export function resolveParams(profile: Profile = 'compressed', overrides: Overri
   checkOverrides(overrides);
   const base: Record<string, number> = { ...DEFAULTS, ...PROFILE_VALUES[profile], ...overrides };
   if (base.resourceTargets === 1 && (base.activityFirst !== 2 || base.observeV5 !== 1)) throw new RangeError('resourceTargets requires activityFirst=2 and observeV5=1');
+  // stage R12 build (docs/staging/r12-build-prereg.md §3, A1.1): the ruled menu rides on R15's two-stage path only
+  if (base.menuPossible >= 1 && base.resourceTargets !== 1) throw new RangeError('menuPossible requires resourceTargets=1');
   const tickHours = base.tickSeconds / 3600;
   const derived: Derived = {
     tickHours, slowHours: base.slowEveryTicks * tickHours,

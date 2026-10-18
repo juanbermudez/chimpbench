@@ -14,6 +14,7 @@ import { perceive } from './perception';
 import { buildRequest, targetRequest } from './request';
 import { resourceEligibleActions } from './resources';
 import { gate } from './rg';
+import { isDiceOption } from './possible';
 import { random } from './rng';
 import { ix, living } from './state';
 
@@ -48,6 +49,8 @@ export function decisionPoint(world: World, c: Chimp): void {
     const policy = world.modelPolicy;
     if (policy.mode === 'async' && (world.time - c.awaitingDecisionSince) * 60 > policy.asyncGraceMinutes) { dropIntent(world, c); decideByRules(world, c); return; }
     if (P.kernelGate === 1 && loopGate(world, c, list)) return;
+    // stage R12 build (ruling 10; A1.2): after the gate and before the act in progress is checked, the dice acts are the rules'
+    if (P.menuPossible >= 1 && diceByRules(world, c, rulesList)) return;
     if (x.finished || !findCandidate(list, c.action, c.targetId)) { if (own && !x.finished) ownSetAside(world, c, P); setRest(world, c, 'Waiting for a decision'); }
     x.finished = false;
     c.nextDecision = world.time + 1 / 60;
@@ -61,7 +64,7 @@ export function decisionPoint(world: World, c: Chimp): void {
     // one coin from world.rng says which. A share of decision points, not of the rules' fresh draws.
     const share = P.kernelSim === 1 ? P.kernelNullShare : 1, mixed = share < 1;
     if (mixed && !(share > 0 && random(world) < share)) { decideByRules(world, c, true); return; }
-    if (!(P.kernelGate === 1 && loopGate(world, c, list))) {
+    if (!(P.kernelGate === 1 && loopGate(world, c, list)) && !(P.menuPossible >= 1 && diceByRules(world, c, rulesList))) {
       kernelStep(world, c, P.kernelSim === 2 ? packetRulesKernel : nullKernel);
       // the animal is now in an act the rules did not choose: their gate must not act later on the intention it left behind
       if (mixed && P.kernelGate !== 1) delete x.rgIntent;
@@ -86,7 +89,26 @@ export const rulesTap: { fn: ((c: Chimp, list: Candidate[], policy: boolean) => 
  * or 'arrived' (the act was set without asking), else why the chimp is open ('no-intent' when no intention was held,
  * otherwise rg.ts gate's reason). Never set by the app; read only.
  */
-export const loopTap: { point: ((c: Chimp, intr: string, finished: boolean) => void) | null; gate: ((c: Chimp, verdict: string) => void) | null } = { point: null, gate: null };
+export const loopTap: { point: ((c: Chimp, intr: string, finished: boolean) => void) | null; gate: ((c: Chimp, verdict: string) => void) | null;
+  /** Stage R12 build: the rules started or continued one of the three acts opened by dice for an animal a kernel decides for (A1.2). */
+  dice: ((c: Chimp, cand: Candidate) => void) | null } = { point: null, gate: null, dice: null };
+
+/**
+ * Stage R12 build (menuPossible ≥ 1, ruling 10; docs/staging/r12-build-prereg.md §4.6 and A1.2): at a decision point of
+ * an animal a kernel decides for, after the loop's gate: when the rules' own first option (their argmax) is the gang
+ * attack, the attack on an infant or the transfer, the rules start it, or continue it when it is the act in progress
+ * (startAction keeps an act's progress), with source 'rules'; no kernel is asked and no draw is taken. It holds no
+ * intention, so the gate can never restart it as the kernel's. When it is no longer their first option the rules have
+ * ended it, and the animal is open for its kernel as after any other ended act.
+ */
+function diceByRules(world: World, c: Chimp, rulesList: Candidate[]): boolean {
+  const best = rulesList[0];
+  if (!best || best.action === 'dead' || !isDiceOption(best)) return false;
+  dropIntent(world, c);
+  startAction(world, c, best, 'rules');
+  if (loopTap.dice) loopTap.dice(c, best);
+  return true;
+}
 
 // The request and environment the rules kernel is called with inside the tick: one reused pair, so the rules' own
 // decisions allocate nothing new. The packet is built only if a kernel reads it (the rules do not: they read the live

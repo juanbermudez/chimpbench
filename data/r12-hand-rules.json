@@ -1,0 +1,3539 @@
+{
+ "stage": "R12-build",
+ "tool": "r12-hand-rules",
+ "schema": 1,
+ "base": "docs/staging/integrator-kit/params/M6-W50.json",
+ "sourceHash": "066d4a0fbe52",
+ "classesHash": "627cb7d6c8e4",
+ "hash": "fe0607eacd145314",
+ "counts": {
+  "all": 157,
+  "byStatus": {
+   "kept": 140,
+   "limit": 5,
+   "pair": 2,
+   "rules": 5,
+   "cut": 2,
+   "body": 3
+  },
+  "bySource": {
+   "inside offer()": 3,
+   "loop": 15,
+   "menu": 16,
+   "table": 123
+  },
+  "byClass": {
+   "ADV": 95,
+   "NUM": 30,
+   "TEXT": 1,
+   "QUO": 28,
+   "DIC": 3
+  },
+  "byRuling": {
+   "2": 8,
+   "3": 4,
+   "4": 3,
+   "5": 3,
+   "6": 7,
+   "7": 9,
+   "8": 16,
+   "9": 24,
+   "10": 13,
+   "none": 90
+  }
+ },
+ "rules": [
+  {
+   "id": "a4184baa9c",
+   "text": "score > threshold",
+   "words": "an option the rules score at the threshold or below is not offered (cut for R15's resources and for the options this build opens)",
+   "class": "ADV",
+   "source": "inside offer()",
+   "sites": [],
+   "numbers": [
+    "-0.4"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts offer"
+  },
+  {
+   "id": "c0c27d1b31",
+   "text": "slot caps",
+   "words": "each act keeps one to three targets by the rules' score (cut for R15's resources and for the options this build opens)",
+   "class": "ADV",
+   "source": "inside offer()",
+   "sites": [],
+   "numbers": [
+    "3; 2; 1"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "data/params.json slotsForage, slotsMulti; src/sim/candidates.ts offer"
+  },
+  {
+   "id": "073f558422",
+   "text": "the patrol's silence",
+   "words": "an animal on a silent patrol is offered no call and no display",
+   "class": "ADV",
+   "source": "inside offer()",
+   "sites": [],
+   "numbers": [
+    "patrolSilence=1"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts offer; data/params.json patrolSilence"
+  },
+  {
+   "id": "48a81ec40f",
+   "text": "a committed trip lasts its walk plus this many minutes",
+   "words": "a committed trip lasts its walk plus this many minutes (read: always)",
+   "class": "NUM",
+   "source": "loop",
+   "sites": [],
+   "numbers": [
+    "5"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/execution.ts startAction (travelCommit)"
+  },
+  {
+   "id": "f5f269bd33",
+   "text": "a trip counts as arrived, and becomes feeding without asking, within this many metres",
+   "words": "a trip counts as arrived, and becomes feeding without asking, within this many metres (read: gate on)",
+   "class": "NUM",
+   "source": "loop",
+   "sites": [],
+   "numbers": [
+    "6"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/decide/gate.ts GATE.arriveM"
+  },
+  {
+   "id": "0208053f82",
+   "text": "age below which the rules decide and no kernel is asked (population runs)",
+   "words": "age below which the rules decide and no kernel is asked (population runs) (read: always)",
+   "class": "NUM",
+   "source": "loop",
+   "sites": [],
+   "numbers": [
+    "8"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "data/params.json rgMinAge"
+  },
+  {
+   "id": "0053762310",
+   "text": "bonus for the act in progress and penalty for the act just finished, in the scores that rank the menu",
+   "words": "bonus for the act in progress and penalty for the act just finished, in the scores that rank the menu (read: always)",
+   "class": "NUM",
+   "source": "loop",
+   "sites": [],
+   "numbers": [
+    "0.25; 0.5"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "data/params.json continueBonus, finishedPenalty"
+  },
+  {
+   "id": "d9b48846f0",
+   "text": "bout ranges, minutes (the length of an act before the next decision point; 66 registry entries)",
+   "words": "bout ranges, minutes (the length of an act before the next decision point; 66 registry entries) (read: always)",
+   "class": "NUM",
+   "source": "loop",
+   "sites": [],
+   "numbers": [
+    "forage 20 to 45, rest 8 to 20, travel 12 to 22, groom 5 to 18, play 3 to 9, nest 60 to 100, drink 6 to 10, follow 4 to 8"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/execution.ts boutHours; data/params.json bout*Min, bout*Max"
+  },
+  {
+   "id": "732b2c95a1",
+   "text": "cap of the menu, with one place per action",
+   "words": "cap of the menu, with one place per action (read: always)",
+   "class": "NUM",
+   "source": "loop",
+   "sites": [],
+   "numbers": [
+    "8"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/menu.ts MAX_OPTIONS, boundedCandidates"
+  },
+  {
+   "id": "ec5a520a96",
+   "text": "clock periods of the gate: the hours that split morning, midday and afternoon",
+   "words": "clock periods of the gate: the hours that split morning, midday and afternoon (read: gate on)",
+   "class": "NUM",
+   "source": "loop",
+   "sites": [],
+   "numbers": [
+    ""
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/decide/facts.ts periodOf"
+  },
+  {
+   "id": "f41fbaea66",
+   "text": "gate thresholds on hunger, thirst, fatigue and loneliness (need buckets)",
+   "words": "gate thresholds on hunger, thirst, fatigue and loneliness (need buckets) (read: gate on)",
+   "class": "NUM",
+   "source": "loop",
+   "sites": [],
+   "numbers": [
+    ""
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/decide/facts.ts bucketOf"
+  },
+  {
+   "id": "87b422679f",
+   "text": "least minutes between two interrupts",
+   "words": "least minutes between two interrupts (read: always)",
+   "class": "NUM",
+   "source": "loop",
+   "sites": [],
+   "numbers": [
+    "2"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "data/params.json interruptSpacingMin"
+  },
+  {
+   "id": "471629b775",
+   "text": "patch ratio: feeding is reconsidered when another place pays this many times more",
+   "words": "patch ratio: feeding is reconsidered when another place pays this many times more (read: gate on)",
+   "class": "NUM",
+   "source": "loop",
+   "sites": [],
+   "numbers": [
+    "2"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/decide/gate.ts GATE.patchRatio"
+  },
+  {
+   "id": "38fc32ebf5",
+   "text": "perceived list: animals an option may name",
+   "words": "perceived list: animals an option may name (read: always)",
+   "class": "NUM",
+   "source": "loop",
+   "sites": [],
+   "numbers": [
+    "8"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/rg.ts perceivedCandidates; src/sim/observe.ts"
+  },
+  {
+   "id": "d5ad6f7712",
+   "text": "pool of options per decision",
+   "words": "pool of options per decision (read: always)",
+   "class": "NUM",
+   "source": "loop",
+   "sites": [],
+   "numbers": [
+    "48"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts"
+  },
+  {
+   "id": "c2de7549a9",
+   "text": "span of the hash jitter on every score (it ranks the targets the menu keeps)",
+   "words": "span of the hash jitter on every score (it ranks the targets the menu keeps) (read: always)",
+   "class": "NUM",
+   "source": "loop",
+   "sites": [],
+   "numbers": [
+    "0.24"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "data/params.json candidateJitterSpan"
+  },
+  {
+   "id": "93b891db8d",
+   "text": "the 30 minute limit on an intention, hours",
+   "words": "the 30 minute limit on an intention, hours (read: gate on)",
+   "class": "NUM",
+   "source": "loop",
+   "sites": [],
+   "numbers": [
+    "0.5"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "data/params.json rgMaxAgeH"
+  },
+  {
+   "id": "ef3921b125",
+   "text": "trip shortlist: remembered or listed trees that reach the scoring of a trip",
+   "words": "trip shortlist: remembered or listed trees that reach the scoring of a trip (read: always)",
+   "class": "NUM",
+   "source": "loop",
+   "sites": [],
+   "numbers": [
+    "4"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts computeCandidates"
+  },
+  {
+   "id": "51d09414ba",
+   "text": "R15 current target kept",
+   "words": "the current target is kept on the menu while it is legal",
+   "class": "NUM",
+   "source": "menu",
+   "sites": [],
+   "numbers": [],
+   "rulings": [
+    2,
+    4
+   ],
+   "status": "kept",
+   "where": "src/sim/resources.ts resourceTargetsFor"
+  },
+  {
+   "id": "63dddb2a53",
+   "text": "R15 sample key",
+   "words": "the hash of the trips shown is keyed by the time spent in the current act (seconds times this factor), 0 for an animal set to rest while it waits (an R15 limit, not changed)",
+   "class": "NUM",
+   "source": "menu",
+   "sites": [],
+   "numbers": [
+    "3600"
+   ],
+   "rulings": [
+    2
+   ],
+   "status": "limit",
+   "where": "src/sim/resources.ts:55"
+  },
+  {
+   "id": "f4394a35de",
+   "text": "R15 target menu caps",
+   "words": "the second call shows at most this many water places and trees",
+   "class": "NUM",
+   "source": "menu",
+   "sites": [],
+   "numbers": [
+    "water 4",
+    "trees 8"
+   ],
+   "rulings": [
+    2,
+    4
+   ],
+   "status": "kept",
+   "where": "src/sim/resources.ts:53"
+  },
+  {
+   "id": "78fdeba739",
+   "text": "R15 trip distance bands",
+   "words": "the trips shown are a stable hash sample over four distance bands, metres",
+   "class": "NUM",
+   "source": "menu",
+   "sites": [],
+   "numbers": [
+    "150",
+    "400",
+    "1000"
+   ],
+   "rulings": [
+    2
+   ],
+   "status": "kept",
+   "where": "src/sim/resources.ts:65"
+  },
+  {
+   "id": "5536eb4b1d",
+   "text": "a kind's one target",
+   "words": "every kind whose target is not opened keeps one target, the rules' best option of the kind (R15's representative)",
+   "class": "NUM",
+   "source": "menu",
+   "sites": [],
+   "numbers": [],
+   "rulings": [
+    6,
+    7
+   ],
+   "status": "kept",
+   "where": "src/sim/request.ts buildResourceRequest"
+  },
+  {
+   "id": "3740fb104b",
+   "text": "dice rates per decision point",
+   "words": "the rolls are fixed per decision point, not per hour, so how often decisions come changes the hourly rate",
+   "class": "NUM",
+   "source": "menu",
+   "sites": [],
+   "numbers": [],
+   "rulings": [
+    10
+   ],
+   "status": "limit",
+   "where": "src/sim/perception.ts, src/sim/reproduction.ts"
+  },
+  {
+   "id": "cc22c930b3",
+   "text": "memory horizon",
+   "words": "a remembered tree is a trip only within this many hours of its sighting",
+   "class": "NUM",
+   "source": "menu",
+   "sites": [],
+   "numbers": [
+    "memTravelHorizonH=240"
+   ],
+   "rulings": [
+    2,
+    3
+   ],
+   "status": "kept",
+   "where": "data/params.json memTravelHorizonH"
+  },
+  {
+   "id": "84d7c1390a",
+   "text": "minimum trip distance",
+   "words": "a remembered tree nearer than this, in metres, is no trip",
+   "class": "NUM",
+   "source": "menu",
+   "sites": [],
+   "numbers": [
+    "memoryTreeMinM=35"
+   ],
+   "rulings": [
+    2,
+    3
+   ],
+   "status": "kept",
+   "where": "data/params.json memoryTreeMinM"
+  },
+  {
+   "id": "04c58299cd",
+   "text": "opened group cap and order",
+   "words": "an opened social group: the current target, the representative, then the nearest, at most this many, listed nearest first",
+   "class": "NUM",
+   "source": "menu",
+   "sites": [],
+   "numbers": [
+    "8"
+   ],
+   "rulings": [
+    6,
+    7
+   ],
+   "status": "kept",
+   "where": "src/sim/possible.ts socialTargetsFor"
+  },
+  {
+   "id": "caa70a260d",
+   "text": "the adult male pair class",
+   "words": "an adult male (15 or older) chooses among adult males only at menuPossible 2; the Ngogo protocol's adult males are 16 or older",
+   "class": "NUM",
+   "source": "menu",
+   "sites": [],
+   "numbers": [
+    "15"
+   ],
+   "rulings": [
+    6
+   ],
+   "status": "pair",
+   "where": "src/sim/hierarchy.ts isAdultMale; src/sim/possible.ts opensTarget"
+  },
+  {
+   "id": "91eee123fe",
+   "text": "the dice set",
+   "words": "the acts that stay with the rules are the transfer, the attack on an infant and the gang attack; the escalation attack rolled at perception is unreachable on the working base and not among them",
+   "class": "NUM",
+   "source": "menu",
+   "sites": [],
+   "numbers": [],
+   "rulings": [
+    10
+   ],
+   "status": "rules",
+   "where": "src/sim/possible.ts isDiceOption"
+  },
+  {
+   "id": "659ecf56dc",
+   "text": "the kind labels and the target instructions",
+   "words": "hand-set text shown to the model: the kind labels and R15's two instructions",
+   "class": "TEXT",
+   "source": "menu",
+   "sites": [],
+   "numbers": [
+    "23 labels",
+    "2 instructions"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/kernel/resource-contract.ts RESOURCE_KIND_LABELS; src/providers/packet.ts r15Packet"
+  },
+  {
+   "id": "667bc17ce8",
+   "text": "the kind packet's nearby list",
+   "words": "the kind call lists the animals of the rules' best-valued options first (R15's observation, kept so the kind call stays R15's)",
+   "class": "NUM",
+   "source": "menu",
+   "sites": [],
+   "numbers": [
+    "8"
+   ],
+   "rulings": [],
+   "status": "limit",
+   "where": "src/sim/observe.ts observe"
+  },
+  {
+   "id": "910972d8b4",
+   "text": "the kind scaffold",
+   "words": "the kinds on the first call are those of the rules' bounded flat menu: at most 8, one place per action, kept picks first",
+   "class": "NUM",
+   "source": "menu",
+   "sites": [],
+   "numbers": [
+    "8"
+   ],
+   "rulings": [],
+   "status": "limit",
+   "where": "src/sim/menu.ts boundedCandidates; src/sim/request.ts buildResourceRequest"
+  },
+  {
+   "id": "39d3b3017e",
+   "text": "the representative's place",
+   "words": "in an opened group the representative is kept, chosen by the rules' score (A1.6)",
+   "class": "NUM",
+   "source": "menu",
+   "sites": [],
+   "numbers": [],
+   "rulings": [
+    6,
+    7
+   ],
+   "status": "limit",
+   "where": "src/sim/possible.ts socialTargetsFor"
+  },
+  {
+   "id": "2bdffdfcd8",
+   "text": "the target call's nearby list",
+   "words": "a social target call lists its group's animals, then the nearest others in view, to this many, by distance",
+   "class": "NUM",
+   "source": "menu",
+   "sites": [],
+   "numbers": [
+    "8"
+   ],
+   "rulings": [
+    6,
+    7
+   ],
+   "status": "kept",
+   "where": "src/sim/possible.ts targetSocial"
+  },
+  {
+   "id": "9939669045",
+   "text": "!(P.patrolValue >= 2) || (x.impulse === IMPULSE_PATROL && x.impulseUntil > time)",
+   "words": "his party has only just come to hold enough adult males (the lead is weighed for 0.1 h after that fusion; nothing is rolled)",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "patrolAndCalls/patrol/LEAD#1",
+     "line": 1523
+    }
+   ],
+   "numbers": [
+    "patrolValue=2"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1523"
+  },
+  {
+   "id": "958160b456",
+   "text": "!(g && g !== c && g.alive && dcc(c, g) < P.guardRivalRangeM)",
+   "words": "no other male is guarding her nearby",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "reproduction/guard/NONE#1",
+     "line": 1374
+    }
+   ],
+   "numbers": [
+    "guardRivalRangeM=30"
+   ],
+   "rulings": [
+    9
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1374"
+  },
+  {
+   "id": "25a9953e42",
+   "text": "!(o.action === 'charge' || o.action === 'attack')",
+   "words": "the opponent is not charging or attacking now",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "affiliationRepair/reconcile/NONE#1",
+     "line": 1481
+    }
+   ],
+   "numbers": [],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1481"
+  },
+  {
+   "id": "aaa9b02476",
+   "text": "!AFFILIATIVE[o.action]",
+   "words": "the other is not reconciling, grooming, consoling, playing or sharing",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/flee/AVOID#1",
+     "line": 833
+    }
+   ],
+   "numbers": [],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:833"
+  },
+  {
+   "id": "7533ae95db",
+   "text": "!busy | busy := o.action === 'flee' || o.action === 'charge' || o.action === 'attack' || o.action === 'display' || o.action === 'transfer'",
+   "words": "the other is not fleeing, charging, attacking, displaying or transferring",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/play/ACCEPT+NONE#1",
+     "line": 822
+    },
+    {
+     "key": "computeCandidates/play/ACCEPT+NONE#2",
+     "line": 825
+    }
+   ],
+   "numbers": [],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:822,825"
+  },
+  {
+   "id": "7a1831d52c",
+   "text": "!guardBySize(P) || !wardHoldsOwn(world, o, ag, P)",
+   "words": "its ward cannot hold its own against the aggressor (assessed odds under even)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/charge/DEFEND#1",
+     "line": 1240
+    }
+   ],
+   "numbers": [],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1240"
+  },
+  {
+   "id": "9ca1ab5de0",
+   "text": "!guarded | guarded := !!g && g.alive && g !== c && dcc(c, g) < P.guardedRangeM && dominates(g, c)",
+   "words": "she is not guarded by a male who outranks it",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "reproduction/guard/NONE#1",
+     "line": 1374
+    },
+    {
+     "key": "reproduction/consort/NONE#1",
+     "line": 1384
+    }
+   ],
+   "numbers": [
+    "guardedRangeM=30"
+   ],
+   "rulings": [
+    9
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1374,1384"
+  },
+  {
+   "id": "d19e08c7b2",
+   "text": "!isAlpha | isAlpha := troop?.alphaId === c.id",
+   "words": "it is not the alpha (the alpha guards instead)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "reproduction/consort/NONE#1",
+     "line": 1384
+    }
+   ],
+   "numbers": [],
+   "rulings": [
+    9
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1384"
+  },
+  {
+   "id": "8394040f24",
+   "text": "!kin | kin := maternalKin(c, o)",
+   "words": "the other is not its maternal kin (kin are never charged)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/charge/REDIRECT#1",
+     "line": 1188
+    },
+    {
+     "key": "aggression/charge/TENSION#1",
+     "line": 1197
+    },
+    {
+     "key": "aggression/charge/COERCE#1",
+     "line": 1203
+    },
+    {
+     "key": "aggression/charge/FEED#1",
+     "line": 1225
+    },
+    {
+     "key": "aggression/charge/FEMALE_DOM#1",
+     "line": 1232
+    }
+   ],
+   "numbers": [],
+   "rulings": [
+    9
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1188,1197,1203,1225,1232"
+  },
+  {
+   "id": "e707827d50",
+   "text": "!male | male := c.sex === 'male'",
+   "words": "the actor is female",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/charge/IMMIGRANT#1",
+     "line": 1213
+    }
+   ],
+   "numbers": [],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1213"
+  },
+  {
+   "id": "709d2a38d3",
+   "text": "!night | night := env.daylight < 0.1",
+   "words": "it is not night (daylight at 0.1 or more)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/flee/AVOID#1",
+     "line": 833
+    },
+    {
+     "key": "computeCandidates/travel/TREE#4",
+     "line": 845
+    },
+    {
+     "key": "computeCandidates/follow/PARTY#1",
+     "line": 853
+    },
+    {
+     "key": "computeCandidates/travel/TREE#6",
+     "line": 888
+    },
+    {
+     "key": "computeCandidates/display/RAIN#1",
+     "line": 898
+    },
+    {
+     "key": "computeCandidates/display/RIVAL+REUNION+NONE#1",
+     "line": 908
+    },
+    {
+     "key": "aggression/charge/STATUS#1",
+     "line": 1156
+    },
+    {
+     "key": "aggression/attack/INFANTICIDE#1",
+     "line": 1172
+    },
+    {
+     "key": "aggression/charge/REDIRECT#1",
+     "line": 1188
+    },
+    {
+     "key": "aggression/attack/ESCALATE#2",
+     "line": 1191
+    },
+    {
+     "key": "aggression/charge/TENSION#1",
+     "line": 1197
+    },
+    {
+     "key": "aggression/charge/COERCE#1",
+     "line": 1203
+    },
+    {
+     "key": "aggression/charge/IMMIGRANT#1",
+     "line": 1213
+    },
+    {
+     "key": "aggression/charge/FEED#1",
+     "line": 1225
+    },
+    {
+     "key": "aggression/charge/FEMALE_DOM#1",
+     "line": 1232
+    },
+    {
+     "key": "aggression/charge/DEFEND#1",
+     "line": 1240
+    },
+    {
+     "key": "aggression/charge/COALITION#1",
+     "line": 1255
+    },
+    {
+     "key": "aggression/charge/GUARD#1",
+     "line": 1260
+    }
+   ],
+   "numbers": [
+    "0.1"
+   ],
+   "rulings": [
+    9,
+    10
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:833,845,853,888,898,908,1156,1172,1188,1191,1197,1203,1213,1225,1232,1240,1255,1260"
+  },
+  {
+   "id": "de0c24a349",
+   "text": "!repairing | repairing := c.lastConflict?.opponentId === o.id && time - c.lastConflict.time < P.reconcileWindowH && b >= P.avoidRepairBondMin",
+   "words": "it has no fresh conflict with a valued partner to repair with that animal",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/flee/AVOID#1",
+     "line": 833
+    }
+   ],
+   "numbers": [
+    "reconcileWindowH=0.3",
+    "avoidRepairBondMin=0.35"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:833"
+  },
+  {
+   "id": "3c025282dc",
+   "text": "!transferring | transferring := c.action === 'transfer' || (x.transferTo > 0 && c.troopId === c.natalTroopId)",
+   "words": "it is not transferring to another community (a transferring female keeps going)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "intergroup/charge/STRANGER#1",
+     "line": 1319
+    },
+    {
+     "key": "intergroup/attack/GANG#1",
+     "line": 1320
+    },
+    {
+     "key": "intergroup/flee/STRANGERS#1",
+     "line": 1322
+    },
+    {
+     "key": "intergroup/display/STRANGER#1",
+     "line": 1324
+    },
+    {
+     "key": "intergroup/call/COUNTERCALL#1",
+     "line": 1324
+    },
+    {
+     "key": "intergroup/flee/STRANGERS#2",
+     "line": 1325
+    }
+   ],
+   "numbers": [],
+   "rulings": [
+    8,
+    10
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1319,1320,1322,1324,1324,1325"
+  },
+  {
+   "id": "8e4acc0225",
+   "text": "((s.huntDay[c.troopId] ?? NEVER) > time && x.ownMales >= P.huntMinMales) || (x.impulse === IMPULSE_HUNT && x.impulseTarget === p.id && x.impulseUntil > time && x.ownMales >= P.huntEncMinMales)",
+   "words": "he has only just met this colobus group with enough own males in view (the lead is weighed for 0.1 h after the encounter; or on an experiment's hunting day)",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "meatAndHunting/hunt/LEAD#1",
+     "line": 1458
+    }
+   ],
+   "numbers": [
+    "huntMinMales=3",
+    "huntEncMinMales=2"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1458"
+  },
+  {
+   "id": "c8471c9125",
+   "text": "(ix(o).coerce[c.id] ?? 0) < P.coerceMaxRepeats",
+   "words": "it has charged her fewer times than the repeat limit",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/charge/COERCE#1",
+     "line": 1203
+    }
+   ],
+   "numbers": [
+    "coerceMaxRepeats=3"
+   ],
+   "rulings": [
+    9
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1203"
+  },
+  {
+   "id": "b011a5b243",
+   "text": "(maleOpen && pg > 0) || quotaTrace.on | maleOpen := mv || time - ix(o).lastMate > P.mateIntervalH | mv := matingValueOn(P) | pg := mv ? paternityGain(c, o, P, world) : 1",
+   "words": "the male's mating quota gates her offer too: 1.5 h since his last copulation (the diagnostic hook aside)",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "reproduction/mate/ACCEPT+NONE#2",
+     "line": 1398
+    },
+    {
+     "key": "reproduction/consort/ACCEPT#1",
+     "line": 1399
+    }
+   ],
+   "numbers": [
+    "mateIntervalH=1.5"
+   ],
+   "rulings": [
+    9
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1398,1399"
+  },
+  {
+   "id": "2129ac9cb4",
+   "text": "(mateOpen && pg > 0) || quotaTrace.on | mateOpen := mv || time - x.lastMate > P.mateIntervalH | mv := matingValueOn(P) | pg := mv ? paternityGain(o, c, P, world) : 1",
+   "words": "the mating quota: 1.5 h since his last copulation (the diagnostic hook aside)",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "reproduction/mate/ACCEPT+NONE#1",
+     "line": 1370
+    }
+   ],
+   "numbers": [
+    "mateIntervalH=1.5"
+   ],
+   "rulings": [
+    9
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1370"
+  },
+  {
+   "id": "0241dae9cb",
+   "text": "(o.sex === 'male' && o.age >= P.pantGruntMaleAgeY) || o.age >= 15",
+   "words": "the other is a male of the greeting age or more, or anyone of 15 or more",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/pant-grunt/NONE#2",
+     "line": 881
+    }
+   ],
+   "numbers": [
+    "15",
+    "pantGruntMaleAgeY=13"
+   ],
+   "rulings": [
+    7
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:881"
+  },
+  {
+   "id": "5c99697eb3",
+   "text": "(x.impulse === IMPULSE_TRANSFER && x.impulseUntil > time) || c.action === 'transfer' || intent | intent := x.transferTo > 0 && c.troopId === c.natalTroopId",
+   "words": "a dispersal impulse was rolled (a yearly hazard for a natal female of dispersal age while swollen), or the transfer it began is still under way",
+   "class": "DIC",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/transfer/NONE#1",
+     "line": 939
+    }
+   ],
+   "numbers": [],
+   "rulings": [
+    10
+   ],
+   "status": "rules",
+   "where": "src/sim/candidates.ts:939"
+  },
+  {
+   "id": "111bf5ae93",
+   "text": "EACH k < 4 && _mem.length",
+   "words": "only the four trees the rules value most are offered (the trip shortlist: a ranking by the rules' own value)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/travel/TREE#3",
+     "line": 648
+    }
+   ],
+   "numbers": [
+    "4"
+   ],
+   "rulings": [
+    2,
+    3
+   ],
+   "status": "cut",
+   "cutBy": {
+    "id": "resourceTargets",
+    "from": 1
+   },
+   "where": "src/sim/candidates.ts:648"
+  },
+  {
+   "id": "8a10cb5a09",
+   "text": "Math.abs(o.age - c.age) < 7",
+   "words": "the two are within 7 years of age",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/play/ACCEPT+NONE#1",
+     "line": 822
+    }
+   ],
+   "numbers": [
+    "7"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:822"
+  },
+  {
+   "id": "6ec741a97d",
+   "text": "Math.abs(o.elo - c.elo) < P.escalateEloGap",
+   "words": "the other is close to it in rank score",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/attack/ESCALATE#2",
+     "line": 1191
+    }
+   ],
+   "numbers": [
+    "escalateEloGap=90"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1191"
+  },
+  {
+   "id": "eee002a31f",
+   "text": "NOT b < P.consoleBondMin && !kin | kin := maternalKin(c, v)",
+   "words": "the victim is its maternal kin, or a partner with a bond at the consolation minimum or above",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "affiliationRepair/console/NONE#1",
+     "line": 1493
+    }
+   ],
+   "numbers": [
+    "consoleBondMin=0.55"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1493"
+  },
+  {
+   "id": "7fbb60211f",
+   "text": "NOT c.age >= 1 && c.age < 15 && o.age < 15 && Math.abs(o.age - c.age) < 7 && !(dependentOn(world, o) && isCarried(o, dependentOn(world, o)))",
+   "words": "the two are not a pair of young peers (the first play rule did not apply)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/play/ACCEPT+NONE#2",
+     "line": 825
+    }
+   ],
+   "numbers": [
+    "1",
+    "15",
+    "7"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:825"
+  },
+  {
+   "id": "c8f92c2bcf",
+   "text": "NOT c.sex === 'male' && immigrantLike | immigrantLike := s.sex === 'female' && s.swelling >= P.immigrantLikeSwelling && !s.lactating",
+   "words": "not a male facing a swollen, childless stranger female (males tolerate a likely immigrant)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "intergroup/charge/STRANGER#1",
+     "line": 1319
+    },
+    {
+     "key": "intergroup/attack/GANG#1",
+     "line": 1320
+    },
+    {
+     "key": "intergroup/flee/STRANGERS#1",
+     "line": 1322
+    },
+    {
+     "key": "intergroup/display/STRANGER#1",
+     "line": 1324
+    },
+    {
+     "key": "intergroup/call/COUNTERCALL#1",
+     "line": 1324
+    },
+    {
+     "key": "intergroup/flee/STRANGERS#2",
+     "line": 1325
+    }
+   ],
+   "numbers": [
+    "immigrantLikeSwelling=0.5"
+   ],
+   "rulings": [
+    8,
+    10
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1319,1320,1322,1324,1324,1325"
+  },
+  {
+   "id": "941c4ad24d",
+   "text": "NOT c.sex === 'male' && own >= 3 && own >= str + 2 && (aggrBit(P, 2) || time - x.lastAgg > 0.2) | own := x.ownMales | str := x.strangerMales",
+   "words": "the charge rule did not apply: not a male with 3 or more own males and 2 more than theirs",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "intergroup/flee/STRANGERS#1",
+     "line": 1322
+    },
+    {
+     "key": "intergroup/display/STRANGER#1",
+     "line": 1324
+    },
+    {
+     "key": "intergroup/call/COUNTERCALL#1",
+     "line": 1324
+    },
+    {
+     "key": "intergroup/flee/STRANGERS#2",
+     "line": 1325
+    }
+   ],
+   "numbers": [
+    "3",
+    "2",
+    "0.2"
+   ],
+   "rulings": [
+    8
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1322,1324,1324,1325"
+  },
+  {
+   "id": "e9a0d43748",
+   "text": "NOT maternalKin(c, o)",
+   "words": "the other is not its maternal kin (no mating between maternal kin)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "reproduction/mate/ACCEPT+NONE#1",
+     "line": 1370
+    },
+    {
+     "key": "reproduction/guard/NONE#1",
+     "line": 1374
+    },
+    {
+     "key": "reproduction/consort/NONE#1",
+     "line": 1384
+    },
+    {
+     "key": "reproduction/mate/ACCEPT+NONE#2",
+     "line": 1398
+    },
+    {
+     "key": "reproduction/consort/ACCEPT#1",
+     "line": 1399
+    }
+   ],
+   "numbers": [],
+   "rulings": [
+    9
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1370,1374,1384,1398,1399"
+  },
+  {
+   "id": "4a185e4996",
+   "text": "NOT own >= 3 && (c.sex === 'male' || inRange) | own := x.ownMales | inRange := troop ? Math.hypot(x.heardX - troop.center[0], x.heardZ - troop.center[2]) < troop.radius * 1.05 : false",
+   "words": "fewer than 3 own males in view (or a female hearing calls from outside the range)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "intergroup/flee/HEARD#1",
+     "line": 1342
+    }
+   ],
+   "numbers": [
+    "3",
+    "2",
+    "1.05"
+   ],
+   "rulings": [
+    8
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1342"
+  },
+  {
+   "id": "33dedaf2af",
+   "text": "NOT own >= 3 && c.sex === 'female' && !inRange | own := x.ownMales | inRange := troop ? Math.hypot(x.heardX - troop.center[0], x.heardZ - troop.center[2]) < troop.radius * 1.05 : false",
+   "words": "not a female with 3 or more males around hearing calls from outside the range (she stays quiet with the males)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "intergroup/patrol/APPROACH#1",
+     "line": 1340
+    },
+    {
+     "key": "intergroup/call/COUNTERCALL#2",
+     "line": 1341
+    },
+    {
+     "key": "intergroup/flee/HEARD#1",
+     "line": 1342
+    }
+   ],
+   "numbers": [
+    "3",
+    "2",
+    "1.05"
+   ],
+   "rulings": [
+    8
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1340,1341,1342"
+  },
+  {
+   "id": "0f95ff6888",
+   "text": "bond(c, o) >= P.consortBondMin",
+   "words": "its bond with her is at the consortship minimum or above",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "reproduction/consort/NONE#1",
+     "line": 1384
+    }
+   ],
+   "numbers": [
+    "consortBondMin=0.35"
+   ],
+   "rulings": [
+    9
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1384"
+  },
+  {
+   "id": "ccd9686d6d",
+   "text": "c.action !== 'consort'",
+   "words": "it is not on a consortship",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/travel/HOME#1",
+     "line": 701
+    },
+    {
+     "key": "reproduction/consort/NONE#1",
+     "line": 1384
+    }
+   ],
+   "numbers": [],
+   "rulings": [
+    9
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:701,1384"
+  },
+  {
+   "id": "806f1eaf17",
+   "text": "c.action !== 'patrol'",
+   "words": "it is not on patrol",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "callerTrip/travel/CALLER#1",
+     "line": 691
+    },
+    {
+     "key": "computeCandidates/travel/HOME#1",
+     "line": 701
+    },
+    {
+     "key": "patrolAndCalls/patrol/JOIN#1",
+     "line": 1514
+    }
+   ],
+   "numbers": [],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:691,701,1514"
+  },
+  {
+   "id": "355a8a2354",
+   "text": "c.action !== 'transfer'",
+   "words": "it is not transferring",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/travel/HOME#1",
+     "line": 701
+    }
+   ],
+   "numbers": [],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:701"
+  },
+  {
+   "id": "08e1930b32",
+   "text": "c.age - x.immigrantAge < 2",
+   "words": "it immigrated less than 2 years ago (a window)",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/follow/PARTY#2",
+     "line": 858
+    }
+   ],
+   "numbers": [
+    "2"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:858"
+  },
+  {
+   "id": "4d703c56c2",
+   "text": "c.age < 15",
+   "words": "it is younger than 15",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/play/ACCEPT+NONE#1",
+     "line": 822
+    }
+   ],
+   "numbers": [
+    "15"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:822"
+  },
+  {
+   "id": "d4bf93e318",
+   "text": "c.age < 16",
+   "words": "it is younger than 16 (play-climbing is for the young)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/climb/NONE#1",
+     "line": 704
+    }
+   ],
+   "numbers": [
+    "16"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:704"
+  },
+  {
+   "id": "f1cdf8f47c",
+   "text": "c.age < P.femaleDomMaxAgeY",
+   "words": "the actor is younger than the age limit (an adolescent male)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/charge/FEMALE_DOM#1",
+     "line": 1232
+    }
+   ],
+   "numbers": [
+    "femaleDomMaxAgeY=16"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1232"
+  },
+  {
+   "id": "00967209e0",
+   "text": "c.age < P.juvenileFollowMaxAgeY",
+   "words": "it is younger than the age up to which a juvenile keeps up with its guardian",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/follow/JUVENILE#1",
+     "line": 453
+    }
+   ],
+   "numbers": [
+    "juvenileFollowMaxAgeY=10"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:453"
+  },
+  {
+   "id": "0019c25f4b",
+   "text": "c.age >= 10",
+   "words": "it is 10 or older (a hand-set age)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/travel/TREE#3",
+     "line": 648
+    },
+    {
+     "key": "reproduction/mate/ACCEPT+NONE#1",
+     "line": 1370
+    },
+    {
+     "key": "reproduction/guard/NONE#1",
+     "line": 1374
+    },
+    {
+     "key": "reproduction/consort/NONE#1",
+     "line": 1384
+    }
+   ],
+   "numbers": [
+    "10"
+   ],
+   "rulings": [
+    2,
+    3,
+    9
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:648,1370,1374,1384"
+  },
+  {
+   "id": "6c5ba8adda",
+   "text": "c.age >= 12",
+   "words": "it is 12 or older (adolescent or adult; a hand-set age)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/follow/PARTY#2",
+     "line": 858
+    },
+    {
+     "key": "computeCandidates/display/RAIN#1",
+     "line": 898
+    },
+    {
+     "key": "computeCandidates/display/RIVAL+REUNION+NONE#1",
+     "line": 908
+    },
+    {
+     "key": "aggression/charge/STATUS#1",
+     "line": 1156
+    },
+    {
+     "key": "aggression/attack/INFANTICIDE#1",
+     "line": 1172
+    },
+    {
+     "key": "aggression/charge/REDIRECT#1",
+     "line": 1188
+    },
+    {
+     "key": "aggression/attack/ESCALATE#2",
+     "line": 1191
+    },
+    {
+     "key": "aggression/charge/TENSION#1",
+     "line": 1197
+    },
+    {
+     "key": "aggression/charge/COERCE#1",
+     "line": 1203
+    },
+    {
+     "key": "aggression/charge/IMMIGRANT#1",
+     "line": 1213
+    },
+    {
+     "key": "aggression/charge/FEED#1",
+     "line": 1225
+    },
+    {
+     "key": "aggression/charge/FEMALE_DOM#1",
+     "line": 1232
+    },
+    {
+     "key": "aggression/charge/DEFEND#1",
+     "line": 1240
+    },
+    {
+     "key": "aggression/charge/COALITION#1",
+     "line": 1255
+    },
+    {
+     "key": "aggression/charge/GUARD#1",
+     "line": 1260
+    },
+    {
+     "key": "threatResponses/charge/COUNTER#1",
+     "line": 1287
+    },
+    {
+     "key": "threatResponses/attack/FIGHTBACK#1",
+     "line": 1288
+    },
+    {
+     "key": "intergroup/charge/STRANGER#1",
+     "line": 1319
+    },
+    {
+     "key": "intergroup/attack/GANG#1",
+     "line": 1320
+    },
+    {
+     "key": "intergroup/flee/STRANGERS#1",
+     "line": 1322
+    },
+    {
+     "key": "intergroup/display/STRANGER#1",
+     "line": 1324
+    },
+    {
+     "key": "intergroup/call/COUNTERCALL#1",
+     "line": 1324
+    },
+    {
+     "key": "intergroup/flee/STRANGERS#2",
+     "line": 1325
+    },
+    {
+     "key": "intergroup/patrol/APPROACH#1",
+     "line": 1340
+    },
+    {
+     "key": "intergroup/call/COUNTERCALL#2",
+     "line": 1341
+    },
+    {
+     "key": "intergroup/flee/HEARD#1",
+     "line": 1342
+    },
+    {
+     "key": "reproduction/consort/CONTINUE#1",
+     "line": 1355
+    },
+    {
+     "key": "reproduction/mate/ACCEPT+NONE#1",
+     "line": 1370
+    },
+    {
+     "key": "reproduction/guard/NONE#1",
+     "line": 1374
+    },
+    {
+     "key": "reproduction/consort/NONE#1",
+     "line": 1384
+    },
+    {
+     "key": "reproduction/mate/ACCEPT+NONE#2",
+     "line": 1398
+    },
+    {
+     "key": "reproduction/consort/ACCEPT#1",
+     "line": 1399
+    },
+    {
+     "key": "meatAndHunting/hunt/JOIN#1",
+     "line": 1445
+    },
+    {
+     "key": "meatAndHunting/hunt/LEAD#1",
+     "line": 1458
+    },
+    {
+     "key": "patrolAndCalls/patrol/CONTINUE#1",
+     "line": 1511
+    },
+    {
+     "key": "patrolAndCalls/patrol/JOIN#1",
+     "line": 1514
+    },
+    {
+     "key": "patrolAndCalls/patrol/LEAD#1",
+     "line": 1523
+    },
+    {
+     "key": "patrolAndCalls/call/CONTACT#1",
+     "line": 1538
+    },
+    {
+     "key": "patrolAndCalls/call/REUNION#1",
+     "line": 1541
+    }
+   ],
+   "numbers": [
+    "12"
+   ],
+   "rulings": [
+    8,
+    9,
+    10
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:858,898,908,1156,1172,1188,1191,1197,1203,1213,1225,1232,1240,1255,1260,1287,1288,1319,1320,1322,1324,1324,1325,1340,1341,1342,1355,1370,1374,1384,1398,1399,1445,1458,1511,1514,1523,1538,1541"
+  },
+  {
+   "id": "a6efaae7ec",
+   "text": "c.age >= 15",
+   "words": "it is 15 or older",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/play/ACCEPT+NONE#2",
+     "line": 825
+    },
+    {
+     "key": "computeCandidates/display/RAIN#1",
+     "line": 898
+    },
+    {
+     "key": "aggression/charge/COERCE#1",
+     "line": 1203
+    },
+    {
+     "key": "aggression/charge/IMMIGRANT#1",
+     "line": 1213
+    },
+    {
+     "key": "reproduction/guard/NONE#1",
+     "line": 1374
+    },
+    {
+     "key": "reproduction/consort/NONE#1",
+     "line": 1384
+    }
+   ],
+   "numbers": [
+    "15"
+   ],
+   "rulings": [
+    9
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:825,898,1203,1213,1374,1384"
+  },
+  {
+   "id": "b527fc3de6",
+   "text": "c.carryingMeat < 0.05",
+   "words": "it holds (almost) no meat itself",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "meatAndHunting/beg/MEAT#1",
+     "line": 1429
+    }
+   ],
+   "numbers": [
+    "0.05"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1429"
+  },
+  {
+   "id": "46e84c4e44",
+   "text": "c.energy > 0.35",
+   "words": "its energy is above 0.35",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "meatAndHunting/hunt/JOIN#1",
+     "line": 1445
+    },
+    {
+     "key": "meatAndHunting/hunt/LEAD#1",
+     "line": 1458
+    }
+   ],
+   "numbers": [
+    "0.35"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1445,1458"
+  },
+  {
+   "id": "465c9de713",
+   "text": "c.hunger < 0.75",
+   "words": "its hunger is under 0.75",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "patrolAndCalls/patrol/JOIN#1",
+     "line": 1514
+    }
+   ],
+   "numbers": [
+    "0.75"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1514"
+  },
+  {
+   "id": "92fbaee53c",
+   "text": "c.hunger < P.patrolMaxHunger",
+   "words": "its hunger is under the patrol maximum",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "patrolAndCalls/patrol/LEAD#1",
+     "line": 1523
+    }
+   ],
+   "numbers": [
+    "patrolMaxHunger=0.75"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1523"
+  },
+  {
+   "id": "32d130d8f0",
+   "text": "c.rankOrder <= 2 || isAlpha | isAlpha := troop?.alphaId === c.id",
+   "words": "it holds one of the top two ranks (or is the alpha)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "reproduction/guard/NONE#1",
+     "line": 1374
+    }
+   ],
+   "numbers": [
+    "2"
+   ],
+   "rulings": [
+    9
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1374"
+  },
+  {
+   "id": "be3136b234",
+   "text": "c.sex !== 'male'",
+   "words": "the actor is female",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "intergroup/flee/STRANGERS#2",
+     "line": 1325
+    }
+   ],
+   "numbers": [],
+   "rulings": [
+    8
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1325"
+  },
+  {
+   "id": "c5a503119d",
+   "text": "c.sex === 'female'",
+   "words": "the actor is female",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/follow/PARTY#2",
+     "line": 858
+    }
+   ],
+   "numbers": [],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:858"
+  },
+  {
+   "id": "40646f172b",
+   "text": "c.sex === 'male'",
+   "words": "the actor is male",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/display/RAIN#1",
+     "line": 898
+    },
+    {
+     "key": "computeCandidates/display/RIVAL+REUNION+NONE#1",
+     "line": 908
+    },
+    {
+     "key": "aggression/charge/COERCE#1",
+     "line": 1203
+    },
+    {
+     "key": "aggression/charge/FEMALE_DOM#1",
+     "line": 1232
+    },
+    {
+     "key": "intergroup/charge/STRANGER#1",
+     "line": 1319
+    },
+    {
+     "key": "intergroup/attack/GANG#1",
+     "line": 1320
+    },
+    {
+     "key": "intergroup/display/STRANGER#1",
+     "line": 1324
+    },
+    {
+     "key": "intergroup/call/COUNTERCALL#1",
+     "line": 1324
+    },
+    {
+     "key": "meatAndHunting/hunt/LEAD#1",
+     "line": 1458
+    },
+    {
+     "key": "patrolAndCalls/call/REUNION#1",
+     "line": 1541
+    }
+   ],
+   "numbers": [],
+   "rulings": [
+    8,
+    9,
+    10
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:898,908,1203,1232,1319,1320,1324,1324,1458,1541"
+  },
+  {
+   "id": "2ff3aeb4eb",
+   "text": "c.sex === 'male' || inRange | inRange := troop ? Math.hypot(x.heardX - troop.center[0], x.heardZ - troop.center[2]) < troop.radius * 1.05 : false",
+   "words": "a male, or the calls came from inside its own range",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "intergroup/patrol/APPROACH#1",
+     "line": 1340
+    },
+    {
+     "key": "intergroup/call/COUNTERCALL#2",
+     "line": 1341
+    }
+   ],
+   "numbers": [
+    "2",
+    "1.05"
+   ],
+   "rulings": [
+    8
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1340,1341"
+  },
+  {
+   "id": "3e513448bc",
+   "text": "c.sex === ag.sex || stranger | stranger := ag.troopId !== c.troopId",
+   "words": "the aggressor is of its own sex, or a stranger (no charging back across the sexes inside the community)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "threatResponses/charge/COUNTER#1",
+     "line": 1287
+    },
+    {
+     "key": "threatResponses/attack/FIGHTBACK#1",
+     "line": 1288
+    }
+   ],
+   "numbers": [],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1287,1288"
+  },
+  {
+   "id": "2eb4166427",
+   "text": "cl > rivalCloseness",
+   "words": "of the ranked males in view, only the one closest to it in rank score is its rival",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/charge/STATUS#1",
+     "line": 1156
+    }
+   ],
+   "numbers": [],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1156"
+  },
+  {
+   "id": "0e23d15c21",
+   "text": "cold > 0",
+   "words": "its body is colder than neutral (thermal load below zero): sheltering is offered only then",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/shelter/NONE#1",
+     "line": 422
+    }
+   ],
+   "numbers": [],
+   "rulings": [
+    5
+   ],
+   "status": "body",
+   "where": "src/sim/candidates.ts:422"
+  },
+  {
+   "id": "8b62dace08",
+   "text": "d < P.avoidCloseM || o.targetId === c.id || o.action === 'display' || o.action === 'charge'",
+   "words": "the other is very close, is aiming at it, or is displaying or charging",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/flee/AVOID#1",
+     "line": 833
+    }
+   ],
+   "numbers": [
+    "avoidCloseM=2.5"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:833"
+  },
+  {
+   "id": "c68bfbf00a",
+   "text": "dispOpen || (quotaTrace.on && male && e > 0.3) | dispOpen := male && e > 0.3 && (aggrBit(P, 4) || time - x.lastDisplay > 0.75) | male := c.sex === 'male' | e := c.energy",
+   "words": "the display's gate as the diagnostic hook sees it: a male with energy above 0.3 and, without the switch, 0.75 h since his last display (its parts are listed after it)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/display/RIVAL+REUNION+NONE#1",
+     "line": 908
+    }
+   ],
+   "numbers": [
+    "0.3",
+    "0.75"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:908"
+  },
+  {
+   "id": "da4f23beb8",
+   "text": "dominates(c, o)",
+   "words": "it outranks the other (the direction of rank)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/charge/REDIRECT#1",
+     "line": 1188
+    },
+    {
+     "key": "aggression/charge/TENSION#1",
+     "line": 1197
+    },
+    {
+     "key": "aggression/charge/FEED#1",
+     "line": 1225
+    }
+   ],
+   "numbers": [],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1188,1197,1225"
+  },
+  {
+   "id": "a455d5877f",
+   "text": "dominates(o, c)",
+   "words": "the other outranks it (the direction of rank)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/flee/AVOID#1",
+     "line": 833
+    },
+    {
+     "key": "computeCandidates/pant-grunt/NONE#2",
+     "line": 881
+    }
+   ],
+   "numbers": [],
+   "rulings": [
+    7
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:833,881"
+  },
+  {
+   "id": "11334e658c",
+   "text": "drive > 0.25 | drive := (company ? nestDrive + company : nestDrive) - raceG | company := P.nestCompany === 1 && inNest && !caretaker && c.age >= 5 ? nestCompanyValue(world, c, P, asleepOnly) : 0 | inNest := c.action === 'nest' && x.phase >= 2 && c.nest !== null | caretaker := dependentOn(world, c) | asleepOnly := P.choiceBelief === 1 || (P.choiceBelief === 2 && dayPhase(world) === 'day')",
+   "words": "the nest's own value, less what waiting would lose of a contested crop, is above 0.25: the rules' value used as a gate",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "offerOwnNest/nest/NONE#2",
+     "line": 287
+    }
+   ],
+   "numbers": [
+    "0.25",
+    "5",
+    "2",
+    "nestCompany=1",
+    "choiceBelief=2"
+   ],
+   "rulings": [
+    5
+   ],
+   "status": "body",
+   "where": "src/sim/candidates.ts:287"
+  },
+  {
+   "id": "b7908bea48",
+   "text": "e > 0.3 | e := c.energy",
+   "words": "its energy is above 0.3",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/display/RIVAL+REUNION+NONE#1",
+     "line": 908
+    }
+   ],
+   "numbers": [
+    "0.3"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:908"
+  },
+  {
+   "id": "8bebcd1e1b",
+   "text": "endoEsc || (tr && escOn) | endoEsc := escOn && cooled | escOn := endoOn(P, 'endoEscalate') && isAdultMale(c) | cooled := aggrBit(P, 1) || time - x.lastAgg > 1.5 | tr := quotaTrace.on",
+   "words": "an adult male past the aggression cooldown (the gate as the diagnostic hook sees it; its parts are listed after it)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/attack/ESCALATE#2",
+     "line": 1191
+    }
+   ],
+   "numbers": [
+    "1.5"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1191"
+  },
+  {
+   "id": "3cdf0b6dfd",
+   "text": "env.daylight > P.contactCallMinDaylight",
+   "words": "daylight is above the minimum for calling",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "patrolAndCalls/call/CONTACT#1",
+     "line": 1538
+    }
+   ],
+   "numbers": [
+    "contactCallMinDaylight=0.3"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1538"
+  },
+  {
+   "id": "0a0b07ec9f",
+   "text": "env.rain < P.patrolMaxRain",
+   "words": "it is not raining hard",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "patrolAndCalls/patrol/LEAD#1",
+     "line": 1523
+    }
+   ],
+   "numbers": [
+    "patrolMaxRain=0.3"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1523"
+  },
+  {
+   "id": "9d11c9f8f7",
+   "text": "fear <= 0.3 | fear := withInfant ? 0.6 : c.sex === 'female' ? 0.25 : 0 | withInfant := c.sex === 'female' && c.lactating",
+   "words": "not fearful (a female with an infant is)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "intergroup/display/STRANGER#1",
+     "line": 1324
+    },
+    {
+     "key": "intergroup/call/COUNTERCALL#1",
+     "line": 1324
+    },
+    {
+     "key": "intergroup/flee/STRANGERS#2",
+     "line": 1325
+    }
+   ],
+   "numbers": [
+    "0.3",
+    "0.6",
+    "0.25"
+   ],
+   "rulings": [
+    8
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1324,1324,1325"
+  },
+  {
+   "id": "1c6108cd95",
+   "text": "gangT | gangT := x.impulse === IMPULSE_GANG && x.impulseUntil > time ? byId.get(x.impulseTarget) : undefined",
+   "words": "a gang-attack impulse was rolled at perception (probability 0.5, one roll per 6 h at most, with 3 or more own males against a lone stranger of 10 or more, on patrol or near the range's edge)",
+   "class": "DIC",
+   "source": "table",
+   "sites": [
+    {
+     "key": "intergroup/attack/GANG#1",
+     "line": 1320
+    }
+   ],
+   "numbers": [],
+   "rulings": [
+    10
+   ],
+   "status": "rules",
+   "where": "src/sim/candidates.ts:1320"
+  },
+  {
+   "id": "dd326fa3f4",
+   "text": "guardianOf(world, o) !== c",
+   "words": "it is not the other's guardian (a guardian never supplants its ward)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/charge/FEED#1",
+     "line": 1225
+    }
+   ],
+   "numbers": [],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1225"
+  },
+  {
+   "id": "53d0f67e98",
+   "text": "here > P.homeLevel",
+   "words": "it stands outside its community's range (use level above the home level)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/travel/HOME#1",
+     "line": 701
+    }
+   ],
+   "numbers": [
+    "homeLevel=0.97"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:701"
+  },
+  {
+   "id": "76fcd32440",
+   "text": "isAdultMale(c)",
+   "words": "it is an adult male",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/attack/ESCALATE#2",
+     "line": 1191
+    },
+    {
+     "key": "patrolAndCalls/patrol/LEAD#1",
+     "line": 1523
+    }
+   ],
+   "numbers": [],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1191,1523"
+  },
+  {
+   "id": "51421ce230",
+   "text": "mv || time - ix(o).lastMate > P.mateIntervalH | mv := matingValueOn(P)",
+   "words": "the male's mating quota gates her offer too: 1.5 h since his last copulation",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "reproduction/mate/ACCEPT+NONE#2",
+     "line": 1398
+    },
+    {
+     "key": "reproduction/consort/ACCEPT#1",
+     "line": 1399
+    }
+   ],
+   "numbers": [
+    "mateIntervalH=1.5"
+   ],
+   "rulings": [
+    9
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1398,1399"
+  },
+  {
+   "id": "3fa2408ffd",
+   "text": "mv || time - x.lastMate > 0.3 | mv := matingValueOn(P)",
+   "words": "0.3 h since her last copulation",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "reproduction/mate/ACCEPT+NONE#2",
+     "line": 1398
+    },
+    {
+     "key": "reproduction/consort/ACCEPT#1",
+     "line": 1399
+    }
+   ],
+   "numbers": [
+    "0.3"
+   ],
+   "rulings": [
+    9
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1398,1399"
+  },
+  {
+   "id": "38df7b575b",
+   "text": "mv || time - x.lastMate > P.mateIntervalH | mv := matingValueOn(P)",
+   "words": "the mating quota: 1.5 h since his last copulation",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "reproduction/mate/ACCEPT+NONE#1",
+     "line": 1370
+    }
+   ],
+   "numbers": [
+    "mateIntervalH=1.5"
+   ],
+   "rulings": [
+    9
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1370"
+  },
+  {
+   "id": "91fc11c963",
+   "text": "o.action === 'rest' || o.action === 'groom' || o.action === 'shelter' || o.action === 'nurse'",
+   "words": "the other is settled: resting, grooming, sheltering or nursing",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/groom/ACCEPT+COALITION+NONE#1",
+     "line": 810
+    }
+   ],
+   "numbers": [],
+   "rulings": [
+    6
+   ],
+   "status": "pair",
+   "where": "src/sim/candidates.ts:810"
+  },
+  {
+   "id": "fa1f28e9a0",
+   "text": "o.age - ox.immigrantAge < 2",
+   "words": "she immigrated less than 2 years ago (a window)",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/charge/IMMIGRANT#1",
+     "line": 1213
+    }
+   ],
+   "numbers": [
+    "2"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1213"
+  },
+  {
+   "id": "110afefc5a",
+   "text": "o.age < 15",
+   "words": "the other is younger than 15",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/play/ACCEPT+NONE#1",
+     "line": 822
+    }
+   ],
+   "numbers": [
+    "15"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:822"
+  },
+  {
+   "id": "2798c9b39f",
+   "text": "o.age < 8",
+   "words": "the other is under 8",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/play/ACCEPT+NONE#2",
+     "line": 825
+    }
+   ],
+   "numbers": [
+    "8"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:825"
+  },
+  {
+   "id": "03c89f9204",
+   "text": "o.age >= 1",
+   "words": "the other is at least 1 year old",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/groom/ACCEPT+COALITION+NONE#1",
+     "line": 810
+    },
+    {
+     "key": "computeCandidates/play/ACCEPT+NONE#1",
+     "line": 822
+    },
+    {
+     "key": "computeCandidates/play/ACCEPT+NONE#2",
+     "line": 825
+    }
+   ],
+   "numbers": [
+    "1"
+   ],
+   "rulings": [
+    6
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:810,822,825"
+  },
+  {
+   "id": "4bcb0c3ede",
+   "text": "o.age >= 10",
+   "words": "the other is 10 or older",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "reproduction/mate/ACCEPT+NONE#1",
+     "line": 1370
+    },
+    {
+     "key": "reproduction/guard/NONE#1",
+     "line": 1374
+    },
+    {
+     "key": "reproduction/consort/NONE#1",
+     "line": 1384
+    },
+    {
+     "key": "reproduction/mate/ACCEPT+NONE#2",
+     "line": 1398
+    },
+    {
+     "key": "reproduction/consort/ACCEPT#1",
+     "line": 1399
+    }
+   ],
+   "numbers": [
+    "10"
+   ],
+   "rulings": [
+    9
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1370,1374,1384,1398,1399"
+  },
+  {
+   "id": "f935ead9fb",
+   "text": "o.age >= 12",
+   "words": "the other is 12 or older",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/charge/STATUS#1",
+     "line": 1156
+    }
+   ],
+   "numbers": [
+    "12"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1156"
+  },
+  {
+   "id": "b5b4b99dad",
+   "text": "o.age >= 15",
+   "words": "the other is 15 or older",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/follow/PARTY#2",
+     "line": 858
+    },
+    {
+     "key": "aggression/attack/ESCALATE#2",
+     "line": 1191
+    },
+    {
+     "key": "aggression/charge/FEMALE_DOM#1",
+     "line": 1232
+    }
+   ],
+   "numbers": [
+    "15"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:858,1191,1232"
+  },
+  {
+   "id": "31564b11cd",
+   "text": "o.age >= 5",
+   "words": "the other is 5 or older",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/charge/REDIRECT#1",
+     "line": 1188
+    },
+    {
+     "key": "aggression/charge/TENSION#1",
+     "line": 1197
+    },
+    {
+     "key": "aggression/charge/FEED#1",
+     "line": 1225
+    }
+   ],
+   "numbers": [
+    "5"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1188,1197,1225"
+  },
+  {
+   "id": "ffadb2edb6",
+   "text": "o.sex === 'female'",
+   "words": "the other is female",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/charge/COERCE#1",
+     "line": 1203
+    },
+    {
+     "key": "aggression/charge/IMMIGRANT#1",
+     "line": 1213
+    },
+    {
+     "key": "aggression/charge/FEMALE_DOM#1",
+     "line": 1232
+    }
+   ],
+   "numbers": [],
+   "rulings": [
+    9
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1203,1213,1232"
+  },
+  {
+   "id": "f34aebfe1f",
+   "text": "o.sex === 'male'",
+   "words": "the other is male",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/follow/PARTY#2",
+     "line": 858
+    },
+    {
+     "key": "aggression/attack/ESCALATE#2",
+     "line": 1191
+    }
+   ],
+   "numbers": [],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:858,1191"
+  },
+  {
+   "id": "a517220137",
+   "text": "o.swelling >= P.coerceSwellingMin",
+   "words": "her swelling is at the coercion level or above",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/charge/COERCE#1",
+     "line": 1203
+    }
+   ],
+   "numbers": [
+    "coerceSwellingMin=0.85"
+   ],
+   "rulings": [
+    9
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1203"
+  },
+  {
+   "id": "19b2a02da1",
+   "text": "o.swelling >= P.consortSwellingMin",
+   "words": "her swelling is at the consortship level or above",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "reproduction/consort/NONE#1",
+     "line": 1384
+    }
+   ],
+   "numbers": [
+    "consortSwellingMin=0.6"
+   ],
+   "rulings": [
+    9
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1384"
+  },
+  {
+   "id": "7c74228055",
+   "text": "o.swelling >= P.guardSwellingMin",
+   "words": "her swelling is at the guarding level or above",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "reproduction/guard/NONE#1",
+     "line": 1374
+    }
+   ],
+   "numbers": [
+    "guardSwellingMin=0.9"
+   ],
+   "rulings": [
+    9
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1374"
+  },
+  {
+   "id": "19bb93df56",
+   "text": "o.targetId === forageTree || (h > P.feedChargeHungerMin && x.trees.includes(o.targetId)) | forageTree := c.action === 'forage' ? c.targetId : -1 | h := c.hunger",
+   "words": "the other feeds in the tree it feeds in itself, or, when its own hunger is above the threshold, in a tree in view",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/charge/FEED#1",
+     "line": 1225
+    }
+   ],
+   "numbers": [
+    "feedChargeHungerMin=0.55"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1225"
+  },
+  {
+   "id": "241128015c",
+   "text": "open | open := greetMem ? x.greet[o.id] === undefined || ((o.action === 'charge' || o.action === 'attack') && o.targetId === c.id) : time - last > P.pantGruntRepeatH | greetMem := socialBit(P, 1)",
+   "words": "once per association: it has not greeted this animal since they last met, or that animal has just charged or attacked it (without the switch: 8 h since the last greeting)",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/pant-grunt/NONE#2",
+     "line": 881
+    }
+   ],
+   "numbers": [
+    "pantGruntRepeatH=8"
+   ],
+   "rulings": [
+    7
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:881"
+  },
+  {
+   "id": "2727ff1a68",
+   "text": "open | open := rS ? env.daylight < 1 : hour >= 12 || night | rS := P.rhythmSleep === 1 | night := env.daylight < 0.1",
+   "words": "a new nest may be started only when daylight is below full (with the sleep mechanism, as on the base; otherwise from 12:00 or at night)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "offerOwnNest/nest/NONE#2",
+     "line": 287
+    }
+   ],
+   "numbers": [
+    "12",
+    "0.1",
+    "rhythmSleep=1"
+   ],
+   "rulings": [
+    5
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:287"
+  },
+  {
+   "id": "ba3ff9ec62",
+   "text": "open || quotaTrace.on | open := greetMem ? x.greet[o.id] === undefined || ((o.action === 'charge' || o.action === 'attack') && o.targetId === c.id) : time - last > P.pantGruntRepeatH | greetMem := socialBit(P, 1)",
+   "words": "once per association: it has not greeted this animal since they last met, or that animal has just charged or attacked it (without the switch: 8 h since the last greeting)",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/pant-grunt/NONE#2",
+     "line": 881
+    }
+   ],
+   "numbers": [
+    "pantGruntRepeatH=8"
+   ],
+   "rulings": [
+    7
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:881"
+  },
+  {
+   "id": "fca097c435",
+   "text": "own < str + 1 || own < 2 || fear > 0.3 | own := x.ownMales | str := x.strangerMales | fear := withInfant ? 0.6 : c.sex === 'female' ? 0.25 : 0 | withInfant := c.sex === 'female' && c.lactating",
+   "words": "outnumbered, alone among males, or fearful (a female with an infant)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "intergroup/flee/STRANGERS#1",
+     "line": 1322
+    }
+   ],
+   "numbers": [
+    "2",
+    "0.3",
+    "0.6",
+    "0.25"
+   ],
+   "rulings": [
+    8
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1322"
+  },
+  {
+   "id": "e5df9a626f",
+   "text": "own >= 2 | own := x.ownMales",
+   "words": "at least 2 males of its own in view",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "intergroup/display/STRANGER#1",
+     "line": 1324
+    },
+    {
+     "key": "intergroup/call/COUNTERCALL#1",
+     "line": 1324
+    },
+    {
+     "key": "intergroup/flee/STRANGERS#2",
+     "line": 1325
+    }
+   ],
+   "numbers": [
+    "2"
+   ],
+   "rulings": [
+    8
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1324,1324,1325"
+  },
+  {
+   "id": "7c3088a535",
+   "text": "own >= 3 | own := x.ownMales",
+   "words": "at least 3 males of its own in view",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "intergroup/charge/STRANGER#1",
+     "line": 1319
+    },
+    {
+     "key": "intergroup/attack/GANG#1",
+     "line": 1320
+    },
+    {
+     "key": "intergroup/patrol/APPROACH#1",
+     "line": 1340
+    },
+    {
+     "key": "intergroup/call/COUNTERCALL#2",
+     "line": 1341
+    }
+   ],
+   "numbers": [
+    "3"
+   ],
+   "rulings": [
+    8,
+    10
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1319,1320,1340,1341"
+  },
+  {
+   "id": "8765fc7914",
+   "text": "own >= str + 1 | own := x.ownMales | str := x.strangerMales",
+   "words": "at least one more male of its own than the strangers have",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "intergroup/display/STRANGER#1",
+     "line": 1324
+    },
+    {
+     "key": "intergroup/call/COUNTERCALL#1",
+     "line": 1324
+    },
+    {
+     "key": "intergroup/flee/STRANGERS#2",
+     "line": 1325
+    }
+   ],
+   "numbers": [],
+   "rulings": [
+    8
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1324,1324,1325"
+  },
+  {
+   "id": "75699e7e57",
+   "text": "own >= str + 2 | own := x.ownMales | str := x.strangerMales",
+   "words": "at least 2 more males than the strangers have",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "intergroup/charge/STRANGER#1",
+     "line": 1319
+    },
+    {
+     "key": "intergroup/attack/GANG#1",
+     "line": 1320
+    }
+   ],
+   "numbers": [
+    "2"
+   ],
+   "rulings": [
+    8,
+    10
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1319,1320"
+  },
+  {
+   "id": "7dda1bfcb6",
+   "text": "r > 0 | r := huntRate(c, P, dist, x.ownMales, gaitOn(P) ? runSpeedOf(c, P) * 0.8 * bodyState(c) : P.walkMps)",
+   "words": "a capture can be expected and he needs energy: the hunt's expected energy rate is positive (the rules' value used as a gate)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "meatAndHunting/hunt/LEAD#1",
+     "line": 1458
+    }
+   ],
+   "numbers": [
+    "0.8",
+    "walkMps=0.35"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1458"
+  },
+  {
+   "id": "93e46a4d93",
+   "text": "rankedMale(c)",
+   "words": "it is a ranked male",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/charge/STATUS#1",
+     "line": 1156
+    }
+   ],
+   "numbers": [],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1156"
+  },
+  {
+   "id": "c2ead40a84",
+   "text": "rankedMale(o)",
+   "words": "the other is a ranked male",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/charge/STATUS#1",
+     "line": 1156
+    }
+   ],
+   "numbers": [],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1156"
+  },
+  {
+   "id": "6c8c5550ca",
+   "text": "sc > 0",
+   "words": "the slow states give the attack a positive value: the rules' value used as a gate",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/attack/ESCALATE#2",
+     "line": 1191
+    }
+   ],
+   "numbers": [],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1191"
+  },
+  {
+   "id": "77177a69f9",
+   "text": "sc > 0 | sc := fast ? rainFastScore(c, x, time, P) : rainScore(c, x, P) | fast := endoOn(P, 'endoFast')",
+   "words": "its arousal gives the display a positive value: the rules' value used as a gate",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/display/RAIN#1",
+     "line": 898
+    }
+   ],
+   "numbers": [],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:898"
+  },
+  {
+   "id": "44f62ce7a3",
+   "text": "sc > bestGruntScore | sc := 0.3 + (troop?.alphaId === o.id ? 0.4 : 0.05) + (displaying ? 0.8 : 0) + c.stress * 0.3 + (x.newcomers > 0 ? 0.15 : 0) + (o.sex === 'male' && c.sex === 'female' ? 0.1 : 0) - d / P.pantGruntDistScaleM - h * 0.2 - (night ?  … | displaying := (o.action === 'display' || o.action === 'charge') && d < P.displayNearM | h := c.hunger | night := env.daylight < 0.1",
+   "words": "of the dominants in reach, only the one the rules score highest is offered (alpha, displaying, nearer score more)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/pant-grunt/NONE#2",
+     "line": 881
+    }
+   ],
+   "numbers": [
+    "0.3",
+    "0.4",
+    "0.05",
+    "0.8",
+    "0.15",
+    "0.1",
+    "0.2",
+    "2",
+    "pantGruntDistScaleM=90",
+    "displayNearM=35"
+   ],
+   "rulings": [
+    7
+   ],
+   "status": "cut",
+   "cutBy": {
+    "id": "menuPossible",
+    "from": 1
+   },
+   "where": "src/sim/candidates.ts:881"
+  },
+  {
+   "id": "2dcb986fbe",
+   "text": "tenureC >= 3 | tenureC := ix(c).immigrantAge < 0 ? c.age - 10 : c.age - ix(c).immigrantAge",
+   "words": "the actor has 3 or more years of tenure (a resident)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/charge/IMMIGRANT#1",
+     "line": 1213
+    }
+   ],
+   "numbers": [
+    "3",
+    "10"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1213"
+  },
+  {
+   "id": "c643e58e32",
+   "text": "time - (x.hooAt ?? NEVER) <= P.travelHooWindowMin / 60",
+   "words": "it heard the hoo within the last few minutes (a window after the event)",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/travel/TREE#6",
+     "line": 888
+    }
+   ],
+   "numbers": [
+    "60",
+    "travelHooWindowMin=5"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:888"
+  },
+  {
+   "id": "4bc6313825",
+   "text": "time - at < (fast ? fastSpanH(P) : P.impulseDurationH) | fast := endoOn(P, 'endoFast')",
+   "words": "a storm began within the span of the fast arousal state (a window after the event)",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/display/RAIN#1",
+     "line": 898
+    }
+   ],
+   "numbers": [
+    "impulseDurationH=0.1"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:898"
+  },
+  {
+   "id": "bff8dff907",
+   "text": "time - lc.time < P.reconcileWindowH | lc := c.lastConflict",
+   "words": "the conflict was within the post-conflict window",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "affiliationRepair/reconcile/NONE#1",
+     "line": 1481
+    }
+   ],
+   "numbers": [
+    "reconcileWindowH=0.3"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1481"
+  },
+  {
+   "id": "9fa8c1c36e",
+   "text": "time - ox.victimAt < 0.05",
+   "words": "the other was attacked within the last 0.05 h (a window after the event)",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/charge/DEFEND#1",
+     "line": 1240
+    }
+   ],
+   "numbers": [
+    "0.05"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1240"
+  },
+  {
+   "id": "015130d389",
+   "text": "time - vx.victimAt <= P.consoleWindowH",
+   "words": "the other was a victim within the consolation window",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "affiliationRepair/console/NONE#1",
+     "line": 1493
+    }
+   ],
+   "numbers": [
+    "consoleWindowH=0.15"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1493"
+  },
+  {
+   "id": "555767f53b",
+   "text": "time - x.coalAt < P.coalitionWindowH",
+   "words": "it was alerted to a conflict within the last 0.05 h (a window; who is alerted is decided in conflict.ts)",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/charge/COALITION#1",
+     "line": 1255
+    }
+   ],
+   "numbers": [
+    "coalitionWindowH=0.05"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1255"
+  },
+  {
+   "id": "805dbc40b1",
+   "text": "time - x.heardAt < 0.2",
+   "words": "it heard them within the last 0.2 h (a window after the event)",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "intergroup/patrol/APPROACH#1",
+     "line": 1340
+    },
+    {
+     "key": "intergroup/call/COUNTERCALL#2",
+     "line": 1341
+    },
+    {
+     "key": "intergroup/flee/HEARD#1",
+     "line": 1342
+    }
+   ],
+   "numbers": [
+    "0.2"
+   ],
+   "rulings": [
+    8
+   ],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1340,1341,1342"
+  },
+  {
+   "id": "396e0f7dab",
+   "text": "time - x.joinAt < 0.3",
+   "words": "it heard the call within the last 0.3 h (a window after the event)",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "callerTrip/travel/CALLER#1",
+     "line": 691
+    }
+   ],
+   "numbers": [
+    "0.3"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:691"
+  },
+  {
+   "id": "676e4a01ea",
+   "text": "time - x.lostAt < (fastRed ? fastSpanH(P) : endoRed ? P.endoStressTauH : P.redirectWindowH) | fastRed := endoOn(P, 'endoFastRedirect') | endoRed := endoOn(P, 'endoRedirect')",
+   "words": "it lost a contest within the last stress time constant (a window after the event)",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/charge/REDIRECT#1",
+     "line": 1188
+    }
+   ],
+   "numbers": [
+    "endoStressTauH=3.4",
+    "redirectWindowH=0.1"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1188"
+  },
+  {
+   "id": "13e1a91229",
+   "text": "tn >= P.rivalTension",
+   "words": "its tension with the other is at the rival level or above",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/flee/AVOID#1",
+     "line": 833
+    },
+    {
+     "key": "aggression/charge/TENSION#1",
+     "line": 1197
+    }
+   ],
+   "numbers": [
+    "rivalTension=0.35"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:833,1197"
+  },
+  {
+   "id": "a7a187e8c0",
+   "text": "v > 0",
+   "words": "the mechanism gives the act a positive value: the rules' value used as a gate (patrol lead: stale border, odds, daylight left, fatigue; pant-hoot: what allies out of sight learn against what the crop loses)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "patrolAndCalls/patrol/LEAD#1",
+     "line": 1523
+    },
+    {
+     "key": "patrolAndCalls/call/CONTACT#1",
+     "line": 1538
+    }
+   ],
+   "numbers": [],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1523,1538"
+  },
+  {
+   "id": "255f5e555b",
+   "text": "vx.consoledAt <= vx.victimAt",
+   "words": "the victim has not been consoled yet (once per event)",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "affiliationRepair/console/NONE#1",
+     "line": 1493
+    }
+   ],
+   "numbers": [],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1493"
+  },
+  {
+   "id": "2dccf74c76",
+   "text": "water ? c.thirst > 0 : c.thirst > 0.25 | water := waterOn(P)",
+   "words": "it is thirsty at all: the water ledger's thirst is above zero (above 0.25 without the ledger)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/drink/NONE#1",
+     "line": 597
+    }
+   ],
+   "numbers": [
+    "0.25"
+   ],
+   "rulings": [
+    4
+   ],
+   "status": "body",
+   "where": "src/sim/candidates.ts:597"
+  },
+  {
+   "id": "cf18d1e768",
+   "text": "world.environment.fruitIndex < 0.4 || (t !== undefined && (P.patchEcology === 1 ? fruitAt(world, t) : t.fruit) < 0.3)",
+   "words": "fruit is scarce: in the habitat (index under 0.4, a figure no animal perceives) or in that tree (crop under 0.3)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/charge/FEED#1",
+     "line": 1225
+    }
+   ],
+   "numbers": [
+    "0.4",
+    "0.3",
+    "patchEcology=1"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1225"
+  },
+  {
+   "id": "2928b7c4f3",
+   "text": "world.environment.rain < 0.3",
+   "words": "it is not raining hard (rain under 0.3)",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "meatAndHunting/hunt/JOIN#1",
+     "line": 1445
+    },
+    {
+     "key": "meatAndHunting/hunt/LEAD#1",
+     "line": 1458
+    }
+   ],
+   "numbers": [
+    "0.3"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1445,1458"
+  },
+  {
+   "id": "83520aefc7",
+   "text": "world.time - x.victimAt <= 0.03",
+   "words": "it was threatened within the last 0.03 h, about 2 minutes (a window after the event)",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "threatResponses/submit/AGGRESSOR#1",
+     "line": 1283
+    },
+    {
+     "key": "threatResponses/flee/AGGRESSOR#1",
+     "line": 1284
+    },
+    {
+     "key": "threatResponses/charge/COUNTER#1",
+     "line": 1287
+    },
+    {
+     "key": "threatResponses/attack/FIGHTBACK#1",
+     "line": 1288
+    }
+   ],
+   "numbers": [
+    "0.03"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1283,1284,1287,1288"
+  },
+  {
+   "id": "48110e41d1",
+   "text": "x.consoleAt <= vx.victimAt",
+   "words": "it has not consoled since that attack (once per event)",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "affiliationRepair/console/NONE#1",
+     "line": 1493
+    }
+   ],
+   "numbers": [],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1493"
+  },
+  {
+   "id": "8411d34f7f",
+   "text": "x.impulse === IMPULSE_INFANTICIDE",
+   "words": "an infanticide impulse was rolled at perception (per look at a stranger's infant when its males outnumber theirs by the margin, or for a new alpha and an infant he did not sire)",
+   "class": "DIC",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/attack/INFANTICIDE#1",
+     "line": 1172
+    }
+   ],
+   "numbers": [],
+   "rulings": [
+    10
+   ],
+   "status": "rules",
+   "where": "src/sim/candidates.ts:1172"
+  },
+  {
+   "id": "818bd18c87",
+   "text": "x.impulseUntil > time",
+   "words": "the impulse is still open (a window of 0.1 h after it was raised)",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/attack/INFANTICIDE#1",
+     "line": 1172
+    }
+   ],
+   "numbers": [],
+   "rulings": [
+    10
+   ],
+   "status": "rules",
+   "where": "src/sim/candidates.ts:1172"
+  },
+  {
+   "id": "92cf7e6e82",
+   "text": "x.lastAgg < x.lostAt",
+   "words": "it has not aggressed since that loss (once per loss)",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "aggression/charge/REDIRECT#1",
+     "line": 1188
+    }
+   ],
+   "numbers": [],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1188"
+  },
+  {
+   "id": "38b0712d3a",
+   "text": "x.lastDisplay < at",
+   "words": "it has not displayed since the storm began (once per storm)",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "computeCandidates/display/RAIN#1",
+     "line": 898
+    }
+   ],
+   "numbers": [],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:898"
+  },
+  {
+   "id": "8b299abf59",
+   "text": "x.ownMales >= P.patrolMinMales",
+   "words": "at least the minimum number of adult males of its own in view",
+   "class": "ADV",
+   "source": "table",
+   "sites": [
+    {
+     "key": "patrolAndCalls/patrol/LEAD#1",
+     "line": 1523
+    }
+   ],
+   "numbers": [
+    "patrolMinMales=3"
+   ],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1523"
+  },
+  {
+   "id": "c9ce8a9e99",
+   "text": "x.recon < lc.time | lc := c.lastConflict",
+   "words": "it has not reconciled since that conflict (once per conflict)",
+   "class": "QUO",
+   "source": "table",
+   "sites": [
+    {
+     "key": "affiliationRepair/reconcile/NONE#1",
+     "line": 1481
+    }
+   ],
+   "numbers": [],
+   "rulings": [],
+   "status": "kept",
+   "where": "src/sim/candidates.ts:1481"
+  }
+ ]
+}

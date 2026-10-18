@@ -41,6 +41,8 @@ export function createR15Handler(worker: Pick<R15Worker, 'start' | 'status' | 's
       value = JSON.parse(body);
     } catch { send(response, 400, { error: 'Invalid JSON or oversized request' }); return; }
     if (!validateDecisionContext(value) || !value.resourceChoice) { send(response, 400, { error: 'R15 requires a valid marked kind or target context' }); return; }
+    // stage R12 build (docs/staging/r12-build-prereg.md §9): an R15 or R16 adapter serves only R15's contract
+    if (value.menu !== undefined) { send(response, 409, { error: 'R15 adapters refuse a context of the R12 menu (menu-targets-v1)' }); return; }
     if (busy) { send(response, 429, { error: 'R15 is busy; no inference queue' }); return; }
     busy = true;
     let packet: ReturnType<typeof r15Packet> | undefined;

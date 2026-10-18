@@ -90,9 +90,13 @@ export interface SiteClass {
   over?: Record<string, AtomClass>;
   /** A base fact under which the site is unreachable although no single switch condition in front of it says so, and why. */
   dead?: string; deadWhy?: string;
+  /** A site a later build added after the sign-off, behind its own switch (stage R12's build: docs/staging/r12-build-prereg.md A1.7): what it is, in a few words. */
+  build?: string;
 }
 /** `short`: the ruling as one plain sentence with the recommendation (the two-minute page); `ask` and `recommend`: the same in full. */
-export interface Ruling { title: string; short: string; ask: string; recommend: string; sites: string[] }
+export interface Ruling { title: string; short: string; ask: string; recommend: string; sites: string[];
+  /** The user's ruling once given: the date and the user's own words (printed in section 2, not on the word-capped first page). */
+  ruled?: string }
 /** `staysShort`: what stays with the rules, in a sentence or two (the two-minute page); `stays`: the same in full. */
 export interface Classes { about: string; rulings: Ruling[]; staysShort: string; stays: string[]; atoms: Record<string, AtomClass>; sites: Record<string, SiteClass> }
 /** The longest the two-minute page may be, in words of running text, its table apart (about two minutes of reading; a pass mark the review added, prereg §14). */
@@ -108,6 +112,8 @@ export function twoMinutePage(md: string): { text: string; words: number } {
 export function baseFacts(P: Params): Record<string, boolean> {
   return {
     trace: false, resources: false,                                  // quotaTrace is off; this table audits ordinary rules enumeration
+    // stage R12 build (docs/staging/r12-build-prereg.md A1.7): the ruled menu's levels; its offers also need the model-only call (`resources`, false here)
+    menu1: P.menuPossible >= 1, menu2: P.menuPossible >= 2,
     circ: circadianOn(P), dark: darkOn(P), rH: P.rhythmHeat === 1, rS: P.rhythmSleep === 1, race: P.departRace === 1,
     fr: forageRateOn(P), gv: gutValueOn(P), shortlist: P.patchEcology === 1, routeChain: P.goalDistScaleM > 0 || P.routeChain === 1,
     callerRate: socialBit(P, 4) && cohesionOn(P) && forageRateOn(P), social4: socialBit(P, 4), cohesion: cohesionOn(P), callTrip: callTripOn(P),
@@ -242,6 +248,9 @@ export function tableMarkdown(T: Table): string {
   o.push('| | Places |', '|---|---|');
   o.push(`| All | ${rows.length} |`);
   o.push(`| Unreachable with today's settings (old branches) | ${n(r => r.status === 'legacy', rows)} |`);
+  // stage R12 build (A1.7): sites added after the sign-off are named, not folded silently into the signed totals (a table line: the page's word count leaves tables out)
+  const built = rows.filter(r => r.cls?.build);
+  if (built.length) o.push(`| … of them added after the sign-off by stage R12's build, behind its switch and for the model's own pool only (${built.map(r => r.cls!.build).join('; ')}) | ${built.length} |`);
   o.push(`| Reached only by animals under ${KERNEL_AGE}, for whom the rules decide | ${n(r => r.status === 'young', rows)} |`);
   o.push(`| **Live for an animal the model decides for** | **${live.length}** |`);
   o.push(`| … open whenever the act is physically possible and the animal perceives what it needs | ${nPossible} |`);
@@ -261,7 +270,7 @@ export function tableMarkdown(T: Table): string {
   o.push(`Of the ${live.length} live places, ${nPossible} are a matter of possibility alone and ${nHand} carry a hand rule. Counting the code as written, old branches and the young included, ${written(hand)} of the ${rows.length} carry advice, a quota or dice. The hand rules of the live places hold ${literals + registry} numbers by the script's count: ${literals} number literals and ${registry} registry values. That count is lexical: a literal is counted once in each condition that carries it, so a threshold written in two conditions counts twice; it includes a few numbers that are not thresholds (a unit conversion, a phase index, the terms of the greeting score, registry switches); and a number inside a function the condition calls is not seen.`, '');
   o.push(`A rule is proposed for dropping in two cases only. Either the rules already value every option the rule cut (which tree to travel to, which dominant to greet), so a model taught by the rules can be taught the wider choice: that removes the cut, and the model is still rules-taught. Or a teacher other than the rules exists or may be allowed (wild grooming records for some pairs; the body's own outcomes, a ruling deferred on 10 October), and the rule goes only where that teacher reaches. Everywhere else a model taught by the rules would learn the same rule back from its teacher, so the rule stays in code and is counted.`, '');
   o.push('### The ten rulings', '');
-  C.rulings.forEach((r, i) => { o.push(`${i + 1}. **${r.title}** ${r.ask} *Recommended:* ${r.recommend}${r.sites.length ? ` (${rowList(r.sites)})` : ''}`); });
+  C.rulings.forEach((r, i) => { o.push(`${i + 1}. **${r.title}** ${r.ask} *Recommended:* ${r.recommend}${r.sites.length ? ` (${rowList(r.sites)})` : ''}${r.ruled ? ` *Ruled:* ${r.ruled}` : ''}`); });
   o.push('', '### What stays with the rules, and why', '');
   for (const s of C.stays) o.push(`- ${s}`);
   o.push('');

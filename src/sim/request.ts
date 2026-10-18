@@ -7,6 +7,8 @@ import { paramsOf, type Params } from './params';
 import { byValue, rgMenuParts } from './rg';
 import { optionKind } from './menu';
 import { resourceKind, resourcePercepts, resourceTargetsFor } from './resources';
+import { isDiceOption, opensTarget, socialTargetsFor, targetSocial } from './possible';
+import { R12_PACKET_VERSION } from '../kernel/resource-contract';
 
 // The request a decision kernel receives (moved unchanged from src/decision.ts, which re-exports it; stage R1,
 // docs/staging/r1-prereg.md D5): the chimp's own percept (observe) with the menu bounded to at most eight legal options.
@@ -44,7 +46,18 @@ export function collapseMemories(recent: string[]): string[] {
  * phaseMenu false: no night or dusk menu (scripts/ft-contexts.ts). menuParity, activityFirst: the stage R2 switch read
  * as this value instead of the world's (scripts/r2-sample.ts; a world's parameters cannot be changed after creation).
  */
-export interface RequestOpts { phaseMenu?: boolean; menuParity?: number; activityFirst?: number }
+export interface RequestOpts {
+  phaseMenu?: boolean; menuParity?: number; activityFirst?: number;
+  /** Stage R12 build (A1.3): options removed from the candidate list before anything is built from it (the dice acts, menuPossible ≥ 1). */
+  drop?: (k: Candidate) => boolean;
+}
+
+/** The rules' pick (their argmax), or, with options dropped (stage R12 build, A1.3), their best option that is not dropped. Pure. */
+function rulesPick(world: World, chimp: Chimp, drop?: (k: Candidate) => boolean): Candidate | null {
+  if (!drop) return rulesChoice(world, chimp);
+  const best = computeCandidates(world, chimp, []).find(k => k.action !== 'dead' && !drop(k));
+  return best ? copyCandidate(best) : null;
+}
 
 /**
  * The request body: the chimp's own percept with the menu bounded for the kernel. Option i of `options` has id `c{i}`.
@@ -62,10 +75,10 @@ export function buildRequest(world: World, chimp: Chimp, opts: RequestOpts = {})
 function buildLegacyRequest(world: World, chimp: Chimp, opts: RequestOpts = {}): KernelRequest {
   const P = paramsOf(world), parity = (opts.menuParity ?? P.menuParity) === 1, kinds = (opts.activityFirst ?? P.activityFirst) >= 1;
   if (parity || kinds) return buildRequestR2(world, chimp, opts, P, parity, kinds);
-  const seen = observe(world, chimp);
+  const seen = observe(world, chimp, opts.drop);
   // phaseMenu: false gives the unfiltered menu, used only to A/B the night and dusk menus (scripts/ft-contexts.ts).
   const ctx = opts.phaseMenu === false ? seen : { ...seen, candidates: phaseMenu(seen.candidates, seen.environment.phase) };
-  const rules = rulesChoice(world, chimp);
+  const rules = rulesPick(world, chimp, opts.drop);
   if (rules && paramsOf(world).kernelNoRulesPick === 1) {
     const rest = { ...ctx, candidates: ctx.candidates.filter(k => !same(k, rules)) };
     const menu = boundedCandidates(rest.candidates, [stimulusResponse(rest)]);
@@ -80,9 +93,12 @@ function buildLegacyRequest(world: World, chimp: Chimp, opts: RequestOpts = {}):
 export function buildResourceRequest(world: World, chimp: Chimp, opts: RequestOpts = {}): KernelRequest {
   const P = paramsOf(world);
   if (P.resourceTargets !== 1 || P.activityFirst !== 2 || P.observeV5 !== 1) throw new RangeError('R15 requires resourceTargets=1, activityFirst=2 and observeV5=1');
-  const legacy = buildLegacyRequest(world, chimp, { ...opts, activityFirst: 0 });
+  // stage R12 build (menuPossible ≥ 1; docs/staging/r12-build-prereg.md §4, A1): the dice acts leave the list first
+  const menu = P.menuPossible >= 1;
+  const legacy = buildLegacyRequest(world, chimp, { ...opts, activityFirst: 0, ...(menu ? { drop: isDiceOption } : {}) });
   const withheld = P.kernelNoRulesPick === 1 ? rulesChoice(world, chimp) : null;
   const percepts = resourcePercepts(world, chimp).filter(k => !withheld || !same(k, withheld)), groups: Candidate[][] = [], options: Candidate[] = [];
+  const social: ({ social: DecisionContext['social']; history: string[] } | null)[] = [];
   const kinds = new Set<ReturnType<typeof optionKind>>();
   for (const old of legacy.options) {
     const kind = optionKind(old);
@@ -94,12 +110,16 @@ export function buildResourceRequest(world: World, chimp: Chimp, opts: RequestOp
       group = resourceTargetsFor(world, chimp, kind, percepts);
       if (!group.length) continue;
       representative = group.find(k => same(k, representatives[0])) ?? [...group].sort((a, b) => b.score - a.score)[0];
+    } else if (menu && opensTarget(world, chimp, kind)) {
+      // stage R12 build (rulings 6 and 7): whom to greet, and an adult male's grooming partner among the adult males
+      representative = representatives[0]; group = socialTargetsFor(world, chimp, kind, percepts, representative);
     } else { representative = representatives[0]; group = [representative]; }
     options.push(copyCandidate(representative)); groups.push(group);
+    if (menu) social.push(group.length > 1 && opensTarget(world, chimp, kind) ? targetSocial(world, chimp, group) : null);
   }
   const rules = legacy.rulesIndex >= 0 ? legacy.options[legacy.rulesIndex] : undefined;
-  return { context: { ...legacy.context, candidates: options, resourceChoice: 'kind', resourceKinds: options.map(optionKind) }, options, groups,
-    rulesIndex: rules ? groups.findIndex(g => g.some(k => same(k, rules))) : -1 };
+  return { context: { ...legacy.context, candidates: options, resourceChoice: 'kind', resourceKinds: options.map(optionKind), ...(menu ? { menu: R12_PACKET_VERSION } : {}) }, options, groups,
+    rulesIndex: rules ? groups.findIndex(g => g.some(k => same(k, rules))) : -1, ...(menu ? { targetSocial: social } : {}) };
 }
 
 /**
@@ -111,10 +131,11 @@ export function buildResourceRequest(world: World, chimp: Chimp, opts: RequestOp
  * Each option is the observation's copy (it carries the option's `value`); the rest of the context is observe()'s.
  */
 function buildRequestR2(world: World, chimp: Chimp, opts: RequestOpts, P: Params, parity: boolean, kinds: boolean): KernelRequest {
-  const seen = observe(world, chimp), rules = rulesChoice(world, chimp), withheld = !!rules && P.kernelNoRulesPick === 1;
+  const seen = observe(world, chimp, opts.drop), rules = rulesPick(world, chimp, opts.drop), withheld = !!rules && P.kernelNoRulesPick === 1;
   let pool: Candidate[], keep: (Candidate | null | undefined)[];
   if (parity) {
     let all = computeCandidates(world, chimp, []);
+    if (opts.drop) all = all.filter(k => !opts.drop!(k));
     if (withheld) all = all.filter(k => !same(k, rules!));
     const parts = rgMenuParts(world, chimp, P.choiceBelief === 1 ? byValue(all) : all, opts.phaseMenu === false);
     pool = parts.phased; keep = parts.keep;
@@ -132,6 +153,12 @@ function buildRequestR2(world: World, chimp: Chimp, opts: RequestOpts, P: Params
   return { context, options, rulesIndex: rules && !withheld ? options.findIndex(o => same(o, rules)) : -1, ...(groups ? { groups } : {}) };
 }
 
+/** A context with another list of perceived animals and their history lines (absent when there are none, as observe() writes it). */
+function withAround(ctx: DecisionContext, around: { social: DecisionContext['social']; history: string[] }): DecisionContext {
+  const { history: _h, ...rest } = ctx;
+  return { ...rest, social: around.social, ...(around.history.length ? { history: around.history } : {}) };
+}
+
 /**
  * Stage R2 (activityFirst 2): the second request, over the options of the kind the kernel chose (entry `index` of a
  * request built at activityFirst ≥ 1), in the menu's fixed order: the same context with those options as its menu.
@@ -142,7 +169,10 @@ export function targetRequest(request: KernelRequest, index: number): KernelRequ
   if (!g || g.length < 2) return null;
   const resource = request.context.resourceChoice === 'kind';
   const options = resource ? g.map(copyCandidate) : menuOrder(g);
-  const context: DecisionContext = { ...request.context, candidates: options,
+  // stage R12 build (§4.5): a social target call shows the animals its own group names, chosen by distance
+  const around = request.targetSocial?.[index];
+  const base: DecisionContext = around ? withAround(request.context, around) : request.context;
+  const context: DecisionContext = { ...base, candidates: options,
     ...(resource ? { resourceChoice: 'target', resourceKinds: options.map(() => request.context.resourceKinds![index]) } : {}) };
   return { context, options, rulesIndex: request.rulesIndex === index ? (resource ? options.findIndex(k => same(k, request.options[index])) : options.indexOf(g[0])) : -1 };
 }

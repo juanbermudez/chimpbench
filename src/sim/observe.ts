@@ -12,6 +12,19 @@ import { bodySights } from './deadbody';
 
 const r2 = (v: number) => Math.round(v * 100) / 100;
 
+/** What the focal animal perceives of one other animal (the observation's `social` entry). Shared with the target calls of the ruled menu (stage R12 build, src/sim/possible.ts). Pure. */
+export function socialPercept(world: World, c: Chimp, o: Chimp): SocialPercept {
+  const troop = index(world).troopById.get(c.troopId), same = o.troopId === c.troopId, v5 = paramsOf(world).observeV5 === 1;
+  return {
+    id: o.id, name: o.name, relation: relationOf(world, c, o), sex: o.sex, ageYears: Math.round(o.age * 10) / 10, stage: o.stage,
+    rankOrder: same ? o.rankOrder : 0, isAlpha: same && troop?.alphaId === o.id, bond: r2(bond(c, o)),
+    distance: Math.round(Math.hypot(o.position[0] - c.position[0], o.position[2] - c.position[2]) * 10) / 10, action: o.action,
+    swelling: r2(o.swelling), injured: o.injury > 0.15, hasMeat: o.carryingMeat > 0.05,
+    ...(same ? { tension: r2(tensionOf(c, o)) } : {}),
+    ...(v5 ? perceptOwn(world, c, o) : {}),
+  };
+}
+
 function ago(hours: number): string {
   const min = hours * 60;
   if (min < 1) return 'just now';
@@ -45,7 +58,7 @@ function dirWord(dx: number, dz: number): string {
  * what it sees each perceived animal doing and its own timing with it, what each option is in its own terms (`about`, on
  * copies), and `packet: 5`. Still pure and local.
  */
-export function observe(world: World, c: Chimp): DecisionContext {
+export function observe(world: World, c: Chimp, drop?: (k: Candidate) => boolean): DecisionContext {
   const x = ix(c);
   const idx = index(world);
   const troop = idx.troopById.get(c.troopId);
@@ -53,7 +66,9 @@ export function observe(world: World, c: Chimp): DecisionContext {
   const env = world.environment;
   // stage R2 (observeV4 1; docs/staging/r2-prereg.md §1 A): the M1 parts plus the v4 fields and the packet marker; stage R8 (observeV5 1): those and the animal's own experience
   const P = paramsOf(world), v5 = P.observeV5 === 1, v4 = v5 || P.observeV4 === 1, track = v4 || P.observeState === 1;
-  const all: Candidate[] = computeCandidates(world, c, []);
+  // stage R12 build (`drop`; docs/staging/r12-build-prereg.md A1.3): the request builder of the ruled menu leaves the dice
+  // acts out before anything is built from the list, so they neither reach the menu nor order the nearby animals
+  const all: Candidate[] = drop ? computeCandidates(world, c, []).filter(k => !drop(k)) : computeCandidates(world, c, []);
   const px = c.position[0], pz = c.position[2];
   const perceivable = (id: number) => x.seen.includes(id) || c.memory.some(m => m.kind === 'chimp' && m.entityId === id) || id === x.caretaker || id === c.motherId;
   // relevance: candidate targets first (by score), then kin, alpha, allies, rivals, strangers, swollen females, meat holders
@@ -79,18 +94,7 @@ export function observe(world: World, c: Chimp): DecisionContext {
   }
   rest.sort((a, b) => b.v - a.v || a.id - b.id);
   for (const r of rest) { if (chosen.length >= 8) break; chosen.push(r.id); }
-  const social: SocialPercept[] = chosen.map(id => {
-    const o = idx.byId.get(id)!;
-    const same = o.troopId === c.troopId;
-    return {
-      id, name: o.name, relation: relationOf(world, c, o), sex: o.sex, ageYears: Math.round(o.age * 10) / 10, stage: o.stage,
-      rankOrder: same ? o.rankOrder : 0, isAlpha: same && troop?.alphaId === o.id, bond: r2(bond(c, o)),
-      distance: Math.round(Math.hypot(o.position[0] - px, o.position[2] - pz) * 10) / 10, action: o.action,
-      swelling: r2(o.swelling), injured: o.injury > 0.15, hasMeat: o.carryingMeat > 0.05,
-      ...(same ? { tension: r2(tensionOf(c, o)) } : {}),
-      ...(v5 ? perceptOwn(world, c, o) : {}),
-    };
-  });
+  const social: SocialPercept[] = chosen.map(id => socialPercept(world, c, idx.byId.get(id)!));
   // stage ED (deadBody; deadbody.ts): the bodies in sight, and the options about them (a body is never in `social`)
   const bodies = paramsOf(world).deadBody === 1 ? bodySights(world, c) : [];
   const candidates = all.filter(k => !isChimpId(k.targetId) || chosen.includes(k.targetId) || bodies.some(b => b.id === k.targetId));

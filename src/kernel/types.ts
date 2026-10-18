@@ -28,6 +28,13 @@ export interface KernelRequest {
    * activityFirst 2 the loop sends the chosen kind's options to the kernel in a second request (targetRequest).
    */
   groups?: Candidate[][];
+  /**
+   * Stage R12 build (menuPossible ≥ 1; docs/staging/r12-build-prereg.md §4.5): for each group whose social target the
+   * ruled menu opens and that has two or more options, what its target call shows of the animals around (the group's
+   * targets, then the nearest others in view, to 8) with their history lines; null for every other group. Built with the
+   * first request from the same world, so the second request stays pure. Absent at 0.
+   */
+  targetSocial?: ({ social: DecisionContext['social']; history: string[] } | null)[];
 }
 
 /** One choice out: `index` (or `choice`, "c{index}") and, from every kernel but the in-simulation rules, a probability per option. The loop validates it (src/kernel/answer.ts). */

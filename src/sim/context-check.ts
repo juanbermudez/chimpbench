@@ -1,4 +1,4 @@
-import { isDecisionKind, isResourceKind } from '../kernel/resource-contract';
+import { isDecisionKind, isResourceKind, isSocialTargetKind, R12_PACKET_VERSION } from '../kernel/resource-contract';
 import type { BodyPercept, BodySight, DecisionContext, OptionAbout, OptionValue, OwnExperience, SocialPercept } from '../types';
 
 // The request validation every kernel shares (stage R1, docs/staging/r1-prereg.md D5): moved unchanged from
@@ -127,7 +127,7 @@ function validSight(b: unknown, focalId: number): b is BodySight {
 
 /** Why a context is rejected, or '' when it is valid. Reasons stay server-side and in receipts. */
 export function decisionContextError(value: unknown, limits: MenuLimits = SIM_LIMITS): string {
-  if (!record(value) || !keysWith(value, ['chimpId', 'version', 'time', 'focal', 'environment', 'social', 'recent', 'stimuli', 'candidates'], ['history', 'body', 'light', 'bodies', 'packet', 'own', 'resourceChoice', 'resourceKinds'])) return 'context keys';
+  if (!record(value) || !keysWith(value, ['chimpId', 'version', 'time', 'focal', 'environment', 'social', 'recent', 'stimuli', 'candidates'], ['history', 'body', 'light', 'bodies', 'packet', 'own', 'resourceChoice', 'resourceKinds', 'menu'])) return 'context keys';
   if (!int(value.chimpId, 1, 99_999) || !int(value.version, 0, 1e12) || !num(value.time, 0, 1e7)) return 'context ids';
   const f = value.focal;
   if (!record(f) || !exactKeys(f, ['name', 'ageYears', 'stage', 'sex', 'community', 'rankOrder', 'rankOf', 'isAlpha', 'hunger', 'thirst', 'energy',
@@ -162,8 +162,11 @@ export function decisionContextError(value: unknown, limits: MenuLimits = SIM_LI
   if (value.resourceChoice !== undefined || value.resourceKinds !== undefined) {
     const kinds = value.resourceKinds;
     if (value.packet !== 5 || (value.resourceChoice !== 'kind' && value.resourceChoice !== 'target') || !Array.isArray(kinds) || !Array.isArray(options) || kinds.length !== options.length || !kinds.length || !kinds.every(isDecisionKind)) return 'resource choice';
-    if (value.resourceChoice === 'kind' ? new Set(kinds).size !== kinds.length : !isResourceKind(kinds[0]) || kinds.some(k => k !== kinds[0])) return 'resource kinds';
+    // stage R12 build (menu; docs/staging/r12-build-prereg.md §9): a target context of the ruled menu may also be of a social kind whose target the rulings open
+    const targetKind = (k: string) => isResourceKind(k) || (value.menu === R12_PACKET_VERSION && isSocialTargetKind(k));
+    if (value.resourceChoice === 'kind' ? new Set(kinds).size !== kinds.length : !targetKind(kinds[0]) || kinds.some(k => k !== kinds[0])) return 'resource kinds';
   }
+  if (value.menu !== undefined && (value.menu !== R12_PACKET_VERSION || value.resourceChoice === undefined)) return 'menu contract'; // stage R12 build: only on R15's marked contexts
   if (!Array.isArray(options) || options.length < 2 || options.length > limits.options) return 'option count';
   const seen = new Set<string>();
   const immature = f.stage === 'infant' || f.stage === 'juvenile';
