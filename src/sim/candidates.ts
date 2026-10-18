@@ -43,7 +43,9 @@ export const V = {
  * the animal cannot see now: [tree id, the crop it values the tree at, hours since it last saw the tree (Infinity when
  * never), feeders it counts there, the distance]; rg.ts draws the crop from that belief (treeFoodWorth).
  */
-export interface CandidateMeta { v: number; aux: number; raw?: number; jit?: number; base?: number; bel?: number[] }
+export interface CandidateMeta { v: number; aux: number; raw?: number; jit?: number; base?: number; bel?: number[];
+  /** Stage R12 build (menuPossible ≥ 1; docs/staging/r12-build-prereg.md §4.1): an option the model-only call opened past the rules' own selection (every allowed dominant to greet; at level 2 every adult male in reach of an adult male). */
+  open?: true }
 export const candidateMeta = new WeakMap<Candidate, CandidateMeta>();
 
 /** The five gates of stage E5e (docs/staging/e5e-prereg.md §2); stage E4q adds the aggression and display gaps, E4p the female's mating gap. */
@@ -152,10 +154,14 @@ let curP: Params;
 /** A patrol member on the way out, at stops or in an incursion: no calls and no displays until the release (§5.3.1 P4a). */
 let curSilent = false;
 let resourceSlots: Slot[] | undefined;
+/** Stage R12 build (menuPossible ≥ 1, the model-only call only): the opened social options, outside the threshold and the slot caps. */
+let openedSlots: Slot[] | undefined;
 
-function offer(action: Action, target: number, score: number, v: number = V.NONE, aux = -1, bel: number[] | null = null): void {
+function offer(action: Action, target: number, score: number, v: number = V.NONE, aux = -1, bel: number[] | null = null, side = false): void {
   const resource = !!resourceSlots && (action === 'forage' || action === 'drink' || (action === 'travel' && v === V.TREE && aux < 0));
-  if (!resource && !(score > -0.4)) { if (offerTap.fn) offerTap.fn(action, target, score, v, aux, 'threshold', -1); return; }
+  // stage R12 build (`side`; docs/staging/r12-build-prereg.md §4.1): an opened social option goes to its own side pool,
+  // past the threshold and the slot caps, as R15's resources do; it never reaches the rules' own pool
+  if (!resource && !side && !(score > -0.4)) { if (offerTap.fn) offerTap.fn(action, target, score, v, aux, 'threshold', -1); return; }
   if (curSilent && (action === 'call' || action === 'display')) { if (offerTap.fn) offerTap.fn(action, target, score, v, aux, 'silent', -1); return; }
   const base = score, jit = (hash01(cur.id, curVersion, CODE[action], target) - 0.5) * curP.candidateJitterSpan;
   score += jit;
@@ -166,6 +172,7 @@ function offer(action: Action, target: number, score: number, v: number = V.NONE
   let cont = 0;
   if (action === cur.action && target === cur.targetId && curP.urgencySwitchCost !== 1) { cont = curDone ? -curP.finishedPenalty : curTime < curEnd && !(curP.redecideValue >= 1) ? curP.continueBonus : 0; score += cont; }
   const raw = base + cont;
+  if (side) { if (openedSlots) openedSlots.push({ action, target, score, v, aux, raw, jit, base, bel }); return; }
   if (resource) {
     resourceSlots!.push({ action, target, score, v, aux, raw, jit, base, bel });
     return;
@@ -259,7 +266,7 @@ const _rk: number[] = [], _dk: number[] = []; // stages C7d-C7e: believed value 
 const _bl: number[] = []; // stage E3e (choiceBelief): per shortlist entry, the crop it is valued at, the hours since the tree was seen, the distance
 const _fb: [number, number] = [0, 0];
 
-function chooseNestTree(world: World, c: Chimp): Tree | undefined {
+export function chooseNestTree(world: World, c: Chimp): Tree | undefined {
   const x = ix(c), P = paramsOf(world);
   const k = treesNear(world, c.position[0], c.position[2], P.nestTreeRadiusM, _near);
   let best: Tree | undefined, bestS = -Infinity;
@@ -328,10 +335,11 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[], reso
   n = 0; cur = c; curVersion = decisionVersion; curTime = world.time; _rm.c = null; _rm.gc = null;
   const P = paramsOf(world);
   curP = P;
+  openedSlots = resources && P.menuPossible >= 1 ? [] : undefined;
   const x = ix(c);
   curEnd = x.actEnd; curDone = x.finished;
   curSilent = P.patrolSilence === 1 && c.action === 'patrol' && x.v !== V.APPROACH && !!simOf(world).patrols[c.troopId];
-  if (!c.alive) { resourceSlots = undefined; out.push({ action: 'dead', targetId: -1, score: 1, reason: 'Life ended' }); return out; }
+  if (!c.alive) { resourceSlots = undefined; openedSlots = undefined; out.push({ action: 'dead', targetId: -1, score: 1, reason: 'Life ended' }); return out; }
   const st = stampTrees(world, c, x);
   const idx = index(world);
   const byId = idx.byId;
@@ -354,6 +362,9 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[], reso
   // companions, who weigh the leaver's company in their own choice to come
   const cohesion = cohesionOn(P);
   const greetMem = socialBit(P, 1); // stage E5e
+  // stage R12 build (docs/staging/r12-build-prereg.md §4.1, A1.1): in the model-only call, the ruled menu opens which
+  // dominant to greet (level 1) and, for an adult male, which adult male to groom whatever he is doing (level 2)
+  const opened = resources && P.menuPossible >= 1, maleOpen = opened && P.menuPossible >= 2 && isAdultMale(c);
   const px = c.position[0], pz = c.position[2];
   const unstable = (s.unstableUntil[c.troopId] ?? NEVER) > time ? 1 : 0;
   const isAlpha = troop?.alphaId === c.id;
@@ -747,6 +758,32 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[], reso
   // --- social: seen individuals -----------------------------------------------
   // stage E4m (leftoverRules bit 1): the share of restraint the acute drive leaves (1 at rest; 1 without the bit)
   const relaxed = (P.leftoverRules & 1) !== 0 ? 1 - acuteDrive(x, time, P) : 1;
+  // the rules' grooming value of partner `o` at distance `d` (bond `b`, kinship, tension `tn`, the alpha's ally term and the
+  // invitation; stage R12 build: moved here unchanged from the offer, so that the opened adult males are valued by it too)
+  const groomScore = (o: Chimp, d: number, b: number, kin: boolean, tn: number, alphaAlly: number, invited: number): number => {
+    const recip = Math.min(1, (x.groomRecv[o.id] ?? 0) / 1.5);
+    const up = dominates(o, c) && o.rankOrder > 0 ? 0.12 : 0;
+    const grooming = c.action === 'groom' && c.targetId === o.id;
+    // stage E3d (redecideValue; docs/staging/e3d-prereg.md §5.1): the bout's own continuation terms (+0.35 while it runs,
+    // −0.25 after its scheduled end; literals) are not applied: a bout is kept while it is still the best by the
+    // valuation that chose it (rg.ts), and its value falls as the groomer's social need is met
+    // East African males are the most avid groomers; adult females groom mostly kin (design weighting) [H]
+    const femaleOffset = c.sex === 'female' && c.age >= 12 && !kin ? P.groomFemaleNonKinOffset : 0;
+    // stage E1k (groomNeedDyad; docs/staging/e1k-prereg.md §6): between a mother and her own unweaned offspring the
+    // groomer's own social need weights every social term (need, bond, kin, reciprocity, rank, invitation): drive ×
+    // incentive, so the score at full need (social 0) is today's and a groomer whose need is met gets no value from the
+    // partner terms alone. The motivation to be groomed falls as grooming feeds back on it [M: keverne1989]; the value
+    // of a stimulus depends on the internal state [H, cabanac1971]; the product form is a design assumption with no
+    // free parameter. Costs (tension, distance, hunger, rain, night, age) and the bout's persistence are unchanged.
+    // stage E5d (groomDrive; docs/staging/e5d-prereg.md §4): the same drive × incentive for every partner. A partner's
+    // bond, kinship, reciprocity and rank say whom to groom when grooming is needed, not that grooming pays when the
+    // need is met (the diagnosis: 35–40% of adults' grooming restored a full need, filling free time at the expense of
+    // rest; the field gives spare time to rest, lehmann2008, couturier2022 [M])
+    const needDyad = P.groomDrive === 1 || (P.groomNeedDyad === 1 && ((o.motherId === c.id && !ix(o).weaned) || (c.motherId === o.id && !x.weaned)));
+    return needDyad
+      ? (grooming && !(P.redecideValue >= 1) ? (time >= x.actEnd ? -0.25 : 0.35) : 0) + (1 - c.social) * (0.55 + b * 0.4 + (kin ? 0.2 : 0) + recip * 0.2 + up + alphaAlly + (invited ? 0.7 : 0) - femaleOffset) - tn * P.groomTensionW - d / P.groomDistScaleM - h * 0.6 - rain * 0.6 - (night ? 1.5 : 0) - (c.age < 5 ? 0.3 : 0)
+      : (grooming && !(P.redecideValue >= 1) ? (time >= x.actEnd ? -0.25 : 0.35) : 0) - femaleOffset + (1 - c.social) * 0.55 + b * 0.4 + (kin ? 0.2 : 0) + recip * 0.2 + up + alphaAlly + invited - tn * P.groomTensionW - d / P.groomDistScaleM - h * 0.6 - rain * 0.6 - (night ? 1.5 : 0) - (c.age < 5 ? 0.3 : 0);
+  };
   let bestGrunt = -1, bestGruntScore = -Infinity;
   let rival = -1, rivalCloseness = 0;
   let alliesNear = 0;
@@ -764,34 +801,16 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[], reso
     const busy = o.action === 'flee' || o.action === 'charge' || o.action === 'attack' || o.action === 'display' || o.action === 'transfer';
     // grooming [H]; reciprocity and grooming-for-support interchange [M-H]
     const settled = o.action === 'rest' || o.action === 'groom' || o.action === 'shelter' || o.action === 'nurse';
-    if (c.age >= 2 && o.age >= 1 && d < P.groomRangeM && settled && !carried) {
-      const recip = Math.min(1, (x.groomRecv[o.id] ?? 0) / 1.5);
-      const up = dominates(o, c) && o.rankOrder > 0 ? 0.12 : 0;
-      const alphaAlly = isAlpha && c.allies.includes(o.id) ? 0.35 : 0;
-      const grooming = c.action === 'groom' && c.targetId === o.id;
-      // grooming bouts persist: an ongoing bout is not abandoned for someone else's invitation
-      // stage E3d (redecideValue; docs/staging/e3d-prereg.md §5.1): the bout's own continuation terms (+0.35 while it runs,
-      // −0.25 after its scheduled end; literals) are not applied: a bout is kept while it is still the best by the
-      // valuation that chose it (rg.ts), and its value falls as the groomer's social need is met
-      const invited = o.action === 'groom' && o.targetId === c.id && c.action !== 'groom' ? 0.3 + 0.4 * (1 - c.social) : 0;
-      // East African males are the most avid groomers; adult females groom mostly kin (design weighting) [H]
-      const femaleOffset = c.sex === 'female' && c.age >= 12 && !kin ? P.groomFemaleNonKinOffset : 0;
-      // stage E1k (groomNeedDyad; docs/staging/e1k-prereg.md §6): between a mother and her own unweaned offspring the
-      // groomer's own social need weights every social term (need, bond, kin, reciprocity, rank, invitation): drive ×
-      // incentive, so the score at full need (social 0) is today's and a groomer whose need is met gets no value from the
-      // partner terms alone. The motivation to be groomed falls as grooming feeds back on it [M: keverne1989]; the value
-      // of a stimulus depends on the internal state [H, cabanac1971]; the product form is a design assumption with no
-      // free parameter. Costs (tension, distance, hunger, rain, night, age) and the bout's persistence are unchanged.
-      // stage E5d (groomDrive; docs/staging/e5d-prereg.md §4): the same drive × incentive for every partner. A partner's
-      // bond, kinship, reciprocity and rank say whom to groom when grooming is needed, not that grooming pays when the
-      // need is met (the diagnosis: 35–40% of adults' grooming restored a full need, filling free time at the expense of
-      // rest; the field gives spare time to rest, lehmann2008, couturier2022 [M])
-      const needDyad = P.groomDrive === 1 || (P.groomNeedDyad === 1 && ((o.motherId === c.id && !ix(o).weaned) || (c.motherId === o.id && !x.weaned)));
-      offer('groom', o.id, needDyad
-        ? (grooming && !(P.redecideValue >= 1) ? (time >= x.actEnd ? -0.25 : 0.35) : 0) + (1 - c.social) * (0.55 + b * 0.4 + (kin ? 0.2 : 0) + recip * 0.2 + up + alphaAlly + (invited ? 0.7 : 0) - femaleOffset) - tn * P.groomTensionW - d / P.groomDistScaleM - h * 0.6 - rain * 0.6 - (night ? 1.5 : 0) - (c.age < 5 ? 0.3 : 0)
-        : (grooming && !(P.redecideValue >= 1) ? (time >= x.actEnd ? -0.25 : 0.35) : 0) - femaleOffset + (1 - c.social) * 0.55 + b * 0.4 + (kin ? 0.2 : 0) + recip * 0.2 + up + alphaAlly + invited - tn * P.groomTensionW - d / P.groomDistScaleM - h * 0.6 - rain * 0.6 - (night ? 1.5 : 0) - (c.age < 5 ? 0.3 : 0),
-        invited ? V.ACCEPT : alphaAlly ? V.COALITION : V.NONE);
-    }
+    // (stage R12 build: these two terms name the offer's variant; they and the value, groomScore above the loop, serve
+    // the rules' offer and the opened adult males alike, so both are valued by one expression)
+    const alphaAlly = isAlpha && c.allies.includes(o.id) ? 0.35 : 0;
+    // grooming bouts persist: an ongoing bout is not abandoned for someone else's invitation
+    const invited = o.action === 'groom' && o.targetId === c.id && c.action !== 'groom' ? 0.3 + 0.4 * (1 - c.social) : 0;
+    if (c.age >= 2 && o.age >= 1 && d < P.groomRangeM && settled && !carried)
+      offer('groom', o.id, groomScore(o, d, b, kin, tn, alphaAlly, invited), invited ? V.ACCEPT : alphaAlly ? V.COALITION : V.NONE);
+    // stage R12 build (ruling 6, menuPossible 2): an adult male's pool gets every adult male in reach, whatever he is doing
+    if (maleOpen && isAdultMale(o) && d < P.groomRangeM)
+      offer('groom', o.id, groomScore(o, d, b, kin, tn, alphaAlly, invited), invited ? V.ACCEPT : alphaAlly ? V.COALITION : V.NONE, -1, null, true);
     // play [H]
     if (!carried && d < P.playRangeM && o.age >= 1 && !busy) {
       const invited = o.action === 'play' && o.targetId === c.id ? 0.7 : 0;
@@ -849,6 +868,8 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[], reso
           + (o.sex === 'male' && c.sex === 'female' ? 0.1 : 0) - d / P.pantGruntDistScaleM - h * 0.2 - (night ? 2 : 0);
         if (quotaTrace.on) quotaTrace.on('greet', c, o, !open, time - last, sc);
         if (open && sc > bestGruntScore) { bestGruntScore = sc; bestGrunt = o.id; }
+        // stage R12 build (ruling 7): the model's pool gets every dominant these conditions allow, not only the best
+        if (open && opened) offer('pant-grunt', o.id, sc, V.NONE, -1, null, true);
       }
     }
     // male status rivalry [H]
@@ -929,13 +950,15 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[], reso
     order[j] = sl;
   }
   if (resourceSlots) order.push(...resourceSlots);
+  const firstOpen = openedSlots ? order.push(...openedSlots) - openedSlots.length : Infinity; // stage R12 build: the opened options come last
   for (let _i7 = 0; _i7 < order.length; _i7++) { const sl = order[_i7];
     const cand: Candidate = { action: sl.action, targetId: sl.target, score: Math.round(clamp(sl.score, 0, 3) * 1000) / 1000, reason: reasonFor(world, c, sl) };
-    candidateMeta.set(cand, resources ? { v: sl.v, aux: sl.aux, raw: sl.raw, jit: sl.jit, base: sl.base, ...(sl.bel ? { bel: sl.bel } : {}) } : P.choiceBelief >= 1 ? (sl.bel ? { v: sl.v, aux: sl.aux, raw: sl.raw, jit: sl.jit, bel: sl.bel } : { v: sl.v, aux: sl.aux, raw: sl.raw, jit: sl.jit })
+    candidateMeta.set(cand, _i7 >= firstOpen ? { v: sl.v, aux: sl.aux, raw: sl.raw, jit: sl.jit, base: sl.base, open: true }
+      : resources ? { v: sl.v, aux: sl.aux, raw: sl.raw, jit: sl.jit, base: sl.base, ...(sl.bel ? { bel: sl.bel } : {}) } : P.choiceBelief >= 1 ? (sl.bel ? { v: sl.v, aux: sl.aux, raw: sl.raw, jit: sl.jit, bel: sl.bel } : { v: sl.v, aux: sl.aux, raw: sl.raw, jit: sl.jit })
       : P.redecideValue >= 1 ? { v: sl.v, aux: sl.aux, raw: sl.raw, jit: sl.jit } : { v: sl.v, aux: sl.aux });
     out.push(cand);
   }
-  resourceSlots = undefined;
+  resourceSlots = undefined; openedSlots = undefined;
   return out;
 }
 

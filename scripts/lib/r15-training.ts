@@ -2,13 +2,16 @@ import { createHash } from 'node:crypto';
 import type { Kind } from '../../src/decide/facts';
 import type { KernelRequest } from '../../src/kernel/types';
 import { optionKey } from '../../src/kernel/decode';
-import { isResourceKind, R15_PACKET_VERSION } from '../../src/kernel/resource-contract';
+import { isResourceKind, isSocialTargetKind, R12_PACKET_VERSION, R15_PACKET_VERSION } from '../../src/kernel/resource-contract';
 import { r15Packet } from '../../src/providers/packet';
 import { candidateMeta, computeCandidates } from '../../src/sim/candidates';
 import { optionKind } from '../../src/sim/menu';
 import { paramsOf } from '../../src/sim/params';
 import { targetRequest } from '../../src/sim/request';
 import { rgMenu } from '../../src/sim/rg';
+import { isDiceOption, settledPartner } from '../../src/sim/possible';
+import { isAdultMale } from '../../src/sim/hierarchy';
+import { index } from '../../src/sim/state';
 import { validateDecisionContext, record } from '../../src/sim/context-check';
 import type { Candidate, Chimp, DecisionContext, World } from '../../src/types';
 import { splitOf } from '../r4-contexts';
@@ -18,13 +21,18 @@ export { r15Packet, R15_PACKET_VERSION };
 export const R15_KIND_TEACHER = 'r11-original-menu-kind-marginal-v1';
 export const R15_TARGET_TEACHER = 'counterfactual-resource-valuation-v1';
 export const R15_TARGET_REDRAWS = 2000;
+/** Stage R12 build (docs/staging/r12-build-prereg.md §8.3, §8.4): the rules' counterfactual valuation of the shown social targets (whom to greet; an adult male's grooming partner). */
+export const R12_SOCIAL_TEACHER = 'counterfactual-social-valuation-v1';
+export { R12_PACKET_VERSION };
 export const digest = (value: unknown): string => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 
 export interface R15Row {
   id: string; decisionId: string; seed: number; chimpId: number; split: 'train' | 'dev' | 'test';
-  phase: 'kind' | 'target'; packetVersion: typeof R15_PACKET_VERSION; teacher: string;
+  phase: 'kind' | 'target'; packetVersion: typeof R15_PACKET_VERSION | typeof R12_PACKET_VERSION; teacher: string;
   context: DecisionContext; contextHash: string; packet: ReturnType<typeof r15Packet>; packetHash: string;
   pick: string; soft: Record<string, number>; diagnostics: { redraws: number; matchedMenus: number; excludedKindMass: number };
+  /** Stage R12 build (§8.4), on an adult male's grooming row only: per option, whether the rules' own gate allows it (a settled partner) and whether the pair is an adult male with an adult male. */
+  options?: { rulesGate: boolean; pair: boolean }[];
 }
 export function normalize(values: number[]): number[] {
   if (!values.length || values.some(v => !Number.isFinite(v) || v < 0)) throw new Error('invalid label');
@@ -32,7 +40,8 @@ export function normalize(values: number[]): number[] {
   if (!(sum > 0)) throw new Error('label has no mass');
   return values.map(v => v / sum);
 }
-export function kindMarginal(kinds: Kind[], originalKinds: Kind[], probabilities: number[]): { q: number[]; excluded: number } | null {
+/** `originalKinds[i]` null: an option whose mass is never credited to a kind (stage R12 build: the dice acts, §8.1); it is reported as excluded. */
+export function kindMarginal(kinds: Kind[], originalKinds: (Kind | null)[], probabilities: number[]): { q: number[]; excluded: number } | null {
   if (originalKinds.length !== probabilities.length || new Set(kinds).size !== kinds.length) throw new Error('misaligned kinds');
   const p = normalize(probabilities), q = kinds.map(k => p.reduce((s, v, i) => s + (originalKinds[i] === k ? v : 0), 0));
   if (!q.some(v => v > 0)) return null;
@@ -71,7 +80,7 @@ export function clampTied(values: Pick<TargetValue, 'raw'>[], span: number): boo
 export const alwaysClamped = (values: Pick<TargetValue, 'raw'>[], span: number): number => values.filter(v => v.raw + span / 2 <= 0).length;
 
 export function exportRow(world: Pick<World, 'seed'>, chimp: Pick<Chimp, 'id'>, request: KernelRequest, decisionId: string,
-  q: number[], teacher: string, diagnostics: R15Row['diagnostics'], anySeed = false): R15Row {
+  q: number[], teacher: string, diagnostics: R15Row['diagnostics'], anySeed = false, extra: { suffix?: string; options?: R15Row['options'] } = {}): R15Row {
   // stage R16's drift reading (docs/staging/r16-prereg.md §13) labels a test world's own asks: never rows, so any seed
   if (!anySeed && ![48, 7, 21].includes(world.seed)) throw new Error('R15 training worlds are 48/7; evaluation is 21');
   const context: unknown = JSON.parse(JSON.stringify(request.context));
@@ -81,9 +90,10 @@ export function exportRow(world: Pick<World, 'seed'>, chimp: Pick<Chimp, 'id'>, 
   const probabilities = normalize(q), packet = r15Packet(context);
   if (JSON.stringify(packet) !== JSON.stringify(r15Packet(request.context))) throw new Error('JSON transport changed packet');
   const best = probabilities.reduce((b, v, i) => v > probabilities[b] ? i : b, 0);
-  return { id: `${decisionId}/${phase}`, decisionId, seed: world.seed, chimpId: chimp.id, split: splitOf(world.seed, chimp.id), phase,
-    packetVersion: R15_PACKET_VERSION, teacher, context, contextHash: digest(context), packet, packetHash: digest(packet), pick: `c${best}`,
-    soft: Object.fromEntries(probabilities.map((v, i) => [`c${i}`, v])), diagnostics };
+  // stage R12 build (§8.6): a context of the ruled menu names its own contract; every R15 row is unchanged
+  return { id: `${decisionId}/${phase}${extra.suffix ?? ''}`, decisionId, seed: world.seed, chimpId: chimp.id, split: splitOf(world.seed, chimp.id), phase,
+    packetVersion: request.context.menu ?? R15_PACKET_VERSION, teacher, context, contextHash: digest(context), packet, packetHash: digest(packet), pick: `c${best}`,
+    soft: Object.fromEntries(probabilities.map((v, i) => [`c${i}`, v])), diagnostics, ...(extra.options ? { options: extra.options } : {}) };
 }
 /** Options of the labeler beyond stage R15's defaults (stage R16; every field absent gives R15's behaviour exactly). */
 export interface R15LabelOptions {
@@ -99,11 +109,17 @@ export interface R15LabelOptions {
   anySeed?: boolean;
   /** At a rules decision: the option the rules took and the world's random state before they chose, so that R11's marks (M1 a to c) check the rules' own draw. Absent: they check the menu's top option against the current state, as stage R15 does. */
   realised?: { chosen: Candidate; rngBefore: number };
+  /** Stage R12 build (A1.12): which social group gives the social target row: its own hash choice among the opened social groups ('hash', the default), or none. Read only on a request of the ruled menu. */
+  social?: 'hash' | 'none';
+  /** Stage R12 build (A1.1): also write a grooming row whose group holds an adult male the rules' gate would refuse (labelled by the rules' formula past their gate: a scaffold). Default: such a group gives no row, and the exclusion is counted. */
+  scaffold?: boolean;
 }
 /** What the labeler computed beyond the rows (stage R16's readings and checks; never in a packet). */
 export interface R15LabelDetail {
-  kind?: { label: Exclude<ReturnType<typeof labelData>, string>; marginal: { q: number[]; excluded: number }; halves?: [number[], number[]] | null; originalKinds: Kind[] };
+  kind?: { label: Exclude<ReturnType<typeof labelData>, string>; marginal: { q: number[]; excluded: number }; halves?: [number[], number[]] | null; originalKinds: (Kind | null)[] };
   target?: { kind: Kind; group: number; request: KernelRequest; values: TargetValue[]; q: number[]; halves?: [number[], number[]]; clampTied: boolean; clamped: number };
+  /** Stage R12 build: the social target row's group, values and label, and the options' flags on a grooming group. */
+  social?: { kind: Kind; group: number; request: KernelRequest; values: TargetValue[]; q: number[]; options: { rulesGate: boolean; pair: boolean }[] | null; written: boolean };
 }
 /** Call at a fresh live decision; bounded selection belongs to the sampler, not to this labeler. */
 export function r15TrainingRows(w: World, c: Chimp, request: KernelRequest, id: string, opts: R15LabelOptions = {}): { rows: R15Row[]; exclusions: string[]; detail: R15LabelDetail } {
@@ -116,7 +132,9 @@ export function r15TrainingRows(w: World, c: Chimp, request: KernelRequest, id: 
   const options = menu.map((k, i) => ({ alias: `c${i}`, action: k.action, targetId: k.targetId, variant: '', family: '', score: k.score }));
   const label = labelData({ id, options, rgIndex: pickAt }, { w, c, list, menu, chosen: menu[pickAt], rngBefore: opts.realised ? opts.realised.rngBefore : rng }, opts.redraws ?? REDRAWS, !!opts.halves);
   if (typeof label === 'string' || !label.listOk || label.same < SAME_MIN) return { rows, exclusions: [typeof label === 'string' ? label : 'insufficient original-menu label reconstruction'], detail };
-  const originalKinds = menu.map(optionKind), marginal = kindMarginal(request.context.resourceKinds, originalKinds, label.counts);
+  // stage R12 build (§8.1): on the ruled menu a dice act's mass is never credited to a kind (it is the rules' act); it is excluded
+  const r12 = request.context.menu !== undefined;
+  const originalKinds = menu.map(k => r12 && isDiceOption(k) ? null : optionKind(k)), marginal = kindMarginal(request.context.resourceKinds, originalKinds, label.counts);
   if (!marginal) return { rows, exclusions: ['zero-retained-kind-mass'], detail };
   const half = (k: number) => label.halves ? kindMarginal(request.context.resourceKinds!, originalKinds, label.halves[k].map(v => v + 0)) : null;
   detail.kind = { label, marginal, originalKinds, ...(opts.halves ? { halves: label.halves && label.halves.every(h => h.some(v => v > 0)) ? [half(0)?.q ?? [], half(1)?.q ?? []] as [number[], number[]] : null } : {}) };
@@ -139,8 +157,38 @@ export function r15TrainingRows(w: World, c: Chimp, request: KernelRequest, id: 
     if (opts.clampRule && tied) exclusions.push('clamp-tied target');
     else rows.push(exportRow(w, c, target, id, q, R15_TARGET_TEACHER, { redraws: R15_TARGET_REDRAWS, matchedMenus: R15_TARGET_REDRAWS, excludedKindMass: 0 }, !!opts.anySeed));
   }
+  if (r12 && opts.social !== 'none') socialRow(w, c, request, id, opts, rows, exclusions, detail);
   if (w.rng !== rng || c.decisionVersion !== version) throw new Error('teacher changed live random state or decision version');
   return { rows, exclusions, detail };
+}
+
+/**
+ * Stage R12 build (docs/staging/r12-build-prereg.md §8.3, §8.4, A1.1, A1.12): the social target row of a request of the
+ * ruled menu. The group is chosen among the opened social groups (those with their own target call) by its own hash, so
+ * the resource row's choice stays R15's. The teacher is the rules' counterfactual valuation of the shown targets, as for
+ * R15's resources, on its own stream of draws; greeting has no crop belief. On an adult male's grooming group each option
+ * is flagged; a group holding a partner the rules' gate would refuse gives no row unless `scaffold` is set.
+ */
+function socialRow(w: World, c: Chimp, request: KernelRequest, id: string, opts: R15LabelOptions, rows: R15Row[], exclusions: string[], detail: R15LabelDetail): void {
+  const groups = request.groups ?? [], around = request.targetSocial ?? [];
+  const social = groups.map((group, i) => ({ group, i, kind: request.context.resourceKinds?.[i] }))
+    .filter(g => g.kind && isSocialTargetKind(g.kind) && g.group.length > 1 && around[g.i])
+    .sort((a, b) => digest(`${id}:social:${a.kind}`).localeCompare(digest(`${id}:social:${b.kind}`)));
+  const chosen = social[0];
+  if (!chosen) return;
+  const target = targetRequest(request, chosen.i);
+  if (!target || target.context.resourceChoice !== 'target') throw new Error('R12 social target request missing stage');
+  const P = paramsOf(w), byId = index(w).byId, values = target.options.map(k => {
+    const meta = candidateMeta.get(k);
+    if (meta?.raw === undefined) throw new Error('social target has no true raw valuation');
+    return { key: optionKey(k), raw: meta.raw, belief: null };
+  });
+  const flags = chosen.kind === 'groom' ? target.options.map(k => { const o = byId.get(k.targetId); return { rulesGate: !!o && settledPartner(o), pair: !!o && isAdultMale(c) && isAdultMale(o) }; }) : null;
+  const t = targetCounts(values, P.candidateJitterSpan, `${id}/social`), q = normalize(t.counts);
+  const opened = !!flags && flags.some(f => !f.rulesGate), written = !opened || !!opts.scaffold;
+  detail.social = { kind: chosen.kind!, group: chosen.i, request: target, values, q, options: flags, written };
+  if (!written) { exclusions.push('opened partner without a teacher'); return; }
+  rows.push(exportRow(w, c, target, id, q, R12_SOCIAL_TEACHER, { redraws: R15_TARGET_REDRAWS, matchedMenus: R15_TARGET_REDRAWS, excludedKindMass: 0 }, !!opts.anySeed, { suffix: '/social', ...(flags ? { options: flags } : {}) }));
 }
 /** The adapters each training stage may name, with the stage its manifest must carry (stage R16 adds two rounds; docs/staging/r16-prereg.md §8). */
 export const ADAPTER_NAME = /^(r15-resources|r16-zero|r16-agg)-s(7|11)$/;

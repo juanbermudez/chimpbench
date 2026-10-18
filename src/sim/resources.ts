@@ -5,6 +5,7 @@ import { copyCandidate, optionKind, same } from './menu';
 import { withValues } from './observe-state';
 import { withAbout } from './own';
 import { paramsOf } from './params';
+import { isDiceOption } from './possible';
 import { hash01 } from './rng';
 import { index, ix } from './state';
 
@@ -12,12 +13,16 @@ export function resourceKind(k: Candidate): boolean {
   return k.action === 'forage' || k.action === 'drink' || (k.action === 'travel' && candidateMeta.get(k)?.v === V.TREE && (candidateMeta.get(k)?.aux ?? -1) <= 0);
 }
 
-/** Full model-only legality pool. The rules never call this function. No shortlist or random draw. */
+/**
+ * Full model-only legality pool. The rules never call this function. No shortlist or random draw.
+ * Stage R12 build (menuPossible ≥ 1; docs/staging/r12-build-prereg.md §4.2, §4.6): plus the social options the ruled menu
+ * opens (candidates.ts `open`), and without the three acts opened by dice, which stay with the rules. At 0, R15's pool.
+ */
 export function resourceEligibleActions(world: World, c: Chimp, decisionVersion = c.decisionVersion): Candidate[] {
   const P = paramsOf(world), original = computeCandidates(world, c, [], false, decisionVersion);
   if (P.resourceTargets !== 1) return original;
-  const x = ix(c), idx = index(world);
-  const resources = computeCandidates(world, c, [], true, decisionVersion).filter(k => {
+  const x = ix(c), idx = index(world), wide = computeCandidates(world, c, [], true, decisionVersion);
+  const resources = wide.filter(k => {
     if (!resourceKind(k)) return false;
     if (k.action === 'forage') return k.targetId === -1 || (x.trees.includes(k.targetId) && idx.treeById.has(k.targetId));
     if (k.action === 'drink') return idx.waterById.has(k.targetId) && c.memory.some(m => m.kind === 'water' && m.entityId === k.targetId);
@@ -25,6 +30,13 @@ export function resourceEligibleActions(world: World, c: Chimp, decisionVersion 
       && c.memory.some(m => m.kind === 'tree' && m.entityId === k.targetId && world.time - m.seenAt < P.memTravelHorizonH
         && Math.hypot(m.position[0] - c.position[0], m.position[2] - c.position[2]) >= P.memoryTreeMinM);
   });
+  if (P.menuPossible >= 1) {
+    // the opened copy of an option the rules also offer wins (it carries the value without the cut, `base` and `open`)
+    const opened = wide.filter(k => candidateMeta.get(k)?.open === true), extra = [...resources, ...opened];
+    const kept = original.filter(k => !resourceKind(k) && !isDiceOption(k) && !opened.some(o => same(o, k)));
+    const more = extra.filter((k, i) => extra.findIndex(o => same(k, o)) === i && !kept.some(o => same(o, k)));
+    return [...kept, ...more].sort((a, b) => b.score - a.score || a.targetId - b.targetId);
+  }
   const others = original.filter(k => !resourceKind(k));
   const unique = resources.filter((k, i) => resources.findIndex(o => same(k, o)) === i && !others.some(o => same(o, k)));
   return [...others, ...unique].sort((a, b) => b.score - a.score || a.targetId - b.targetId);

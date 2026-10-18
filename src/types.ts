@@ -495,6 +495,12 @@ export interface DecisionContext {
   /** R15: explicit two-call packet stage and serialized kinds, aligned with candidates. */
   resourceChoice?: 'kind' | 'target';
   resourceKinds?: Kind[];
+  /**
+   * Stage R12 build (menuPossible ≥ 1; docs/staging/r12-build-prereg.md §9): the contract of a context of the ruled menu,
+   * on both calls. Absent at 0, so every R15 and R16 context is unchanged. With it a target context may also be of the
+   * kinds greet_or_appease and groom (src/sim/context-check.ts).
+   */
+  menu?: 'menu-targets-v1';
   chimpId: number; version: number; time: number;
   focal: {
     name: string; ageYears: number; stage: LifeStage; sex: Sex; community: string;

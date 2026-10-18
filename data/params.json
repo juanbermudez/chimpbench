@@ -15812,6 +15812,33 @@
    "notes": "Stage R2 switch (Track R, packet v4; docs/staging/r2-prereg.md §1 B; the user, 6 October 2026: fix the night menu in the next stage): one menu for every kernel. With 1 the menu of every kernel other than the rules (buildRequest) is the menu the rules policy draws from (src/sim/rg.ts rgMenu): the same phase rule (the open menu under rhythmFreeNight 1, the night and dusk menus otherwise) and the same kept picks (the best option, a response to a perceived disturbance, a joined trip, a hunt or patrol lead at its impulse), in the same order, so a comparison of kernels does not also compare menus after dusk. The rules' own menu is not changed, so a rules-only world is the same at 0 and 1. 0 = today, bit for bit: buildRequest applies the night and dusk menus whatever rhythmFreeNight says and keeps the rules' argmax and a disturbance response. Design (a menu layout, not a behavioural constant)."
   },
   {
+   "id": "menuPossible",
+   "group": "decision",
+   "value": 0,
+   "units": "level",
+   "range": [
+    0,
+    2
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    2
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.menuPossible",
+   "file": "src/sim/request.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage R12 (docs/staging/r12-build-prereg.md, amendment A1.1): the menu as the user ruled on 17 October 2026, on R15's two-stage path; requires resourceTargets 1. Level 1: the model chooses which dominant to greet among those the rules' conditions allow; the gang attack, the attack on an infant and the transfer leave the model's menu and stay with the rules. Level 2: level 1 plus an adult male's grooming target among the adult males in view and in reach, whatever they are doing. No rules path reads it. Design assumption."
+  },
+  {
    "id": "milkInDrive",
    "group": "needs",
    "value": 0,

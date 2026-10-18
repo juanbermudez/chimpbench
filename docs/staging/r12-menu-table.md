@@ -2,12 +2,13 @@
 
 ## 1. In two minutes
 
-The rules decide what the model may choose from in 94 places in the code, each offering one act (rest, feed in this tree, groom this animal, charge that one) behind conditions. To build a menu from what an animal can do, each condition must be called a fact about what is possible or a piece of advice. This is that sorting, for your sign-off: a reading of the code, counted by a script; nothing was run.
+The rules decide what the model may choose from in 96 places in the code, each offering one act (rest, feed in this tree, groom this animal, charge that one) behind conditions. To build a menu from what an animal can do, each condition must be called a fact about what is possible or a piece of advice. This is that sorting, for your sign-off: a reading of the code, counted by a script; nothing was run.
 
 | | Places |
 |---|---|
-| All | 94 |
-| Unreachable with today's settings (old branches) | 19 |
+| All | 96 |
+| Unreachable with today's settings (old branches) | 21 |
+| … of them added after the sign-off by stage R12's build, behind its switch and for the model's own pool only (an adult male grooming any adult male in reach; greeting any dominant the conditions allow) | 2 |
 | Reached only by animals under 8, for whom the rules decide | 6 |
 | **Live for an animal the model decides for** | **69** |
 | … open whenever the act is physically possible and the animal perceives what it needs | 6 |
@@ -39,22 +40,22 @@ Reasons and method: the sections below.
 
 Every condition went into one of six classes: **physical** (the body or the world does not allow the act otherwise), **perceptual** (the animal does not see or remember what the act needs), **social fact** (who the act is addressed to: a community member, its mother, the animal that just charged it), **advice** (a conclusion about who does this, toward whom or when, written as a gate), **quota or timer** (an hours-since rule) and **dice** (opened by a random roll).
 
-Of the 69 live places, 6 are a matter of possibility alone and 61 carry a hand rule. Counting the code as written, old branches and the young included, 83 of the 94 carry advice, a quota or dice. The hand rules of the live places hold 117 numbers by the script's count: 76 number literals and 41 registry values. That count is lexical: a literal is counted once in each condition that carries it, so a threshold written in two conditions counts twice; it includes a few numbers that are not thresholds (a unit conversion, a phase index, the terms of the greeting score, registry switches); and a number inside a function the condition calls is not seen.
+Of the 69 live places, 6 are a matter of possibility alone and 61 carry a hand rule. Counting the code as written, old branches and the young included, 85 of the 96 carry advice, a quota or dice. The hand rules of the live places hold 117 numbers by the script's count: 76 number literals and 41 registry values. That count is lexical: a literal is counted once in each condition that carries it, so a threshold written in two conditions counts twice; it includes a few numbers that are not thresholds (a unit conversion, a phase index, the terms of the greeting score, registry switches); and a number inside a function the condition calls is not seen.
 
 A rule is proposed for dropping in two cases only. Either the rules already value every option the rule cut (which tree to travel to, which dominant to greet), so a model taught by the rules can be taught the wider choice: that removes the cut, and the model is still rules-taught. Or a teacher other than the rules exists or may be allowed (wild grooming records for some pairs; the body's own outcomes, a ruling deferred on 10 October), and the rule goes only where that teacher reaches. Everywhere else a model taught by the rules would learn the same rule back from its teacher, so the rule stays in code and is counted.
 
 ### The ten rulings
 
-1. **The dividing line itself.** Is it right to call a condition a "social fact" when it only says who the act is addressed to (a community member, its mother, the animal that just charged it, a female in oestrus), and "advice" as soon as it says who may act, toward whom or when (the direction of rank, an age, a sex, a balance of numbers, a threshold)? *Recommended:* yes. Every count on this page follows from that line; a different line moves conditions between the two columns without changing a single rule.
-2. **Which tree.** May the model choose which tree to travel to among trees shortlisted by what the animal sees and remembers, instead of being shown the one tree left of the four the rules value most? *Recommended:* yes. It is the largest choice no model has ever made (about 51 trees possible, one shown), and the rules value every tree, so a scaffold teacher exists. The shortlist's own numbers are counted as hand-set. (rows 15, 21 of the table)
-3. **Trees no animal has itself seen.** Should the model also be offered trees from its community's list, which no single animal remembers? *Recommended:* not in the first build: its own view and memory only, with a count of how often the rules themselves travel to a listed tree. If that count is large, add one slot labelled "known to my community". (row 21 of the table)
-4. **Which water, and drinking when not thirsty.** May a drink be offered at any remembered water whenever one is remembered, instead of only when the thirst gauge is above zero and only at the one water the rules value most? *Recommended:* the choice of water: yes. Offering a drink without thirst: only once a teacher that is not the rules exists for the body's acts (forked body outcomes, the ruling deferred on 10 October); until then that rule stays and is counted. (row 19 of the table)
-5. **Nesting and sheltering whenever possible.** May "build a nest" and "shelter from the rain" be offered whenever physically possible, instead of only when the rules' own value says so (the nest's value above 0.25, the body colder than neutral)? *Recommended:* as for water: yes once a body-outcome teacher is allowed, counted until then. Keep the light condition on starting a nest (none in full daylight): an earlier stage offered nests at any light and day nests took a third of the daytime. (rows 2, 7 of the table)
-6. **Whom to groom.** May any community member in reach be offered as a grooming partner, whatever it is doing, instead of only those resting, grooming, sheltering or nursing? *Recommended:* yes, where a teacher that is not the rules can teach the choice, and only there. Wild records of whom a male grooms are in hand (Ngogo: an adult male among the adult males present); Taï's are approved for download and count once checked. For every other pair "only a settled partner" stays a rule and is counted: a model taught by the rules would learn it back. (row 26 of the table)
-7. **Whom to greet.** A pant-grunt is offered only toward an animal that outranks the greeter, and only toward the one such animal the rules score highest. Should the direction rule stay? *Recommended:* keep "only to a dominant" for now and count it: no wild record of greetings is in hand, so a model taught by the rules would learn the same rule from its labels. Let the model choose which dominant. The direction of greetings then stays true by construction and may not be credited to the model. (row 34 of the table)
-8. **Strangers: the rules on numbers.** A charge at strangers needs at least 3 males of one's own and 2 more than theirs; with fewer, the only options are to display, call back or retreat, each by its own count. Should these stay rules? *Recommended:* keep and count them. The acts are rare and dangerous, no teacher exists, and the counts are already shown to the model as facts. (rows 62, 64, 65, 66, 67, 68, 69, 70 of the table)
-9. **Courtship rules.** Guarding a female is offered only to the top two ranks, a consortship only to a male who is not the alpha and has a bond with her, coercion only toward a female near full swelling, and mating only 1.5 hours after the male's last copulation. Should these stay rules? *Recommended:* keep and count them. The quota has a built replacement (the paternity mechanism, off on the working base); adopting it is a decision about the base, not about the menu. (rows 51, 72, 73, 74, 75 of the table)
-10. **Dice.** A gang attack, an attack on an infant and a female's transfer to another community are opened by a random roll and then offered at a fixed high score. Should they stay with the rules? *Recommended:* yes. They stay hazards, decided by the rules and reported as the rules' acts. No record can teach a once-in-a-lifetime act, and an untaught model would set its rate by accident. (rows 41, 47, 63 of the table)
+1. **The dividing line itself.** Is it right to call a condition a "social fact" when it only says who the act is addressed to (a community member, its mother, the animal that just charged it, a female in oestrus), and "advice" as soon as it says who may act, toward whom or when (the direction of rank, an age, a sex, a balance of numbers, a threshold)? *Recommended:* yes. Every count on this page follows from that line; a different line moves conditions between the two columns without changing a single rule. *Ruled:* 17 October 2026, 22:12 EDT: "yes to the recomendations" (the user's words, to the recommendation above; IMPLEMENTATION_PLAN.md, User decision (17 October 2026, 22:12 EDT)).
+2. **Which tree.** May the model choose which tree to travel to among trees shortlisted by what the animal sees and remembers, instead of being shown the one tree left of the four the rules value most? *Recommended:* yes. It is the largest choice no model has ever made (about 51 trees possible, one shown), and the rules value every tree, so a scaffold teacher exists. The shortlist's own numbers are counted as hand-set. (rows 15, 21 of the table) *Ruled:* 17 October 2026: "the model picks the tree" (the user's words; IMPLEMENTATION_PLAN.md, User decisions (17 October 2026)). Built by stage R15 behind resourceTargets.
+3. **Trees no animal has itself seen.** Should the model also be offered trees from its community's list, which no single animal remembers? *Recommended:* not in the first build: its own view and memory only, with a count of how often the rules themselves travel to a listed tree. If that count is large, add one slot labelled "known to my community". (row 21 of the table) *Ruled:* 17 October 2026, 22:12 EDT: "yes to the recomendations" (the user's words, to the recommendation above; IMPLEMENTATION_PLAN.md, User decision (17 October 2026, 22:12 EDT)).
+4. **Which water, and drinking when not thirsty.** May a drink be offered at any remembered water whenever one is remembered, instead of only when the thirst gauge is above zero and only at the one water the rules value most? *Recommended:* the choice of water: yes. Offering a drink without thirst: only once a teacher that is not the rules exists for the body's acts (forked body outcomes, the ruling deferred on 10 October); until then that rule stays and is counted. (row 19 of the table) *Ruled:* 17 October 2026, 22:12 EDT: "yes to the recomendations" (the user's words, to the recommendation above; IMPLEMENTATION_PLAN.md, User decision (17 October 2026, 22:12 EDT)).
+5. **Nesting and sheltering whenever possible.** May "build a nest" and "shelter from the rain" be offered whenever physically possible, instead of only when the rules' own value says so (the nest's value above 0.25, the body colder than neutral)? *Recommended:* as for water: yes once a body-outcome teacher is allowed, counted until then. Keep the light condition on starting a nest (none in full daylight): an earlier stage offered nests at any light and day nests took a third of the daytime. (rows 2, 7 of the table) *Ruled:* 17 October 2026, 22:12 EDT: "yes to the recomendations" (the user's words, to the recommendation above; IMPLEMENTATION_PLAN.md, User decision (17 October 2026, 22:12 EDT)).
+6. **Whom to groom.** May any community member in reach be offered as a grooming partner, whatever it is doing, instead of only those resting, grooming, sheltering or nursing? *Recommended:* yes, where a teacher that is not the rules can teach the choice, and only there. Wild records of whom a male grooms are in hand (Ngogo: an adult male among the adult males present); Taï's are approved for download and count once checked. For every other pair "only a settled partner" stays a rule and is counted: a model taught by the rules would learn it back. (row 26 of the table) *Ruled:* 17 October 2026, 22:12 EDT: "yes to the recomendations" (the user's words, to the recommendation above; IMPLEMENTATION_PLAN.md, User decision (17 October 2026, 22:12 EDT)).
+7. **Whom to greet.** A pant-grunt is offered only toward an animal that outranks the greeter, and only toward the one such animal the rules score highest. Should the direction rule stay? *Recommended:* keep "only to a dominant" for now and count it: no wild record of greetings is in hand, so a model taught by the rules would learn the same rule from its labels. Let the model choose which dominant. The direction of greetings then stays true by construction and may not be credited to the model. (row 36 of the table) *Ruled:* 17 October 2026, 22:12 EDT: "yes to the recomendations" (the user's words, to the recommendation above; IMPLEMENTATION_PLAN.md, User decision (17 October 2026, 22:12 EDT)).
+8. **Strangers: the rules on numbers.** A charge at strangers needs at least 3 males of one's own and 2 more than theirs; with fewer, the only options are to display, call back or retreat, each by its own count. Should these stay rules? *Recommended:* keep and count them. The acts are rare and dangerous, no teacher exists, and the counts are already shown to the model as facts. (rows 64, 66, 67, 68, 69, 70, 71, 72 of the table) *Ruled:* 17 October 2026, 22:12 EDT: "yes to the recomendations" (the user's words, to the recommendation above; IMPLEMENTATION_PLAN.md, User decision (17 October 2026, 22:12 EDT)).
+9. **Courtship rules.** Guarding a female is offered only to the top two ranks, a consortship only to a male who is not the alpha and has a bond with her, coercion only toward a female near full swelling, and mating only 1.5 hours after the male's last copulation. Should these stay rules? *Recommended:* keep and count them. The quota has a built replacement (the paternity mechanism, off on the working base); adopting it is a decision about the base, not about the menu. (rows 53, 74, 75, 76, 77 of the table) *Ruled:* 17 October 2026, 22:12 EDT: "yes to the recomendations" (the user's words, to the recommendation above; IMPLEMENTATION_PLAN.md, User decision (17 October 2026, 22:12 EDT)).
+10. **Dice.** A gang attack, an attack on an infant and a female's transfer to another community are opened by a random roll and then offered at a fixed high score. Should they stay with the rules? *Recommended:* yes. They stay hazards, decided by the rules and reported as the rules' acts. No record can teach a once-in-a-lifetime act, and an untaught model would set its rate by accident. (rows 43, 49, 65 of the table) *Ruled:* 17 October 2026, 22:12 EDT: "yes to the recomendations" (the user's words, to the recommendation above; IMPLEMENTATION_PLAN.md, User decision (17 October 2026, 22:12 EDT)).
 
 ### What stays with the rules, and why
 
@@ -69,7 +70,7 @@ A rule is proposed for dropping in two cases only. Either the rules already valu
 
 ## 3. How this was made, and how to read the table
 
-Generated by `scripts/r12-offer-table.ts` from `src/sim/candidates.ts` (sha256 22ca5555943a…) and the classification in `data/r12-offer-classes.json`, on the working base `docs/staging/integrator-kit/params/M6-W50.json` (field map). The script reads the source as text; it runs no simulation and no model. **Every count is computed. Every class is a reading of the code by the stage's author, kept in the classification file: that reading is what is put up for sign-off.** A place where the rules offer an option is called an offer site below. The sites cover 29 actions and 22 kinds of activity. Design: `docs/staging/r12-prereg.md`.
+Generated by `scripts/r12-offer-table.ts` from `src/sim/candidates.ts` (sha256 066d4a0fbe52…) and the classification in `data/r12-offer-classes.json`, on the working base `docs/staging/integrator-kit/params/M6-W50.json` (field map). The script reads the source as text; it runs no simulation and no model. **Every count is computed. Every class is a reading of the code by the stage's author, kept in the classification file: that reading is what is put up for sign-off.** A place where the rules offer an option is called an offer site below. The sites cover 29 actions and 22 kinds of activity. Design: `docs/staging/r12-prereg.md`.
 
 - **A condition** is one conjunct of an `if` in front of an offer, the negation of an earlier branch or of a `continue`/`return` guard, a loop the offer stands in, or the same for every call of the helper function it stands in. A local name is opened to its definition (`name := …`).
 - **Classes.** PHY = PHYSICAL; PER = PERCEPTUAL; SOC = SOCIAL FACT; ADV = ADVICE; QUO = QUOTA OR TIMER; DIC = DICE; SWI = SWITCH. A SWITCH is a registry switch or a diagnostic hook: on a given base it is simply true or false. A site whose every path stands behind a switch that is false on the working base is **legacy**.
@@ -82,100 +83,102 @@ Generated by `scripts/r12-offer-table.ts` from `src/sim/candidates.ts` (sha256 2
 
 | # | Line | The act, in plain words | Action (variants) | Kind | Status | Classes it carries | Proposal | Teacher |
 |---|---|---|---|---|---|---|---|---|
-| 1 | 279 | Stay in its own finished nest | nest (NONE) | nest | live | PHY | nothing to rule: possible is offered | rules, body |
-| 2 | 280 | Build a night nest, or go on building one | nest (NONE) | nest | live | PHY ADV | offered more widely: a rule is dropped (only once body outcomes are allowed as a teacher) | rules, body |
-| 3 | 405 | Sleep in its mother's nest (a dependent) | nest (MOTHER) | nest | young | (PHY PER) | the rules (under 8) | rules |
-| 4 | 408 | Rest where it is | rest (NONE) | rest | live | PHY | nothing to rule: possible is offered | rules, body |
-| 5 | 409 | Rest (without the body clock) | rest (NONE) | rest | legacy | (PHY) | – | rules |
-| 6 | 410 | Rest outside a nest in the dark (without the body clock) | rest (NONE) | rest | legacy | (PHY) | – | rules |
-| 7 | 411 | Sit hunched out of the rain | shelter (NONE) | rest | live | PHY ADV | offered more widely: a rule is dropped (only once body outcomes are allowed as a teacher) | rules, body |
-| 8 | 412 | Shelter from the rain (without the heat mechanism) | shelter (NONE) | rest | legacy | (PHY ADV) | – | rules |
-| 9 | 418 | Ride on its mother (a carried infant) | follow (MOTHER) | keep_with_party | young | (PHY) | the rules (under 8) | rules |
-| 10 | 419 | Keep up with its mother (a dependent on the ground) | follow (MOTHER) | keep_with_party | young | (PHY) | the rules (under 8) | rules |
-| 11 | 431 | Ask its mother to nurse | nurse (NONE) | nurse | young | (PHY SOC QUO) | the rules (under 8) | rules |
-| 12 | 436 | Beg plant food from its feeding mother (a dependent) | beg (PLANT) | share_food | young | (PHY PER ADV) | the rules (under 8) | rules |
-| 13 | 437 | Pick at food where it is (a dependent off its mother) | forage (NONE) | eat_here | young | (PHY ADV) | the rules (under 8) | rules |
-| 14 | 442 | Keep up with its guardian (a weaned juvenile) | follow (JUVENILE) | keep_with_party | live | PER SOC ADV | stays on the menu behind its rules, counted | rules |
-| 15 | 541 | Feed in a fruit tree in view | forage (NONE) | eat_here | live | PER | nothing to rule: possible is offered | rules, body |
-| 16 | 552 | Feed on leaves and pith where it stands (valued through the gut) | forage (NONE) | eat_here | legacy | (PHY) | – | rules |
-| 17 | 553 | Feed on leaves and pith where it stands | forage (NONE) | eat_here | live | – | nothing to rule: possible is offered | rules, body |
-| 18 | 582 | Go to a remembered fruit tree (every one offered: the small map's route) | travel (TREE) | go_to_food | legacy | (PHY PER QUO) | – | rules |
-| 19 | 586 | Go and drink at a remembered water | drink (NONE) | drink | live | PER ADV | offered more widely: a rule is dropped (only once body outcomes are allowed as a teacher) | rules, body |
-| 20 | 629 | Go to the remembered tree with the most believed value per metre (route chaining) | travel (TREE) | go_to_food | legacy | (PHY PER ADV QUO) | – | rules |
-| 21 | 637 | Go to a fruit tree out of view, remembered or on the community's list | travel (TREE) | go_to_food | live | PHY PER ADV | offered more widely: a rule is dropped | rules, body |
-| 22 | 654 | Go toward a pant-hoot heard (the older valuation) | travel (CALLER) | keep_with_party | legacy | (PHY PER ADV QUO) | – | rules |
-| 23 | 680 | Go toward a community member's pant-hoot | travel (CALLER) | keep_with_party | live | PER ADV QUO | stays on the menu behind its rules, counted | rules, budongo |
-| 24 | 690 | Go back toward the middle of its range | travel (HOME) | go_home | live | ADV | stays on the menu behind its rules, counted | rules |
-| 25 | 693 | Climb in a tree in view (play) | climb (NONE) | play | live | PER ADV | stays on the menu behind its rules, counted | rules |
-| 26 | 790 | Groom an animal in view | groom (ACCEPT, COALITION, NONE) | groom | live | PHY PER SOC ADV | offered more widely: a rule is dropped (only for the pairs a wild choice record covers) | wild-groom, tai-groom, rules |
-| 27 | 803 | Play with a young peer in view | play (ACCEPT, NONE) | play | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
-| 28 | 806 | Play with a youngster (an adult) | play (ACCEPT, NONE) | play | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
-| 29 | 814 | Move away from a tense dominant who comes close | flee (AVOID) | escape | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
-| 30 | 826 | Go along on a companion's trip to a food tree | travel (TREE) | keep_with_party | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules, budongo |
-| 31 | 833 | Go to a companion's goal tree (before joining was a choice) | travel (TREE) | keep_with_party | legacy | (PHY PER SOC ADV) | – | rules |
-| 32 | 834 | Follow a companion who is walking off | follow (PARTY) | keep_with_party | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules, budongo |
-| 33 | 839 | Stay near an adult male (a recently immigrated female) | follow (PARTY) | keep_with_party | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules |
-| 34 | 860 | Pant-grunt to a dominant in reach | pant-grunt (NONE) | greet_or_appease | live | PHY PER SOC ADV QUO | offered more widely: a rule is dropped | rules |
-| 35 | 867 | Join the trip of a companion heard giving a travel hoo, out of view | travel (TREE) | keep_with_party | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules, budongo |
-| 36 | 877 | Rain display at the onset of a storm | display (RAIN) | contest | live | ADV QUO | stays on the menu behind its rules, counted | rules |
-| 37 | 879 | Rain display (opened by a roll) | display (RAIN) | contest | legacy | (PHY ADV QUO DIC) | – | none |
-| 38 | 887 | Charging display: at a rival, at a reunion, or undirected | display (RIVAL, REUNION, NONE) | contest | live | ADV | stays on the menu behind its rules, counted | rules |
-| 39 | 912 | Give alarm calls at a snake | alarm (SNAKE) | escape | live | PHY PER | nothing to rule: possible is offered | rules |
-| 40 | 913 | Back away from a snake | flee (SNAKE) | escape | live | PHY PER | nothing to rule: possible is offered | rules |
-| 41 | 918 | Leave for a neighbouring community | transfer (NONE) | emigrate | live | DIC | stays with the rules | none |
-| 42 | 974 | Go to her dead infant and take it up | follow (BODY) | keep_with_party | legacy | (PHY PER SOC ADV) | – | none |
-| 43 | 975 | Groom a dead infant's body | groom (BODY) | groom | legacy | (PHY PER SOC ADV) | – | none |
-| 44 | 978 | Walk up to a dead infant's body and look | follow (BODY) | keep_with_party | legacy | (PHY PER SOC ADV QUO) | – | none |
-| 45 | 1133 | Charge a rival male over status | charge (STATUS) | contest | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
-| 46 | 1138 | Attack a close rival (opened by a roll) | attack (ESCALATE) | contest | legacy | (PHY PER ADV QUO DIC) | – | none |
-| 47 | 1149 | Attack an infant (opened by a roll) | attack (INFANTICIDE) | contest | live | PHY PER ADV QUO DIC | stays with the rules | none |
-| 48 | 1165 | Charge a lower-ranked bystander after losing a contest | charge (REDIRECT) | contest | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules |
-| 49 | 1168 | Attack a male close to it in rank | attack (ESCALATE) | contest | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
-| 50 | 1174 | Charge a subordinate it holds a grudge against | charge (TENSION) | contest | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
-| 51 | 1180 | Charge a swollen female (coercion) | charge (COERCE) | contest | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules |
-| 52 | 1190 | Charge a recently immigrated female (a resident female) | charge (IMMIGRANT) | contest | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules |
-| 53 | 1202 | Supplant a subordinate that is feeding when fruit is scarce | charge (FEED) | contest | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
-| 54 | 1209 | Charge an adult female (an adolescent male) | charge (FEMALE_DOM) | contest | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
-| 55 | 1217 | Charge the animal attacking its ward | charge (DEFEND) | back_ally_or_defend | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules |
-| 56 | 1232 | Join an ally's conflict: charge its opponent | charge (COALITION) | back_ally_or_defend | live | PHY PER ADV QUO | stays on the menu behind its rules, counted | kanyawara, rules |
-| 57 | 1237 | Chase a rival away from the female it guards | charge (GUARD) | contest | live | PHY PER ADV | stays on the menu behind its rules, counted | rules |
-| 58 | 1260 | Crouch and submit to the animal threatening it | submit (AGGRESSOR) | greet_or_appease | live | PHY PER SOC QUO | stays on the menu behind its rules, counted | rules |
-| 59 | 1261 | Flee from the animal threatening it | flee (AGGRESSOR) | escape | live | PHY PER SOC QUO | stays on the menu behind its rules, counted | rules |
-| 60 | 1264 | Charge back at the animal threatening it | charge (COUNTER) | back_ally_or_defend | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules |
-| 61 | 1265 | Fight back against an attacker at arm's length | attack (FIGHTBACK) | back_ally_or_defend | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules |
-| 62 | 1296 | Charge at strangers in view | charge (STRANGER) | confront_strangers | live | PHY PER ADV | stays on the menu behind its rules, counted | rules |
-| 63 | 1297 | Gang attack on a lone stranger (opened by a roll) | attack (GANG) | confront_strangers | live | PHY PER ADV DIC | stays with the rules | none |
-| 64 | 1299 | Retreat from strangers in view (outnumbered or fearful) | flee (STRANGERS) | avoid_strangers | live | PHY PER ADV | stays on the menu behind its rules, counted | rules |
-| 65 | 1301 | Display at strangers in view (even numbers) | display (STRANGER) | confront_strangers | live | PHY PER ADV | stays on the menu behind its rules, counted | rules |
-| 66 | 1301 | Pant-hoot back at strangers in view (even numbers) | call (COUNTERCALL) | confront_strangers | live | PHY PER ADV | stays on the menu behind its rules, counted | rules |
-| 67 | 1302 | Retreat from strangers in view (a female, even numbers) | flee (STRANGERS) | avoid_strangers | live | PHY PER ADV | stays on the menu behind its rules, counted | rules |
-| 68 | 1317 | Approach stranger calls heard | patrol (APPROACH) | confront_strangers | live | PER ADV QUO | stays on the menu behind its rules, counted | rules |
-| 69 | 1318 | Pant-hoot back at stranger calls heard | call (COUNTERCALL) | confront_strangers | live | PER ADV QUO | stays on the menu behind its rules, counted | rules |
-| 70 | 1319 | Move away from stranger calls heard | flee (HEARD) | avoid_strangers | live | PER ADV QUO | stays on the menu behind its rules, counted | rules |
-| 71 | 1332 | Stay on its consortship | consort (CONTINUE) | court | live | PHY ADV | stays on the menu behind its rules, counted | rules |
-| 72 | 1347 | Court and mate with a female in oestrus (a male) | mate (ACCEPT, NONE) | court | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules |
-| 73 | 1351 | Mate-guard a swollen female | guard (NONE) | court | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
-| 74 | 1361 | Lead a female on a consortship | consort (NONE) | court | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
-| 75 | 1375 | Present to and mate with a male (a female in oestrus) | mate (ACCEPT, NONE) | court | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules |
-| 76 | 1376 | Go along on a male's consortship | consort (ACCEPT) | court | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules |
-| 77 | 1406 | Beg meat from an animal holding some | beg (MEAT) | share_food | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
-| 78 | 1410 | Share meat with an animal begging from it | share (MEAT) | share_food | live | PHY PER SOC | nothing to rule: possible is offered | rules |
-| 79 | 1412 | Share plant food with its begging ward | share (PLANT) | share_food | live | PHY PER SOC | nothing to rule: possible is offered | rules |
-| 80 | 1422 | Join a hunt of red colobus under way | hunt (JOIN) | hunt | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
-| 81 | 1435 | Start a hunt of red colobus | hunt (LEAD) | hunt | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules |
-| 82 | 1442 | Start a hunt (the older, quota-gated valuation) | hunt (LEAD) | hunt | legacy | (PHY PER SOC ADV QUO) | – | rules |
-| 83 | 1458 | Reconcile with its last opponent | reconcile (NONE) | make_up | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules |
-| 84 | 1470 | Console the victim of a recent attack | console (NONE) | make_up | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules |
-| 85 | 1488 | Carry on with the border patrol | patrol (CONTINUE) | confront_strangers | live | PHY SOC ADV | stays on the menu behind its rules, counted | rules |
-| 86 | 1491 | Join the border patrol under way | patrol (JOIN) | confront_strangers | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
-| 87 | 1492 | Join the patrol (the older valuation by sex) | patrol (JOIN) | confront_strangers | legacy | (PHY PER SOC ADV) | – | rules |
-| 88 | 1500 | Lead a border patrol | patrol (LEAD) | confront_strangers | live | SOC ADV QUO | stays on the menu behind its rules, counted | rules |
-| 89 | 1505 | Lead a patrol (opened by the patrol hazard's roll) | patrol (LEAD) | confront_strangers | legacy | (PHY SOC ADV QUO DIC) | – | none |
-| 90 | 1515 | Pant-hoot | call (CONTACT) | call | live | ADV | stays on the menu behind its rules, counted | rules |
-| 91 | 1516 | Food call at a rich tree (older) | call (FOODCALL) | call | legacy | (PHY ADV QUO) | – | rules |
-| 92 | 1517 | Join the dawn or dusk chorus (older) | call (CHORUS) | call | legacy | (PHY ADV QUO) | – | rules |
-| 93 | 1518 | Pant-hoot at a reunion (a male) | call (REUNION) | call | live | PER ADV | stays on the menu behind its rules, counted | rules |
-| 94 | 1524 | Contact pant-hoot when alone (older) | call (CONTACT) | call | legacy | (PHY ADV QUO) | – | rules |
+| 1 | 286 | Stay in its own finished nest | nest (NONE) | nest | live | PHY | nothing to rule: possible is offered | rules, body |
+| 2 | 287 | Build a night nest, or go on building one | nest (NONE) | nest | live | PHY ADV | offered more widely: a rule is dropped (only once body outcomes are allowed as a teacher) | rules, body |
+| 3 | 416 | Sleep in its mother's nest (a dependent) | nest (MOTHER) | nest | young | (PHY PER) | the rules (under 8) | rules |
+| 4 | 419 | Rest where it is | rest (NONE) | rest | live | PHY | nothing to rule: possible is offered | rules, body |
+| 5 | 420 | Rest (without the body clock) | rest (NONE) | rest | legacy | (PHY) | – | rules |
+| 6 | 421 | Rest outside a nest in the dark (without the body clock) | rest (NONE) | rest | legacy | (PHY) | – | rules |
+| 7 | 422 | Sit hunched out of the rain | shelter (NONE) | rest | live | PHY ADV | offered more widely: a rule is dropped (only once body outcomes are allowed as a teacher) | rules, body |
+| 8 | 423 | Shelter from the rain (without the heat mechanism) | shelter (NONE) | rest | legacy | (PHY ADV) | – | rules |
+| 9 | 429 | Ride on its mother (a carried infant) | follow (MOTHER) | keep_with_party | young | (PHY) | the rules (under 8) | rules |
+| 10 | 430 | Keep up with its mother (a dependent on the ground) | follow (MOTHER) | keep_with_party | young | (PHY) | the rules (under 8) | rules |
+| 11 | 442 | Ask its mother to nurse | nurse (NONE) | nurse | young | (PHY SOC QUO) | the rules (under 8) | rules |
+| 12 | 447 | Beg plant food from its feeding mother (a dependent) | beg (PLANT) | share_food | young | (PHY PER ADV) | the rules (under 8) | rules |
+| 13 | 448 | Pick at food where it is (a dependent off its mother) | forage (NONE) | eat_here | young | (PHY ADV) | the rules (under 8) | rules |
+| 14 | 453 | Keep up with its guardian (a weaned juvenile) | follow (JUVENILE) | keep_with_party | live | PER SOC ADV | stays on the menu behind its rules, counted | rules |
+| 15 | 552 | Feed in a fruit tree in view | forage (NONE) | eat_here | live | PER | nothing to rule: possible is offered | rules, body |
+| 16 | 563 | Feed on leaves and pith where it stands (valued through the gut) | forage (NONE) | eat_here | legacy | (PHY) | – | rules |
+| 17 | 564 | Feed on leaves and pith where it stands | forage (NONE) | eat_here | live | – | nothing to rule: possible is offered | rules, body |
+| 18 | 593 | Go to a remembered fruit tree (every one offered: the small map's route) | travel (TREE) | go_to_food | legacy | (PHY PER QUO) | – | rules |
+| 19 | 597 | Go and drink at a remembered water | drink (NONE) | drink | live | PER ADV | offered more widely: a rule is dropped (only once body outcomes are allowed as a teacher) | rules, body |
+| 20 | 640 | Go to the remembered tree with the most believed value per metre (route chaining) | travel (TREE) | go_to_food | legacy | (PHY PER ADV QUO) | – | rules |
+| 21 | 648 | Go to a fruit tree out of view, remembered or on the community's list | travel (TREE) | go_to_food | live | PHY PER ADV | offered more widely: a rule is dropped | rules, body |
+| 22 | 665 | Go toward a pant-hoot heard (the older valuation) | travel (CALLER) | keep_with_party | legacy | (PHY PER ADV QUO) | – | rules |
+| 23 | 691 | Go toward a community member's pant-hoot | travel (CALLER) | keep_with_party | live | PER ADV QUO | stays on the menu behind its rules, counted | rules, budongo |
+| 24 | 701 | Go back toward the middle of its range | travel (HOME) | go_home | live | ADV | stays on the menu behind its rules, counted | rules |
+| 25 | 704 | Climb in a tree in view (play) | climb (NONE) | play | live | PER ADV | stays on the menu behind its rules, counted | rules |
+| 26 | 810 | Groom an animal in view | groom (ACCEPT, COALITION, NONE) | groom | live | PHY PER SOC ADV | offered more widely: a rule is dropped (only for the pairs a wild choice record covers) | wild-groom, tai-groom, rules |
+| 27 | 813 | Groom an adult male in reach, whatever he is doing (an adult male's own pool on the model's path) | groom (ACCEPT, COALITION, NONE) | groom | legacy | (PHY PER SOC ADV) | – | wild-groom, rules |
+| 28 | 822 | Play with a young peer in view | play (ACCEPT, NONE) | play | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
+| 29 | 825 | Play with a youngster (an adult) | play (ACCEPT, NONE) | play | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
+| 30 | 833 | Move away from a tense dominant who comes close | flee (AVOID) | escape | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
+| 31 | 845 | Go along on a companion's trip to a food tree | travel (TREE) | keep_with_party | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules, budongo |
+| 32 | 852 | Go to a companion's goal tree (before joining was a choice) | travel (TREE) | keep_with_party | legacy | (PHY PER SOC ADV) | – | rules |
+| 33 | 853 | Follow a companion who is walking off | follow (PARTY) | keep_with_party | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules, budongo |
+| 34 | 858 | Stay near an adult male (a recently immigrated female) | follow (PARTY) | keep_with_party | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules |
+| 35 | 872 | Pant-grunt to any dominant in reach the conditions allow (the model's own pool) | pant-grunt (NONE) | greet_or_appease | legacy | (PHY PER SOC ADV QUO) | – | rules |
+| 36 | 881 | Pant-grunt to a dominant in reach | pant-grunt (NONE) | greet_or_appease | live | PHY PER SOC ADV QUO | offered more widely: a rule is dropped | rules |
+| 37 | 888 | Join the trip of a companion heard giving a travel hoo, out of view | travel (TREE) | keep_with_party | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules, budongo |
+| 38 | 898 | Rain display at the onset of a storm | display (RAIN) | contest | live | ADV QUO | stays on the menu behind its rules, counted | rules |
+| 39 | 900 | Rain display (opened by a roll) | display (RAIN) | contest | legacy | (PHY ADV QUO DIC) | – | none |
+| 40 | 908 | Charging display: at a rival, at a reunion, or undirected | display (RIVAL, REUNION, NONE) | contest | live | ADV | stays on the menu behind its rules, counted | rules |
+| 41 | 933 | Give alarm calls at a snake | alarm (SNAKE) | escape | live | PHY PER | nothing to rule: possible is offered | rules |
+| 42 | 934 | Back away from a snake | flee (SNAKE) | escape | live | PHY PER | nothing to rule: possible is offered | rules |
+| 43 | 939 | Leave for a neighbouring community | transfer (NONE) | emigrate | live | DIC | stays with the rules | none |
+| 44 | 997 | Go to her dead infant and take it up | follow (BODY) | keep_with_party | legacy | (PHY PER SOC ADV) | – | none |
+| 45 | 998 | Groom a dead infant's body | groom (BODY) | groom | legacy | (PHY PER SOC ADV) | – | none |
+| 46 | 1001 | Walk up to a dead infant's body and look | follow (BODY) | keep_with_party | legacy | (PHY PER SOC ADV QUO) | – | none |
+| 47 | 1156 | Charge a rival male over status | charge (STATUS) | contest | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
+| 48 | 1161 | Attack a close rival (opened by a roll) | attack (ESCALATE) | contest | legacy | (PHY PER ADV QUO DIC) | – | none |
+| 49 | 1172 | Attack an infant (opened by a roll) | attack (INFANTICIDE) | contest | live | PHY PER ADV QUO DIC | stays with the rules | none |
+| 50 | 1188 | Charge a lower-ranked bystander after losing a contest | charge (REDIRECT) | contest | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules |
+| 51 | 1191 | Attack a male close to it in rank | attack (ESCALATE) | contest | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
+| 52 | 1197 | Charge a subordinate it holds a grudge against | charge (TENSION) | contest | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
+| 53 | 1203 | Charge a swollen female (coercion) | charge (COERCE) | contest | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules |
+| 54 | 1213 | Charge a recently immigrated female (a resident female) | charge (IMMIGRANT) | contest | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules |
+| 55 | 1225 | Supplant a subordinate that is feeding when fruit is scarce | charge (FEED) | contest | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
+| 56 | 1232 | Charge an adult female (an adolescent male) | charge (FEMALE_DOM) | contest | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
+| 57 | 1240 | Charge the animal attacking its ward | charge (DEFEND) | back_ally_or_defend | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules |
+| 58 | 1255 | Join an ally's conflict: charge its opponent | charge (COALITION) | back_ally_or_defend | live | PHY PER ADV QUO | stays on the menu behind its rules, counted | kanyawara, rules |
+| 59 | 1260 | Chase a rival away from the female it guards | charge (GUARD) | contest | live | PHY PER ADV | stays on the menu behind its rules, counted | rules |
+| 60 | 1283 | Crouch and submit to the animal threatening it | submit (AGGRESSOR) | greet_or_appease | live | PHY PER SOC QUO | stays on the menu behind its rules, counted | rules |
+| 61 | 1284 | Flee from the animal threatening it | flee (AGGRESSOR) | escape | live | PHY PER SOC QUO | stays on the menu behind its rules, counted | rules |
+| 62 | 1287 | Charge back at the animal threatening it | charge (COUNTER) | back_ally_or_defend | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules |
+| 63 | 1288 | Fight back against an attacker at arm's length | attack (FIGHTBACK) | back_ally_or_defend | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules |
+| 64 | 1319 | Charge at strangers in view | charge (STRANGER) | confront_strangers | live | PHY PER ADV | stays on the menu behind its rules, counted | rules |
+| 65 | 1320 | Gang attack on a lone stranger (opened by a roll) | attack (GANG) | confront_strangers | live | PHY PER ADV DIC | stays with the rules | none |
+| 66 | 1322 | Retreat from strangers in view (outnumbered or fearful) | flee (STRANGERS) | avoid_strangers | live | PHY PER ADV | stays on the menu behind its rules, counted | rules |
+| 67 | 1324 | Display at strangers in view (even numbers) | display (STRANGER) | confront_strangers | live | PHY PER ADV | stays on the menu behind its rules, counted | rules |
+| 68 | 1324 | Pant-hoot back at strangers in view (even numbers) | call (COUNTERCALL) | confront_strangers | live | PHY PER ADV | stays on the menu behind its rules, counted | rules |
+| 69 | 1325 | Retreat from strangers in view (a female, even numbers) | flee (STRANGERS) | avoid_strangers | live | PHY PER ADV | stays on the menu behind its rules, counted | rules |
+| 70 | 1340 | Approach stranger calls heard | patrol (APPROACH) | confront_strangers | live | PER ADV QUO | stays on the menu behind its rules, counted | rules |
+| 71 | 1341 | Pant-hoot back at stranger calls heard | call (COUNTERCALL) | confront_strangers | live | PER ADV QUO | stays on the menu behind its rules, counted | rules |
+| 72 | 1342 | Move away from stranger calls heard | flee (HEARD) | avoid_strangers | live | PER ADV QUO | stays on the menu behind its rules, counted | rules |
+| 73 | 1355 | Stay on its consortship | consort (CONTINUE) | court | live | PHY ADV | stays on the menu behind its rules, counted | rules |
+| 74 | 1370 | Court and mate with a female in oestrus (a male) | mate (ACCEPT, NONE) | court | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules |
+| 75 | 1374 | Mate-guard a swollen female | guard (NONE) | court | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
+| 76 | 1384 | Lead a female on a consortship | consort (NONE) | court | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
+| 77 | 1398 | Present to and mate with a male (a female in oestrus) | mate (ACCEPT, NONE) | court | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules |
+| 78 | 1399 | Go along on a male's consortship | consort (ACCEPT) | court | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules |
+| 79 | 1429 | Beg meat from an animal holding some | beg (MEAT) | share_food | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
+| 80 | 1433 | Share meat with an animal begging from it | share (MEAT) | share_food | live | PHY PER SOC | nothing to rule: possible is offered | rules |
+| 81 | 1435 | Share plant food with its begging ward | share (PLANT) | share_food | live | PHY PER SOC | nothing to rule: possible is offered | rules |
+| 82 | 1445 | Join a hunt of red colobus under way | hunt (JOIN) | hunt | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
+| 83 | 1458 | Start a hunt of red colobus | hunt (LEAD) | hunt | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules |
+| 84 | 1465 | Start a hunt (the older, quota-gated valuation) | hunt (LEAD) | hunt | legacy | (PHY PER SOC ADV QUO) | – | rules |
+| 85 | 1481 | Reconcile with its last opponent | reconcile (NONE) | make_up | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules |
+| 86 | 1493 | Console the victim of a recent attack | console (NONE) | make_up | live | PHY PER SOC ADV QUO | stays on the menu behind its rules, counted | rules |
+| 87 | 1511 | Carry on with the border patrol | patrol (CONTINUE) | confront_strangers | live | PHY SOC ADV | stays on the menu behind its rules, counted | rules |
+| 88 | 1514 | Join the border patrol under way | patrol (JOIN) | confront_strangers | live | PHY PER SOC ADV | stays on the menu behind its rules, counted | rules |
+| 89 | 1515 | Join the patrol (the older valuation by sex) | patrol (JOIN) | confront_strangers | legacy | (PHY PER SOC ADV) | – | rules |
+| 90 | 1523 | Lead a border patrol | patrol (LEAD) | confront_strangers | live | SOC ADV QUO | stays on the menu behind its rules, counted | rules |
+| 91 | 1528 | Lead a patrol (opened by the patrol hazard's roll) | patrol (LEAD) | confront_strangers | legacy | (PHY SOC ADV QUO DIC) | – | none |
+| 92 | 1538 | Pant-hoot | call (CONTACT) | call | live | ADV | stays on the menu behind its rules, counted | rules |
+| 93 | 1539 | Food call at a rich tree (older) | call (FOODCALL) | call | legacy | (PHY ADV QUO) | – | rules |
+| 94 | 1540 | Join the dawn or dusk chorus (older) | call (CHORUS) | call | legacy | (PHY ADV QUO) | – | rules |
+| 95 | 1541 | Pant-hoot at a reunion (a male) | call (REUNION) | call | live | PER ADV | stays on the menu behind its rules, counted | rules |
+| 96 | 1547 | Contact pant-hoot when alone (older) | call (CONTACT) | call | legacy | (PHY ADV QUO) | – | rules |
 
 Classes in brackets are those of a site that is not live (as written). Line numbers are those of `src/sim/candidates.ts` at the hash above.
 
@@ -207,11 +210,11 @@ Classes in brackets are those of a site that is not live (as written). Line numb
 
 ## 5. Every site, with its conditions as written
 
-### 1. Stay in its own finished nest (`src/sim/candidates.ts:279`)
+### 1. Stay in its own finished nest (`src/sim/candidates.ts:286`)
 
 `offer('nest', c.nest.treeId, …)` in `offerOwnNest`; kind: nest; key `offerOwnNest/nest/NONE#1`, print `7b279120`. **live**; carries physical; nothing to rule: possible is offered. Teacher: the rules' own judgment (scaffold); forked body outcomes, if the user allows them.
 
-Reached through offerOwnNest() called at line 406 (this way is closed on the working base):
+Reached through offerOwnNest() called at line 417 (this way is closed on the working base):
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)`: it is not a dependent (weaned, or 6 or older) *(always from 8)*
 - **ADV** `c.age >= 3`: it is 3 or older (a hand-set age: from then it builds its own nest) *(always from 8; proposal: keep)*
@@ -221,7 +224,7 @@ Reached through offerOwnNest() called at line 406 (this way is closed on the wor
 - **PHY** `c.nest !== null` (through `inNest`): it has a nest
 - **PHY** `c.nest`: it has a nest
 
-Reached through offerOwnNest() called at line 696:
+Reached through offerOwnNest() called at line 707:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **SWI** `P.departRace === 1` (through `race`): the dawn race for food is on [departRace = 1] *(true on the base)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)`: it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -233,13 +236,13 @@ Reached through offerOwnNest() called at line 696:
 
 Number literals in its conditions: 3, 2. Hand-set numbers in its advice, quota and dice conditions: 0.
 
-### 2. Build a night nest, or go on building one (`src/sim/candidates.ts:280`)
+### 2. Build a night nest, or go on building one (`src/sim/candidates.ts:287`)
 
 `offer('nest', t.id, …)` in `offerOwnNest`; kind: nest; key `offerOwnNest/nest/NONE#2`, print `c39535b7`. **live**; carries physical, advice; offered more widely: a rule is dropped (only once body outcomes are allowed as a teacher). Teacher: the rules' own judgment (scaffold); forked body outcomes, if the user allows them.
 
 *Chosen by code before the offer:* The tree: one of the trees tall enough within reach, by a formula of distance, height and a hash that avoids last night's tree (`chooseNestTree`); 11.7 stand in reach on average (R7 ledger).
 
-Reached through offerOwnNest() called at line 406 (this way is closed on the working base):
+Reached through offerOwnNest() called at line 417 (this way is closed on the working base):
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)`: it is not a dependent (weaned, or 6 or older) *(always from 8)*
 - **ADV** `c.age >= 3`: it is 3 or older (a hand-set age: from then it builds its own nest) *(always from 8; proposal: keep)*
@@ -249,7 +252,7 @@ Reached through offerOwnNest() called at line 406 (this way is closed on the wor
 - **ADV** `open | open := rS ? env.daylight < 1 : hour >= 12 || night | rS := P.rhythmSleep === 1 | night := env.daylight < 0.1`: a new nest may be started only when daylight is below full (with the sleep mechanism, as on the base; otherwise from 12:00 or at night) [rhythmSleep = 1] *(proposal: keep)*
 - **PHY** `t | t := c.action === 'nest' && isTreeId(c.targetId) ? index(world).treeById.get(c.targetId) : chooseNestTree(world, c)`: a tree to nest in exists: the one it is building in, or one tall enough within reach (which one is chosen by a formula)
 
-Reached through offerOwnNest() called at line 696:
+Reached through offerOwnNest() called at line 707:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **SWI** `P.departRace === 1` (through `race`): the dawn race for food is on [departRace = 1] *(true on the base)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)`: it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -261,7 +264,7 @@ Reached through offerOwnNest() called at line 696:
 
 Number literals in its conditions: 3, 2, 0.25, 5, 12, 0.1. Hand-set numbers in its advice, quota and dice conditions: 8.
 
-### 3. Sleep in its mother's nest (a dependent) (`src/sim/candidates.ts:405`)
+### 3. Sleep in its mother's nest (a dependent) (`src/sim/candidates.ts:416`)
 
 `offer('nest', caretaker.targetId, …, V.MOTHER)` in `computeCandidates`; kind: nest; key `computeCandidates/nest/MOTHER#1`, print `0abbc22b`. **young only: no animal aged 8 or over reaches it**. Teacher: the rules' own judgment (scaffold).
 
@@ -271,7 +274,7 @@ Conditions:
 - **PER** `caretaker.action === 'nest' | caretaker := dependentOn(world, c)`: its caretaker is nesting
 - **PHY** `isTreeId(caretaker.targetId) | caretaker := dependentOn(world, c)`: the caretaker's nest is in a tree
 
-### 4. Rest where it is (`src/sim/candidates.ts:408`)
+### 4. Rest where it is (`src/sim/candidates.ts:419`)
 
 `offer('rest', -1, …)` in `computeCandidates`; kind: rest; key `computeCandidates/rest/NONE#1`, print `d4548d05`. **live**; carries physical; nothing to rule: possible is offered. Teacher: the rules' own judgment (scaffold); forked body outcomes, if the user allows them.
 
@@ -282,7 +285,7 @@ Conditions:
 
 Number literals in its conditions: 2. Hand-set numbers in its advice, quota and dice conditions: 0.
 
-### 5. Rest (without the body clock) (`src/sim/candidates.ts:409`)
+### 5. Rest (without the body clock) (`src/sim/candidates.ts:420`)
 
 `offer('rest', -1, …)` in `computeCandidates`; kind: rest; key `computeCandidates/rest/NONE#2`, print `4c0a0b92`. **legacy: unreachable on the working base**. Teacher: the rules' own judgment (scaffold).
 
@@ -293,7 +296,7 @@ Conditions:
 - **SWI** `!circ | circ := circadianOn(P)`: the body clock mechanism is off *(**false on the base**)*
 - **SWI** `!dark | dark := darkOn(P)`: the cost of darkness is off *(**false on the base**)*
 
-### 6. Rest outside a nest in the dark (without the body clock) (`src/sim/candidates.ts:410`)
+### 6. Rest outside a nest in the dark (without the body clock) (`src/sim/candidates.ts:421`)
 
 `offer('rest', -1, …)` in `computeCandidates`; kind: rest; key `computeCandidates/rest/NONE#3`, print `214bba69`. **legacy: unreachable on the working base**. Teacher: the rules' own judgment (scaffold).
 
@@ -307,7 +310,7 @@ Conditions:
 
 Number literals in its conditions: 2.
 
-### 7. Sit hunched out of the rain (`src/sim/candidates.ts:411`)
+### 7. Sit hunched out of the rain (`src/sim/candidates.ts:422`)
 
 `offer('shelter', -1, …)` in `computeCandidates`; kind: rest; key `computeCandidates/shelter/NONE#1`, print `27282d55`. **live**; carries physical, advice; offered more widely: a rule is dropped (only once body outcomes are allowed as a teacher). Teacher: the rules' own judgment (scaffold); forked body outcomes, if the user allows them.
 
@@ -321,7 +324,7 @@ Conditions:
 
 Number literals in its conditions: 0.12, 2. Hand-set numbers in its advice, quota and dice conditions: 0.
 
-### 8. Shelter from the rain (without the heat mechanism) (`src/sim/candidates.ts:412`)
+### 8. Shelter from the rain (without the heat mechanism) (`src/sim/candidates.ts:423`)
 
 `offer('shelter', -1, …)` in `computeCandidates`; kind: rest; key `computeCandidates/shelter/NONE#2`, print `bfc277bf`. **legacy: unreachable on the working base**. Teacher: the rules' own judgment (scaffold).
 
@@ -337,7 +340,7 @@ Conditions:
 
 Number literals in its conditions: 0.3, 2, 0.1.
 
-### 9. Ride on its mother (a carried infant) (`src/sim/candidates.ts:418`)
+### 9. Ride on its mother (a carried infant) (`src/sim/candidates.ts:429`)
 
 `offer('follow', caretaker.id, …, V.MOTHER)` in `computeCandidates`; kind: keep_with_party; key `computeCandidates/follow/MOTHER#1`, print `21af5fdb`. **young only: no animal aged 8 or over reaches it**. Teacher: the rules' own judgment (scaffold).
 
@@ -346,7 +349,7 @@ Conditions:
 - **PHY** `dependentOn(world, c)` (through `caretaker`): it is a dependent: unweaned, under 6, with a living caretaker *(never from 8)*
 - **PHY** `carried | carried := caretaker ? isCarried(c, caretaker) : false | caretaker := dependentOn(world, c)`: it is being carried *(never from 8)*
 
-### 10. Keep up with its mother (a dependent on the ground) (`src/sim/candidates.ts:419`)
+### 10. Keep up with its mother (a dependent on the ground) (`src/sim/candidates.ts:430`)
 
 `offer('follow', caretaker.id, …, V.MOTHER)` in `computeCandidates`; kind: keep_with_party; key `computeCandidates/follow/MOTHER#2`, print `04cf8e6c`. **young only: no animal aged 8 or over reaches it**. Teacher: the rules' own judgment (scaffold).
 
@@ -355,7 +358,7 @@ Conditions:
 - **PHY** `dependentOn(world, c)` (through `caretaker`): it is a dependent: unweaned, under 6, with a living caretaker *(never from 8)*
 - **PHY** `!carried | carried := caretaker ? isCarried(c, caretaker) : false | caretaker := dependentOn(world, c)`: it is not being carried *(always from 8)*
 
-### 11. Ask its mother to nurse (`src/sim/candidates.ts:431`)
+### 11. Ask its mother to nurse (`src/sim/candidates.ts:442`)
 
 `offer('nurse', caretaker.id, …)` in `computeCandidates`; kind: nurse; key `computeCandidates/nurse/NONE#1`, print `6acc63b5`. **young only: no animal aged 8 or over reaches it**. Teacher: the rules' own judgment (scaffold).
 
@@ -368,7 +371,7 @@ Conditions:
 
 Number literals in its conditions: 0.3.
 
-### 12. Beg plant food from its feeding mother (a dependent) (`src/sim/candidates.ts:436`)
+### 12. Beg plant food from its feeding mother (a dependent) (`src/sim/candidates.ts:447`)
 
 `offer('beg', caretaker.id, …, V.PLANT)` in `computeCandidates`; kind: share_food; key `computeCandidates/beg/PLANT#1`, print `3c47116f`. **young only: no animal aged 8 or over reaches it**. Teacher: the rules' own judgment (scaffold).
 
@@ -383,7 +386,7 @@ Conditions:
 
 Number literals in its conditions: 1, 0.35.
 
-### 13. Pick at food where it is (a dependent off its mother) (`src/sim/candidates.ts:437`)
+### 13. Pick at food where it is (a dependent off its mother) (`src/sim/candidates.ts:448`)
 
 `offer('forage', -1, …)` in `computeCandidates`; kind: eat_here; key `computeCandidates/forage/NONE#1`, print `c288afc7`. **young only: no animal aged 8 or over reaches it**. Teacher: the rules' own judgment (scaffold).
 
@@ -395,7 +398,7 @@ Conditions:
 
 Number literals in its conditions: 1.2.
 
-### 14. Keep up with its guardian (a weaned juvenile) (`src/sim/candidates.ts:442`)
+### 14. Keep up with its guardian (a weaned juvenile) (`src/sim/candidates.ts:453`)
 
 `offer('follow', m.id, …, V.JUVENILE)` in `computeCandidates`; kind: keep_with_party; key `computeCandidates/follow/JUVENILE#1`, print `527690d4`. **live**; carries perceptual, social fact, advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
@@ -406,7 +409,7 @@ Conditions:
 - **SOC** `guardianOf(world, c)` (through `m`): it has a living guardian in its community (its mother, or an adoptive caretaker)
 - **PER** `x.seen.includes(m.id) || remembersChimp(c, m.id) | m := guardianOf(world, c)` (through `known`): it sees or remembers its guardian
 
-### 15. Feed in a fruit tree in view (`src/sim/candidates.ts:541`)
+### 15. Feed in a fruit tree in view (`src/sim/candidates.ts:552`)
 
 `offer('forage', t.id, …)` in `computeCandidates`; kind: eat_here; key `computeCandidates/forage/NONE#2`, print `7655d0b4`. **live**; carries perceptual; nothing to rule: possible is offered. Teacher: the rules' own judgment (scaffold); forked body outcomes, if the user allows them.
 
@@ -420,7 +423,7 @@ Conditions:
 
 Number literals in its conditions: 1.5. Hand-set numbers in its advice, quota and dice conditions: 0.
 
-### 16. Feed on leaves and pith where it stands (valued through the gut) (`src/sim/candidates.ts:552`)
+### 16. Feed on leaves and pith where it stands (valued through the gut) (`src/sim/candidates.ts:563`)
 
 `offer('forage', -1, …)` in `computeCandidates`; kind: eat_here; key `computeCandidates/forage/NONE#3`, print `8d9ed181`. **legacy: unreachable on the working base**. Teacher: the rules' own judgment (scaffold).
 
@@ -432,7 +435,7 @@ Conditions:
 - **SWI** `forageRateOn(P)` (through `gv > fr`): feeding is valued by net energy rate *(true on the base)*
 - **SWI** `gutValueOn(P)` (through `gv`): feeding is valued through the gut *(**false on the base**)*
 
-### 17. Feed on leaves and pith where it stands (`src/sim/candidates.ts:553`)
+### 17. Feed on leaves and pith where it stands (`src/sim/candidates.ts:564`)
 
 `offer('forage', -1, …)` in `computeCandidates`; kind: eat_here; key `computeCandidates/forage/NONE#4`, print `2295f276`. **live**; carries nothing but possibility; nothing to rule: possible is offered. Teacher: the rules' own judgment (scaffold); forked body outcomes, if the user allows them.
 
@@ -441,7 +444,7 @@ Conditions:
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)`: it is not a dependent (weaned, or 6 or older) *(always from 8)*
 - **SWI** `!gv | gv := fr && gutValueOn(P) | fr := forageRateOn(P)`: feeding is not valued through the gut *(true on the base)*
 
-### 18. Go to a remembered fruit tree (every one offered: the small map's route) (`src/sim/candidates.ts:582`)
+### 18. Go to a remembered fruit tree (every one offered: the small map's route) (`src/sim/candidates.ts:593`)
 
 `offer('travel', t.id, …, V.TREE)` in `computeCandidates`; kind: go_to_food; key `computeCandidates/travel/TREE#1`, print `d9d88793`. **legacy: unreachable on the working base**. Teacher: the rules' own judgment (scaffold).
 
@@ -459,7 +462,7 @@ Conditions:
 - **SWI** `!shortlist | shortlist := P.patchEcology === 1 && !resources`: the field shortlist is off, or R15 enumerates individual resource targets without that shortlist [patchEcology = 1] *(**false on the base**)*
 - **QUO** `!held | held := P.departPersist === 1 && !dv && x.tryAt !== undefined && time < x.tryAt && departAudience(world, c) > 0 | dv := P.departPersist === 1 && P.departValue >= 1`: after a departure nobody followed, its own trips wait for the re-launch time [departPersist = 1, departValue = 2] *(not read on the base; proposal: keep)*
 
-### 19. Go and drink at a remembered water (`src/sim/candidates.ts:586`)
+### 19. Go and drink at a remembered water (`src/sim/candidates.ts:597`)
 
 `offer('drink', m.entityId, …)` in `computeCandidates`; kind: drink; key `computeCandidates/drink/NONE#1`, print `485f26ec`. **live**; carries perceptual, advice; offered more widely: a rule is dropped (only once body outcomes are allowed as a teacher). Teacher: the rules' own judgment (scaffold); forked body outcomes, if the user allows them.
 
@@ -476,7 +479,7 @@ Conditions:
 
 Number literals in its conditions: 3, 0.25. Hand-set numbers in its advice, quota and dice conditions: 1.
 
-### 20. Go to the remembered tree with the most believed value per metre (route chaining) (`src/sim/candidates.ts:629`)
+### 20. Go to the remembered tree with the most believed value per metre (route chaining) (`src/sim/candidates.ts:640`)
 
 `offer('travel', t.id, …, V.TREE)` in `computeCandidates`; kind: go_to_food; key `computeCandidates/travel/TREE#2`, print `6c2cc333`. **legacy: unreachable on the working base**. Teacher: the rules' own judgment (scaffold).
 
@@ -491,7 +494,7 @@ Conditions:
 - **PER** `_rk.length`: at least one remembered or listed tree passed the trip conditions
 - **QUO** `!held | held := P.departPersist === 1 && !dv && x.tryAt !== undefined && time < x.tryAt && departAudience(world, c) > 0 | dv := P.departPersist === 1 && P.departValue >= 1`: after a departure nobody followed, its own trips wait for the re-launch time [departPersist = 1, departValue = 2] *(not read on the base; proposal: keep)*
 
-Where its target comes from (`_rk filled at line 581`):
+Where its target comes from (`_rk filled at line 592`):
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)`: it is not a dependent (weaned, or 6 or older) *(always from 8)*
 - **PER** `EACH of c.memory`: each place it remembers
@@ -503,7 +506,7 @@ Where its target comes from (`_rk filled at line 581`):
 - **SWI** `P.patchEcology === 1` (through `shortlist`): the field map's shortlist is on [patchEcology = 1] *(true on the base)*
 - **SWI** `!resources` (through `shortlist`): the R15 model-only resource enumeration is off; ordinary rules use their existing shortlist *(true on the base)*
 
-Where its target comes from (`_rk filled at line 612`):
+Where its target comes from (`_rk filled at line 623`):
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)`: it is not a dependent (weaned, or 6 or older) *(always from 8)*
 - **PER** `s.knownTrees?.[c.troopId]` (through `known`): its community has a list of productive trees (community knowledge: no single animal holds it)
@@ -519,7 +522,7 @@ Where its target comes from (`_rk filled at line 612`):
 
 Number literals in its conditions: 10.
 
-### 21. Go to a fruit tree out of view, remembered or on the community's list (`src/sim/candidates.ts:637`)
+### 21. Go to a fruit tree out of view, remembered or on the community's list (`src/sim/candidates.ts:648`)
 
 `offer('travel', t.id, …, V.TREE)` in `computeCandidates`; kind: go_to_food; key `computeCandidates/travel/TREE#3`, print `876f2e8e`. **live**; carries physical, perceptual, advice; offered more widely: a rule is dropped. Teacher: the rules' own judgment (scaffold); forked body outcomes, if the user allows them.
 
@@ -533,7 +536,7 @@ Conditions:
 - **ADV** `EACH k < 4 && _mem.length`: only the four trees the rules value most are offered (the trip shortlist: a ranking by the rules' own value) *(proposal: drop, shown in `each target's belief words (crop when seen, hours since, distance and direction)`)*
 - **QUO** `!held | held := P.departPersist === 1 && !dv && x.tryAt !== undefined && time < x.tryAt && departAudience(world, c) > 0 | dv := P.departPersist === 1 && P.departValue >= 1`: after a departure nobody followed, its own trips wait for the re-launch time [departPersist = 1, departValue = 2] *(not read on the base; proposal: keep)*
 
-Where its target comes from (`_mem filled at line 581`):
+Where its target comes from (`_mem filled at line 592`):
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)`: it is not a dependent (weaned, or 6 or older) *(always from 8)*
 - **PER** `EACH of c.memory`: each place it remembers
@@ -545,7 +548,7 @@ Where its target comes from (`_mem filled at line 581`):
 - **SWI** `P.patchEcology === 1` (through `shortlist`): the field map's shortlist is on [patchEcology = 1] *(true on the base)*
 - **SWI** `!resources` (through `shortlist`): the R15 model-only resource enumeration is off; ordinary rules use their existing shortlist *(true on the base)*
 
-Where its target comes from (`_mem filled at line 612`):
+Where its target comes from (`_mem filled at line 623`):
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)`: it is not a dependent (weaned, or 6 or older) *(always from 8)*
 - **PER** `s.knownTrees?.[c.troopId]` (through `known`): its community has a list of productive trees (community knowledge: no single animal holds it)
@@ -561,7 +564,7 @@ Where its target comes from (`_mem filled at line 612`):
 
 Number literals in its conditions: 4, 10. Hand-set numbers in its advice, quota and dice conditions: 2.
 
-### 22. Go toward a pant-hoot heard (the older valuation) (`src/sim/candidates.ts:654`)
+### 22. Go toward a pant-hoot heard (the older valuation) (`src/sim/candidates.ts:665`)
 
 `offer('travel', x.joinCall, …, V.CALLER)` in `computeCandidates`; kind: keep_with_party; key `computeCandidates/travel/CALLER#1`, print `2406fe80`. **legacy: unreachable on the working base**. Teacher: the rules' own judgment (scaffold).
 
@@ -578,13 +581,13 @@ Conditions:
 
 Number literals in its conditions: 0.3.
 
-### 23. Go toward a community member's pant-hoot (`src/sim/candidates.ts:680`)
+### 23. Go toward a community member's pant-hoot (`src/sim/candidates.ts:691`)
 
 `offer('travel', callId, …, V.CALLER)` in `callerTrip`; kind: keep_with_party; key `callerTrip/travel/CALLER#1`, print `b8903195`. **live**; carries perceptual, advice, quota or timer; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold); Budongo party scans, once downloaded and checked.
 
 *Note:* Party scans could teach joining and leaving a party, not the answer to a call as such.
 
-Reached through callerTrip() called at line 683:
+Reached through callerTrip() called at line 694:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)`: it is not a dependent (weaned, or 6 or older) *(always from 8)*
 - **SWI** `socialBit(P, 4)` (through `callerRate`): the approach to a caller is valued in the forager's currency *(true on the base)*
@@ -595,7 +598,7 @@ Reached through callerTrip() called at line 683:
 - **ADV** `c.action !== 'patrol'`: it is not on patrol *(proposal: keep)*
 - **PER** `d > minD | minD := P.joinCallMinM`: the call's place is farther than the minimum (nearer, it is already there) [joinCallMinM = 50]
 
-Reached through callerTrip() called at line 687 (this way is closed on the working base):
+Reached through callerTrip() called at line 698 (this way is closed on the working base):
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)`: it is not a dependent (weaned, or 6 or older) *(always from 8)*
 - **SWI** `own | own := callerRate ? ownCall(P, x, c.action === 'travel' && x.v === V.CALLER, c.targetId) : undefined | callerRate := socialBit(P, 4) && cohesion && fr | cohesion := cohesionOn(P) | fr := forageRateOn(P)`: a caller trip in progress keeps the call it was chosen for (and it is on such a trip) *(**false on the base**)*
@@ -604,7 +607,7 @@ Reached through callerTrip() called at line 687 (this way is closed on the worki
 
 Number literals in its conditions: 0.3. Hand-set numbers in its advice, quota and dice conditions: 1.
 
-### 24. Go back toward the middle of its range (`src/sim/candidates.ts:690`)
+### 24. Go back toward the middle of its range (`src/sim/candidates.ts:701`)
 
 `offer('travel', -1, …, V.HOME)` in `computeCandidates`; kind: go_home; key `computeCandidates/travel/HOME#1`, print `c8c8064f`. **live**; carries advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
@@ -617,7 +620,7 @@ Conditions:
 - **ADV** `c.action !== 'consort'`: it is not on a consortship *(proposal: keep)*
 - **ADV** `c.action !== 'transfer'`: it is not transferring *(proposal: keep)*
 
-### 25. Climb in a tree in view (play) (`src/sim/candidates.ts:693`)
+### 25. Climb in a tree in view (play) (`src/sim/candidates.ts:704`)
 
 `offer('climb', t.id, …)` in `computeCandidates`; kind: play; key `computeCandidates/climb/NONE#1`, print `469b1b2f`. **live**; carries perceptual, advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
@@ -632,7 +635,7 @@ Conditions:
 
 Number literals in its conditions: 1.5, 16. Hand-set numbers in its advice, quota and dice conditions: 1.
 
-### 26. Groom an animal in view (`src/sim/candidates.ts:790`)
+### 26. Groom an animal in view (`src/sim/candidates.ts:810`)
 
 `offer('groom', o.id, …, V.ACCEPT | V.COALITION | V.NONE)` in `computeCandidates`; kind: groom; key `computeCandidates/groom/ACCEPT+COALITION+NONE#1`, print `30c808da`. **live**; carries physical, perceptual, social fact, advice; offered more widely: a rule is dropped (only for the pairs a wild choice record covers). Teacher: wild choice records in hand (whom a Ngogo male grooms); Taï grooming partner choice, once downloaded and checked; the rules' own judgment (scaffold).
 
@@ -653,7 +656,29 @@ Conditions:
 
 Number literals in its conditions: 2, 1. Hand-set numbers in its advice, quota and dice conditions: 1.
 
-### 27. Play with a young peer in view (`src/sim/candidates.ts:803`)
+### 27. Groom an adult male in reach, whatever he is doing (an adult male's own pool on the model's path) (`src/sim/candidates.ts:813`)
+
+`offer('groom', o.id, …, V.ACCEPT | V.COALITION | V.NONE)` in `computeCandidates`; kind: groom; key `computeCandidates/groom/ACCEPT+COALITION+NONE#2`, print `24c10e00`. **legacy: unreachable on the working base**. Teacher: wild choice records in hand (whom a Ngogo male grooms); the rules' own judgment (scaffold).
+
+*Chosen by code before the offer:* Every adult male in view and in grooming reach, valued by the rules' grooming formula, outside the score threshold and the slot caps; offered only in the model-only call at menuPossible 2, never to the rules.
+
+*Note:* Stage R12's build (docs/staging/r12-build-prereg.md section 4.1, A1.1): ruling 6 opens the pair class where the Ngogo record can teach. By default the export writes no rules label for a partner the rules' own gate would refuse (one who is not settled).
+
+Unreachable because: `resources`; `P.menuPossible >= 1`; `P.menuPossible >= 2`.
+
+Conditions:
+- **PHY** `c.alive`: the animal is alive *(always from 8)*
+- **PER** `EACH of x.seen`: each animal in view
+- **PHY** `o.alive`: the other is alive
+- **SOC** `o.troopId === c.troopId` (through `same`): the other is a member of its own community
+- **SWI** `resources` (through `maleOpen > opened`): the model-only call of R15 (the model's own legal pool); the rules' own enumeration, which this table audits, never has it *(**false on the base**)*
+- **SWI** `P.menuPossible >= 1` (through `maleOpen > opened`): stage R12's build: the menu as ruled is on (menuPossible 1 or 2; 0 on the working base) [menuPossible = 0] *(**false on the base**)*
+- **SWI** `P.menuPossible >= 2` (through `maleOpen`): stage R12's build: the adult male pair opening is on as well (menuPossible 2; off unless a run names it) [menuPossible = 0] *(**false on the base**)*
+- **ADV** `isAdultMale(c)` (through `maleOpen`): it is an adult male *(proposal: keep)*
+- **ADV** `isAdultMale(o)`: the partner is an adult male (15 or older): the pair class ruling 6 opens, where the Ngogo record can teach *(proposal: keep)*
+- **PER** `d < P.groomRangeM`: the other is within grooming reach (a hand-set radius) [groomRangeM = 45]
+
+### 28. Play with a young peer in view (`src/sim/candidates.ts:822`)
 
 `offer('play', o.id, …, V.ACCEPT | V.NONE)` in `computeCandidates`; kind: play; key `computeCandidates/play/ACCEPT+NONE#1`, print `641b91c7`. **live**; carries physical, perceptual, social fact, advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
@@ -674,7 +699,7 @@ Conditions:
 
 Number literals in its conditions: 1, 15, 7. Hand-set numbers in its advice, quota and dice conditions: 3.
 
-### 28. Play with a youngster (an adult) (`src/sim/candidates.ts:806`)
+### 29. Play with a youngster (an adult) (`src/sim/candidates.ts:825`)
 
 `offer('play', o.id, …, V.ACCEPT | V.NONE)` in `computeCandidates`; kind: play; key `computeCandidates/play/ACCEPT+NONE#2`, print `cc14438b`. **live**; carries physical, perceptual, social fact, advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
@@ -693,7 +718,7 @@ Conditions:
 
 Number literals in its conditions: 1, 15, 7, 8. Hand-set numbers in its advice, quota and dice conditions: 4.
 
-### 29. Move away from a tense dominant who comes close (`src/sim/candidates.ts:814`)
+### 30. Move away from a tense dominant who comes close (`src/sim/candidates.ts:833`)
 
 `offer('flee', o.id, …, V.AVOID)` in `computeCandidates`; kind: escape; key `computeCandidates/flee/AVOID#1`, print `b58c2710`. **live**; carries physical, perceptual, social fact, advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
@@ -714,7 +739,7 @@ Conditions:
 
 Number literals in its conditions: 5, 0.1. Hand-set numbers in its advice, quota and dice conditions: 5.
 
-### 30. Go along on a companion's trip to a food tree (`src/sim/candidates.ts:826`)
+### 31. Go along on a companion's trip to a food tree (`src/sim/candidates.ts:845`)
 
 `offer('travel', L.targetId, …, V.TREE)` in `computeCandidates`; kind: keep_with_party; key `computeCandidates/travel/TREE#4`, print `16395c19`. **live**; carries physical, perceptual, social fact, advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold); Budongo party scans, once downloaded and checked.
 
@@ -742,7 +767,7 @@ Conditions:
 
 Number literals in its conditions: 5, 0.1. Hand-set numbers in its advice, quota and dice conditions: 1.
 
-### 31. Go to a companion's goal tree (before joining was a choice) (`src/sim/candidates.ts:833`)
+### 32. Go to a companion's goal tree (before joining was a choice) (`src/sim/candidates.ts:852`)
 
 `offer('travel', L.targetId, …, V.TREE)` in `computeCandidates`; kind: keep_with_party; key `computeCandidates/travel/TREE#5`, print `7ec2d3de`. **legacy: unreachable on the working base**. Teacher: the rules' own judgment (scaffold).
 
@@ -771,7 +796,7 @@ Conditions:
 
 Number literals in its conditions: 5, 0.1.
 
-### 32. Follow a companion who is walking off (`src/sim/candidates.ts:834`)
+### 33. Follow a companion who is walking off (`src/sim/candidates.ts:853`)
 
 `offer('follow', lead, …, V.PARTY)` in `computeCandidates`; kind: keep_with_party; key `computeCandidates/follow/PARTY#1`, print `82882c06`. **live**; carries physical, perceptual, social fact, advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold); Budongo party scans, once downloaded and checked.
 
@@ -794,7 +819,7 @@ Conditions:
 
 Number literals in its conditions: 5, 0.1. Hand-set numbers in its advice, quota and dice conditions: 1.
 
-### 33. Stay near an adult male (a recently immigrated female) (`src/sim/candidates.ts:839`)
+### 34. Stay near an adult male (a recently immigrated female) (`src/sim/candidates.ts:858`)
 
 `offer('follow', o.id, …, V.PARTY)` in `computeCandidates`; kind: keep_with_party; key `computeCandidates/follow/PARTY#2`, print `df4cd8d8`. **live**; carries physical, perceptual, social fact, advice, quota or timer; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
@@ -814,9 +839,36 @@ Conditions:
 
 Number literals in its conditions: 12, 2, 15. Hand-set numbers in its advice, quota and dice conditions: 3.
 
-### 34. Pant-grunt to a dominant in reach (`src/sim/candidates.ts:860`)
+### 35. Pant-grunt to any dominant in reach the conditions allow (the model's own pool) (`src/sim/candidates.ts:872`)
 
-`offer('pant-grunt', bestGrunt, …)` in `computeCandidates`; kind: greet_or_appease; key `computeCandidates/pant-grunt/NONE#1`, print `afe2c15d`. **live**; carries physical, perceptual, social fact, advice, quota or timer; offered more widely: a rule is dropped. Teacher: the rules' own judgment (scaffold).
+`offer('pant-grunt', o.id, …)` in `computeCandidates`; kind: greet_or_appease; key `computeCandidates/pant-grunt/NONE#1`, print `1364c070`. **legacy: unreachable on the working base**. Teacher: the rules' own judgment (scaffold).
+
+*Chosen by code before the offer:* Every dominant the greeting's conditions allow, not only the one the rules score highest; offered only in the model-only call at menuPossible 1 or 2, never to the rules.
+
+*Note:* Stage R12's build (docs/staging/r12-build-prereg.md section 4.1): ruling 7 keeps "only to a dominant" and lets the model choose which dominant. The rules value every dominant they allow, so a rules teacher exists (a scaffold).
+
+Unreachable because: `resources`; `P.menuPossible >= 1`.
+
+Conditions:
+- **PHY** `c.alive`: the animal is alive *(always from 8)*
+- **PER** `EACH of x.seen`: each animal in view
+- **PHY** `o.alive`: the other is alive
+- **SOC** `o.troopId === c.troopId` (through `same`): the other is a member of its own community
+- **ADV** `c.age >= 5`: it is 5 or older (a hand-set age) *(always from 8; proposal: keep)*
+- **PHY** `!carried | carried := caretaker ? isCarried(c, caretaker) : false | caretaker := dependentOn(world, c)`: it is not being carried *(always from 8)*
+- **PER** `d < P.pantGruntRangeM`: the other is within greeting reach (a hand-set radius) [pantGruntRangeM = 20]
+- **ADV** `(o.sex === 'male' && o.age >= P.pantGruntMaleAgeY) || o.age >= 15`: the other is a male of the greeting age or more, or anyone of 15 or more [pantGruntMaleAgeY = 13] *(proposal: keep)*
+- **ADV** `dominates(o, c)`: the other outranks it (the direction of rank) *(proposal: keep)*
+- **QUO** `open || quotaTrace.on | open := greetMem ? x.greet[o.id] === undefined || ((o.action === 'charge' || o.action === 'attack') && o.targetId === c.id) : time - last > P.pantGruntRepeatH | greetMem := socialBit(P, 1)`: once per association: it has not greeted this animal since they last met, or that animal has just charged or attacked it (without the switch: 8 h since the last greeting) [pantGruntRepeatH = 8] *(proposal: keep)*
+- **QUO** `open | open := greetMem ? x.greet[o.id] === undefined || ((o.action === 'charge' || o.action === 'attack') && o.targetId === c.id) : time - last > P.pantGruntRepeatH | greetMem := socialBit(P, 1)`: once per association: it has not greeted this animal since they last met, or that animal has just charged or attacked it (without the switch: 8 h since the last greeting) [pantGruntRepeatH = 8] *(proposal: keep)*
+- **SWI** `resources` (through `opened`): the model-only call of R15 (the model's own legal pool); the rules' own enumeration, which this table audits, never has it *(**false on the base**)*
+- **SWI** `P.menuPossible >= 1` (through `opened`): stage R12's build: the menu as ruled is on (menuPossible 1 or 2; 0 on the working base) [menuPossible = 0] *(**false on the base**)*
+
+Number literals in its conditions: 5, 15.
+
+### 36. Pant-grunt to a dominant in reach (`src/sim/candidates.ts:881`)
+
+`offer('pant-grunt', bestGrunt, …)` in `computeCandidates`; kind: greet_or_appease; key `computeCandidates/pant-grunt/NONE#2`, print `afe2c15d`. **live**; carries physical, perceptual, social fact, advice, quota or timer; offered more widely: a rule is dropped. Teacher: the rules' own judgment (scaffold).
 
 *Chosen by code before the offer:* The one dominant the rules score highest (the alpha, a displaying male and a nearer one score more): one greeting target reaches `offer()`.
 
@@ -824,7 +876,7 @@ Conditions:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **PHY** `bestGrunt > 0`: a dominant to greet was found (see where its target comes from)
 
-Where its target comes from (`bestGrunt set at line 851`):
+Where its target comes from (`bestGrunt set at line 870`):
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **PER** `EACH of x.seen`: each animal in view
 - **PHY** `o.alive`: the other is alive
@@ -840,7 +892,7 @@ Where its target comes from (`bestGrunt set at line 851`):
 
 Number literals in its conditions: 5, 15, 0.3, 0.4, 0.05, 0.8, 0.15, 0.1, 0.2, 2. Hand-set numbers in its advice, quota and dice conditions: 13.
 
-### 35. Join the trip of a companion heard giving a travel hoo, out of view (`src/sim/candidates.ts:867`)
+### 37. Join the trip of a companion heard giving a travel hoo, out of view (`src/sim/candidates.ts:888`)
 
 `offer('travel', L.targetId, …, V.TREE)` in `computeCandidates`; kind: keep_with_party; key `computeCandidates/travel/TREE#6`, print `c104d98c`. **live**; carries physical, perceptual, social fact, advice, quota or timer; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold); Budongo party scans, once downloaded and checked.
 
@@ -866,7 +918,7 @@ Conditions:
 
 Number literals in its conditions: 5, 0.1, 60. Hand-set numbers in its advice, quota and dice conditions: 3.
 
-### 36. Rain display at the onset of a storm (`src/sim/candidates.ts:877`)
+### 38. Rain display at the onset of a storm (`src/sim/candidates.ts:898`)
 
 `offer('display', -1, …, V.RAIN)` in `computeCandidates`; kind: contest; key `computeCandidates/display/RAIN#1`, print `f2d699b7`. **live**; carries advice, quota or timer; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
@@ -884,7 +936,7 @@ Conditions:
 
 Number literals in its conditions: 12, 0.1, 15. Hand-set numbers in its advice, quota and dice conditions: 4.
 
-### 37. Rain display (opened by a roll) (`src/sim/candidates.ts:879`)
+### 39. Rain display (opened by a roll) (`src/sim/candidates.ts:900`)
 
 `offer('display', -1, …, V.RAIN)` in `computeCandidates`; kind: contest; key `computeCandidates/display/RAIN#2`, print `61d92bd0`. **legacy: unreachable on the working base**. Teacher: none.
 
@@ -902,7 +954,7 @@ Conditions:
 
 Number literals in its conditions: 12, 0.1.
 
-### 38. Charging display: at a rival, at a reunion, or undirected (`src/sim/candidates.ts:887`)
+### 40. Charging display: at a rival, at a reunion, or undirected (`src/sim/candidates.ts:908`)
 
 `offer('display', rv, …, V.RIVAL | V.REUNION | V.NONE)` in `computeCandidates`; kind: contest; key `computeCandidates/display/RIVAL+REUNION+NONE#1`, print `691d98a5`. **live**; carries advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
@@ -922,7 +974,7 @@ Conditions:
 
 Number literals in its conditions: 12, 0.1, 0.3, 0.75. Hand-set numbers in its advice, quota and dice conditions: 4.
 
-### 39. Give alarm calls at a snake (`src/sim/candidates.ts:912`)
+### 41. Give alarm calls at a snake (`src/sim/candidates.ts:933`)
 
 `offer('alarm', -1, …, V.SNAKE)` in `computeCandidates`; kind: escape; key `computeCandidates/alarm/SNAKE#1`, print `ed5367d8`. **live**; carries physical, perceptual; nothing to rule: possible is offered. Teacher: the rules' own judgment (scaffold).
 
@@ -937,7 +989,7 @@ Conditions:
 
 Number literals in its conditions: 5. Hand-set numbers in its advice, quota and dice conditions: 0.
 
-### 40. Back away from a snake (`src/sim/candidates.ts:913`)
+### 42. Back away from a snake (`src/sim/candidates.ts:934`)
 
 `offer('flee', -1, …, V.SNAKE)` in `computeCandidates`; kind: escape; key `computeCandidates/flee/SNAKE#1`, print `f767d785`. **live**; carries physical, perceptual; nothing to rule: possible is offered. Teacher: the rules' own judgment (scaffold).
 
@@ -949,7 +1001,7 @@ Conditions:
 - **PER** `aware.includes(c.id)`: it has noticed the snake
 - **PER** `d < P.snakeFleeM`: the snake is within fleeing distance [snakeFleeM = 6]
 
-### 41. Leave for a neighbouring community (`src/sim/candidates.ts:918`)
+### 43. Leave for a neighbouring community (`src/sim/candidates.ts:939`)
 
 `offer('transfer', -1, …)` in `computeCandidates`; kind: emigrate; key `computeCandidates/transfer/NONE#1`, print `5f29a47a`. **live**; carries dice; stays with the rules. Teacher: none.
 
@@ -959,13 +1011,13 @@ Conditions:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **DIC** `(x.impulse === IMPULSE_TRANSFER && x.impulseUntil > time) || c.action === 'transfer' || intent | intent := x.transferTo > 0 && c.troopId === c.natalTroopId`: a dispersal impulse was rolled (a yearly hazard for a natal female of dispersal age while swollen), or the transfer it began is still under way *(proposal: rules)*
 
-### 42. Go to her dead infant and take it up (`src/sim/candidates.ts:974`)
+### 44. Go to her dead infant and take it up (`src/sim/candidates.ts:997`)
 
 `offer('follow', b.id, …, V.BODY)` in `bodyOptions`; kind: keep_with_party; key `bodyOptions/follow/BODY#1`, print `0a6168c8`. **legacy: unreachable on the working base**. Teacher: none.
 
 Unreachable because: `bodyOn(P)`; `carryOn(P) || respondOn(P)`; `carryOn(P)`.
 
-Reached through bodyOptions() called at line 916:
+Reached through bodyOptions() called at line 937:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **SWI** `bodyOn(P)`: responses to the dead are on *(**false on the base**)*
 - **PER** `x.bd !== undefined`: it has bodies in view
@@ -984,13 +1036,13 @@ Reached through bodyOptions() called at line 916:
 - **PHY** `ridesInLife(b)`: the body is small enough to carry
 - **PHY** `(c.carryingDeadId ?? -1) < 0`: it is not already carrying a body
 
-### 43. Groom a dead infant's body (`src/sim/candidates.ts:975`)
+### 45. Groom a dead infant's body (`src/sim/candidates.ts:998`)
 
 `offer('groom', b.id, …, V.BODY)` in `bodyOptions`; kind: groom; key `bodyOptions/groom/BODY#1`, print `99ea559d`. **legacy: unreachable on the working base**. Teacher: none.
 
 Unreachable because: `bodyOn(P)`; `carryOn(P) || respondOn(P)`; `respondOn(P)`.
 
-Reached through bodyOptions() called at line 916:
+Reached through bodyOptions() called at line 937:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **SWI** `bodyOn(P)`: responses to the dead are on *(**false on the base**)*
 - **PER** `x.bd !== undefined`: it has bodies in view
@@ -1010,13 +1062,13 @@ Reached through bodyOptions() called at line 916:
 
 Number literals in its conditions: 2.
 
-### 44. Walk up to a dead infant's body and look (`src/sim/candidates.ts:978`)
+### 46. Walk up to a dead infant's body and look (`src/sim/candidates.ts:1001`)
 
 `offer('follow', b.id, …, V.BODY)` in `bodyOptions`; kind: keep_with_party; key `bodyOptions/follow/BODY#2`, print `9d131aff`. **legacy: unreachable on the working base**. Teacher: none.
 
 Unreachable because: `bodyOn(P)`; `carryOn(P) || respondOn(P)`; `respondOn(P)`.
 
-Reached through bodyOptions() called at line 916:
+Reached through bodyOptions() called at line 937:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **SWI** `bodyOn(P)`: responses to the dead are on *(**false on the base**)*
 - **PER** `x.bd !== undefined`: it has bodies in view
@@ -1037,13 +1089,13 @@ Reached through bodyOptions() called at line 916:
 
 Number literals in its conditions: 2, 10.
 
-### 45. Charge a rival male over status (`src/sim/candidates.ts:1133`)
+### 47. Charge a rival male over status (`src/sim/candidates.ts:1156`)
 
 `offer('charge', o.id, …, V.STATUS)` in `aggression`; kind: contest; key `aggression/charge/STATUS#1`, print `48c2e8b1`. **live**; carries physical, perceptual, social fact, advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
 *Chosen by code before the offer:* The rival: of the ranked males of 12 or more in view, the one closest to it in rank score.
 
-Reached through aggression() called at line 889:
+Reached through aggression() called at line 910:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1054,7 +1106,7 @@ Reached through aggression() called at line 889:
 - **PER** `dcc(c, o) < P.chargeRangeM`: the rival is within charging reach [chargeRangeM = 45]
 - **QUO** `aggrBit(P, 1) || time - x.lastAgg > 1.5` (through `cooled`): 1.5 h since its last aggression *(not read on the base; proposal: keep)*
 
-Where its target comes from (`rival set at line 857`):
+Where its target comes from (`rival set at line 878`):
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **PER** `EACH of x.seen`: each animal in view
 - **PHY** `o.alive`: the other is alive
@@ -1067,13 +1119,13 @@ Where its target comes from (`rival set at line 857`):
 
 Number literals in its conditions: 12, 0.1, 1.5. Hand-set numbers in its advice, quota and dice conditions: 2.
 
-### 46. Attack a close rival (opened by a roll) (`src/sim/candidates.ts:1138`)
+### 48. Attack a close rival (opened by a roll) (`src/sim/candidates.ts:1161`)
 
 `offer('attack', o.id, …, V.ESCALATE)` in `aggression`; kind: contest; key `aggression/attack/ESCALATE#1`, print `2ec15626`. **legacy: unreachable on the working base**. Teacher: none.
 
 Unreachable because: the escalation impulse is rolled in perception.ts only while escalation does not come from the slow states.
 
-Reached through aggression() called at line 889:
+Reached through aggression() called at line 910:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1086,11 +1138,11 @@ Reached through aggression() called at line 889:
 
 Number literals in its conditions: 12, 0.1.
 
-### 47. Attack an infant (opened by a roll) (`src/sim/candidates.ts:1149`)
+### 49. Attack an infant (opened by a roll) (`src/sim/candidates.ts:1172`)
 
 `offer('attack', o.id, …, V.INFANTICIDE)` in `aggression`; kind: contest; key `aggression/attack/INFANTICIDE#1`, print `f1ecfc24`. **live**; carries physical, perceptual, advice, quota or timer, dice; stays with the rules. Teacher: none.
 
-Reached through aggression() called at line 889:
+Reached through aggression() called at line 910:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1103,11 +1155,11 @@ Reached through aggression() called at line 889:
 
 Number literals in its conditions: 12, 0.1. Hand-set numbers in its advice, quota and dice conditions: 2.
 
-### 48. Charge a lower-ranked bystander after losing a contest (`src/sim/candidates.ts:1165`)
+### 50. Charge a lower-ranked bystander after losing a contest (`src/sim/candidates.ts:1188`)
 
 `offer('charge', o.id, …, V.REDIRECT)` in `aggression`; kind: contest; key `aggression/charge/REDIRECT#1`, print `e9156cf3`. **live**; carries physical, perceptual, social fact, advice, quota or timer; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through aggression() called at line 889:
+Reached through aggression() called at line 910:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1124,11 +1176,11 @@ Reached through aggression() called at line 889:
 
 Number literals in its conditions: 12, 0.1, 5. Hand-set numbers in its advice, quota and dice conditions: 5.
 
-### 49. Attack a male close to it in rank (`src/sim/candidates.ts:1168`)
+### 51. Attack a male close to it in rank (`src/sim/candidates.ts:1191`)
 
 `offer('attack', o.id, …, V.ESCALATE)` in `aggression`; kind: contest; key `aggression/attack/ESCALATE#2`, print `f620ba10`. **live**; carries physical, perceptual, social fact, advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through aggression() called at line 889:
+Reached through aggression() called at line 910:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1148,11 +1200,11 @@ Reached through aggression() called at line 889:
 
 Number literals in its conditions: 12, 0.1, 1.5, 15. Hand-set numbers in its advice, quota and dice conditions: 5.
 
-### 50. Charge a subordinate it holds a grudge against (`src/sim/candidates.ts:1174`)
+### 52. Charge a subordinate it holds a grudge against (`src/sim/candidates.ts:1197`)
 
 `offer('charge', o.id, …, V.TENSION)` in `aggression`; kind: contest; key `aggression/charge/TENSION#1`, print `3052a355`. **live**; carries physical, perceptual, social fact, advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through aggression() called at line 889:
+Reached through aggression() called at line 910:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1171,11 +1223,11 @@ Reached through aggression() called at line 889:
 
 Number literals in its conditions: 12, 0.1, 1.5, 5, 2. Hand-set numbers in its advice, quota and dice conditions: 4.
 
-### 51. Charge a swollen female (coercion) (`src/sim/candidates.ts:1180`)
+### 53. Charge a swollen female (coercion) (`src/sim/candidates.ts:1203`)
 
 `offer('charge', o.id, …, V.COERCE)` in `aggression`; kind: contest; key `aggression/charge/COERCE#1`, print `c4c893f0`. **live**; carries physical, perceptual, social fact, advice, quota or timer; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through aggression() called at line 889:
+Reached through aggression() called at line 910:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1195,11 +1247,11 @@ Reached through aggression() called at line 889:
 
 Number literals in its conditions: 12, 0.1, 15, 1.5. Hand-set numbers in its advice, quota and dice conditions: 5.
 
-### 52. Charge a recently immigrated female (a resident female) (`src/sim/candidates.ts:1190`)
+### 54. Charge a recently immigrated female (a resident female) (`src/sim/candidates.ts:1213`)
 
 `offer('charge', o.id, …, V.IMMIGRANT)` in `aggression`; kind: contest; key `aggression/charge/IMMIGRANT#1`, print `fada2f5e`. **live**; carries physical, perceptual, social fact, advice, quota or timer; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through aggression() called at line 889:
+Reached through aggression() called at line 910:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1219,11 +1271,11 @@ Reached through aggression() called at line 889:
 
 Number literals in its conditions: 12, 0.1, 15, 2, 3, 10. Hand-set numbers in its advice, quota and dice conditions: 6.
 
-### 53. Supplant a subordinate that is feeding when fruit is scarce (`src/sim/candidates.ts:1202`)
+### 55. Supplant a subordinate that is feeding when fruit is scarce (`src/sim/candidates.ts:1225`)
 
 `offer('charge', o.id, …, V.FEED)` in `aggression`; kind: contest; key `aggression/charge/FEED#1`, print `d6383098`. **live**; carries physical, perceptual, social fact, advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through aggression() called at line 889:
+Reached through aggression() called at line 910:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1246,11 +1298,11 @@ Reached through aggression() called at line 889:
 
 Number literals in its conditions: 12, 0.1, 5, 0.4, 0.3. Hand-set numbers in its advice, quota and dice conditions: 7.
 
-### 54. Charge an adult female (an adolescent male) (`src/sim/candidates.ts:1209`)
+### 56. Charge an adult female (an adolescent male) (`src/sim/candidates.ts:1232`)
 
 `offer('charge', o.id, …, V.FEMALE_DOM)` in `aggression`; kind: contest; key `aggression/charge/FEMALE_DOM#1`, print `85d2efc4`. **live**; carries physical, perceptual, social fact, advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through aggression() called at line 889:
+Reached through aggression() called at line 910:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1269,11 +1321,11 @@ Reached through aggression() called at line 889:
 
 Number literals in its conditions: 12, 0.1, 15, 1.5. Hand-set numbers in its advice, quota and dice conditions: 4.
 
-### 55. Charge the animal attacking its ward (`src/sim/candidates.ts:1217`)
+### 57. Charge the animal attacking its ward (`src/sim/candidates.ts:1240`)
 
 `offer('charge', ag.id, …, V.DEFEND)` in `aggression`; kind: back_ally_or_defend; key `aggression/charge/DEFEND#1`, print `e297cadc`. **live**; carries physical, perceptual, social fact, advice, quota or timer; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through aggression() called at line 889:
+Reached through aggression() called at line 910:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1293,13 +1345,13 @@ Reached through aggression() called at line 889:
 
 Number literals in its conditions: 12, 0.1, 0.05. Hand-set numbers in its advice, quota and dice conditions: 3.
 
-### 56. Join an ally's conflict: charge its opponent (`src/sim/candidates.ts:1232`)
+### 58. Join an ally's conflict: charge its opponent (`src/sim/candidates.ts:1255`)
 
 `offer('charge', b.id, …, V.COALITION)` in `aggression`; kind: back_ally_or_defend; key `aggression/charge/COALITION#1`, print `75c525c8`. **live**; carries physical, perceptual, advice, quota or timer; stays on the menu behind its rules, counted. Teacher: Kanyawara female coalition partners, once downloaded and checked; the rules' own judgment (scaffold).
 
 *Note:* Who is alerted to a conflict, and on whose side, is decided in `conflict.ts`, outside this file. Kanyawara's records are of coalition partners among adult females only.
 
-Reached through aggression() called at line 889:
+Reached through aggression() called at line 910:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1314,11 +1366,11 @@ Reached through aggression() called at line 889:
 
 Number literals in its conditions: 12, 0.1. Hand-set numbers in its advice, quota and dice conditions: 3.
 
-### 57. Chase a rival away from the female it guards (`src/sim/candidates.ts:1237`)
+### 59. Chase a rival away from the female it guards (`src/sim/candidates.ts:1260`)
 
 `offer('charge', r.id, …, V.GUARD)` in `aggression`; kind: contest; key `aggression/charge/GUARD#1`, print `8761977d`. **live**; carries physical, perceptual, advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through aggression() called at line 889:
+Reached through aggression() called at line 910:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1331,11 +1383,11 @@ Reached through aggression() called at line 889:
 
 Number literals in its conditions: 12, 0.1. Hand-set numbers in its advice, quota and dice conditions: 2.
 
-### 58. Crouch and submit to the animal threatening it (`src/sim/candidates.ts:1260`)
+### 60. Crouch and submit to the animal threatening it (`src/sim/candidates.ts:1283`)
 
 `offer('submit', ag.id, …, V.AGGRESSOR)` in `threatResponses`; kind: greet_or_appease; key `threatResponses/submit/AGGRESSOR#1`, print `bd6866f5`. **live**; carries physical, perceptual, social fact, quota or timer; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through threatResponses() called at line 891:
+Reached through threatResponses() called at line 912:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **QUO** `world.time - x.victimAt <= 0.03`: it was threatened within the last 0.03 h, about 2 minutes (a window after the event) *(proposal: keep)*
 - **PHY** `ag`: the aggressor exists
@@ -1346,11 +1398,11 @@ Reached through threatResponses() called at line 891:
 
 Number literals in its conditions: 0.03. Hand-set numbers in its advice, quota and dice conditions: 1.
 
-### 59. Flee from the animal threatening it (`src/sim/candidates.ts:1261`)
+### 61. Flee from the animal threatening it (`src/sim/candidates.ts:1284`)
 
 `offer('flee', ag.id, …, V.AGGRESSOR)` in `threatResponses`; kind: escape; key `threatResponses/flee/AGGRESSOR#1`, print `abd9baa5`. **live**; carries physical, perceptual, social fact, quota or timer; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through threatResponses() called at line 891:
+Reached through threatResponses() called at line 912:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **QUO** `world.time - x.victimAt <= 0.03`: it was threatened within the last 0.03 h, about 2 minutes (a window after the event) *(proposal: keep)*
 - **PHY** `ag`: the aggressor exists
@@ -1361,11 +1413,11 @@ Reached through threatResponses() called at line 891:
 
 Number literals in its conditions: 0.03. Hand-set numbers in its advice, quota and dice conditions: 1.
 
-### 60. Charge back at the animal threatening it (`src/sim/candidates.ts:1264`)
+### 62. Charge back at the animal threatening it (`src/sim/candidates.ts:1287`)
 
 `offer('charge', ag.id, …, V.COUNTER)` in `threatResponses`; kind: back_ally_or_defend; key `threatResponses/charge/COUNTER#1`, print `d0b7e125`. **live**; carries physical, perceptual, social fact, advice, quota or timer; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through threatResponses() called at line 891:
+Reached through threatResponses() called at line 912:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **QUO** `world.time - x.victimAt <= 0.03`: it was threatened within the last 0.03 h, about 2 minutes (a window after the event) *(proposal: keep)*
 - **PHY** `ag`: the aggressor exists
@@ -1378,11 +1430,11 @@ Reached through threatResponses() called at line 891:
 
 Number literals in its conditions: 0.03, 12. Hand-set numbers in its advice, quota and dice conditions: 2.
 
-### 61. Fight back against an attacker at arm's length (`src/sim/candidates.ts:1265`)
+### 63. Fight back against an attacker at arm's length (`src/sim/candidates.ts:1288`)
 
 `offer('attack', ag.id, …, V.FIGHTBACK)` in `threatResponses`; kind: back_ally_or_defend; key `threatResponses/attack/FIGHTBACK#1`, print `76be5c6a`. **live**; carries physical, perceptual, social fact, advice, quota or timer; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through threatResponses() called at line 891:
+Reached through threatResponses() called at line 912:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **QUO** `world.time - x.victimAt <= 0.03`: it was threatened within the last 0.03 h, about 2 minutes (a window after the event) *(proposal: keep)*
 - **PHY** `ag`: the aggressor exists
@@ -1397,13 +1449,13 @@ Reached through threatResponses() called at line 891:
 
 Number literals in its conditions: 0.03, 12. Hand-set numbers in its advice, quota and dice conditions: 2.
 
-### 62. Charge at strangers in view (`src/sim/candidates.ts:1296`)
+### 64. Charge at strangers in view (`src/sim/candidates.ts:1319`)
 
 `offer('charge', s.id, …, V.STRANGER)` in `intergroup`; kind: confront_strangers; key `intergroup/charge/STRANGER#1`, print `fa4b209e`. **live**; carries physical, perceptual, advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
 *Chosen by code before the offer:* The target: the nearest stranger.
 
-Reached through intergroup() called at line 893:
+Reached through intergroup() called at line 914:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1420,11 +1472,11 @@ Reached through intergroup() called at line 893:
 
 Number literals in its conditions: 12, 3, 2, 0.2. Hand-set numbers in its advice, quota and dice conditions: 4.
 
-### 63. Gang attack on a lone stranger (opened by a roll) (`src/sim/candidates.ts:1297`)
+### 65. Gang attack on a lone stranger (opened by a roll) (`src/sim/candidates.ts:1320`)
 
 `offer('attack', gangT.id, …, V.GANG)` in `intergroup`; kind: confront_strangers; key `intergroup/attack/GANG#1`, print `c418f7bc`. **live**; carries physical, perceptual, advice, dice; stays with the rules. Teacher: none.
 
-Reached through intergroup() called at line 893:
+Reached through intergroup() called at line 914:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1443,11 +1495,11 @@ Reached through intergroup() called at line 893:
 
 Number literals in its conditions: 12, 3, 2, 0.2. Hand-set numbers in its advice, quota and dice conditions: 4.
 
-### 64. Retreat from strangers in view (outnumbered or fearful) (`src/sim/candidates.ts:1299`)
+### 66. Retreat from strangers in view (outnumbered or fearful) (`src/sim/candidates.ts:1322`)
 
 `offer('flee', s.id, …, V.STRANGERS)` in `intergroup`; kind: avoid_strangers; key `intergroup/flee/STRANGERS#1`, print `51d95e5e`. **live**; carries physical, perceptual, advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through intergroup() called at line 893:
+Reached through intergroup() called at line 914:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1462,11 +1514,11 @@ Reached through intergroup() called at line 893:
 
 Number literals in its conditions: 12, 3, 2, 0.2, 0.3, 0.6, 0.25. Hand-set numbers in its advice, quota and dice conditions: 8.
 
-### 65. Display at strangers in view (even numbers) (`src/sim/candidates.ts:1301`)
+### 67. Display at strangers in view (even numbers) (`src/sim/candidates.ts:1324`)
 
 `offer('display', s.id, …, V.STRANGER)` in `intergroup`; kind: confront_strangers; key `intergroup/display/STRANGER#1`, print `38183810`. **live**; carries physical, perceptual, advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through intergroup() called at line 893:
+Reached through intergroup() called at line 914:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1484,11 +1536,11 @@ Reached through intergroup() called at line 893:
 
 Number literals in its conditions: 12, 3, 2, 0.2, 0.3, 0.6, 0.25. Hand-set numbers in its advice, quota and dice conditions: 8.
 
-### 66. Pant-hoot back at strangers in view (even numbers) (`src/sim/candidates.ts:1301`)
+### 68. Pant-hoot back at strangers in view (even numbers) (`src/sim/candidates.ts:1324`)
 
 `offer('call', -1, …, V.COUNTERCALL)` in `intergroup`; kind: confront_strangers; key `intergroup/call/COUNTERCALL#1`, print `b50e5774`. **live**; carries physical, perceptual, advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through intergroup() called at line 893:
+Reached through intergroup() called at line 914:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1506,11 +1558,11 @@ Reached through intergroup() called at line 893:
 
 Number literals in its conditions: 12, 3, 2, 0.2, 0.3, 0.6, 0.25. Hand-set numbers in its advice, quota and dice conditions: 8.
 
-### 67. Retreat from strangers in view (a female, even numbers) (`src/sim/candidates.ts:1302`)
+### 69. Retreat from strangers in view (a female, even numbers) (`src/sim/candidates.ts:1325`)
 
 `offer('flee', s.id, …, V.STRANGERS)` in `intergroup`; kind: avoid_strangers; key `intergroup/flee/STRANGERS#2`, print `01d1d96d`. **live**; carries physical, perceptual, advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through intergroup() called at line 893:
+Reached through intergroup() called at line 914:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1528,11 +1580,11 @@ Reached through intergroup() called at line 893:
 
 Number literals in its conditions: 12, 3, 2, 0.2, 0.3, 0.6, 0.25. Hand-set numbers in its advice, quota and dice conditions: 8.
 
-### 68. Approach stranger calls heard (`src/sim/candidates.ts:1317`)
+### 70. Approach stranger calls heard (`src/sim/candidates.ts:1340`)
 
 `offer('patrol', -1, …, V.APPROACH)` in `intergroup`; kind: confront_strangers; key `intergroup/patrol/APPROACH#1`, print `fd4b8943`. **live**; carries perceptual, advice, quota or timer; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through intergroup() called at line 893:
+Reached through intergroup() called at line 914:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1546,11 +1598,11 @@ Reached through intergroup() called at line 893:
 
 Number literals in its conditions: 12, 0.2, 3, 2, 1.05. Hand-set numbers in its advice, quota and dice conditions: 5.
 
-### 69. Pant-hoot back at stranger calls heard (`src/sim/candidates.ts:1318`)
+### 71. Pant-hoot back at stranger calls heard (`src/sim/candidates.ts:1341`)
 
 `offer('call', -1, …, V.COUNTERCALL)` in `intergroup`; kind: confront_strangers; key `intergroup/call/COUNTERCALL#2`, print `6280ae6b`. **live**; carries perceptual, advice, quota or timer; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through intergroup() called at line 893:
+Reached through intergroup() called at line 914:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1564,11 +1616,11 @@ Reached through intergroup() called at line 893:
 
 Number literals in its conditions: 12, 0.2, 3, 2, 1.05. Hand-set numbers in its advice, quota and dice conditions: 5.
 
-### 70. Move away from stranger calls heard (`src/sim/candidates.ts:1319`)
+### 72. Move away from stranger calls heard (`src/sim/candidates.ts:1342`)
 
 `offer('flee', -1, …, V.HEARD)` in `intergroup`; kind: avoid_strangers; key `intergroup/flee/HEARD#1`, print `4e0bad8f`. **live**; carries perceptual, advice, quota or timer; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through intergroup() called at line 893:
+Reached through intergroup() called at line 914:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1581,11 +1633,11 @@ Reached through intergroup() called at line 893:
 
 Number literals in its conditions: 12, 0.2, 3, 2, 1.05. Hand-set numbers in its advice, quota and dice conditions: 5.
 
-### 71. Stay on its consortship (`src/sim/candidates.ts:1332`)
+### 73. Stay on its consortship (`src/sim/candidates.ts:1355`)
 
 `offer('consort', p.id, …, V.CONTINUE)` in `reproduction`; kind: court; key `reproduction/consort/CONTINUE#1`, print `6bc58095`. **live**; carries physical, advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through reproduction() called at line 894:
+Reached through reproduction() called at line 915:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1595,11 +1647,11 @@ Reached through reproduction() called at line 894:
 
 Number literals in its conditions: 12. Hand-set numbers in its advice, quota and dice conditions: 1.
 
-### 72. Court and mate with a female in oestrus (a male) (`src/sim/candidates.ts:1347`)
+### 74. Court and mate with a female in oestrus (a male) (`src/sim/candidates.ts:1370`)
 
 `offer('mate', o.id, …, V.ACCEPT | V.NONE)` in `reproduction`; kind: court; key `reproduction/mate/ACCEPT+NONE#1`, print `00d88926`. **live**; carries physical, perceptual, social fact, advice, quota or timer; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through reproduction() called at line 894:
+Reached through reproduction() called at line 915:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1619,11 +1671,11 @@ Reached through reproduction() called at line 894:
 
 Number literals in its conditions: 12, 10, 0.75. Hand-set numbers in its advice, quota and dice conditions: 3.
 
-### 73. Mate-guard a swollen female (`src/sim/candidates.ts:1351`)
+### 75. Mate-guard a swollen female (`src/sim/candidates.ts:1374`)
 
 `offer('guard', o.id, …)` in `reproduction`; kind: court; key `reproduction/guard/NONE#1`, print `e5b4223b`. **live**; carries physical, perceptual, social fact, advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through reproduction() called at line 894:
+Reached through reproduction() called at line 915:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1645,13 +1697,13 @@ Reached through reproduction() called at line 894:
 
 Number literals in its conditions: 12, 10, 0.75, 15, 2. Hand-set numbers in its advice, quota and dice conditions: 7.
 
-### 74. Lead a female on a consortship (`src/sim/candidates.ts:1361`)
+### 76. Lead a female on a consortship (`src/sim/candidates.ts:1384`)
 
 `offer('consort', o.id, …)` in `reproduction`; kind: court; key `reproduction/consort/NONE#1`, print `e8d80e27`. **live**; carries physical, perceptual, social fact, advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
 *Chosen by code before the offer:* Where he leads: a point at 0.85 of the range radius, by a hash of the pair and the day (`consortGoal`).
 
-Reached through reproduction() called at line 894:
+Reached through reproduction() called at line 915:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1675,11 +1727,11 @@ Reached through reproduction() called at line 894:
 
 Number literals in its conditions: 12, 10, 0.75, 15. Hand-set numbers in its advice, quota and dice conditions: 6.
 
-### 75. Present to and mate with a male (a female in oestrus) (`src/sim/candidates.ts:1375`)
+### 77. Present to and mate with a male (a female in oestrus) (`src/sim/candidates.ts:1398`)
 
 `offer('mate', o.id, …, V.ACCEPT | V.NONE)` in `reproduction`; kind: court; key `reproduction/mate/ACCEPT+NONE#2`, print `d0caf64f`. **live**; carries physical, perceptual, social fact, advice, quota or timer; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through reproduction() called at line 894:
+Reached through reproduction() called at line 915:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1699,11 +1751,11 @@ Reached through reproduction() called at line 894:
 
 Number literals in its conditions: 12, 0.75, 10, 0.3. Hand-set numbers in its advice, quota and dice conditions: 4.
 
-### 76. Go along on a male's consortship (`src/sim/candidates.ts:1376`)
+### 78. Go along on a male's consortship (`src/sim/candidates.ts:1399`)
 
 `offer('consort', o.id, …, V.ACCEPT)` in `reproduction`; kind: court; key `reproduction/consort/ACCEPT#1`, print `5770d7b2`. **live**; carries physical, perceptual, social fact, advice, quota or timer; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through reproduction() called at line 894:
+Reached through reproduction() called at line 915:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1725,11 +1777,11 @@ Reached through reproduction() called at line 894:
 
 Number literals in its conditions: 12, 0.75, 10, 0.3. Hand-set numbers in its advice, quota and dice conditions: 4.
 
-### 77. Beg meat from an animal holding some (`src/sim/candidates.ts:1406`)
+### 79. Beg meat from an animal holding some (`src/sim/candidates.ts:1429`)
 
 `offer('beg', o.id, …, V.MEAT)` in `meatAndHunting`; kind: share_food; key `meatAndHunting/beg/MEAT#1`, print `9ac60a38`. **live**; carries physical, perceptual, social fact, advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through meatAndHunting() called at line 895:
+Reached through meatAndHunting() called at line 916:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **PHY** `c.age >= 12` (through `adolescentOrAdult`): structure: adolescents and adults reach this through one call of the helper and the young through the other; together everyone who is not carried *(always from 8)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1740,7 +1792,7 @@ Reached through meatAndHunting() called at line 895:
 - **PER** `dist < P.begMeatRangeM`: the meat holder is within begging reach [begMeatRangeM = 25]
 - **ADV** `c.carryingMeat < 0.05`: it holds (almost) no meat itself *(proposal: keep)*
 
-Reached through meatAndHunting() called at line 898:
+Reached through meatAndHunting() called at line 919:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **PHY** `!adolescentOrAdult | adolescentOrAdult := c.age >= 12 && !caretaker | caretaker := dependentOn(world, c)`: structure: the second call of this helper, for animals under 12 or dependent; the first call covers the rest *(always from 8)*
 - **PHY** `!carried | carried := caretaker ? isCarried(c, caretaker) : false | caretaker := dependentOn(world, c)`: it is not being carried *(always from 8)*
@@ -1753,11 +1805,11 @@ Reached through meatAndHunting() called at line 898:
 
 Number literals in its conditions: 12, 0.15, 0.05. Hand-set numbers in its advice, quota and dice conditions: 1.
 
-### 78. Share meat with an animal begging from it (`src/sim/candidates.ts:1410`)
+### 80. Share meat with an animal begging from it (`src/sim/candidates.ts:1433`)
 
 `offer('share', o.id, …, V.MEAT)` in `meatAndHunting`; kind: share_food; key `meatAndHunting/share/MEAT#1`, print `a98b677b`. **live**; carries physical, perceptual, social fact; nothing to rule: possible is offered. Teacher: the rules' own judgment (scaffold).
 
-Reached through meatAndHunting() called at line 895:
+Reached through meatAndHunting() called at line 916:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **PHY** `c.age >= 12` (through `adolescentOrAdult`): structure: adolescents and adults reach this through one call of the helper and the young through the other; together everyone who is not carried *(always from 8)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1769,7 +1821,7 @@ Reached through meatAndHunting() called at line 895:
 - **PER** `dist < P.shareRangeM`: the beggar is within sharing reach [shareRangeM = 5]
 - **PHY** `c.carryingMeat > 0.25`: it holds meat
 
-Reached through meatAndHunting() called at line 898:
+Reached through meatAndHunting() called at line 919:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **PHY** `!adolescentOrAdult | adolescentOrAdult := c.age >= 12 && !caretaker | caretaker := dependentOn(world, c)`: structure: the second call of this helper, for animals under 12 or dependent; the first call covers the rest *(always from 8)*
 - **PHY** `!carried | carried := caretaker ? isCarried(c, caretaker) : false | caretaker := dependentOn(world, c)`: it is not being carried *(always from 8)*
@@ -1783,11 +1835,11 @@ Reached through meatAndHunting() called at line 898:
 
 Number literals in its conditions: 12, 0.25. Hand-set numbers in its advice, quota and dice conditions: 0.
 
-### 79. Share plant food with its begging ward (`src/sim/candidates.ts:1412`)
+### 81. Share plant food with its begging ward (`src/sim/candidates.ts:1435`)
 
 `offer('share', o.id, …, V.PLANT)` in `meatAndHunting`; kind: share_food; key `meatAndHunting/share/PLANT#1`, print `cbf9e213`. **live**; carries physical, perceptual, social fact; nothing to rule: possible is offered. Teacher: the rules' own judgment (scaffold).
 
-Reached through meatAndHunting() called at line 895:
+Reached through meatAndHunting() called at line 916:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **PHY** `c.age >= 12` (through `adolescentOrAdult`): structure: adolescents and adults reach this through one call of the helper and the young through the other; together everyone who is not carried *(always from 8)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1801,7 +1853,7 @@ Reached through meatAndHunting() called at line 895:
 - **PHY** `c.action === 'forage'`: it is feeding
 - **SOC** `guardianOf(world, o) === c`: it is the other's guardian (its mother or caretaker)
 
-Reached through meatAndHunting() called at line 898:
+Reached through meatAndHunting() called at line 919:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **PHY** `!adolescentOrAdult | adolescentOrAdult := c.age >= 12 && !caretaker | caretaker := dependentOn(world, c)`: structure: the second call of this helper, for animals under 12 or dependent; the first call covers the rest *(always from 8)*
 - **PHY** `!carried | carried := caretaker ? isCarried(c, caretaker) : false | caretaker := dependentOn(world, c)`: it is not being carried *(always from 8)*
@@ -1817,11 +1869,11 @@ Reached through meatAndHunting() called at line 898:
 
 Number literals in its conditions: 12, 0.25. Hand-set numbers in its advice, quota and dice conditions: 0.
 
-### 80. Join a hunt of red colobus under way (`src/sim/candidates.ts:1422`)
+### 82. Join a hunt of red colobus under way (`src/sim/candidates.ts:1445`)
 
 `offer('hunt', p.id, …, V.JOIN)` in `meatAndHunting`; kind: hunt; key `meatAndHunting/hunt/JOIN#1`, print `873f2262`. **live**; carries physical, perceptual, social fact, advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through meatAndHunting() called at line 895:
+Reached through meatAndHunting() called at line 916:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1831,7 +1883,7 @@ Reached through meatAndHunting() called at line 895:
 - **PHY** `p`: the partner or prey exists
 - **SOC** `s.hunts.find(q => q.preyId === p.id && q.troopId === c.troopId)` (through `hunt`): a hunt of this colobus group by its community is under way
 
-Reached through meatAndHunting() called at line 898:
+Reached through meatAndHunting() called at line 919:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **PHY** `!adolescentOrAdult | adolescentOrAdult := c.age >= 12 && !caretaker | caretaker := dependentOn(world, c)`: structure: the second call of this helper, for animals under 12 or dependent; the first call covers the rest *(always from 8)*
 - **PHY** `!carried | carried := caretaker ? isCarried(c, caretaker) : false | caretaker := dependentOn(world, c)`: it is not being carried *(always from 8)*
@@ -1844,11 +1896,11 @@ Reached through meatAndHunting() called at line 898:
 
 Number literals in its conditions: 12, 0.3, 0.35. Hand-set numbers in its advice, quota and dice conditions: 3.
 
-### 81. Start a hunt of red colobus (`src/sim/candidates.ts:1435`)
+### 83. Start a hunt of red colobus (`src/sim/candidates.ts:1458`)
 
 `offer('hunt', p.id, …, V.LEAD)` in `meatAndHunting`; kind: hunt; key `meatAndHunting/hunt/LEAD#1`, print `49969d78`. **live**; carries physical, perceptual, social fact, advice, quota or timer; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through meatAndHunting() called at line 895:
+Reached through meatAndHunting() called at line 916:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1862,7 +1914,7 @@ Reached through meatAndHunting() called at line 895:
 - **QUO** `((s.huntDay[c.troopId] ?? NEVER) > time && x.ownMales >= P.huntMinMales) || (x.impulse === IMPULSE_HUNT && x.impulseTarget === p.id && x.impulseUntil > time && x.ownMales >= P.huntEncMinMales)`: he has only just met this colobus group with enough own males in view (the lead is weighed for 0.1 h after the encounter; or on an experiment's hunting day) [huntMinMales = 3, huntEncMinMales = 2] *(proposal: keep)*
 - **ADV** `r > 0 | r := huntRate(c, P, dist, x.ownMales, gaitOn(P) ? runSpeedOf(c, P) * 0.8 * bodyState(c) : P.walkMps)`: a capture can be expected and he needs energy: the hunt's expected energy rate is positive (the rules' value used as a gate) [walkMps = 0.35] *(proposal: keep)*
 
-Reached through meatAndHunting() called at line 898:
+Reached through meatAndHunting() called at line 919:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **PHY** `!adolescentOrAdult | adolescentOrAdult := c.age >= 12 && !caretaker | caretaker := dependentOn(world, c)`: structure: the second call of this helper, for animals under 12 or dependent; the first call covers the rest *(always from 8)*
 - **PHY** `!carried | carried := caretaker ? isCarried(c, caretaker) : false | caretaker := dependentOn(world, c)`: it is not being carried *(always from 8)*
@@ -1879,13 +1931,13 @@ Reached through meatAndHunting() called at line 898:
 
 Number literals in its conditions: 12, 0.3, 0.35, 0.8. Hand-set numbers in its advice, quota and dice conditions: 7.
 
-### 82. Start a hunt (the older, quota-gated valuation) (`src/sim/candidates.ts:1442`)
+### 84. Start a hunt (the older, quota-gated valuation) (`src/sim/candidates.ts:1465`)
 
 `offer('hunt', p.id, …, V.LEAD)` in `meatAndHunting`; kind: hunt; key `meatAndHunting/hunt/LEAD#2`, print `0d6a9f18`. **legacy: unreachable on the working base**. Teacher: the rules' own judgment (scaffold).
 
 Unreachable because: `NOT huntValueOn(P)`.
 
-Reached through meatAndHunting() called at line 895:
+Reached through meatAndHunting() called at line 916:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1899,7 +1951,7 @@ Reached through meatAndHunting() called at line 895:
 - **QUO** `time - (s.lastHunt[c.troopId] ?? NEVER) > P.huntGapH`: the community gap since its last hunt has passed [huntGapH = 6] *(proposal: keep)*
 - **QUO** `((s.huntDay[c.troopId] ?? NEVER) > time && x.ownMales >= P.huntMinMales) || (x.impulse === IMPULSE_HUNT && x.impulseTarget === p.id && x.impulseUntil > time && x.ownMales >= P.huntEncMinMales)`: he has only just met this colobus group with enough own males in view (the lead is weighed for 0.1 h after the encounter; or on an experiment's hunting day) [huntMinMales = 3, huntEncMinMales = 2] *(proposal: keep)*
 
-Reached through meatAndHunting() called at line 898:
+Reached through meatAndHunting() called at line 919:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **PHY** `!adolescentOrAdult | adolescentOrAdult := c.age >= 12 && !caretaker | caretaker := dependentOn(world, c)`: structure: the second call of this helper, for animals under 12 or dependent; the first call covers the rest *(always from 8)*
 - **PHY** `!carried | carried := caretaker ? isCarried(c, caretaker) : false | caretaker := dependentOn(world, c)`: it is not being carried *(always from 8)*
@@ -1916,11 +1968,11 @@ Reached through meatAndHunting() called at line 898:
 
 Number literals in its conditions: 12, 0.3, 0.35.
 
-### 83. Reconcile with its last opponent (`src/sim/candidates.ts:1458`)
+### 85. Reconcile with its last opponent (`src/sim/candidates.ts:1481`)
 
 `offer('reconcile', o.id, …)` in `affiliationRepair`; kind: make_up; key `affiliationRepair/reconcile/NONE#1`, print `d4a585f6`. **live**; carries physical, perceptual, social fact, advice, quota or timer; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through affiliationRepair() called at line 896:
+Reached through affiliationRepair() called at line 917:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **PHY** `c.age >= 12` (through `adolescentOrAdult`): structure: adolescents and adults reach this through one call of the helper and the young through the other; together everyone who is not carried *(always from 8)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1934,7 +1986,7 @@ Reached through affiliationRepair() called at line 896:
 - **PER** `dcc(c, o) < P.reconcileRangeM`: the opponent is within reach [reconcileRangeM = 50]
 - **ADV** `!(o.action === 'charge' || o.action === 'attack')`: the opponent is not charging or attacking now *(proposal: keep)*
 
-Reached through affiliationRepair() called at line 898:
+Reached through affiliationRepair() called at line 919:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **PHY** `!adolescentOrAdult | adolescentOrAdult := c.age >= 12 && !caretaker | caretaker := dependentOn(world, c)`: structure: the second call of this helper, for animals under 12 or dependent; the first call covers the rest *(always from 8)*
 - **PHY** `!carried | carried := caretaker ? isCarried(c, caretaker) : false | caretaker := dependentOn(world, c)`: it is not being carried *(always from 8)*
@@ -1950,11 +2002,11 @@ Reached through affiliationRepair() called at line 898:
 
 Number literals in its conditions: 12. Hand-set numbers in its advice, quota and dice conditions: 1.
 
-### 84. Console the victim of a recent attack (`src/sim/candidates.ts:1470`)
+### 86. Console the victim of a recent attack (`src/sim/candidates.ts:1493`)
 
 `offer('console', v.id, …)` in `affiliationRepair`; kind: make_up; key `affiliationRepair/console/NONE#1`, print `32cb4182`. **live**; carries physical, perceptual, social fact, advice, quota or timer; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through affiliationRepair() called at line 896:
+Reached through affiliationRepair() called at line 917:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **PHY** `c.age >= 12` (through `adolescentOrAdult`): structure: adolescents and adults reach this through one call of the helper and the young through the other; together everyone who is not carried *(always from 8)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -1970,7 +2022,7 @@ Reached through affiliationRepair() called at line 896:
 - **PER** `dcc(c, v) < P.consoleRangeM`: the victim is within reach [consoleRangeM = 6]
 - **ADV** `c.age >= 5`: it is 5 or older (a hand-set age) *(always from 8; proposal: keep)*
 
-Reached through affiliationRepair() called at line 898:
+Reached through affiliationRepair() called at line 919:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **PHY** `!adolescentOrAdult | adolescentOrAdult := c.age >= 12 && !caretaker | caretaker := dependentOn(world, c)`: structure: the second call of this helper, for animals under 12 or dependent; the first call covers the rest *(always from 8)*
 - **PHY** `!carried | carried := caretaker ? isCarried(c, caretaker) : false | caretaker := dependentOn(world, c)`: it is not being carried *(always from 8)*
@@ -1988,11 +2040,11 @@ Reached through affiliationRepair() called at line 898:
 
 Number literals in its conditions: 12, 5. Hand-set numbers in its advice, quota and dice conditions: 2.
 
-### 85. Carry on with the border patrol (`src/sim/candidates.ts:1488`)
+### 87. Carry on with the border patrol (`src/sim/candidates.ts:1511`)
 
 `offer('patrol', patrol.leaderId === c.id ? -1 : patrol.leaderId, …, V.CONTINUE)` in `patrolAndCalls`; kind: confront_strangers; key `patrolAndCalls/patrol/CONTINUE#1`, print `c39df3f7`. **live**; carries physical, social fact, advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through patrolAndCalls() called at line 897:
+Reached through patrolAndCalls() called at line 918:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -2001,11 +2053,11 @@ Reached through patrolAndCalls() called at line 897:
 
 Number literals in its conditions: 12. Hand-set numbers in its advice, quota and dice conditions: 1.
 
-### 86. Join the border patrol under way (`src/sim/candidates.ts:1491`)
+### 88. Join the border patrol under way (`src/sim/candidates.ts:1514`)
 
 `offer('patrol', leader.id, …, V.JOIN)` in `patrolAndCalls`; kind: confront_strangers; key `patrolAndCalls/patrol/JOIN#1`, print `7a27a7e8`. **live**; carries physical, perceptual, social fact, advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through patrolAndCalls() called at line 897:
+Reached through patrolAndCalls() called at line 918:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -2020,13 +2072,13 @@ Reached through patrolAndCalls() called at line 897:
 
 Number literals in its conditions: 12, 0.75. Hand-set numbers in its advice, quota and dice conditions: 2.
 
-### 87. Join the patrol (the older valuation by sex) (`src/sim/candidates.ts:1492`)
+### 89. Join the patrol (the older valuation by sex) (`src/sim/candidates.ts:1515`)
 
 `offer('patrol', leader.id, …, V.JOIN)` in `patrolAndCalls`; kind: confront_strangers; key `patrolAndCalls/patrol/JOIN#2`, print `56701e22`. **legacy: unreachable on the working base**. Teacher: the rules' own judgment (scaffold).
 
 Unreachable because: `!pv | pv := patrolValueOn(P)`.
 
-Reached through patrolAndCalls() called at line 897:
+Reached through patrolAndCalls() called at line 918:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -2041,11 +2093,11 @@ Reached through patrolAndCalls() called at line 897:
 
 Number literals in its conditions: 12, 0.75.
 
-### 88. Lead a border patrol (`src/sim/candidates.ts:1500`)
+### 90. Lead a border patrol (`src/sim/candidates.ts:1523`)
 
 `offer('patrol', -1, …, V.LEAD)` in `patrolAndCalls`; kind: confront_strangers; key `patrolAndCalls/patrol/LEAD#1`, print `c385d8bb`. **live**; carries social fact, advice, quota or timer; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through patrolAndCalls() called at line 897:
+Reached through patrolAndCalls() called at line 918:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -2060,13 +2112,13 @@ Reached through patrolAndCalls() called at line 897:
 
 Number literals in its conditions: 12. Hand-set numbers in its advice, quota and dice conditions: 5.
 
-### 89. Lead a patrol (opened by the patrol hazard's roll) (`src/sim/candidates.ts:1505`)
+### 91. Lead a patrol (opened by the patrol hazard's roll) (`src/sim/candidates.ts:1528`)
 
 `offer('patrol', -1, …, V.LEAD)` in `patrolAndCalls`; kind: confront_strangers; key `patrolAndCalls/patrol/LEAD#2`, print `0c7f3d50`. **legacy: unreachable on the working base**. Teacher: none.
 
 Unreachable because: `!pv | pv := patrolValueOn(P)`.
 
-Reached through patrolAndCalls() called at line 897:
+Reached through patrolAndCalls() called at line 918:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -2081,11 +2133,11 @@ Reached through patrolAndCalls() called at line 897:
 
 Number literals in its conditions: 12.
 
-### 90. Pant-hoot (`src/sim/candidates.ts:1515`)
+### 92. Pant-hoot (`src/sim/candidates.ts:1538`)
 
 `offer('call', -1, …, V.CONTACT)` in `patrolAndCalls`; kind: call; key `patrolAndCalls/call/CONTACT#1`, print `3528442e`. **live**; carries advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through patrolAndCalls() called at line 897:
+Reached through patrolAndCalls() called at line 918:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -2095,13 +2147,13 @@ Reached through patrolAndCalls() called at line 897:
 
 Number literals in its conditions: 12. Hand-set numbers in its advice, quota and dice conditions: 2.
 
-### 91. Food call at a rich tree (older) (`src/sim/candidates.ts:1516`)
+### 93. Food call at a rich tree (older) (`src/sim/candidates.ts:1539`)
 
 `offer('call', -1, …, V.FOODCALL)` in `patrolAndCalls`; kind: call; key `patrolAndCalls/call/FOODCALL#1`, print `6a463d0f`. **legacy: unreachable on the working base**. Teacher: the rules' own judgment (scaffold).
 
 Unreachable because: `!cv | cv := callValueOn(P)`.
 
-Reached through patrolAndCalls() called at line 897:
+Reached through patrolAndCalls() called at line 918:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -2112,13 +2164,13 @@ Reached through patrolAndCalls() called at line 897:
 
 Number literals in its conditions: 12, 0.5, 0.6.
 
-### 92. Join the dawn or dusk chorus (older) (`src/sim/candidates.ts:1517`)
+### 94. Join the dawn or dusk chorus (older) (`src/sim/candidates.ts:1540`)
 
 `offer('call', -1, …, V.CHORUS)` in `patrolAndCalls`; kind: call; key `patrolAndCalls/call/CHORUS#1`, print `dc75d3ad`. **legacy: unreachable on the working base**. Teacher: the rules' own judgment (scaffold).
 
 Unreachable because: `!cv | cv := callValueOn(P)`.
 
-Reached through patrolAndCalls() called at line 897:
+Reached through patrolAndCalls() called at line 918:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -2129,11 +2181,11 @@ Reached through patrolAndCalls() called at line 897:
 
 Number literals in its conditions: 12, 1.5, 18, 19, 6.4, 7.4, 0.05.
 
-### 93. Pant-hoot at a reunion (a male) (`src/sim/candidates.ts:1518`)
+### 95. Pant-hoot at a reunion (a male) (`src/sim/candidates.ts:1541`)
 
 `offer('call', -1, …, V.REUNION)` in `patrolAndCalls`; kind: call; key `patrolAndCalls/call/REUNION#1`, print `2fbb9c2b`. **live**; carries perceptual, advice; stays on the menu behind its rules, counted. Teacher: the rules' own judgment (scaffold).
 
-Reached through patrolAndCalls() called at line 897:
+Reached through patrolAndCalls() called at line 918:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -2143,13 +2195,13 @@ Reached through patrolAndCalls() called at line 897:
 
 Number literals in its conditions: 12, 0.5. Hand-set numbers in its advice, quota and dice conditions: 1.
 
-### 94. Contact pant-hoot when alone (older) (`src/sim/candidates.ts:1524`)
+### 96. Contact pant-hoot when alone (older) (`src/sim/candidates.ts:1547`)
 
 `offer('call', -1, …, V.CONTACT)` in `patrolAndCalls`; kind: call; key `patrolAndCalls/call/CONTACT#2`, print `0ead52ef`. **legacy: unreachable on the working base**. Teacher: the rules' own judgment (scaffold).
 
 Unreachable because: `!cv | cv := callValueOn(P)`.
 
-Reached through patrolAndCalls() called at line 897:
+Reached through patrolAndCalls() called at line 918:
 - **PHY** `c.alive`: the animal is alive *(always from 8)*
 - **ADV** `c.age >= 12` (through `adolescentOrAdult`): it is 12 or older (adolescent or adult; a hand-set age) *(proposal: keep)*
 - **PHY** `!caretaker | caretaker := dependentOn(world, c)` (through `adolescentOrAdult`): it is not a dependent (weaned, or 6 or older) *(always from 8)*
@@ -2165,135 +2217,135 @@ Number literals in its conditions: 12, 2.
 
 | Class | Condition | In plain words | Proposal | Packet line | Sites (lines) |
 |---|---|---|---|---|---|
-| ADV | `drive > 0.25 \| drive := (company ? nestDrive + company : nestDrive) - raceG \| company := P.nestCompany === 1 && inNest && !caretaker && c.age >= 5 ? nestCompany …` | the nest's own value, less what waiting would lose of a contested crop, is above 0.25: the rules' value used as a gate | drop (only once body outcomes are allowed as a teacher) | `body (sleepiness and body clock) and now (the light)` | 280 |
-| ADV | `open \| open := rS ? env.daylight < 1 : hour >= 12 \|\| night \| rS := P.rhythmSleep === 1 \| night := env.daylight < 0.1` | a new nest may be started only when daylight is below full (with the sleep mechanism, as on the base; otherwise from 12:00 or at night) | keep |  | 280 |
-| ADV | `cold > 0` | its body is colder than neutral (thermal load below zero): sheltering is offered only then | drop (only once body outcomes are allowed as a teacher) | `body (temperature) and now (the weather)` | 411 |
-| ADV | `c.age < P.juvenileFollowMaxAgeY` | it is younger than the age up to which a juvenile keeps up with its guardian | keep |  | 442 |
-| ADV | `water ? c.thirst > 0 : c.thirst > 0.25 \| water := waterOn(P)` | it is thirsty at all: the water ledger's thirst is above zero (above 0.25 without the ledger) | drop (only once body outcomes are allowed as a teacher) | `body (water)` | 586 |
-| ADV | `EACH k < 4 && _mem.length` | only the four trees the rules value most are offered (the trip shortlist: a ranking by the rules' own value) | drop | `each target's belief words (crop when seen, hours since, distance and direction)` | 637 |
-| ADV | `c.age >= 10` | it is 10 or older (a hand-set age) | keep |  | 637, 1347, 1351, 1361 |
-| ADV | `c.action !== 'patrol'` | it is not on patrol | keep |  | 680, 690, 1491 |
-| ADV | `c.action !== 'consort'` | it is not on a consortship | keep |  | 690, 1361 |
-| ADV | `c.action !== 'transfer'` | it is not transferring | keep |  | 690 |
-| ADV | `here > P.homeLevel` | it stands outside its community's range (use level above the home level) | keep |  | 690 |
-| ADV | `c.age < 16` | it is younger than 16 (play-climbing is for the young) | keep |  | 693 |
-| ADV | `o.action === 'rest' \|\| o.action === 'groom' \|\| o.action === 'shelter' \|\| o.action === 'nurse'` | the other is settled: resting, grooming, sheltering or nursing | drop (only for the pairs a wild choice record covers) | `nearby (each animal's act)` | 790 |
-| ADV | `o.age >= 1` | the other is at least 1 year old | keep |  | 790, 803, 806 |
-| ADV | `!busy \| busy := o.action === 'flee' \|\| o.action === 'charge' \|\| o.action === 'attack' \|\| o.action === 'display' \|\| o.action === 'transfer'` | the other is not fleeing, charging, attacking, displaying or transferring | keep |  | 803, 806 |
-| ADV | `Math.abs(o.age - c.age) < 7` | the two are within 7 years of age | keep |  | 803 |
-| ADV | `c.age < 15` | it is younger than 15 | keep |  | 803 |
-| ADV | `o.age < 15` | the other is younger than 15 | keep |  | 803 |
-| ADV | `NOT c.age >= 1 && c.age < 15 && o.age < 15 && Math.abs(o.age - c.age) < 7 && !(dependentOn(world, o) && isCarried(o, dependentOn(world, o)))` | the two are not a pair of young peers (the first play rule did not apply) | keep |  | 806 |
-| ADV | `c.age >= 15` | it is 15 or older | keep |  | 806, 877, 1180, 1190, 1351, 1361 |
-| ADV | `o.age < 8` | the other is under 8 | keep |  | 806 |
-| ADV | `!AFFILIATIVE[o.action]` | the other is not reconciling, grooming, consoling, playing or sharing | keep |  | 814 |
-| ADV | `!night \| night := env.daylight < 0.1` | it is not night (daylight at 0.1 or more) | keep |  | 814, 826, 834, 867, 877, 887, 1133, 1149, 1165, 1168, 1174, 1180, 1190, 1202, 1209, 1217, 1232, 1237 |
-| ADV | `!repairing \| repairing := c.lastConflict?.opponentId === o.id && time - c.lastConflict.time < P.reconcileWindowH && b >= P.avoidRepairBondMin` | it has no fresh conflict with a valued partner to repair with that animal | keep |  | 814 |
-| ADV | `d < P.avoidCloseM \|\| o.targetId === c.id \|\| o.action === 'display' \|\| o.action === 'charge'` | the other is very close, is aiming at it, or is displaying or charging | keep |  | 814 |
-| ADV | `dominates(o, c)` | the other outranks it (the direction of rank) | keep |  | 814, 860 |
-| ADV | `tn >= P.rivalTension` | its tension with the other is at the rival level or above | keep |  | 814, 1174 |
-| ADV | `c.age >= 12` | it is 12 or older (adolescent or adult; a hand-set age) | keep |  | 839, 877, 887, 1133, 1149, 1165, 1168, 1174, 1180, 1190, 1202, 1209, 1217, 1232, 1237, 1264, 1265, 1296, 1297, 1299, 1301, 1302, 1317, 1318, 1319, 1332, 1347, 1351, 1361, 1375, 1376, 1422, 1435, 1488, 1491, 1500, 1515, 1518 |
-| ADV | `c.sex === 'female'` | the actor is female | keep |  | 839 |
-| ADV | `o.age >= 15` | the other is 15 or older | keep |  | 839, 1168, 1209 |
-| ADV | `o.sex === 'male'` | the other is male | keep |  | 839, 1168 |
-| ADV | `(o.sex === 'male' && o.age >= P.pantGruntMaleAgeY) \|\| o.age >= 15` | the other is a male of the greeting age or more, or anyone of 15 or more | keep |  | 860 |
-| ADV | `sc > bestGruntScore \| sc := 0.3 + (troop?.alphaId === o.id ? 0.4 : 0.05) + (displaying ? 0.8 : 0) + c.stress * 0.3 + (x.newcomers > 0 ? 0.15 : 0) + (o.sex === ' …` | of the dominants in reach, only the one the rules score highest is offered (alpha, displaying, nearer score more) | drop | `nearby (rank, distance, what it is doing) and last (greeted when)` | 860 |
-| ADV | `c.sex === 'male'` | the actor is male | keep |  | 877, 887, 1180, 1209, 1296, 1297, 1301, 1435, 1518 |
-| ADV | `sc > 0 \| sc := fast ? rainFastScore(c, x, time, P) : rainScore(c, x, P) \| fast := endoOn(P, 'endoFast')` | its arousal gives the display a positive value: the rules' value used as a gate | keep |  | 877 |
-| ADV | `dispOpen \|\| (quotaTrace.on && male && e > 0.3) \| dispOpen := male && e > 0.3 && (aggrBit(P, 4) \|\| time - x.lastDisplay > 0.75) \| male := c.sex === 'male' \| e := …` | the display's gate as the diagnostic hook sees it: a male with energy above 0.3 and, without the switch, 0.75 h since his last display (its parts are listed after it) | keep |  | 887 |
-| ADV | `e > 0.3 \| e := c.energy` | its energy is above 0.3 | keep |  | 887 |
-| ADV | `cl > rivalCloseness` | of the ranked males in view, only the one closest to it in rank score is its rival | keep |  | 1133 |
-| ADV | `o.age >= 12` | the other is 12 or older | keep |  | 1133 |
-| ADV | `rankedMale(c)` | it is a ranked male | keep |  | 1133 |
-| ADV | `rankedMale(o)` | the other is a ranked male | keep |  | 1133 |
-| ADV | `!kin \| kin := maternalKin(c, o)` | the other is not its maternal kin (kin are never charged) | keep |  | 1165, 1174, 1180, 1202, 1209 |
-| ADV | `dominates(c, o)` | it outranks the other (the direction of rank) | keep |  | 1165, 1174, 1202 |
-| ADV | `o.age >= 5` | the other is 5 or older | keep |  | 1165, 1174, 1202 |
-| ADV | `Math.abs(o.elo - c.elo) < P.escalateEloGap` | the other is close to it in rank score | keep |  | 1168 |
-| ADV | `endoEsc \|\| (tr && escOn) \| endoEsc := escOn && cooled \| escOn := endoOn(P, 'endoEscalate') && isAdultMale(c) \| cooled := aggrBit(P, 1) \|\| time - x.lastAgg > 1.5 …` | an adult male past the aggression cooldown (the gate as the diagnostic hook sees it; its parts are listed after it) | keep |  | 1168 |
-| ADV | `isAdultMale(c)` | it is an adult male | keep |  | 1168, 1500 |
-| ADV | `sc > 0` | the slow states give the attack a positive value: the rules' value used as a gate | keep |  | 1168 |
-| ADV | `o.sex === 'female'` | the other is female | keep |  | 1180, 1190, 1209 |
-| ADV | `o.swelling >= P.coerceSwellingMin` | her swelling is at the coercion level or above | keep |  | 1180 |
-| ADV | `!male \| male := c.sex === 'male'` | the actor is female | keep |  | 1190 |
-| ADV | `tenureC >= 3 \| tenureC := ix(c).immigrantAge < 0 ? c.age - 10 : c.age - ix(c).immigrantAge` | the actor has 3 or more years of tenure (a resident) | keep |  | 1190 |
-| ADV | `guardianOf(world, o) !== c` | it is not the other's guardian (a guardian never supplants its ward) | keep |  | 1202 |
-| ADV | `o.targetId === forageTree \|\| (h > P.feedChargeHungerMin && x.trees.includes(o.targetId)) \| forageTree := c.action === 'forage' ? c.targetId : -1 \| h := c.hunger` | the other feeds in the tree it feeds in itself, or, when its own hunger is above the threshold, in a tree in view | keep |  | 1202 |
-| ADV | `world.environment.fruitIndex < 0.4 \|\| (t !== undefined && (P.patchEcology === 1 ? fruitAt(world, t) : t.fruit) < 0.3)` | fruit is scarce: in the habitat (index under 0.4, a figure no animal perceives) or in that tree (crop under 0.3) | keep |  | 1202 |
-| ADV | `c.age < P.femaleDomMaxAgeY` | the actor is younger than the age limit (an adolescent male) | keep |  | 1209 |
-| ADV | `!guardBySize(P) \|\| !wardHoldsOwn(world, o, ag, P)` | its ward cannot hold its own against the aggressor (assessed odds under even) | keep |  | 1217 |
-| ADV | `c.sex === ag.sex \|\| stranger \| stranger := ag.troopId !== c.troopId` | the aggressor is of its own sex, or a stranger (no charging back across the sexes inside the community) | keep |  | 1264, 1265 |
-| ADV | `!transferring \| transferring := c.action === 'transfer' \|\| (x.transferTo > 0 && c.troopId === c.natalTroopId)` | it is not transferring to another community (a transferring female keeps going) | keep |  | 1296, 1297, 1299, 1301, 1302 |
-| ADV | `NOT c.sex === 'male' && immigrantLike \| immigrantLike := s.sex === 'female' && s.swelling >= P.immigrantLikeSwelling && !s.lactating` | not a male facing a swollen, childless stranger female (males tolerate a likely immigrant) | keep |  | 1296, 1297, 1299, 1301, 1302 |
-| ADV | `own >= 3 \| own := x.ownMales` | at least 3 males of its own in view | keep |  | 1296, 1297, 1317, 1318 |
-| ADV | `own >= str + 2 \| own := x.ownMales \| str := x.strangerMales` | at least 2 more males than the strangers have | keep |  | 1296, 1297 |
-| ADV | `NOT c.sex === 'male' && own >= 3 && own >= str + 2 && (aggrBit(P, 2) \|\| time - x.lastAgg > 0.2) \| own := x.ownMales \| str := x.strangerMales` | the charge rule did not apply: not a male with 3 or more own males and 2 more than theirs | keep |  | 1299, 1301, 1302 |
-| ADV | `own < str + 1 \|\| own < 2 \|\| fear > 0.3 \| own := x.ownMales \| str := x.strangerMales \| fear := withInfant ? 0.6 : c.sex === 'female' ? 0.25 : 0 \| withInfant := c …` | outnumbered, alone among males, or fearful (a female with an infant) | keep |  | 1299 |
-| ADV | `fear <= 0.3 \| fear := withInfant ? 0.6 : c.sex === 'female' ? 0.25 : 0 \| withInfant := c.sex === 'female' && c.lactating` | not fearful (a female with an infant is) | keep |  | 1301, 1302 |
-| ADV | `own >= 2 \| own := x.ownMales` | at least 2 males of its own in view | keep |  | 1301, 1302 |
-| ADV | `own >= str + 1 \| own := x.ownMales \| str := x.strangerMales` | at least one more male of its own than the strangers have | keep |  | 1301, 1302 |
-| ADV | `c.sex !== 'male'` | the actor is female | keep |  | 1302 |
-| ADV | `NOT own >= 3 && c.sex === 'female' && !inRange \| own := x.ownMales \| inRange := troop ? Math.hypot(x.heardX - troop.center[0], x.heardZ - troop.center[2]) < tro …` | not a female with 3 or more males around hearing calls from outside the range (she stays quiet with the males) | keep |  | 1317, 1318, 1319 |
-| ADV | `c.sex === 'male' \|\| inRange \| inRange := troop ? Math.hypot(x.heardX - troop.center[0], x.heardZ - troop.center[2]) < troop.radius * 1.05 : false` | a male, or the calls came from inside its own range | keep |  | 1317, 1318 |
-| ADV | `NOT own >= 3 && (c.sex === 'male' \|\| inRange) \| own := x.ownMales \| inRange := troop ? Math.hypot(x.heardX - troop.center[0], x.heardZ - troop.center[2]) < troo …` | fewer than 3 own males in view (or a female hearing calls from outside the range) | keep |  | 1319 |
-| ADV | `NOT maternalKin(c, o)` | the other is not its maternal kin (no mating between maternal kin) | keep |  | 1347, 1351, 1361, 1375, 1376 |
-| ADV | `o.age >= 10` | the other is 10 or older | keep |  | 1347, 1351, 1361, 1375, 1376 |
-| ADV | `!(g && g !== c && g.alive && dcc(c, g) < P.guardRivalRangeM)` | no other male is guarding her nearby | keep |  | 1351 |
-| ADV | `!guarded \| guarded := !!g && g.alive && g !== c && dcc(c, g) < P.guardedRangeM && dominates(g, c)` | she is not guarded by a male who outranks it | keep |  | 1351, 1361 |
-| ADV | `c.rankOrder <= 2 \|\| isAlpha \| isAlpha := troop?.alphaId === c.id` | it holds one of the top two ranks (or is the alpha) | keep |  | 1351 |
-| ADV | `o.swelling >= P.guardSwellingMin` | her swelling is at the guarding level or above | keep |  | 1351 |
-| ADV | `!isAlpha \| isAlpha := troop?.alphaId === c.id` | it is not the alpha (the alpha guards instead) | keep |  | 1361 |
-| ADV | `bond(c, o) >= P.consortBondMin` | its bond with her is at the consortship minimum or above | keep |  | 1361 |
-| ADV | `o.swelling >= P.consortSwellingMin` | her swelling is at the consortship level or above | keep |  | 1361 |
-| ADV | `c.carryingMeat < 0.05` | it holds (almost) no meat itself | keep |  | 1406 |
-| ADV | `c.energy > 0.35` | its energy is above 0.35 | keep |  | 1422, 1435 |
-| ADV | `world.environment.rain < 0.3` | it is not raining hard (rain under 0.3) | keep |  | 1422, 1435 |
-| ADV | `r > 0 \| r := huntRate(c, P, dist, x.ownMales, gaitOn(P) ? runSpeedOf(c, P) * 0.8 * bodyState(c) : P.walkMps)` | a capture can be expected and he needs energy: the hunt's expected energy rate is positive (the rules' value used as a gate) | keep |  | 1435 |
-| ADV | `!(o.action === 'charge' \|\| o.action === 'attack')` | the opponent is not charging or attacking now | keep |  | 1458 |
-| ADV | `NOT b < P.consoleBondMin && !kin \| kin := maternalKin(c, v)` | the victim is its maternal kin, or a partner with a bond at the consolation minimum or above | keep |  | 1470 |
-| ADV | `c.hunger < 0.75` | its hunger is under 0.75 | keep |  | 1491 |
-| ADV | `c.hunger < P.patrolMaxHunger` | its hunger is under the patrol maximum | keep |  | 1500 |
-| ADV | `env.rain < P.patrolMaxRain` | it is not raining hard | keep |  | 1500 |
-| ADV | `v > 0` | the mechanism gives the act a positive value: the rules' value used as a gate (patrol lead: stale border, odds, daylight left, fatigue; pant-hoot: what allies out of sight learn against what the crop loses) | keep |  | 1500, 1515 |
-| ADV | `x.ownMales >= P.patrolMinMales` | at least the minimum number of adult males of its own in view | keep |  | 1500 |
-| ADV | `env.daylight > P.contactCallMinDaylight` | daylight is above the minimum for calling | keep |  | 1515 |
-| QUO | `time - x.joinAt < 0.3` | it heard the call within the last 0.3 h (a window after the event) | keep |  | 680 |
-| QUO | `c.age - x.immigrantAge < 2` | it immigrated less than 2 years ago (a window) | keep |  | 839 |
-| QUO | `open \| open := greetMem ? x.greet[o.id] === undefined \|\| ((o.action === 'charge' \|\| o.action === 'attack') && o.targetId === c.id) : time - last > P.pantGruntRe …` | once per association: it has not greeted this animal since they last met, or that animal has just charged or attacked it (without the switch: 8 h since the last greeting) | keep |  | 860 |
-| QUO | `open \|\| quotaTrace.on \| open := greetMem ? x.greet[o.id] === undefined \|\| ((o.action === 'charge' \|\| o.action === 'attack') && o.targetId === c.id) : time - las …` | once per association: it has not greeted this animal since they last met, or that animal has just charged or attacked it (without the switch: 8 h since the last greeting) | keep |  | 860 |
-| QUO | `time - (x.hooAt ?? NEVER) <= P.travelHooWindowMin / 60` | it heard the hoo within the last few minutes (a window after the event) | keep |  | 867 |
-| QUO | `time - at < (fast ? fastSpanH(P) : P.impulseDurationH) \| fast := endoOn(P, 'endoFast')` | a storm began within the span of the fast arousal state (a window after the event) | keep |  | 877 |
-| QUO | `x.lastDisplay < at` | it has not displayed since the storm began (once per storm) | keep |  | 877 |
-| QUO | `x.impulseUntil > time` | the impulse is still open (a window of 0.1 h after it was raised) | rules |  | 1149 |
-| QUO | `time - x.lostAt < (fastRed ? fastSpanH(P) : endoRed ? P.endoStressTauH : P.redirectWindowH) \| fastRed := endoOn(P, 'endoFastRedirect') \| endoRed := endoOn(P, 'e …` | it lost a contest within the last stress time constant (a window after the event) | keep |  | 1165 |
-| QUO | `x.lastAgg < x.lostAt` | it has not aggressed since that loss (once per loss) | keep |  | 1165 |
-| QUO | `(ix(o).coerce[c.id] ?? 0) < P.coerceMaxRepeats` | it has charged her fewer times than the repeat limit | keep |  | 1180 |
-| QUO | `o.age - ox.immigrantAge < 2` | she immigrated less than 2 years ago (a window) | keep |  | 1190 |
-| QUO | `time - ox.victimAt < 0.05` | the other was attacked within the last 0.05 h (a window after the event) | keep |  | 1217 |
-| QUO | `time - x.coalAt < P.coalitionWindowH` | it was alerted to a conflict within the last 0.05 h (a window; who is alerted is decided in conflict.ts) | keep |  | 1232 |
-| QUO | `world.time - x.victimAt <= 0.03` | it was threatened within the last 0.03 h, about 2 minutes (a window after the event) | keep |  | 1260, 1261, 1264, 1265 |
-| QUO | `time - x.heardAt < 0.2` | it heard them within the last 0.2 h (a window after the event) | keep |  | 1317, 1318, 1319 |
-| QUO | `(mateOpen && pg > 0) \|\| quotaTrace.on \| mateOpen := mv \|\| time - x.lastMate > P.mateIntervalH \| mv := matingValueOn(P) \| pg := mv ? paternityGain(o, c, P, world …` | the mating quota: 1.5 h since his last copulation (the diagnostic hook aside) | keep |  | 1347 |
-| QUO | `mv \|\| time - x.lastMate > P.mateIntervalH \| mv := matingValueOn(P)` | the mating quota: 1.5 h since his last copulation | keep |  | 1347 |
-| QUO | `(maleOpen && pg > 0) \|\| quotaTrace.on \| maleOpen := mv \|\| time - ix(o).lastMate > P.mateIntervalH \| mv := matingValueOn(P) \| pg := mv ? paternityGain(c, o, P, w …` | the male's mating quota gates her offer too: 1.5 h since his last copulation (the diagnostic hook aside) | keep |  | 1375, 1376 |
-| QUO | `mv \|\| time - ix(o).lastMate > P.mateIntervalH \| mv := matingValueOn(P)` | the male's mating quota gates her offer too: 1.5 h since his last copulation | keep |  | 1375, 1376 |
-| QUO | `mv \|\| time - x.lastMate > 0.3 \| mv := matingValueOn(P)` | 0.3 h since her last copulation | keep |  | 1375, 1376 |
-| QUO | `((s.huntDay[c.troopId] ?? NEVER) > time && x.ownMales >= P.huntMinMales) \|\| (x.impulse === IMPULSE_HUNT && x.impulseTarget === p.id && x.impulseUntil > time &&  …` | he has only just met this colobus group with enough own males in view (the lead is weighed for 0.1 h after the encounter; or on an experiment's hunting day) | keep |  | 1435 |
-| QUO | `time - lc.time < P.reconcileWindowH \| lc := c.lastConflict` | the conflict was within the post-conflict window | keep |  | 1458 |
-| QUO | `x.recon < lc.time \| lc := c.lastConflict` | it has not reconciled since that conflict (once per conflict) | keep |  | 1458 |
-| QUO | `time - vx.victimAt <= P.consoleWindowH` | the other was a victim within the consolation window | keep |  | 1470 |
-| QUO | `vx.consoledAt <= vx.victimAt` | the victim has not been consoled yet (once per event) | keep |  | 1470 |
-| QUO | `x.consoleAt <= vx.victimAt` | it has not consoled since that attack (once per event) | keep |  | 1470 |
-| QUO | `!(P.patrolValue >= 2) \|\| (x.impulse === IMPULSE_PATROL && x.impulseUntil > time)` | his party has only just come to hold enough adult males (the lead is weighed for 0.1 h after that fusion; nothing is rolled) | keep |  | 1500 |
-| DIC | `(x.impulse === IMPULSE_TRANSFER && x.impulseUntil > time) \|\| c.action === 'transfer' \|\| intent \| intent := x.transferTo > 0 && c.troopId === c.natalTroopId` | a dispersal impulse was rolled (a yearly hazard for a natal female of dispersal age while swollen), or the transfer it began is still under way | rules |  | 918 |
-| DIC | `x.impulse === IMPULSE_INFANTICIDE` | an infanticide impulse was rolled at perception (per look at a stranger's infant when its males outnumber theirs by the margin, or for a new alpha and an infant he did not sire) | rules |  | 1149 |
-| DIC | `gangT \| gangT := x.impulse === IMPULSE_GANG && x.impulseUntil > time ? byId.get(x.impulseTarget) : undefined` | a gang-attack impulse was rolled at perception (probability 0.5, one roll per 6 h at most, with 3 or more own males against a lone stranger of 10 or more, on patrol or near the range's edge) | rules |  | 1297 |
+| ADV | `drive > 0.25 \| drive := (company ? nestDrive + company : nestDrive) - raceG \| company := P.nestCompany === 1 && inNest && !caretaker && c.age >= 5 ? nestCompany …` | the nest's own value, less what waiting would lose of a contested crop, is above 0.25: the rules' value used as a gate | drop (only once body outcomes are allowed as a teacher) | `body (sleepiness and body clock) and now (the light)` | 287 |
+| ADV | `open \| open := rS ? env.daylight < 1 : hour >= 12 \|\| night \| rS := P.rhythmSleep === 1 \| night := env.daylight < 0.1` | a new nest may be started only when daylight is below full (with the sleep mechanism, as on the base; otherwise from 12:00 or at night) | keep |  | 287 |
+| ADV | `cold > 0` | its body is colder than neutral (thermal load below zero): sheltering is offered only then | drop (only once body outcomes are allowed as a teacher) | `body (temperature) and now (the weather)` | 422 |
+| ADV | `c.age < P.juvenileFollowMaxAgeY` | it is younger than the age up to which a juvenile keeps up with its guardian | keep |  | 453 |
+| ADV | `water ? c.thirst > 0 : c.thirst > 0.25 \| water := waterOn(P)` | it is thirsty at all: the water ledger's thirst is above zero (above 0.25 without the ledger) | drop (only once body outcomes are allowed as a teacher) | `body (water)` | 597 |
+| ADV | `EACH k < 4 && _mem.length` | only the four trees the rules value most are offered (the trip shortlist: a ranking by the rules' own value) | drop | `each target's belief words (crop when seen, hours since, distance and direction)` | 648 |
+| ADV | `c.age >= 10` | it is 10 or older (a hand-set age) | keep |  | 648, 1370, 1374, 1384 |
+| ADV | `c.action !== 'patrol'` | it is not on patrol | keep |  | 691, 701, 1514 |
+| ADV | `c.action !== 'consort'` | it is not on a consortship | keep |  | 701, 1384 |
+| ADV | `c.action !== 'transfer'` | it is not transferring | keep |  | 701 |
+| ADV | `here > P.homeLevel` | it stands outside its community's range (use level above the home level) | keep |  | 701 |
+| ADV | `c.age < 16` | it is younger than 16 (play-climbing is for the young) | keep |  | 704 |
+| ADV | `o.action === 'rest' \|\| o.action === 'groom' \|\| o.action === 'shelter' \|\| o.action === 'nurse'` | the other is settled: resting, grooming, sheltering or nursing | drop (only for the pairs a wild choice record covers) | `nearby (each animal's act)` | 810 |
+| ADV | `o.age >= 1` | the other is at least 1 year old | keep |  | 810, 822, 825 |
+| ADV | `!busy \| busy := o.action === 'flee' \|\| o.action === 'charge' \|\| o.action === 'attack' \|\| o.action === 'display' \|\| o.action === 'transfer'` | the other is not fleeing, charging, attacking, displaying or transferring | keep |  | 822, 825 |
+| ADV | `Math.abs(o.age - c.age) < 7` | the two are within 7 years of age | keep |  | 822 |
+| ADV | `c.age < 15` | it is younger than 15 | keep |  | 822 |
+| ADV | `o.age < 15` | the other is younger than 15 | keep |  | 822 |
+| ADV | `NOT c.age >= 1 && c.age < 15 && o.age < 15 && Math.abs(o.age - c.age) < 7 && !(dependentOn(world, o) && isCarried(o, dependentOn(world, o)))` | the two are not a pair of young peers (the first play rule did not apply) | keep |  | 825 |
+| ADV | `c.age >= 15` | it is 15 or older | keep |  | 825, 898, 1203, 1213, 1374, 1384 |
+| ADV | `o.age < 8` | the other is under 8 | keep |  | 825 |
+| ADV | `!AFFILIATIVE[o.action]` | the other is not reconciling, grooming, consoling, playing or sharing | keep |  | 833 |
+| ADV | `!night \| night := env.daylight < 0.1` | it is not night (daylight at 0.1 or more) | keep |  | 833, 845, 853, 888, 898, 908, 1156, 1172, 1188, 1191, 1197, 1203, 1213, 1225, 1232, 1240, 1255, 1260 |
+| ADV | `!repairing \| repairing := c.lastConflict?.opponentId === o.id && time - c.lastConflict.time < P.reconcileWindowH && b >= P.avoidRepairBondMin` | it has no fresh conflict with a valued partner to repair with that animal | keep |  | 833 |
+| ADV | `d < P.avoidCloseM \|\| o.targetId === c.id \|\| o.action === 'display' \|\| o.action === 'charge'` | the other is very close, is aiming at it, or is displaying or charging | keep |  | 833 |
+| ADV | `dominates(o, c)` | the other outranks it (the direction of rank) | keep |  | 833, 881 |
+| ADV | `tn >= P.rivalTension` | its tension with the other is at the rival level or above | keep |  | 833, 1197 |
+| ADV | `c.age >= 12` | it is 12 or older (adolescent or adult; a hand-set age) | keep |  | 858, 898, 908, 1156, 1172, 1188, 1191, 1197, 1203, 1213, 1225, 1232, 1240, 1255, 1260, 1287, 1288, 1319, 1320, 1322, 1324, 1325, 1340, 1341, 1342, 1355, 1370, 1374, 1384, 1398, 1399, 1445, 1458, 1511, 1514, 1523, 1538, 1541 |
+| ADV | `c.sex === 'female'` | the actor is female | keep |  | 858 |
+| ADV | `o.age >= 15` | the other is 15 or older | keep |  | 858, 1191, 1232 |
+| ADV | `o.sex === 'male'` | the other is male | keep |  | 858, 1191 |
+| ADV | `(o.sex === 'male' && o.age >= P.pantGruntMaleAgeY) \|\| o.age >= 15` | the other is a male of the greeting age or more, or anyone of 15 or more | keep |  | 881 |
+| ADV | `sc > bestGruntScore \| sc := 0.3 + (troop?.alphaId === o.id ? 0.4 : 0.05) + (displaying ? 0.8 : 0) + c.stress * 0.3 + (x.newcomers > 0 ? 0.15 : 0) + (o.sex === ' …` | of the dominants in reach, only the one the rules score highest is offered (alpha, displaying, nearer score more) | drop | `nearby (rank, distance, what it is doing) and last (greeted when)` | 881 |
+| ADV | `c.sex === 'male'` | the actor is male | keep |  | 898, 908, 1203, 1232, 1319, 1320, 1324, 1458, 1541 |
+| ADV | `sc > 0 \| sc := fast ? rainFastScore(c, x, time, P) : rainScore(c, x, P) \| fast := endoOn(P, 'endoFast')` | its arousal gives the display a positive value: the rules' value used as a gate | keep |  | 898 |
+| ADV | `dispOpen \|\| (quotaTrace.on && male && e > 0.3) \| dispOpen := male && e > 0.3 && (aggrBit(P, 4) \|\| time - x.lastDisplay > 0.75) \| male := c.sex === 'male' \| e := …` | the display's gate as the diagnostic hook sees it: a male with energy above 0.3 and, without the switch, 0.75 h since his last display (its parts are listed after it) | keep |  | 908 |
+| ADV | `e > 0.3 \| e := c.energy` | its energy is above 0.3 | keep |  | 908 |
+| ADV | `cl > rivalCloseness` | of the ranked males in view, only the one closest to it in rank score is its rival | keep |  | 1156 |
+| ADV | `o.age >= 12` | the other is 12 or older | keep |  | 1156 |
+| ADV | `rankedMale(c)` | it is a ranked male | keep |  | 1156 |
+| ADV | `rankedMale(o)` | the other is a ranked male | keep |  | 1156 |
+| ADV | `!kin \| kin := maternalKin(c, o)` | the other is not its maternal kin (kin are never charged) | keep |  | 1188, 1197, 1203, 1225, 1232 |
+| ADV | `dominates(c, o)` | it outranks the other (the direction of rank) | keep |  | 1188, 1197, 1225 |
+| ADV | `o.age >= 5` | the other is 5 or older | keep |  | 1188, 1197, 1225 |
+| ADV | `Math.abs(o.elo - c.elo) < P.escalateEloGap` | the other is close to it in rank score | keep |  | 1191 |
+| ADV | `endoEsc \|\| (tr && escOn) \| endoEsc := escOn && cooled \| escOn := endoOn(P, 'endoEscalate') && isAdultMale(c) \| cooled := aggrBit(P, 1) \|\| time - x.lastAgg > 1.5 …` | an adult male past the aggression cooldown (the gate as the diagnostic hook sees it; its parts are listed after it) | keep |  | 1191 |
+| ADV | `isAdultMale(c)` | it is an adult male | keep |  | 1191, 1523 |
+| ADV | `sc > 0` | the slow states give the attack a positive value: the rules' value used as a gate | keep |  | 1191 |
+| ADV | `o.sex === 'female'` | the other is female | keep |  | 1203, 1213, 1232 |
+| ADV | `o.swelling >= P.coerceSwellingMin` | her swelling is at the coercion level or above | keep |  | 1203 |
+| ADV | `!male \| male := c.sex === 'male'` | the actor is female | keep |  | 1213 |
+| ADV | `tenureC >= 3 \| tenureC := ix(c).immigrantAge < 0 ? c.age - 10 : c.age - ix(c).immigrantAge` | the actor has 3 or more years of tenure (a resident) | keep |  | 1213 |
+| ADV | `guardianOf(world, o) !== c` | it is not the other's guardian (a guardian never supplants its ward) | keep |  | 1225 |
+| ADV | `o.targetId === forageTree \|\| (h > P.feedChargeHungerMin && x.trees.includes(o.targetId)) \| forageTree := c.action === 'forage' ? c.targetId : -1 \| h := c.hunger` | the other feeds in the tree it feeds in itself, or, when its own hunger is above the threshold, in a tree in view | keep |  | 1225 |
+| ADV | `world.environment.fruitIndex < 0.4 \|\| (t !== undefined && (P.patchEcology === 1 ? fruitAt(world, t) : t.fruit) < 0.3)` | fruit is scarce: in the habitat (index under 0.4, a figure no animal perceives) or in that tree (crop under 0.3) | keep |  | 1225 |
+| ADV | `c.age < P.femaleDomMaxAgeY` | the actor is younger than the age limit (an adolescent male) | keep |  | 1232 |
+| ADV | `!guardBySize(P) \|\| !wardHoldsOwn(world, o, ag, P)` | its ward cannot hold its own against the aggressor (assessed odds under even) | keep |  | 1240 |
+| ADV | `c.sex === ag.sex \|\| stranger \| stranger := ag.troopId !== c.troopId` | the aggressor is of its own sex, or a stranger (no charging back across the sexes inside the community) | keep |  | 1287, 1288 |
+| ADV | `!transferring \| transferring := c.action === 'transfer' \|\| (x.transferTo > 0 && c.troopId === c.natalTroopId)` | it is not transferring to another community (a transferring female keeps going) | keep |  | 1319, 1320, 1322, 1324, 1325 |
+| ADV | `NOT c.sex === 'male' && immigrantLike \| immigrantLike := s.sex === 'female' && s.swelling >= P.immigrantLikeSwelling && !s.lactating` | not a male facing a swollen, childless stranger female (males tolerate a likely immigrant) | keep |  | 1319, 1320, 1322, 1324, 1325 |
+| ADV | `own >= 3 \| own := x.ownMales` | at least 3 males of its own in view | keep |  | 1319, 1320, 1340, 1341 |
+| ADV | `own >= str + 2 \| own := x.ownMales \| str := x.strangerMales` | at least 2 more males than the strangers have | keep |  | 1319, 1320 |
+| ADV | `NOT c.sex === 'male' && own >= 3 && own >= str + 2 && (aggrBit(P, 2) \|\| time - x.lastAgg > 0.2) \| own := x.ownMales \| str := x.strangerMales` | the charge rule did not apply: not a male with 3 or more own males and 2 more than theirs | keep |  | 1322, 1324, 1325 |
+| ADV | `own < str + 1 \|\| own < 2 \|\| fear > 0.3 \| own := x.ownMales \| str := x.strangerMales \| fear := withInfant ? 0.6 : c.sex === 'female' ? 0.25 : 0 \| withInfant := c …` | outnumbered, alone among males, or fearful (a female with an infant) | keep |  | 1322 |
+| ADV | `fear <= 0.3 \| fear := withInfant ? 0.6 : c.sex === 'female' ? 0.25 : 0 \| withInfant := c.sex === 'female' && c.lactating` | not fearful (a female with an infant is) | keep |  | 1324, 1325 |
+| ADV | `own >= 2 \| own := x.ownMales` | at least 2 males of its own in view | keep |  | 1324, 1325 |
+| ADV | `own >= str + 1 \| own := x.ownMales \| str := x.strangerMales` | at least one more male of its own than the strangers have | keep |  | 1324, 1325 |
+| ADV | `c.sex !== 'male'` | the actor is female | keep |  | 1325 |
+| ADV | `NOT own >= 3 && c.sex === 'female' && !inRange \| own := x.ownMales \| inRange := troop ? Math.hypot(x.heardX - troop.center[0], x.heardZ - troop.center[2]) < tro …` | not a female with 3 or more males around hearing calls from outside the range (she stays quiet with the males) | keep |  | 1340, 1341, 1342 |
+| ADV | `c.sex === 'male' \|\| inRange \| inRange := troop ? Math.hypot(x.heardX - troop.center[0], x.heardZ - troop.center[2]) < troop.radius * 1.05 : false` | a male, or the calls came from inside its own range | keep |  | 1340, 1341 |
+| ADV | `NOT own >= 3 && (c.sex === 'male' \|\| inRange) \| own := x.ownMales \| inRange := troop ? Math.hypot(x.heardX - troop.center[0], x.heardZ - troop.center[2]) < troo …` | fewer than 3 own males in view (or a female hearing calls from outside the range) | keep |  | 1342 |
+| ADV | `NOT maternalKin(c, o)` | the other is not its maternal kin (no mating between maternal kin) | keep |  | 1370, 1374, 1384, 1398, 1399 |
+| ADV | `o.age >= 10` | the other is 10 or older | keep |  | 1370, 1374, 1384, 1398, 1399 |
+| ADV | `!(g && g !== c && g.alive && dcc(c, g) < P.guardRivalRangeM)` | no other male is guarding her nearby | keep |  | 1374 |
+| ADV | `!guarded \| guarded := !!g && g.alive && g !== c && dcc(c, g) < P.guardedRangeM && dominates(g, c)` | she is not guarded by a male who outranks it | keep |  | 1374, 1384 |
+| ADV | `c.rankOrder <= 2 \|\| isAlpha \| isAlpha := troop?.alphaId === c.id` | it holds one of the top two ranks (or is the alpha) | keep |  | 1374 |
+| ADV | `o.swelling >= P.guardSwellingMin` | her swelling is at the guarding level or above | keep |  | 1374 |
+| ADV | `!isAlpha \| isAlpha := troop?.alphaId === c.id` | it is not the alpha (the alpha guards instead) | keep |  | 1384 |
+| ADV | `bond(c, o) >= P.consortBondMin` | its bond with her is at the consortship minimum or above | keep |  | 1384 |
+| ADV | `o.swelling >= P.consortSwellingMin` | her swelling is at the consortship level or above | keep |  | 1384 |
+| ADV | `c.carryingMeat < 0.05` | it holds (almost) no meat itself | keep |  | 1429 |
+| ADV | `c.energy > 0.35` | its energy is above 0.35 | keep |  | 1445, 1458 |
+| ADV | `world.environment.rain < 0.3` | it is not raining hard (rain under 0.3) | keep |  | 1445, 1458 |
+| ADV | `r > 0 \| r := huntRate(c, P, dist, x.ownMales, gaitOn(P) ? runSpeedOf(c, P) * 0.8 * bodyState(c) : P.walkMps)` | a capture can be expected and he needs energy: the hunt's expected energy rate is positive (the rules' value used as a gate) | keep |  | 1458 |
+| ADV | `!(o.action === 'charge' \|\| o.action === 'attack')` | the opponent is not charging or attacking now | keep |  | 1481 |
+| ADV | `NOT b < P.consoleBondMin && !kin \| kin := maternalKin(c, v)` | the victim is its maternal kin, or a partner with a bond at the consolation minimum or above | keep |  | 1493 |
+| ADV | `c.hunger < 0.75` | its hunger is under 0.75 | keep |  | 1514 |
+| ADV | `c.hunger < P.patrolMaxHunger` | its hunger is under the patrol maximum | keep |  | 1523 |
+| ADV | `env.rain < P.patrolMaxRain` | it is not raining hard | keep |  | 1523 |
+| ADV | `v > 0` | the mechanism gives the act a positive value: the rules' value used as a gate (patrol lead: stale border, odds, daylight left, fatigue; pant-hoot: what allies out of sight learn against what the crop loses) | keep |  | 1523, 1538 |
+| ADV | `x.ownMales >= P.patrolMinMales` | at least the minimum number of adult males of its own in view | keep |  | 1523 |
+| ADV | `env.daylight > P.contactCallMinDaylight` | daylight is above the minimum for calling | keep |  | 1538 |
+| QUO | `time - x.joinAt < 0.3` | it heard the call within the last 0.3 h (a window after the event) | keep |  | 691 |
+| QUO | `c.age - x.immigrantAge < 2` | it immigrated less than 2 years ago (a window) | keep |  | 858 |
+| QUO | `open \| open := greetMem ? x.greet[o.id] === undefined \|\| ((o.action === 'charge' \|\| o.action === 'attack') && o.targetId === c.id) : time - last > P.pantGruntRe …` | once per association: it has not greeted this animal since they last met, or that animal has just charged or attacked it (without the switch: 8 h since the last greeting) | keep |  | 881 |
+| QUO | `open \|\| quotaTrace.on \| open := greetMem ? x.greet[o.id] === undefined \|\| ((o.action === 'charge' \|\| o.action === 'attack') && o.targetId === c.id) : time - las …` | once per association: it has not greeted this animal since they last met, or that animal has just charged or attacked it (without the switch: 8 h since the last greeting) | keep |  | 881 |
+| QUO | `time - (x.hooAt ?? NEVER) <= P.travelHooWindowMin / 60` | it heard the hoo within the last few minutes (a window after the event) | keep |  | 888 |
+| QUO | `time - at < (fast ? fastSpanH(P) : P.impulseDurationH) \| fast := endoOn(P, 'endoFast')` | a storm began within the span of the fast arousal state (a window after the event) | keep |  | 898 |
+| QUO | `x.lastDisplay < at` | it has not displayed since the storm began (once per storm) | keep |  | 898 |
+| QUO | `x.impulseUntil > time` | the impulse is still open (a window of 0.1 h after it was raised) | rules |  | 1172 |
+| QUO | `time - x.lostAt < (fastRed ? fastSpanH(P) : endoRed ? P.endoStressTauH : P.redirectWindowH) \| fastRed := endoOn(P, 'endoFastRedirect') \| endoRed := endoOn(P, 'e …` | it lost a contest within the last stress time constant (a window after the event) | keep |  | 1188 |
+| QUO | `x.lastAgg < x.lostAt` | it has not aggressed since that loss (once per loss) | keep |  | 1188 |
+| QUO | `(ix(o).coerce[c.id] ?? 0) < P.coerceMaxRepeats` | it has charged her fewer times than the repeat limit | keep |  | 1203 |
+| QUO | `o.age - ox.immigrantAge < 2` | she immigrated less than 2 years ago (a window) | keep |  | 1213 |
+| QUO | `time - ox.victimAt < 0.05` | the other was attacked within the last 0.05 h (a window after the event) | keep |  | 1240 |
+| QUO | `time - x.coalAt < P.coalitionWindowH` | it was alerted to a conflict within the last 0.05 h (a window; who is alerted is decided in conflict.ts) | keep |  | 1255 |
+| QUO | `world.time - x.victimAt <= 0.03` | it was threatened within the last 0.03 h, about 2 minutes (a window after the event) | keep |  | 1283, 1284, 1287, 1288 |
+| QUO | `time - x.heardAt < 0.2` | it heard them within the last 0.2 h (a window after the event) | keep |  | 1340, 1341, 1342 |
+| QUO | `(mateOpen && pg > 0) \|\| quotaTrace.on \| mateOpen := mv \|\| time - x.lastMate > P.mateIntervalH \| mv := matingValueOn(P) \| pg := mv ? paternityGain(o, c, P, world …` | the mating quota: 1.5 h since his last copulation (the diagnostic hook aside) | keep |  | 1370 |
+| QUO | `mv \|\| time - x.lastMate > P.mateIntervalH \| mv := matingValueOn(P)` | the mating quota: 1.5 h since his last copulation | keep |  | 1370 |
+| QUO | `(maleOpen && pg > 0) \|\| quotaTrace.on \| maleOpen := mv \|\| time - ix(o).lastMate > P.mateIntervalH \| mv := matingValueOn(P) \| pg := mv ? paternityGain(c, o, P, w …` | the male's mating quota gates her offer too: 1.5 h since his last copulation (the diagnostic hook aside) | keep |  | 1398, 1399 |
+| QUO | `mv \|\| time - ix(o).lastMate > P.mateIntervalH \| mv := matingValueOn(P)` | the male's mating quota gates her offer too: 1.5 h since his last copulation | keep |  | 1398, 1399 |
+| QUO | `mv \|\| time - x.lastMate > 0.3 \| mv := matingValueOn(P)` | 0.3 h since her last copulation | keep |  | 1398, 1399 |
+| QUO | `((s.huntDay[c.troopId] ?? NEVER) > time && x.ownMales >= P.huntMinMales) \|\| (x.impulse === IMPULSE_HUNT && x.impulseTarget === p.id && x.impulseUntil > time &&  …` | he has only just met this colobus group with enough own males in view (the lead is weighed for 0.1 h after the encounter; or on an experiment's hunting day) | keep |  | 1458 |
+| QUO | `time - lc.time < P.reconcileWindowH \| lc := c.lastConflict` | the conflict was within the post-conflict window | keep |  | 1481 |
+| QUO | `x.recon < lc.time \| lc := c.lastConflict` | it has not reconciled since that conflict (once per conflict) | keep |  | 1481 |
+| QUO | `time - vx.victimAt <= P.consoleWindowH` | the other was a victim within the consolation window | keep |  | 1493 |
+| QUO | `vx.consoledAt <= vx.victimAt` | the victim has not been consoled yet (once per event) | keep |  | 1493 |
+| QUO | `x.consoleAt <= vx.victimAt` | it has not consoled since that attack (once per event) | keep |  | 1493 |
+| QUO | `!(P.patrolValue >= 2) \|\| (x.impulse === IMPULSE_PATROL && x.impulseUntil > time)` | his party has only just come to hold enough adult males (the lead is weighed for 0.1 h after that fusion; nothing is rolled) | keep |  | 1523 |
+| DIC | `(x.impulse === IMPULSE_TRANSFER && x.impulseUntil > time) \|\| c.action === 'transfer' \|\| intent \| intent := x.transferTo > 0 && c.troopId === c.natalTroopId` | a dispersal impulse was rolled (a yearly hazard for a natal female of dispersal age while swollen), or the transfer it began is still under way | rules |  | 939 |
+| DIC | `x.impulse === IMPULSE_INFANTICIDE` | an infanticide impulse was rolled at perception (per look at a stranger's infant when its males outnumber theirs by the margin, or for a new alpha and an infant he did not sire) | rules |  | 1172 |
+| DIC | `gangT \| gangT := x.impulse === IMPULSE_GANG && x.impulseUntil > time ? byId.get(x.impulseTarget) : undefined` | a gang-attack impulse was rolled at perception (probability 0.5, one roll per 6 h at most, with 3 or more own males against a lone stranger of 10 or more, on patrol or near the range's edge) | rules |  | 1320 |
 
 123 distinct conditions: 92 advice, 28 quota or timer, 3 dice. Proposed: keep 113, drop 6, leave with the rules 4. Of the 6 to drop, 2 need no teacher but the rules (the rules value every option the rule cut), 1 can go only for the pairs a wild choice record covers and 3 only once body outcomes are allowed as a teacher.
 
 ## 7. The switches of the working base the sites stand behind
 
-trace off; resources off; circ on; dark on; rH on; rS on; race on; fr on; gv off; shortlist on; routeChain off; callerRate on; social4 on; cohesion on; callTrip off; party on; joinChoice on; partyJoinTrip on; travelHoo on; followCarer on; endoRain on; endoEscalate on; body off; carry off; respond off; bodyAny off; huntValue on; huntEncounter on; pv on; pv2 on; cv on; callGap1 on; callGap2 on; contactCall on; mv off; aggr1 on; aggr2 on; aggr4 on; social1 on; social2 on; social8 on; weanOutcome off; water on; dv on; guardBySize on.
+trace off; resources off; menu1 off; menu2 off; circ on; dark on; rH on; rS on; race on; fr on; gv off; shortlist on; routeChain off; callerRate on; social4 on; cohesion on; callTrip off; party on; joinChoice on; partyJoinTrip on; travelHoo on; followCarer on; endoRain on; endoEscalate on; body off; carry off; respond off; bodyAny off; huntValue on; huntEncounter on; pv on; pv2 on; cv on; callGap1 on; callGap2 on; contactCall on; mv off; aggr1 on; aggr2 on; aggr4 on; social1 on; social2 on; social8 on; weanOutcome off; water on; dv on; guardBySize on.
 
-370 distinct conditions over 94 sites; classification file sha256 73b55a8a03ae….
+374 distinct conditions over 96 sites; classification file sha256 627cb7d6c8e4….
 

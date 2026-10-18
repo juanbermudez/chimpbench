@@ -33,6 +33,7 @@ import { readReceipts, readRegistry } from './lib/r10-run';
 import { animalLedger, armLedger, linesOf, nightInfo, nightReceipts, totalOf, truthfulName, type AnimalLedger, type ArmInfo, type ArmLedger, type FourLines, type KernelKind, type LedgerReceipt } from './lib/who-decided';
 import type { Valuation } from './valuation-ledger';
 import { valuationMarkdown } from './valuation-ledger';
+import { printSection, readList } from './r12-hand-rules';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const git = (cmd: string) => { try { return execSync(`git ${cmd}`, { cwd: ROOT, encoding: 'utf8' }).trim(); } catch { return ''; } };
@@ -361,6 +362,8 @@ export function reportMarkdown(R: ReceiptsLedger | null, taps: TapResult[], V: V
     for (const n of nums) o.push(`| ${n.name} | ${n.value} | ${n.read} | ${n.where} |`);
     if (V) o.push('', `Behind the menu itself stand the rules' scores: ${V.offerSites.total} offer sites over ${V.offerSites.actions} actions, ${V.literals.score} inline score literals, ${V.literals.byContext.gate ?? 0} thresholds in the conditions in front of offers, ${V.terms.total} terms switched by who the animal is, and ${V.registry.read} registry parameters (section 5). A rules-taught adapter reads them a second time through its labels.`);
     o.push('');
+    // stage R12 build (docs/staging/r12-build-prereg.md §5): the rules the user's rulings keep, counted under these parameters
+    o.push(...printSection(paramsForNumbers, readList(), 'the working base'));
   }
 
   // ---- 2 to 4: the shadow tap --------------------------------------------------------------------------------------

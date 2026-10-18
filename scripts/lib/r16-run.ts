@@ -70,6 +70,7 @@ export async function runDay16(e: Engine16, o: DayOpts16): Promise<{ summary: Da
   const w = e.world, minAge = o.minAge ?? MIN_AGE, n = o.ticks ?? DAY, day = e.day + 1, t0 = Date.now(), started = new Date().toISOString(), time0 = w.time;
   const P = paramsOf(w);
   if (P.resourceTargets !== 1 || P.activityFirst !== 2 || P.observeV5 !== 1) throw new Error('the R16 runner needs resourceTargets 1, activityFirst 2, observeV5 1');
+  if (P.menuPossible >= 1) throw new Error('the R16 runner serves R15\'s contract; a world of the R12 menu (menuPossible) is refused');
   if (o.ask && w.modelPolicy.mode !== 'lockstep') throw new Error('the R16 runner needs the lockstep model policy');
   const driven = o.driven ?? ((c: Chimp) => isDriven16(c, minAge)), counters0 = o.counters?.() ?? { stalls: 0, retries: 0, warmups: 0 };
   const ms: { kind: number[]; target: number[] } = { kind: [], target: [] }, tok: number[] = [];
