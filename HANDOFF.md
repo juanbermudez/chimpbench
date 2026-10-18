@@ -60,6 +60,13 @@ pools, the cinematic view films the animal it names, Storm keeps the watched ani
 no see-through slab, no seated glide, no infant put-down jump, no shelter statues. Open (plan, Stage W14): the camera
 at a sprint at 1 min/s, limb jumps at a climb's start and end, oversized fruit clusters, the portrait showing hands,
 the shelter elbow flip, the pick-up fly-in, grooming begun 11 m apart in a crown.
+**18 October (written 11:40 EDT).** Stage R12's build (the menu as the user ruled on all ten questions, on R15's
+two-stage path behind `menuPossible`, 0 by default; no model) passed its second reading and is merged (ca418af);
+`docs/staging/r12-build-prereg.md` §16 to §18, `r12-build-numbers.md`. Level 2 (an adult male choosing which adult male
+to groom) stays off until the user says yes or the Ngogo route qualifies. Stage R16's session 1 stopped at its
+preflight on 18 October at 11:19 (R15's preflight worker did not accept the chain's lock; nothing loaded); repaired by
+amendment 25 (`r16-prereg.md` §25, merged as c7644d4; the frozen checkout moved to 6cdf1fa and its pin re-taken by
+`scripts/r16-repin.py`), and session 1 restarted at 11:36.
 **Stage R16 (written 18:40 EDT, 17 October):** registered, built and reviewed with no model (eight defects repaired by the
 second reader), merged into `track-e` (6c72d70) and frozen as `.claude/worktrees/bench-r16` at 2971e14. The no-model
 dry chain and session 0 run in the detached screen session `r16-s0` (outputs `bench-r16/artifacts/r16-dry.out`,
@@ -369,6 +376,8 @@ addresssed and we move faster parelalizing more work to get closer to the real r
 6. Older operational repairs still on record: `r9-run.sh` and `r9-seed2.sh` identify model processes only by interpreter path; earlier chain guards may not know newer trainers; `r13-run.sh report` does not require `rules-plain.json`; the population script omits ledger items 3–8. R14's own launch must guard process names and prior chain state files.
 
 ## 6. Waiting on the user
+
+**New on 18 October, from stage R12's build** (`docs/staging/r12-build-prereg.md`, its integrator section): whether a rules-taught arm may label the opened male partners by the rules' formula (recommended: yes, reported apart and named a scaffold; until then level 2 stays off and no such row is written); whether ruling 3's count is large enough for a slot "known to my community" (no threshold set; M1: 12% and 18% of the rules' own food trips went to a listed tree the animal never saw itself); whether trees the animal saw itself within 240 h but no longer holds in memory (class c: under 1% of those trips) count as "perceived or remembered" under ruling 2; whether the choice among settled partners and the targets of the other social kinds should open next (not ruled; the rules value each, so a scaffold teacher exists); a companion's goal tree under "Go to food" or "Go along with a companion" (no recommendation; left as R15 built it until the user rules); "Carry on" as an option (recommended yes; not built).
 
 Every decision open for the user on 12 October 2026, the most consequential first, each with where it is written
 and what is recommended. Where no recommendation is on file it says so, and what is built stands until a ruling.

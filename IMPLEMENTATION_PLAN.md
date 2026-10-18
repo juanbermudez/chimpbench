@@ -581,6 +581,21 @@ recipe named only when both trainings agree; the app demo only on a viable adapt
 **Status**: Registered and built on branch `r16-scale-and-own-states` (17 October 2026), reviewed by a second reader (eight defects repaired, §23 and §24), merged into `track-e` (6c72d70). Frozen checkout `bench-r16` at 2971e14; the no-model dry chain and session 0 started at 18:39 EDT on 17 October; **no model step has run**. The integrator runs it in three model sessions (about 33 model hours; 27 if s7's population is not
 viable) from a frozen checkout, `docs/staging/r16-prereg.md` §22.
 
+
+## Stage R12 (build): the menu as ruled, on R15's two-stage path
+**Goal**: build the ten rulings of 17 October 2026 behind one switch (`menuPossible`, 0 by default) on top of R15:
+at level 1 the model picks which dominant to greet, and the three acts opened by dice leave its menu and stay with the
+rules; at level 2 (off unless a run names it) an adult male also picks which adult male to groom, whatever he is doing;
+every rule the rulings keep is listed (`data/r12-hand-rules.json`) and counted in every result; the rules' trips to
+community-listed trees are counted; the teachers and label formats of the new target calls are prepared. No training and
+no model run.
+**Success Criteria** (`docs/staging/r12-build-prereg.md` §10 to §12, amendment A1): with the switch at 0 R15's and R16's
+requests, packets, labels, receipts and hashes match the pin recorded before any code; goldens and the field pin
+unchanged; a rules world hashes the same at every level; the tests of §10.2 pass; the offer table's signed counts unchanged.
+**Tests**: `tests/r12-menu.test.ts` (22), `tests/r12-offer-table.test.ts`, `scripts/r12-pin.ts check`.
+**Status**: Built on `r12-menu` with no model (section 17), read by a second reader who found four defects in reporting, labels and tests (none in the simulation) and fixed them (section 18); merged into `track-e` on 18 October 2026 (ca418af). The pin is equal at 0 (checked on the untouched source too); 23 R12 tests and 179 tests of the files it touches pass; M1 and M2 run (`docs/staging/r12-build-numbers.md`); the whole suite after the second reader's five commits waits for a gap between R16's model sessions. Every later trained arm on this menu is a
+"rules-taught model on a rules menu (the R12 menu)".
+
 ## Stage R12 (design only): The menu by what is possible
 **Goal**: the table the user must sign off before any hand rule in front of an option leaves code, and the design of a menu built from what the animal can do with what it sees or remembers, asked as "what kind of thing next" and then "which one".
 **Status**: Documents and a read-only script on branch `r12-menu-design`, reviewed; merged into `track-e` on 11 October 2026 (`docs/staging/r12-menu-table.md` with a first page for the user, `docs/staging/r12-prereg.md`, `scripts/r12-offer-table.ts`). Of the 94 places where the rules offer an option, 19 are unreachable on the working base, 6 are reached only by animals under 8 and 69 are live; of the live ones 6 are open by physical or perceptual possibility alone, 2 more depend only on whom the act is addressed to, and 61 sit behind a hand rule (advice at 58, a quota or timer at 25, dice at 3). Nothing is built: ten rulings are the user's (first page of the table), the speed estimate for two short calls is unmeasured, and the review found one way a held draw can still switch across the two calls.
