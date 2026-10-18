@@ -753,6 +753,95 @@ hashes and counts only) and checked again on the unchanged source at 23:10 to 23
   offered: 1,552 kind asks, of which 772 had an unsettled adult male in reach of an adult male.
 - **The whole suite and the build**: see the last entry of this log.
 
+## 18. Second reading (18 October 2026, 11:12 to 11:38 EDT; times from `date`)
+
+A second reader tried to refute the build, with no model. The builder's last entry of section 17 was never written (its
+session ended after commit 771d7279); the logs it left in `artifacts/r12/` (gitignored) show the whole suite at 23:55 on
+the final code, two files at a time: 1,585 tests, 1,584 passed, 1 skipped (a validation file not on this computer), none
+failed; and `pnpm build` (type check and production build) passed at 23:58.
+
+**The machine.** No model process was started. At 11:18 the integrator's launcher started R16's session 1 in `bench-r16`;
+it stopped at 11:19 at its preflight step (its own log: the preflight worker wanted its own supervisor lock), was
+relaunched at 11:36 and began its model step `preflight-zero` at 11:37:22. From then on this reading ran no test, no run
+and no type check. Nothing of `bench-r16`, its screen sessions or `artifacts/r14-chain.lock` was touched. One-minute load
+between 2 and about 5. Seeds 48 and 7 only.
+
+**Order and the attack.** In git the registration came alone first (b5b6f7c2, 22:36), then amendment A1 alone (df55ceae,
+23:05), then the pin script and the pin with no change under `src/` (3cde3804, 23:14), then the code (ee34529e, 23:32).
+Sections 0 to 16 were not edited after the code: the last commit changed only section 17 and the integrator's lines.
+Every one of the attack's 14 amendments, 8 corrections and 14 gaps maps onto A1.1 to A1.14 and is built; the one different
+reading (A1.2) is stated with its reason. One slip of time: A1's heading says written 23:05 to 23:20, but it was committed
+at 23:05:30 and the pin was recorded from 23:07.
+
+**With the switch at 0.** `scripts/r12-pin.ts check` reproduces byte for byte at the build's head and again at this
+reading's head. The pin itself was checked on an export of the pin commit's tree (its source equal to 286fe38): it
+reproduces there too, so it was recorded on the unchanged source. The goldens (`tests/sim-params.test.ts`) and the field
+pin (`tests/sim-track-e.test.ts`) pass. World hashes computed by the reader on the unchanged source and on the branch are
+equal: default worlds (the small map, seeds 48 and 7, and the field map, seed 48; one day each), the working base on the
+field map, and the working base with R15's switches and the in-tick kernel path (`kernelSim` 1 for a day on both seeds,
+`kernelSim` 2 for half a day). The only byte that moves at 0 is the registry hash stored in a new world's settings (a new
+parameter always moves it; older saves open with the usual notice), which the world hash leaves out.
+
+**Each ruling, read at its sites.** Ruling 7: the opened offer stands inside the same conditions as the rules' choice of
+the best dominant, without that last comparison, so every member outranks the greeter; the group is those members, the
+representative, nearest first, at most 8. Ruling 6: the opened offer needs `menuPossible` 2, an adult male actor and an
+adult male partner in reach; at level 1 the groom kind keeps one target; no other pair is opened (an unsettled adult female
+or a male of 10 to 14 is refused). Ruling 10: the three dice acts leave the request and the legal pool before anything is
+built; at a decision point the rules start one when it is their argmax and nothing is asked, after the gate (A1.2: an
+intention the gate holds wins, as it does for an animal on the rules). Nothing else is opened: the drink offer keeps its
+thirst line in the model-only call, the nest and shelter sites are untouched, the community's list is never in the model's
+pool (a new test, 12c), and the stranger and courtship sites are unchanged. Ruling 3's count exists and prints (M1).
+
+**Probes with the switch on** (fakes only): a stale answer, a target that moves out of reach or dies between the request
+and the answer, a pant-grunt to an animal that does not outrank the greeter or was already greeted, a grooming of an
+unsettled adult male at level 1 or of an unsettled animal that is not an adult male at level 2, and a dice act sent as an
+answer are all refused by the legality re-check; a dominant who walks away while the greeting is held is set aside at the
+next decision point and the animal waits for its kernel; a transfer rolled while an answer is pending is started by the
+rules and the pending answer is refused. Over 451 packets of a four-day field world at level 2, replacing every option's
+score and reason left every packet the same.
+
+**Reruns.** M1 (seeds 48 and 7) at this reading's head: every figure equal to the builder's files (only the wall-clock
+seconds differ), and both worlds end on the hash of the untapped world at level 0. M2 (24 runs): every figure equal, every
+replay exact.
+
+**Defects found and repaired** (each its own commit):
+
+1. *A training row at a decision the rules take* (62cbeb5d). Section 8.1 says a decision at which the rules start a dice
+   act makes no row; the labeller excluded the dice act's share and wrote the row anyway, so a later collection would teach
+   the model kinds at decisions where it is never asked. Now no row, counted as "dice act: the rules start it"; nothing
+   changes at 0. Test 10b, which an `if` let pass without checking, now holds both cases.
+2. *Tests that held less than they said* (a098c5e3). 4c never reached the cap (nine copies of one option); 8d compared two
+   lengths with an act that names no animal. Both now test what they name; 12c is the test section 6 asked for.
+3. *Ruling 3's count missing from M2* (ec00b05d), which section 6 (b) asks of every run: added (1,732 rules trips, all to
+   trees in the animals' own memory, as must be in the first three hours of a fresh world before the community's list
+   exists). The printed hand-rule section showed the same "kept except for the adult male pair" at levels 1 and 2; it now
+   says whether the pair opening is on.
+4. *Level 2 described as a plain option* (ff952191) in the parameter's note and in `docs/simulation.md`; both now say it
+   has no teacher in this build and is not for a run whose result is read until the user says yes or the Ngogo route
+   qualifies.
+
+**Not repaired, named.** M1 and M2 ran at level 2 although A1.1 says level 2 is used for a run only after the user's yes
+or the Ngogo qualification; both are no-model (a rules world, where the level changes only the requests a tap builds, and
+a wiring run with control kernels) and nothing in them is read as behaviour. A scaffold row (written only with
+`scaffold: true`) carries the same teacher name as a greeting row; it is told apart only by its options' `rulesGate`
+flags, so any later training must filter on those. Section 5's counts of what the score threshold, the slot caps and the
+patrol's silence removed at a kernel's decision points (`offerTap`) are not in M1 or M2. Test 12 checks ruling 3's classes
+on a crafted world, not a count of one on a world whose only trip is a listed tree (M1 and M2 carry the count). With
+`urgencyPersist` 1 (0 on the working base) the gate's pay test would read the model's pool without the dice acts and the
+rules' list with them, so the gate could hold a model animal where it would open a rules animal.
+
+**Tests run by this reading** (one file, or two at a time, each with the load under 5): `tests/r12-menu.test.ts` (23
+tests), every `tests/r15-*.test.ts`, `tests/r16-scale.test.ts`, `tests/r12-offer-table.test.ts` (104 in all, passed);
+`tests/r7-ledger.test.ts`, `tests/r8-packet.test.ts`, `tests/kernel.test.ts`, `tests/valuation-ledger.test.ts`,
+`tests/persist-envelope.test.ts` (75, passed); `tests/sim-params.test.ts` and `tests/sim-track-e.test.ts` (passed);
+`gen-params --check`, `scripts/r12-hand-rules.ts --check` and `scripts/r12-offer-table.ts --check` (clean); the strict type
+check on `src/` with the changed scripts and test (clean). **Not run by this reading:** the whole suite and `pnpm build`
+after its four commits (R16's model step began first); the changes are in scripts, one test file and two notes, and every
+file that imports them was run.
+
+**For the integrator, in addition to the lines below:** the status line reads "Built on `r12-menu` with no model; second
+reading done (four repairs, section 18)", the test count is 23, and the decisions that are the user's gain nothing new.
+
 ## For the integrator (proposed lines; HANDOFF.md, IMPLEMENTATION_PLAN.md and AGENTS.md are not edited by this stage)
 
 Written after the build (section 17), so these lines say what is built. The branch is `r12-menu`, not pushed or merged.
