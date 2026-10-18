@@ -149,7 +149,9 @@ export function printSection(overrides: Overrides, list: HandRuleList | null = r
     `List \`${LIST_FILE}\`, hash ${list.hash} (${list.counts.all} rules: ${fmt(list.counts.bySource)}). On the path of an animal a kernel decides for, under ${label}'s parameters (resourceTargets ${P.resourceTargets}, menuPossible ${P.menuPossible}): **${on.length} hand rules**.`,
     '', `- By status: ${fmt(c.byStatus)}.`, `- By ruling: ${fmt(c.byRuling, Object.fromEntries(Array.from({ length: 10 }, (_, i) => [String(i + 1), `ruling ${i + 1}`])))}.`,
     `- By class: ${fmt(c.byClass, { ...CLASS_NAMES, NUM: 'number', TEXT: 'hand-set text' })}.`,
-    `- Cut on the model's path by a switch that is on (still counted, off the path): ${cut.length ? cut.map(r => `${r.words} (${r.cutBy!.id})`).join('; ') : 'none'}.`, ''];
+    `- Cut on the model's path by a switch that is on (still counted, off the path): ${cut.length ? cut.map(r => `${r.words} (${r.cutBy!.id})`).join('; ') : 'none'}.`,
+    // second reading: the status "kept except for the adult male pair" says what level 2 would do; say whether it does here
+    `- The adult male pair opening (ruling 6, \`menuPossible\` 2): ${P.menuPossible >= 2 ? 'on: an adult male\'s grooming target call lists the adult males in reach whatever they are doing, so "only a settled partner" binds for every other pair' : 'off: "only a settled partner" binds for every pair, adult males included'}.`, ''];
 }
 
 export function readList(file = LIST_FILE): HandRuleList | null { const f = resolve(ROOT, file); return existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) as HandRuleList : null; }

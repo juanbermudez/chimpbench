@@ -15,13 +15,13 @@ import type { Kernel, KernelRequest } from '../src/kernel/types';
 import { r15Packet } from '../src/providers/packet';
 import { candidateMeta, computeCandidates, V } from '../src/sim/candidates';
 import { loopTap } from '../src/sim/decide';
+import { rgMenu, rgTap } from '../src/sim/rg';
 import { isAdultMale } from '../src/sim/hierarchy';
 import { optionKind, same } from '../src/sim/menu';
 import { paramsOf } from '../src/sim/params';
 import { isDiceOption, settledPartner } from '../src/sim/possible';
 import { buildRequest, targetRequest } from '../src/sim/request';
 import { resourcePercepts } from '../src/sim/resources';
-import { rgMenu } from '../src/sim/rg';
 import { index, simOf, TICK_HOURS } from '../src/sim/state';
 import { createWorld, tickWorld } from '../src/simulation';
 import type { Chimp, World } from '../src/types';
@@ -211,6 +211,12 @@ export interface M2Run {
   identityHash: string;
   /** What is possible but not offered (§7) at every kind ask of the run, from the state alone: asks where it held. */
   possible: Record<string, number>;
+  /**
+   * Ruling 3's count in this run (registration §6 (b); added by the second reading): the own food trips the rules started for
+   * the animals of 8 and over on the rules (every animal but the focal five), by ruling 3's classes; and the focal animals'
+   * rules fallbacks that started a food trip (their trees are not classed: the run keeps no copy of the world at that moment).
+   */
+  ruling3?: { trips: number; bySource: Record<TreeSource, number>; fallbackTrips: number };
 }
 export async function runM2One(seed: number, level: number, mode: HarnessDecode['mode'], kernel: (typeof M2.kernels)[number]): Promise<M2Run> {
   const decode: HarnessDecode = { mode, salt: 1, hold: 'act' };
@@ -223,6 +229,12 @@ export async function runM2One(seed: number, level: number, mode: HarnessDecode[
   const identity = hashR15({ stage: 'R12-build', contract: 'menu-targets-v1', level, kernel, decode });
   const journal: R15Call[] = [], dice: Record<string, number> = {}, groupSizes: Record<string, Record<string, number>> = {}, possible: Record<string, number> = {};
   loopTap.dice = (c, k) => { if (focal.includes(c.id)) inc(dice, k.action === 'transfer' ? 'transfer' : 'attack'); };
+  // ruling 3 (§6 (b)): the rules' own fresh trips in this run, read when the rules choose (before the act starts), read only
+  const ruling3: NonNullable<M2Run['ruling3']> = { trips: 0, bySource: { own: 0, never: 0, old: 0, unremembered: 0 }, fallbackTrips: 0 };
+  rgTap.fn = (c, _list, _menu, _p, chosen, why) => {
+    if (why === 'kept' || why === 'arrived' || focal.includes(c.id) || !ownTrip(chosen) || (c.action === chosen.action && c.targetId === chosen.targetId)) return;
+    ruling3.trips++; ruling3.bySource[treeSource(world, c, chosen.targetId)]++;
+  };
   let result: Awaited<ReturnType<typeof runR15>>;
   try {
     result = await runR15(world, KERNELS[kernel], { ticks: M2.ticks, identity, decode, onCall: call => journal.push(call),
@@ -232,7 +244,8 @@ export async function runM2One(seed: number, level: number, mode: HarnessDecode[
         const c = index(w).byId.get(request.context.chimpId)!, p = possibleNotOffered(w, c, computeCandidates(w, c, []));   // pure: computeCandidates writes nothing when given its own list
         for (const [k, v] of Object.entries(p)) inc(possible, k, typeof v === 'boolean' ? (v ? 1 : 0) : v > 0 ? 1 : 0);
       } });
-  } finally { loopTap.dice = null; }
+  } finally { loopTap.dice = null; rgTap.fn = null; }
+  for (const rc of result.receipts) if (rc.by === 'rules' && /^travel:/.test(rc.applied) && index(world).treeById.has(Number(rc.applied.slice(7)))) ruling3.fallbackTrips++;
   const replay = await runR15(structuredClone(initial), r15FakeKernel, { ticks: M2.ticks, identity, decode, journal, replayOnly: true });
   const exact = replay.endHash === result.endHash && JSON.stringify(replay.receipts) === JSON.stringify(result.receipts);
   const targetCalls: Record<string, number> = {}, fallbacks: Record<string, number> = {};
@@ -244,7 +257,7 @@ export async function runM2One(seed: number, level: number, mode: HarnessDecode[
   const socialEnded = result.receipts.filter((rc, i) => isSocial(rc) && result.receipts.slice(i + 1).some(o => o.id === rc.id)).length;
   return { seed, level, decode: mode, kernel, ticks: M2.ticks, focal, startHash, endHash: result.endHash, replay: exact ? 'exact' : 'differs', journalHash: hashR15(journal), receiptsHash: hashR15(result.receipts),
     asks: result.receipts.length, kindCalls: journal.filter(c => c.stage === 'kind').length, targetCalls, groupSizes, applied: result.receipts.filter(r => r.by === 'kernel').length, fallbacks,
-    dice, dicePerAnimalHour: hours ? nDice / hours : 0, socialApplied: result.receipts.filter(rc => rc.by === 'kernel' && rc.calls.some(k => k.stage === 'target/greet_or_appease' || k.stage === 'target/groom')).length, socialEnded, identityHash: identity.slice(0, 16), possible };
+    dice, dicePerAnimalHour: hours ? nDice / hours : 0, socialApplied: result.receipts.filter(rc => rc.by === 'kernel' && rc.calls.some(k => k.stage === 'target/greet_or_appease' || k.stage === 'target/groom')).length, socialEnded, identityHash: identity.slice(0, 16), possible, ruling3 };
 }
 
 // =====================================================================================================================
@@ -300,6 +313,12 @@ export function numbersMarkdown(m1: M1Result[], m2: M2Run[]): string {
   for (const r of m2) for (const [k, h] of Object.entries(r.groupSizes)) for (const [n, v] of Object.entries(h)) { sizes[k] ??= {}; sizes[k][n] = (sizes[k][n] ?? 0) + v; }
   const pos: Record<string, number> = {}; let asks = 0;
   for (const r of m2) { asks += r.kindCalls; for (const [k, v] of Object.entries(r.possible ?? {})) pos[k] = (pos[k] ?? 0) + v; }
+  const r3 = m2.filter(r => r.ruling3);
+  if (r3.length) {
+    const t = { trips: 0, own: 0, never: 0, old: 0, unremembered: 0, fallbackTrips: 0 };
+    for (const r of r3) { t.trips += r.ruling3!.trips; t.fallbackTrips += r.ruling3!.fallbackTrips; for (const k of ['own', 'never', 'old', 'unremembered'] as const) t[k] += r.ruling3!.bySource[k]; }
+    o.push('', `Ruling 3 in the M2 runs (§6 (b)): of ${t.trips} own food trips the rules started for the animals on the rules in the ${r3.length} runs, ${t.own} (${pct(t.own, t.trips)}) went to a tree in their own memory within 240 h, ${t.never} (${pct(t.never, t.trips)}) to a listed tree never seen (a), ${t.old} (${pct(t.old, t.trips)}) to one seen more than 240 h ago (b), ${t.unremembered} (${pct(t.unremembered, t.trips)}) to one seen within 240 h but no longer remembered (c); the focal animals' rules fallbacks started ${t.fallbackTrips} food trips (not classed). The window is the first three hours of a fresh world, before the community's list is first written (at the end of the first day), so classes (a) to (c) cannot occur in it: M1 holds the reading.`);
+  }
   o.push('', `Possible, not offered, at the ${asks} kind asks of all M2 runs (asks where it held): ${Object.entries(pos).map(([k, v]) => `${k} ${v}`).join(', ') || 'none'}.`);
   o.push('', `Options per group on the kind requests of all M2 runs: ${Object.entries(sizes).filter(([k]) => ['greet_or_appease', 'groom', 'go_to_food', 'eat_here', 'drink'].includes(k)).map(([k, h]) => `${k}: ${fmtHist(h)}`).join('; ')}. Too short to read behaviour: no energy, nest or timing figure is read from M2.`, '');
   o.push(...printSection({ ...B, ...SWITCHES, menuPossible: 1 }, readList(), 'the runs at level 1'));

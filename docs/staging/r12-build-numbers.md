@@ -85,6 +85,8 @@ R15's wiring run (720 ticks from the first light, the first five animals of 8 or
 | 2, 7, held, rules-option | 64 | 64 | go_to_food 8, eat_here 15, greet_or_appease 1 | 64; none | 1; 1 | none (0.000) | exact |
 | 2, 7, held, uniform | 44 | 44 | go_to_food 3, eat_here 3 | 44; none | 0; 0 | none (0.000) | exact |
 
+Ruling 3 in the M2 runs (§6 (b)): of 1732 own food trips the rules started for the animals on the rules in the 24 runs, 1732 (100.0%) went to a tree in their own memory within 240 h, 0 (0.0%) to a listed tree never seen (a), 0 (0.0%) to one seen more than 240 h ago (b), 0 (0.0%) to one seen within 240 h but no longer remembered (c); the focal animals' rules fallbacks started 6 food trips (not classed). The window is the first three hours of a fresh world, before the community's list is first written (at the end of the first day), so classes (a) to (c) cannot occur in it: M1 holds the reading.
+
 Possible, not offered, at the 1552 kind asks of all M2 runs (asks where it held): maleUnsettled 772, groomUnsettledOther 903, greetNonDominant 925, waterNoThirst 1552, nestGated 404, shelterWarm 0.
 
 Options per group on the kind requests of all M2 runs: eat_here: 1: 909, 2: 368, 3: 245, 4: 14, 5: 12, 6: 4; go_to_food: 7: 165, 8: 1069; greet_or_appease: 1: 215, 2: 26; groom: 1: 260, 2: 47, 3: 61. Too short to read behaviour: no energy, nest or timing figure is read from M2.
@@ -97,6 +99,7 @@ List `data/r12-hand-rules.json`, hash fe0607eacd145314 (157 rules: table 123; me
 - By ruling: none 90; ruling 9 24; ruling 8 16; ruling 10 13; ruling 7 8; ruling 2 7; ruling 6 7; ruling 3 3; ruling 4 3; ruling 5 3.
 - By class: ADVICE 93; number 30; QUOTA OR TIMER 28; DICE 3; hand-set text 1.
 - Cut on the model's path by a switch that is on (still counted, off the path): only the four trees the rules value most are offered (the trip shortlist: a ranking by the rules' own value) (resourceTargets); of the dominants in reach, only the one the rules score highest is offered (alpha, displaying, nearer score more) (menuPossible).
+- The adult male pair opening (ruling 6, `menuPossible` 2): off: "only a settled partner" binds for every pair, adult males included.
 
 ### The hand rules the rulings keep (counted)
 
@@ -106,4 +109,5 @@ List `data/r12-hand-rules.json`, hash fe0607eacd145314 (157 rules: table 123; me
 - By ruling: none 90; ruling 9 24; ruling 8 16; ruling 10 13; ruling 7 8; ruling 2 7; ruling 6 7; ruling 3 3; ruling 4 3; ruling 5 3.
 - By class: ADVICE 93; number 30; QUOTA OR TIMER 28; DICE 3; hand-set text 1.
 - Cut on the model's path by a switch that is on (still counted, off the path): only the four trees the rules value most are offered (the trip shortlist: a ranking by the rules' own value) (resourceTargets); of the dominants in reach, only the one the rules score highest is offered (alpha, displaying, nearer score more) (menuPossible).
+- The adult male pair opening (ruling 6, `menuPossible` 2): on: an adult male's grooming target call lists the adult males in reach whatever they are doing, so "only a settled partner" binds for every other pair.
 
