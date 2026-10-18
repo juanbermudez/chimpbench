@@ -2062,9 +2062,11 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   // name says it is a rest, a sit or a perch.
   const I_ALL = idleBit(IDLE.scratch) | idleBit(IDLE.yawn) | idleBit(IDLE.shift) | idleBit(IDLE.glance) | idleBit(IDLE.nod);
   const I_FACE = idleBit(IDLE.yawn) | idleBit(IDLE.glance);
+  // (Stage W14, second reader: shelter glances and shifts its weight too. With yawns alone a party sat out a storm as
+  // statues; the hands hold the knees, so no scratch.)
   const IDLE_ALLOW = new Map<string, number>([
     ['stand', I_ALL], ['sitIdle', I_ALL], ['rest', I_ALL], ['perch', I_ALL], ['guard', I_ALL & ~idleBit(IDLE.nod)],
-    ['forage', idleBit(IDLE.shift) | idleBit(IDLE.glance)], ['nurse', I_FACE | idleBit(IDLE.shift)], ['groomee', idleBit(IDLE.yawn)], ['shelter', idleBit(IDLE.yawn)], ['clingTrunk', idleBit(IDLE.glance)],
+    ['forage', idleBit(IDLE.shift) | idleBit(IDLE.glance)], ['nurse', I_FACE | idleBit(IDLE.shift)], ['groomee', idleBit(IDLE.yawn)], ['shelter', idleBit(IDLE.yawn) | idleBit(IDLE.glance) | idleBit(IDLE.shift)], ['clingTrunk', idleBit(IDLE.glance)],
     ['pantHoot', idleBit(IDLE.shift) | idleBit(IDLE.glance) | idleBit(IDLE.scratch)],
     ...['sleep', 'dead', 'deadCarried', 'carryVentral', 'carryDorsal', 'drink', 'groom', 'play', 'wrestle', 'tickle', 'display', 'charge', 'attack', 'defend', 'submit', 'pantGrunt', 'embrace', 'mate', 'share', 'beg',
       'drum', 'alarm', 'patrol', 'listen', 'hunt', 'cower', 'nestBuild', 'walk', 'gallop', 'sneak', 'swagger', 'bipedWalk', 'climb', 'clamber', 'bind', 'portrait'].map(k => [k, 0] as [string, number]),

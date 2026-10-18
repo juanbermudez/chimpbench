@@ -102,6 +102,8 @@ const OUT_OF_STEP: [string, Variant][] = [
   ['groom, from behind', { clip: 'groom', role: 0, pair: true }], ['groom, mutual', { clip: 'groom', role: 1, pair: true }], ['groom, an infant held', { clip: 'groom', role: GROOM_LAP, pair: true }],
   ['groom, from the front', { clip: 'groom', role: GROOM_FRONT, pair: true }], ['groom, the shoulders', { clip: 'groom', role: GROOM_HIGH, pair: true }],
   ['alarm', { clip: 'alarm' }], ['listen, sniffing', { clip: 'listen', role: Listen.sniff }],
+  // Stage W14, second reader: sheltering from a storm (a slow sway at each animal's own tempo).
+  ['shelter', { clip: 'shelter' }], ['shelter in a crown', { clip: 'shelter', inTree: true }],
 ];
 
 test('animals that enter a clip in the same frame do not move in step', () => {
@@ -350,4 +352,18 @@ test('nothing in the creature renderer draws from Math.random for these movement
   const { readFileSync } = await import('node:fs');
   for (const f of ['poses.ts', 'perch.ts', 'secondary.ts', 'idle.ts', 'nests.ts']) assert.ok(!/Math\.random/.test(readFileSync(new URL(`../src/render/creatures/${f}`, import.meta.url), 'utf8')), `${f} has no Math.random`);
   assert.ok(!/Math\.random/.test(readFileSync(new URL('../src/render/creatures.ts', import.meta.url), 'utf8')), 'creatures.ts has no Math.random');
+});
+
+// Stage W14, second reader: a party sitting out a storm. The shelter clip was one pose for every animal (a 0.006 rad
+// shiver aside), and two animals that began to shelter in the same frame were drawn the same to the millimetre for the
+// 45 s filmed (films ST1, ST2). Each now holds its own hunch.
+test('animals sheltering together each hold their own hunch', () => {
+  const at = (id: number) => { w.bind(pose).reset(); CLIPS.shelter(w, ctxOf(id, 5, { clip: 'shelter' })); return Float32Array.from(pose.v); };
+  const poses = SOLO.map(at);
+  let least = Infinity;
+  for (let i = 0; i < poses.length; i++) for (let j = i + 1; j < poses.length; j++) {
+    let d = 0; for (let ch = 0; ch < POSE_SIZE; ch++) d = Math.max(d, Math.abs(poses[i][ch] - poses[j][ch]));
+    least = Math.min(least, d);
+  }
+  assert.ok(least > 0.03, `the closest two of eight sheltering animals differ by ${least.toFixed(3)} in some joint (before: under 0.001)`);
 });
