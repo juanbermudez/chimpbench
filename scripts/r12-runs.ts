@@ -209,6 +209,8 @@ export interface M2Run {
   journalHash: string; receiptsHash: string; asks: number; kindCalls: number; targetCalls: Record<string, number>; groupSizes: Record<string, Record<string, number>>;
   applied: number; fallbacks: Record<string, number>; dice: Record<string, number>; dicePerAnimalHour: number; socialApplied: number; socialEnded: number;
   identityHash: string;
+  /** What is possible but not offered (§7) at every kind ask of the run, from the state alone: asks where it held. */
+  possible: Record<string, number>;
 }
 export async function runM2One(seed: number, level: number, mode: HarnessDecode['mode'], kernel: (typeof M2.kernels)[number]): Promise<M2Run> {
   const decode: HarnessDecode = { mode, salt: 1, hold: 'act' };
@@ -219,12 +221,17 @@ export async function runM2One(seed: number, level: number, mode: HarnessDecode[
   const initial = structuredClone(world), startHash = worldHash(world);
   // the run's identity names the contract (A1.5: no git HEAD in it), so an R12 journal and an R15 one cannot be swapped
   const identity = hashR15({ stage: 'R12-build', contract: 'menu-targets-v1', level, kernel, decode });
-  const journal: R15Call[] = [], dice: Record<string, number> = {}, groupSizes: Record<string, Record<string, number>> = {};
+  const journal: R15Call[] = [], dice: Record<string, number> = {}, groupSizes: Record<string, Record<string, number>> = {}, possible: Record<string, number> = {};
   loopTap.dice = (c, k) => { if (focal.includes(c.id)) inc(dice, k.action === 'transfer' ? 'transfer' : 'attack'); };
   let result: Awaited<ReturnType<typeof runR15>>;
   try {
     result = await runR15(world, KERNELS[kernel], { ticks: M2.ticks, identity, decode, onCall: call => journal.push(call),
-      onRequest: (_w, request: KernelRequest) => { if (request.context.resourceChoice === 'kind') request.groups!.forEach((g, i) => { const k = request.context.resourceKinds![i]; groupSizes[k] ??= {}; hist(groupSizes[k], g.length); }); } });
+      onRequest: (w, request: KernelRequest) => {
+        if (request.context.resourceChoice !== 'kind') return;
+        request.groups!.forEach((g, i) => { const k = request.context.resourceKinds![i]; groupSizes[k] ??= {}; hist(groupSizes[k], g.length); });
+        const c = index(w).byId.get(request.context.chimpId)!, p = possibleNotOffered(w, c, computeCandidates(w, c, []));   // pure: computeCandidates writes nothing when given its own list
+        for (const [k, v] of Object.entries(p)) inc(possible, k, typeof v === 'boolean' ? (v ? 1 : 0) : v > 0 ? 1 : 0);
+      } });
   } finally { loopTap.dice = null; }
   const replay = await runR15(structuredClone(initial), r15FakeKernel, { ticks: M2.ticks, identity, decode, journal, replayOnly: true });
   const exact = replay.endHash === result.endHash && JSON.stringify(replay.receipts) === JSON.stringify(result.receipts);
@@ -237,7 +244,7 @@ export async function runM2One(seed: number, level: number, mode: HarnessDecode[
   const socialEnded = result.receipts.filter((rc, i) => isSocial(rc) && result.receipts.slice(i + 1).some(o => o.id === rc.id)).length;
   return { seed, level, decode: mode, kernel, ticks: M2.ticks, focal, startHash, endHash: result.endHash, replay: exact ? 'exact' : 'differs', journalHash: hashR15(journal), receiptsHash: hashR15(result.receipts),
     asks: result.receipts.length, kindCalls: journal.filter(c => c.stage === 'kind').length, targetCalls, groupSizes, applied: result.receipts.filter(r => r.by === 'kernel').length, fallbacks,
-    dice, dicePerAnimalHour: hours ? nDice / hours : 0, socialApplied: result.receipts.filter(rc => rc.by === 'kernel' && rc.calls.some(k => k.stage === 'target/greet_or_appease' || k.stage === 'target/groom')).length, socialEnded, identityHash: identity.slice(0, 16) };
+    dice, dicePerAnimalHour: hours ? nDice / hours : 0, socialApplied: result.receipts.filter(rc => rc.by === 'kernel' && rc.calls.some(k => k.stage === 'target/greet_or_appease' || k.stage === 'target/groom')).length, socialEnded, identityHash: identity.slice(0, 16), possible };
 }
 
 // =====================================================================================================================
@@ -287,6 +294,9 @@ export function numbersMarkdown(m1: M1Result[], m2: M2Run[]): string {
   for (const r of m2) o.push(`| ${r.level}, ${r.seed}, ${r.decode}, ${r.kernel} | ${r.asks} | ${r.kindCalls} | ${Object.entries(r.targetCalls).map(([k, v]) => `${k} ${v}`).join(', ') || 'none'} | ${r.applied}; ${Object.entries(r.fallbacks).map(([k, v]) => `${k} ${v}`).join(', ') || 'none'} | ${r.socialApplied}; ${r.socialEnded} | ${Object.entries(r.dice).map(([k, v]) => `${k} ${v}`).join(', ') || 'none'} (${r.dicePerAnimalHour.toFixed(3)}) | ${r.replay} |`);
   const sizes: Record<string, Record<string, number>> = {};
   for (const r of m2) for (const [k, h] of Object.entries(r.groupSizes)) for (const [n, v] of Object.entries(h)) { sizes[k] ??= {}; sizes[k][n] = (sizes[k][n] ?? 0) + v; }
+  const pos: Record<string, number> = {}; let asks = 0;
+  for (const r of m2) { asks += r.kindCalls; for (const [k, v] of Object.entries(r.possible ?? {})) pos[k] = (pos[k] ?? 0) + v; }
+  o.push('', `Possible, not offered, at the ${asks} kind asks of all M2 runs (asks where it held): ${Object.entries(pos).map(([k, v]) => `${k} ${v}`).join(', ') || 'none'}.`);
   o.push('', `Options per group on the kind requests of all M2 runs: ${Object.entries(sizes).filter(([k]) => ['greet_or_appease', 'groom', 'go_to_food', 'eat_here', 'drink'].includes(k)).map(([k, h]) => `${k}: ${fmtHist(h)}`).join('; ')}. Too short to read behaviour: no energy, nest or timing figure is read from M2.`, '');
   o.push(...printSection({ ...B, ...SWITCHES, menuPossible: 1 }, readList(), 'the runs at level 1'));
   o.push(...printSection({ ...B, ...SWITCHES, menuPossible: 2 }, readList(), 'the runs at level 2'));
