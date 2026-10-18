@@ -39,7 +39,7 @@ import { bodyStateOf } from '../simulation';
 import { paramsOf } from '../sim/params';
 import { sampleSmooth } from './creatures/motion';
 import { GAITS, Regime, advancePhase, createLock, limbPhase, resetLock, solveClimb, solveGait, stepLock, type ContactLock, type GaitSolve } from './creatures/gait';
-import { movingK, referenceRate, smallMapPace } from './creatures/pace';
+import { clipHeld, movingK, referenceRate, smallMapPace } from './creatures/pace';
 import {
   BLINK_SLOW, IDLE, SCRATCH, applyInertia, blinkAt, createAttention, createBlink, createIdle, createInertia, headLook, idleBit, idleCancel, idleLean, idleRate, idleSpend, idleStep,
   scanAngles, selectAttention, springStep, startInertia, type AttnCand, type Attention, type Blink, type Idle, type Inertia,
@@ -1479,7 +1479,9 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     const turning = !a.moving && a.carry === 0 && a.elevated < 0.5 && c.alive && (clip === 'stand' || clip === 'listen') && Math.abs(a.turnRate) > 0.9;
     if (turning) { clip = 'walk'; gait = 'walk'; role = 0; }
     const changed = clip !== a.clip || role !== a.role;
-    if (changed && a.clip && a.clipT < CLIP_DWELL && !URGENT.has(clip)) { clip = a.clip; role = a.role; gait = a.gait; }
+    // (Stage W14, second reader, pace.ts clipHeld: the dwell holds no body in a clip that does not move it once it has set
+    // off across the ground; a body landing from its trunk at 1 min/s was held seated while it ran off at 20 m/s.)
+    if (changed && a.clip && clipHeld(a.clipT, CLIP_DWELL, URGENT.has(clip), a.gait, gait, a.moving, a.y <= 0.3)) { clip = a.clip; role = a.role; gait = a.gait; }
     const start = (clip !== a.clip || role !== a.role) && a.clip !== '';
     const prevClip = a.clip;
     if (clip !== a.clip || role !== a.role) { if (a.clip) a.dbg.clipSwitches++; a.clip = clip; a.role = role; a.clipT = 0; }
