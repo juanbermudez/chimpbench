@@ -5,7 +5,7 @@ import { B, PI, computeMorph, createFK, createMorph, createPose, solveFK } from 
 import { CLIPS, FEED, FEED_CHEW_MIN_S, FEED_HOLD_INFANT, GROOM_FRONT, GROOM_HIGH, PROP, Pw, feedCycle, feedHold, feedPick, feedPicks, feedPlan, feedPull, groomerRole, type PoseCtx } from '../src/render/creatures/poses';
 import { LIMB_TIP, leafSprayGeometry } from '../src/render/creatures/props';
 import { headLook } from '../src/render/creatures/secondary';
-import { CLAMBER_MAX_RATE, CLAMBER_MPS, CLAMBER_OFF_M, CLAMBER_ON_M, CROWN_JUMP_M, NEST_TURNS, NEST_TURN_RAD, PAIR_HEIGHT_M, PAIR_REACH_M, PERCH, SEAT_REACH_M, STEM_REACH_M, boughStem, clamberSpeed, clambering, crownStep, nestTurn, pairReach, perchBout, perchLies, perchPeriod, perchPosture, seatAllowed, seatGroups, trunkBound, type SeatPairs } from '../src/render/creatures/perch';
+import { CLAMBER_MAX_RATE, CLAMBER_MPS, CLAMBER_OFF_M, CLAMBER_ON_M, CROWN_JUMP_M, NEST_TURNS, NEST_TURN_RAD, PAIR_HEIGHT_M, PAIR_REACH_M, PERCH, SEAT_REACH_M, STEM_REACH_M, boughStem, clamberSpeed, clambering, crownStep, nestTurn, pairReach, perchBout, perchLies, perchPeriod, perchPosture, seatAllowed, seatGroups, trunkBound, type SeatPairs, CROWN_TURN_MAX, crownTurn } from '../src/render/creatures/perch';
 import { ABOUT_MAX_RATE, PATH_MOVING_MPS } from '../src/render/creatures/drawn';
 import { dampAngle } from '../src/render/creatures/util';
 
@@ -419,4 +419,26 @@ test('the cluster is a small leafy spray, and an animal with an infant on its be
     }
   }
   assert.deepEqual([...FEED_HOLD_INFANT], [0.3, 0.5, 0.36]);
+});
+
+// Stage W14: a body in a crown turns no faster than CROWN_TURN_MAX (perch.ts crownTurn). The clamber's line of travel,
+// the seat's facing and the bark each pulled the heading by an exponential damper, so a half turn began at 16 to
+// 25 rad/s: 68 turns faster than 6 rad/s in ten filmed scenes.
+test('a body in a crown turns at most half a turn a second, and a small turn is drawn as given', () => {
+  const dt = 1 / 60;
+  let h = 0, steps = 0;
+  const target = Math.PI * 0.98;
+  while (Math.abs(target - h) > 1e-6 && steps < 600) {
+    // what the old damper would have given this frame
+    const next = h + (target - h) * (1 - Math.exp(-8 * dt));
+    const drawn = crownTurn(h, next, dt);
+    assert.ok(Math.abs(drawn - h) <= CROWN_TURN_MAX * dt + 1e-12, 'never faster than the limit');
+    h = drawn; steps++;
+  }
+  assert.ok(steps * dt > Math.PI * 0.98 / CROWN_TURN_MAX - 0.05, `a half turn takes about a second (${(steps * dt).toFixed(2)} s)`);
+  assert.equal(crownTurn(1, 1.02, dt), 1.02, 'a turn within the limit is untouched');
+  // Across the wrap: from just under +π to just over −π is a small turn, not a whole one.
+  const w = crownTurn(Math.PI - 0.01, -Math.PI + 0.01, dt);
+  assert.ok(Math.abs(Math.atan2(Math.sin(w - (Math.PI - 0.01)), Math.cos(w - (Math.PI - 0.01)))) <= 0.02 + 1e-9);
+  assert.equal(crownTurn(0, 2, 0), 0, 'no time, no turn');
 });

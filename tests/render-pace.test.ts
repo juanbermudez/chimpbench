@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { SPEED_PRESETS } from '../src/clock';
 import { GAITS, Regime, solveClimb, solveGait, type GaitSolve } from '../src/render/creatures/gait';
-import { ADULT_BODY_M, SMALL_MAP_RATE, lapseRate, referenceRate, smallMapPace, walkPace } from '../src/render/creatures/pace';
+import { ADULT_BODY_M, SMALL_MAP_RATE, clipHeld, lapseRate, movingK, referenceRate, smallMapPace, walkPace } from '../src/render/creatures/pace';
 import { CLIPS, Pw, type PoseCtx } from '../src/render/creatures/poses';
 import { LIMB, PI, createPose } from '../src/render/creatures/rig';
 import { DEFAULT_PARAMS, resolveParams } from '../src/sim/params';
@@ -116,4 +116,39 @@ test('a stopped biped (the swagger of a display) puts its raised foot down too',
     }
   }
   assert.ok(airborne > 0);
+});
+
+// Stage W14: the moving test reads the path at the faster of the playback and the reference rate on every map.
+test('on the 160 m map a walker at Watch 4x and Real time reads as moving; at 1 min/s and faster nothing changes', () => {
+  const refK = referenceRate(DEFAULT_PARAMS) / 3600, walk = DEFAULT_PARAMS.walkMps;
+  const reads160 = (playback: number) => walk * movingK(playback / 3600, refK) * 3600 / ADULT_BODY_M;
+  for (const pb of [1, 4]) {
+    assert.ok(walk * pb / ADULT_BODY_M < 0.3, `drawn alone, a walk at ${pb} s/s reads as standing (the glide)`);
+    assert.ok(reads160(pb) > 0.3, `read at the reference rate, a walk at ${pb} s/s is moving`);
+  }
+  for (const pb of [60, 240, 600, 3600]) assert.equal(movingK(pb / 3600, refK), pb / 3600, `at ${pb} s/s the playback rate itself`);
+  // The field map's own reading (stage W1) is the same rule with its own reference rate.
+  const fk = referenceRate(FIELD) / 3600;
+  assert.equal(movingK(4 / 3600, fk), fk); assert.equal(movingK(60 / 3600, fk), 60 / 3600);
+});
+
+// Stage W14, second reader: the dwell (a clip plays at least CLIP_DWELL, 0.35 s) holds no body in a clip that does not
+// move it once it has set off across the ground. Filmed: at 1 min/s on the field map a body landing from its trunk was
+// drawn seated (perch) for the last 25 cm of the descent, and the dwell held that seat while it ran off at about 20 m/s,
+// a seated glide of 5 to 7 m on the followed animal of a new world's opening.
+test('the dwell keeps clips from flickering but holds no seated body that has set off across the ground', () => {
+  const D = 0.35;
+  // Set off on the ground from a clip that does not move the body: the walk (or gallop) is drawn at once.
+  assert.equal(clipHeld(0.05, D, false, null, 'walk', true, true), false, 'a seated body that runs off is drawn walking');
+  assert.equal(clipHeld(0.05, D, false, null, 'gallop', true, true), false);
+  // Everything else is held as before.
+  assert.equal(clipHeld(0.05, D, false, null, null, false, true), true, 'one stationary clip for another: held');
+  assert.equal(clipHeld(0.05, D, false, 'walk', null, false, true), true, 'a walker that stops is held in its walk a moment');
+  assert.equal(clipHeld(0.05, D, false, null, 'walk', false, true), true, 'a turn on the spot (the walk clip, not moving) is held');
+  assert.equal(clipHeld(0.05, D, false, null, 'walk', true, false), true, 'in a tree (the clamber) as before');
+  assert.equal(clipHeld(0.05, D, false, null, 'climb', true, true), true, 'onto the trunk as before');
+  assert.equal(clipHeld(0.05, D, false, 'walk', 'gallop', true, true), true, 'one gait for another: held');
+  // An urgent clip, or a clip that has played its dwell, is never held.
+  assert.equal(clipHeld(0.05, D, true, null, null, false, true), false);
+  assert.equal(clipHeld(0.4, D, false, null, null, false, true), false);
 });

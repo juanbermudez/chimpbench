@@ -40,3 +40,26 @@ export const referenceRate = (P: Params): number => SMALL_MAP_RATE * (SMALL_MAP_
  * map, 82 s/s on the 160 m map. Derived from the gait table; no new constant.
  */
 export const lapseRate = (P: Params, bodyM = ADULT_BODY_M): number => GAITS.walk.fCap * GAITS.walk.strideMax * bodyM / walkPace(P);
+
+/**
+ * Stage W14: the rate (ecological hours per real second, as the layer's pbRate) at which the moving test and the
+ * heading read an animal's simulated path: the playback rate, or the reference rate when the playback is slower. On
+ * every map: the 160 m map used to read the drawn speed alone, tuned at 1 min/s, so at Watch 4x and Real time a walk
+ * read as standing and the body glided over the ground in the standing clip. At the reference rate and faster it is
+ * the playback rate itself, so nothing changes there. A stylization (stage W1's thresholds carried over).
+ */
+export const movingK = (pbRate: number, refK: number): number => pbRate > refK ? pbRate : refK;
+
+/**
+ * Stage W14, second reader: whether the clip a body is in holds it a moment longer than its next clip asks (the layer's
+ * dwell, CLIP_DWELL in creatures.ts: a clip plays at least that long, so clips do not flicker). A body that has set off
+ * across the ground is not held in a clip that does not move it. At 1 min/s on the field map a body coming down its trunk
+ * is drawn seated (the perch clip) for the frames its last 25 cm take, and the dwell then held it seated for 0.35 s while
+ * it ran off at about 20 m/s: a seated glide of up to 7 m, filmed on the followed animal of a new world's opening, where
+ * stage W14 drops to 1 min/s as the party wakes. The moving test has its own hysteresis (creatures.ts MOVE_ENTER,
+ * MOVE_EXIT and 0.8 s), so a walk entered here does not flicker. In a tree the dwell is as before. Pure; a drawing rule.
+ */
+export function clipHeld(clipT: number, dwell: number, urgent: boolean, heldGait: string | null, nextGait: string | null, moving: boolean, onGround: boolean): boolean {
+  if (urgent || !(clipT < dwell)) return false;
+  return !(moving && onGround && heldGait === null && nextGait !== null && nextGait !== 'climb');
+}

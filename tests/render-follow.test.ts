@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FOLLOW_IDLE, FOLLOW_TAU, chaseArrived, chaseReset, chaseStep, createChase, jumpFor, nextFollow, userPanned, type Chase, type FollowState } from '../src/render/env/follow';
+import { FOLLOW_IDLE, FOLLOW_TAU, chaseArrived, chaseReset, chaseStep, createChase, createTrack, jumpFor, nextFollow, trackReset, trackStep, userPanned, type Chase, type FollowState } from '../src/render/env/follow';
 
 // Camera follow (render/env/follow.ts): the attach/detach state machine and the critically damped focus approach.
 
@@ -117,4 +117,43 @@ test('a user pan needs a real drag that moved the focus while held or just relea
   assert.equal(userPanned(0.5, 40, false, 0), false, 'long after release: not the user');
   assert.equal(userPanned(0.5, 3, true, 0), false, 'a click that jiggled is not a pan');
   assert.equal(userPanned(0, 40, true, 0), false, 'rotation keeps the focus: not a pan');
+});
+
+// Stage W14: the close view's tracking step (follow.ts trackStep). A field-map walker at 1 min/s is drawn at about
+// 21 m/s; the old spring, its whole speed capped at 12 m/s, fell 22 m behind and cut forward every two seconds.
+test('the close camera travels with a subject drawn faster than its cap, without a cut, and stops with it', () => {
+  const dt = 1 / 60, v = 21, t = createTrack();
+  trackReset(t, 0, 1.1, 0);
+  let cuts = 0, worst = 0, x = 0;
+  for (let f = 0; f < 600; f++) { x += v * dt; if (trackStep(t, x, 1.1, 0, dt)) cuts++; if (f > 90) worst = Math.max(worst, Math.abs(x - t.p[0])); }
+  assert.equal(cuts, 0, 'no cut while the subject walks');
+  assert.ok(worst < 0.5, `after a second and a half it rides within half a metre (${worst.toFixed(2)})`);
+  let past = 0;
+  for (let f = 0; f < 240; f++) { trackStep(t, x, 1.1, 0, dt); past = Math.max(past, t.p[0] - x); }
+  assert.ok(past < 1, `it stops within a metre past where the walker stopped (${past.toFixed(2)})`);
+  assert.ok(Math.abs(t.p[0] - x) < 0.05, 'and settles on it');
+  // Without the goal's velocity carried forward (the old spring) the same walk cuts again and again.
+  const o = createTrack(); trackReset(o, 0, 1.1, 0); let ox = 0, oc = 0;
+  for (let f = 0; f < 600; f++) { ox += v * dt; if (trackStep(o, ox, 1.1, 0, dt, 0)) oc++; }
+  assert.ok(oc >= 3, `the old spring cut ${oc} times in 10 s`);
+});
+
+test('the close camera comes down a trunk with a body climbing down at 1 min/s', () => {
+  // About 20 m/s down for 0.9 s, then on the ground: the soft vertical spring alone trailed it by more than 15 m.
+  const dt = 1 / 60, t = createTrack();
+  trackReset(t, 0, 20, 0);
+  let y = 20, worst = 0;
+  for (let f = 0; f < 120; f++) { y = Math.max(1, y - 20 * dt); trackStep(t, 0, y, 0, dt); worst = Math.max(worst, Math.abs(t.p[1] - y)); }
+  assert.ok(worst < 2.5, `it stays within 2.5 m of the body's height (${worst.toFixed(2)})`);
+  assert.ok(Math.abs(t.p[1] - 1) < 0.3, 'and settles at the ground');
+});
+
+test('the tracking step is unchanged for a subject at rest, and a teleport still cuts', () => {
+  const dt = 1 / 60, t = createTrack();
+  trackReset(t, 0, 0, 0);
+  for (let f = 0; f < 120; f++) trackStep(t, 3, 0, 0, dt);
+  assert.ok(Math.abs(t.p[0] - 3) < 0.05, 'a goal 3 m away is reached within two seconds');
+  assert.equal(trackStep(t, 40, 0, 0, dt), true, 'a goal 37 m away is cut to');
+  assert.equal(t.p[0], 40);
+  assert.equal(t.gv[0], 0, 'and a jump carries no velocity');
 });

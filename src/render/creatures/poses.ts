@@ -1336,11 +1336,19 @@ export const CLIPS: Record<string, Clip> = {
   guard(w, c) { sitBase(w, c, 0); w.a(B.head, -0.1); idleHead(w, c, 1.2); w.set('bristle', 0.35).set('look', 0.5); },
   shelter(w, c) {
     // Sitting out heavy rain: hunched, arms around the knees, head down.
+    // (Stage W14, second reader: each animal its own hunch. With one pose for all, a party sitting out a storm was drawn
+    // as statues of one animal: two that began to shelter in the same frame held the same pose to the millimetre for the
+    // 45 s filmed (films ST1, ST2), yawns aside. How deep the hunch, how low and how turned the head, how high the arms
+    // hold the knees and which hand is higher are the animal's own (variants 176 to 179), and over a storm it sways a
+    // little at its own slow tempo (movement 43). Stylizations.)
+    const s = c.seed, deep = cyc01(0, s, 176) - 0.5, low = cyc01(0, s, 177) - 0.5, hold = cyc01(0, s, 178) - 0.5, turn = cyc01(0, s, 179) - 0.5;
+    const sway = sin(ownClock(c.time, s, 43, 60, 0.3) * 0.6);
     sitBase(w, c, 1, 0);
     w.root(0, 0.14, -0.02);
     w.ik(LIMB.legL, 0.09, 0.08, 0.2, 1, 1).ik(LIMB.legR, -0.09, 0.08, 0.2, 1, 1);
-    w.a(B.spine, 0.1).a(B.chest, 0.2).r(B.neck, 0.35).r(B.head, 0.45);
-    reach(w, 0, -0.02, 0.36, 0.44, -1.4, 0, 1.3, 0.2); reach(w, 1, 0.02, 0.33, 0.45, -1.4, 0, -1.3, 0.2);
+    w.a(B.spine, 0.1 + 0.14 * deep + 0.035 * sway).a(B.chest, 0.2 + 0.12 * deep).r(B.neck, 0.35 + 0.3 * low).r(B.head, 0.45 + 0.24 * low, 0.3 * turn);
+    const hy = 0.05 * hold, side = 0.04 * Math.sign(turn);
+    reach(w, 0, -0.02, 0.36 + hy + side, 0.44, -1.4, 0, 1.3, 0.2); reach(w, 1, 0.02, 0.33 + hy - side, 0.45, -1.4, 0, -1.3, 0.2);
     grip(w, 0, 0.8); grip(w, 1, 0.8);
     w.set('bristle', 0.25).set('eyes', 0.4);
     w.a(B.chest, sin(c.time * 7 * ownTempo(c.seed, 27) + c.seed * 50) * 0.006); // shivering (W12: at its own tempo)

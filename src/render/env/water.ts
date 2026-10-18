@@ -27,7 +27,7 @@ const MAX_RIPPLES = 16;
 export function createWater(terrain: Terrain, uniforms: SharedUniforms, owner: Owner, field = false, reach = HEIGHT_HALF - 4): WaterSurface {
   const { points, tangents, lengths, halfWidth } = terrain.river;
   const riffle = riffles({ lengths, fords: terrain.fordArc, seed: 1049 });
-  const positions: number[] = []; const uvs: number[] = []; const flows: number[] = []; const extra: number[] = []; const index: number[] = [];
+  const positions: number[] = []; const uvs: number[] = []; const flows: number[] = []; const extra: number[] = []; const index: number[] = []; const levels: number[] = [];
   let rows = 0;
   // The ribbon covers the height texture around the terrain's origin. The field view's 8 km stream can leave and
   // re-enter a window at a meander, so there each stretch inside becomes its own strip.
@@ -40,6 +40,7 @@ export function createWater(terrain: Terrain, uniforms: SharedUniforms, owner: O
     const nx = -t.z, nz = t.x;
     const w = halfWidth[i] + 2.2;
     positions.push(p.x - nx * w, WATER_LEVEL, p.z - nz * w, p.x + nx * w, WATER_LEVEL, p.z + nz * w);
+    levels.push(WATER_LEVEL, WATER_LEVEL);
     // Ribbon UVs in metres: across (−w .. w) and along (arc length).
     uvs.push(-w, lengths[i], w, lengths[i]);
     flows.push(t.x, t.z, t.x, t.z);
@@ -48,11 +49,27 @@ export function createWater(terrain: Terrain, uniforms: SharedUniforms, owner: O
     if (rows > 0 && (joined || !field)) { const k = rows * 2; index.push(k - 2, k - 1, k, k - 1, k + 1, k); }
     rows++; joined = true;
   }
+  // Stage W14: the pools of the field map (terrain.ts) in the same mesh: a round disc of the pool's radius over its
+  // hollow, at its own surface height (aLevel), with still water (a flow of almost nothing, which the shader also reads
+  // as "a pool": its uv is metres from the centre and its edge fades over the last 35 cm). The hollow is wider than the
+  // disc, so the outline is this circle and not the 1 m height grid's polygon.
+  const POOL_SEGS = 32;
+  for (const pool of terrain.pools ?? []) {
+    const base = positions.length / 3, R = pool.r + 0.02;
+    positions.push(pool.x, pool.level, pool.z); uvs.push(0, 0); flows.push(1e-3, 0); extra.push(0, pool.r); levels.push(pool.level);
+    for (let k = 0; k < POOL_SEGS; k++) {
+      const t = k / POOL_SEGS * Math.PI * 2, dx = Math.cos(t) * R, dz = Math.sin(t) * R;
+      positions.push(pool.x + dx, pool.level, pool.z + dz); uvs.push(dx, dz); flows.push(1e-3, 0); extra.push(0, pool.r); levels.push(pool.level);
+      // Wound to face the sky (as the ribbon): centre, next, this.
+      index.push(base, base + 1 + (k + 1) % POOL_SEGS, base + 1 + k);
+    }
+  }
   const geometry = owner.own(new THREE.BufferGeometry());
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
   geometry.setAttribute('aFlow', new THREE.Float32BufferAttribute(flows, 2));
   geometry.setAttribute('aRiver', new THREE.Float32BufferAttribute(extra, 2));
+  geometry.setAttribute('aLevel', new THREE.Float32BufferAttribute(levels, 1));
   geometry.setAttribute('normal', new THREE.Float32BufferAttribute(new Float32Array(positions.length).map((_, i) => (i % 3 === 1 ? 1 : 0)), 3));
   geometry.setIndex(index);
 
@@ -69,12 +86,12 @@ export function createWater(terrain: Terrain, uniforms: SharedUniforms, owner: O
     base.call(material, shader, renderer);
     Object.assign(shader.uniforms, { uWaterLevel: { value: WATER_LEVEL }, uEnvBoost: envBoost, uPersp: perspective, uStones: { value: stones }, uStoneCount: { value: stoneCount }, uRipples: { value: ripples } });
     shader.vertexShader = shader.vertexShader
-      .replace('void main() {', 'attribute vec2 aFlow; attribute vec2 aRiver; varying vec2 vFlow; varying vec2 vRiverUv; varying vec2 vRiver;\nvoid main() {\n vFlow = aFlow; vRiverUv = uv; vRiver = aRiver;');
+      .replace('void main() {', 'attribute vec2 aFlow; attribute vec2 aRiver; attribute float aLevel; varying vec2 vFlow; varying vec2 vRiverUv; varying vec2 vRiver; varying float vLevel;\nvoid main() {\n vFlow = aFlow; vRiverUv = uv; vRiver = aRiver; vLevel = aLevel;');
     shader.fragmentShader = shader.fragmentShader
       .replace('void main() {', /* glsl */`
         uniform float uWaterLevel; uniform float uEnvBoost; uniform float uPersp;
         uniform vec3 uStones[ ${MAX_STONES} ]; uniform int uStoneCount; uniform vec4 uRipples[ ${MAX_RIPPLES} ];
-        varying vec2 vFlow; varying vec2 vRiverUv; varying vec2 vRiver;
+        varying vec2 vFlow; varying vec2 vRiverUv; varying vec2 vRiver; varying float vLevel;
         float waterH( vec2 uv ) { return texture2D( uNoise, uv ).r * 0.65 + texture2D( uNoise, uv * 2.3 + 0.31 ).g * 0.35; }
         // Height of both scrolling layers for one flow phase (ribbon metres lp, flow fr, phase offset o).
         float flowH( vec2 lp, vec2 fr, float t, float o ) {
@@ -85,12 +102,14 @@ export function createWater(terrain: Terrain, uniforms: SharedUniforms, owner: O
       .replace('#include <color_fragment>', /* glsl */`
         float gridN = uHeightHalf * 2.0 + 1.0;
         float bed = texture2D( uHeight, ( vEnvWorld.xz - uOrigin + uHeightHalf + 0.5 ) / gridN ).r;
-        float wDepth = max( uWaterLevel - bed, 0.0 );
+        // (Stage W14: each vertex's own surface height: the stream's, or a pool's.)
+        float wDepth = max( vLevel - bed, 0.0 );
         vec2 flow = normalize( vFlow );
         vec2 side = vec2( - flow.y, flow.x );
         float riffle = vRiver.x;
         float across = vRiverUv.x / max( vRiver.y, 0.5 );
-        float speed = ( 0.18 + 0.42 * riffle ) * ( 1.0 - 0.65 * min( 1.0, across * across ) ) * smoothstep( 0.0, 0.2, wDepth );
+        // (A pool's flow vector is almost nothing: its water is still.)
+        float speed = ( 0.18 + 0.42 * riffle ) * ( 1.0 - 0.65 * min( 1.0, across * across ) ) * smoothstep( 0.0, 0.2, wDepth ) * min( 1.0, length( vFlow ) );
         // Ford stones: the flow bends round the nearest stone and speeds up beside it.
         float sd = 99.0; vec2 away = vec2( 0.0, 1.0 );
         for ( int i = 0; i < ${MAX_STONES}; i ++ ) {
@@ -156,6 +175,9 @@ export function createWater(terrain: Terrain, uniforms: SharedUniforms, owner: O
         float foam = clamp( lap * ( 0.2 + 0.25 * uPersp ) + collar * 0.75 + streak * 0.4 * smoothstep( 0.1, 0.3, wDepth ), 0.0, 0.8 );
         diffuseColor.rgb = mix( wCol, vec3( 0.52, 0.53, 0.48 ), foam );
         diffuseColor.a = max( ( 1.0 - Tr ) * 0.94 + 0.05, foam * 0.9 ) * smoothstep( 0.0, 0.03, wDepth );
+        // (Stage W14: a pool's round edge, soft over its last 35 cm; vRiver.y is its radius. The stream's flow is a unit
+        // vector, a pool's almost nothing.)
+        if ( length( vFlow ) < 0.5 ) diffuseColor.a *= 1.0 - smoothstep( vRiver.y - 0.35, vRiver.y, length( vRiverUv ) );
       `)
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor = mix( 0.035 + riffle * 0.04, 0.5, foam );')
       .replace('#include <normal_fragment_maps>', 'normal = normalize( ( viewMatrix * vec4( wN, 0.0 ) ).xyz );')
@@ -195,7 +217,7 @@ export function createWater(terrain: Terrain, uniforms: SharedUniforms, owner: O
         }
       `);
   };
-  material.customProgramCacheKey = () => 'mgogo-water-v2';
+  material.customProgramCacheKey = () => 'mgogo-water-v3';
   const mesh = new THREE.Mesh(geometry, material);
   mesh.name = 'river';
   mesh.receiveShadow = true;
