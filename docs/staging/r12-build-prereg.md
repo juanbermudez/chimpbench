@@ -664,43 +664,151 @@ classes (A1.4); section 8.4's default (A1.1); section 10.1's pin (A1.5); section
 A1.2, A1.7); section 10.3's M1 (A1.10); section 12's iterations (A1.13); section 13 item 2 (A1.14); the names
 (A1.8); section 2 rulings 2 and 10 (A1.9).
 
+## 17. Log of the build (17 October 2026, 23:05 EDT onward; times from `date`)
+
+**The machine.** No R16 model step ran while this stage worked (checked before every heavy step: no `r16.py session`,
+`r15-scorer`, `decide_ft` or `train_r1` process; a `pgrep` on those words also matches other sessions' shells whose command
+lines carry the same words, so the check was made on the process list). Other sessions kept the one-minute load between
+about 3 and 14, with a burst to 36 during this stage's whole suite (two files at a time; a browser and other sessions were
+busy too). Every step of this stage ran as one process; nothing touched `bench-r16`, its screen sessions or
+`artifacts/r14-chain.lock`; no model, worker, tokenizer, browser or dev server was started. Seeds 48 and 7 only.
+
+**Iteration 0 (23:06 to 23:14): the pin** (commit 3cde3804, before any code). `scripts/r12-pin.ts` calls the libraries
+directly (A1.5): A, R15's path at sampled fresh decisions of a rules world on the field working base with R15's switches
+(30 days of burn-in; 40 and 35 decision points on seeds 48 and 7, 10 of each labelled with R15's labels and R16's options);
+B, R15's wiring run (seed 48, five adults, 720 ticks, decodes draw and held: 79 and 91 calls); C, R16's day runner with an
+in-process asker (240 ticks on the burned-in worlds: 189 and 210 calls); D, R16's census of one day with no burn-in (1,739
+and 1,713 entries) and the selection of plan `zero`. Recorded at 23:07 to 23:08 on the unchanged source (`data/r12-pin.json`,
+hashes and counts only) and checked again on the unchanged source at 23:10 to 23:13: equal.
+
+**Iteration 1 (23:14 to 23:43): the build** (commit ee34529e and the commits after it on `r12-menu`).
+
+- **The pin with the switch at 0 after the code: equal byte for byte**, every section (checked 23:22 to 23:24, after every
+  change under `src/`; checked again at the branch's last commit, below).
+- **What was built**, as registered with A1: `menuPossible` (levels 0 to 2, 0 in both profiles, refused without
+  `resourceTargets` 1; `docs/simulation.md` §17); `src/sim/possible.ts` (the dice set, the opened social groups, the target
+  call's own nearby list, the rules' grooming gate); a side pool in `computeCandidates` for the opened options, filled only in
+  the model-only call (two new `offer()` sites: every dominant the greeting's conditions allow; at level 2, every adult male
+  in reach of an adult male, valued by the rules' grooming formula, which was moved unchanged into one expression so that
+  both offers read it); `resourceEligibleActions` with the opened options and without the dice acts; the request builder
+  (the dice acts dropped before anything is built, `observe()` given the same filter, the social groups, the contract mark
+  `menu`, `targetSocial`); `targetRequest` showing a social call's own nearby list; the validation; the dice check in
+  `decisionPoint` on both paths, after the gate, with a read-only tap (`loopTap.dice`); the labeller (the dice mass excluded,
+  the social row by its own hash and stream, the flags, no row for an opened partner unless `scaffold`, the shared function
+  `socialTarget`); the refusals (`assertContract`, the R15 model kernel, the R15 server route, R16's day runner); the
+  counted-rules list and its printer (`scripts/r12-hand-rules.ts`, `data/r12-hand-rules.json`), printed in stage R7's
+  ledger report and in the numbers file, its hash and counts carried by every M1 and M2 result; the counts
+  (`scripts/lib/r12-menu.ts`); the runs (`scripts/r12-runs.ts`).
+- **Tests.** `tests/r12-menu.test.ts`, 22 tests, all pass (the registered 13, with 4b, 4c, 6b, 8b, 8c, 8d, 10b, 10c, 12b).
+  The guards pass: every `tests/r15-*.test.ts`, `tests/r16-scale.test.ts`, `tests/r7-ledger.test.ts`, `tests/r8-packet.test.ts`,
+  `tests/kernel.test.ts`, `tests/sim-params.test.ts` (the goldens), `tests/sim-track-e.test.ts` (the field pin),
+  `tests/valuation-ledger.test.ts`, `tests/r12-offer-table.test.ts`, `gen-params --check`; `tsc --noEmit` on `src/` and, by
+  hand with the same strict options, on every new or changed script and test. **One existing test was changed**, which the
+  registration said must pass unchanged: `tests/r12-offer-table.test.ts` read "the first pant-grunt site" as the rules' live
+  greeting; the build's greeting site stands inside the loop, before the rules' own site (whose key became
+  `computeCandidates/pant-grunt/NONE#2`), so the assertion now finds the live greeting site by its status, and two checks of
+  the built sites were added (legacy on every base, named as added). The whole suite and the build: below.
+- **The offer table.** 96 sites: 69 live, 6 young, 21 legacy; of the live, 6 by possibility alone, 2 with a social fact,
+  61 behind a hand rule (58 advice, 25 quota or timer, 3 dice): every count the user signed is unchanged, and a test holds it.
+  The first page names the two added sites in a table line (its running text stays at the 540-word cap). Rows after row 26
+  renumber by 2, so the rulings' row references in section 2 moved (ruling 7: row 34 to 36; ruling 8: 62 to 70 became 64 to
+  72; and so on). Each ruling's entry now carries the user's words (`ruled`), printed in section 2.
+- **The counted-rules list.** 157 rules (hash fe0607eacd145314): from the table 123, as registered and computed, not typed:
+  113 kept, 3 kept until a body teacher, 1 kept except for the adult male pair, 2 cut on the model's path (the trip
+  shortlist of four by `resourceTargets`; the one best dominant by `menuPossible`), 4 with the rules; inside `offer()` 3;
+  the menus 16 (R15's numbers, this build's, the kind scaffold, the hand-set text, and 5 named limits); the loop 15 (stage
+  R7's list). On the path of an animal a kernel decides for at level 1 or 2: 155 (the 2 cut are listed apart).
+- **Facts found while building.** (1) Starting an attack spends the roll that opened it (`src/sim/execution.ts:280`), so the
+  rules never offer a gang attack or an attack on an infant twice: a rules-started attack runs under source `rules` to its
+  next decision point, where the rules end it, exactly as for an animal on the rules. The transfer is offered again while it
+  runs, so the rules continue it to its own end (test 8b: completed on the small map, source `rules` at every tick). So A1.2's
+  "while the rules rank it first" applies to the transfer only; for the two attacks it is their first decision point. (2) At
+  level 2 the scaffold is visible: an adult male in a nest, not settled by the rules' word, is offered as a grooming partner;
+  this is why A1.1 keeps level 2 off by default and writes no row for such a group.
+- **M1** (a rules world read by a tap at level 2, which no rules path reads; 30 days of burn-in, 5 tapped days; 23:38 to
+  23:41; `docs/staging/r12-build-numbers.md`): each world ended on the same hash as the same world at level 0 with no tap
+  (seed 48 2b0d03220e8c968f, seed 7 9e558333b86ec364). 10,382 and 11,227 fresh asks. "Greet or appease" was on the kind menu
+  at 2,349 and 2,870 asks; its group had two or more options at 35% and 44% of them (up to 7 and 8; the cap of 8 would have
+  cut one group). An adult male had "Groom someone" on the menu at 2,046 and 2,565 asks; at level 2 his group held up to 7,
+  34% and 40% of its members not settled. No decision had a dice act as the rules' best in the 10 tapped days (5 per seed). The kind
+  packet equalled R15's at all 60 sampled asks (none had a dice option among its candidates). The new social target
+  packets were estimated at 411 and 442 tokens on average, at most 650, against R15's own resource target packets in the
+  same runs (490 and 506, at most 871); none over 1,280. **Ruling 3:** of 1,356 and 1,243 own food trips the rules started,
+  12.1% and 17.8% went to a listed tree the animal never saw itself (a), 1.3% and 0.2% to one it saw more than 240 h ago
+  (b), 0.8% and 0.5% to one it saw within 240 h but no longer held in memory (c); about 0.9 and 1.2 trips of class (a) per
+  adult-day of animals 10 and over; at 40 sampled decisions per seed, classes (a) and (c) carried 2.6% and 3.7% (seed 48)
+  and 17.8% and 0% (seed 7) of R15's "Go to food elsewhere" kind label. **The labels against the rules' realised picks:** at
+  201 and 402 greetings with a group of two or more, the rules' dominant was in the group every time, first by the label at
+  199 and 395, with a mean label mass of 0.84 and 0.81 on it (chance 0.43 and 0.39); first by the realised jitter at 181 and
+  346 (the rules pick the dominant by its score before the jitter). At 122 and 161 groomings of an adult male by an adult
+  male, the realised partner was first by the label at 113 and 148, mass 0.90 and 0.90 (chance 0.36 and 0.35). **Possible, not
+  offered** (share of decisions of animals 8 and over): an unsettled adult male in reach of an adult male 16% and 22%; an
+  unsettled member in grooming reach for any other pair 66% and 65%; an animal in greeting reach that does not outrank 37%
+  and 41%; a remembered water while not thirsty 90% and 91%; a nest possible but not offered 5% and 5%; rain without cold
+  1.4% and 0.3%.
+- **M2** (R15's wiring run, levels 1 and 2, seeds 48 and 7, decodes draw and held, three kernels: 24 runs; 23:42): every
+  replay exact. The early-morning window offers few social choices: greeting target calls at 5 runs, grooming target calls
+  at 4 (all at level 2), 15 social choices applied and each followed by a later ask of the same animal; no dice act;
+  the legality re-check refused 1 or 2 answers in 10 runs, and the rules then decided. Asks where something possible was not
+  offered: 1,552 kind asks, of which 772 had an unsettled adult male in reach of an adult male.
+- **The whole suite and the build**: see the last entry of this log.
+
 ## For the integrator (proposed lines; HANDOFF.md, IMPLEMENTATION_PLAN.md and AGENTS.md are not edited by this stage)
+
+Written after the build (section 17), so these lines say what is built. The branch is `r12-menu`, not pushed or merged.
 
 **`IMPLEMENTATION_PLAN.md`**, a block after Stage R16:
 
 > ## Stage R12 (build): the menu as ruled, on R15's two-stage path
 > **Goal**: build the ten rulings of 17 October 2026 behind one switch (`menuPossible`, 0 by default) on top of R15:
-> the model picks which dominant to greet and, for an adult male, which adult male to groom whatever he is doing; the
-> three dice acts leave the model's menu; every rule the rulings keep is listed (`data/r12-hand-rules.json`) and counted
-> in every result; the rules' trips to community-listed trees are counted; the teachers and label formats of the new
-> target stages are prepared. No training and no model run.
-> **Success Criteria** (`docs/staging/r12-build-prereg.md` §10 to §12): with the switch at 0 R15's and R16's requests,
-> packets, labels, receipts and hashes match the pin recorded before any code; goldens and the field pin unchanged; a
-> rules world hashes the same at 0 and 1; the tests of §10.2 pass; the offer table's working-base counts unchanged.
-> **Tests**: `tests/r12-menu.test.ts`, `tests/r12-offer-table.test.ts`, the pin check.
-> **Status**: Registered (this document), not built.
+> at level 1 the model picks which dominant to greet, and the three acts opened by dice leave its menu and stay with the
+> rules; at level 2 (off unless a run names it) an adult male also picks which adult male to groom, whatever he is doing;
+> every rule the rulings keep is listed (`data/r12-hand-rules.json`) and counted in every result; the rules' trips to
+> community-listed trees are counted; the teachers and label formats of the new target calls are prepared. No training and
+> no model run.
+> **Success Criteria** (`docs/staging/r12-build-prereg.md` §10 to §12, amendment A1): with the switch at 0 R15's and R16's
+> requests, packets, labels, receipts and hashes match the pin recorded before any code; goldens and the field pin
+> unchanged; a rules world hashes the same at every level; the tests of §10.2 pass; the offer table's signed counts unchanged.
+> **Tests**: `tests/r12-menu.test.ts` (22), `tests/r12-offer-table.test.ts`, `scripts/r12-pin.ts check`.
+> **Status**: Built on `r12-menu` with no model (section 17): the pin equal at 0; 22 new tests pass; M1 and M2 run
+> (`docs/staging/r12-build-numbers.md`). Not merged; a second reader next. Every later trained arm on this menu is a
+> "rules-taught model on a rules menu (the R12 menu)".
 
-**`AGENTS.md`**, a command line and a gotcha:
+**`AGENTS.md`**, three command lines and a gotcha:
 
 ```sh
-pnpm exec tsx scripts/r12-hand-rules.ts [--check] | print --params <file>   # stage R12 build (docs/staging/r12-build-prereg.md): the rules the user's rulings keep, generated from the offer table, with each rule's status, ruling, class and numbers; print writes the counted-rules section every result carries
+pnpm exec tsx scripts/r12-hand-rules.ts [--check] | print [--params <file>] [--set id=v,...]   # stage R12 build (docs/staging/r12-build-prereg.md): the rules the user's rulings keep, generated from the offer table, R15's and this build's menu numbers and stage R7's loop numbers, each with its status, ruling, class and numbers (data/r12-hand-rules.json); print writes the counted-rules section every result carries (stage R7's ledger prints it)
+pnpm exec tsx scripts/r12-pin.ts record | check [--only A,B,C,D]   # stage R12 build: the pin of R15's and R16's paths (requests, packets, pools, labels, R15's wiring run, R16's day runner and census), recorded on the source before the build (data/r12-pin.json); check must reproduce it byte for byte with menuPossible 0; direct library calls, no lock, no git identity
+pnpm exec tsx scripts/r12-runs.ts m1 --seed 48|7 | m2 | numbers   # stage R12 build, no model: M1 a rules world read by a tap (group sizes, dice, ruling 3's count, what is possible but not offered, the new labels against the rules' realised picks), M2 R15's wiring run on the ruled menu with control kernels and exact replays; numbers writes docs/staging/r12-build-numbers.md
 ```
 
-> R12 build (`menuPossible` 1 needs `resourceTargets` 1): the greeting and the adult male grooming target calls, and
-> the removal of the dice acts, live only on the model's path; no rules path reads the switch. Every result of a model
-> on any menu prints the counted-rules section (`scripts/r12-hand-rules.ts print`). With the switch at 0,
-> `data/r12-pin.json` must still match.
+> R12 build (`menuPossible` 1 or 2 needs `resourceTargets` 1; `src/sim/possible.ts`): the greeting target call (level 1),
+> an adult male's grooming target call (level 2, off unless a run names it, and by default no training row for a group that
+> holds a partner the rules' gate would refuse) and the removal of the dice acts live only on the model's path; no rules
+> path reads the switch. Opened options come from a side pool of the model-only call (`offer(..., side)`; two legacy offer
+> sites), so the rules' own enumeration is unchanged. A rules-started dice act holds no intention: the rules start,
+> continue (the transfer) and end it. A social target call shows its own nearby list (`KernelRequest.targetSocial`), by
+> distance. Contexts of this menu carry `menu: 'menu-targets-v1'`; R15 and R16 adapters, the R15 server route and R16's
+> day runner refuse them. Every result of a model on any menu prints the counted-rules section
+> (`scripts/r12-hand-rules.ts print`). With the switch at 0, `scripts/r12-pin.ts check` must still match.
 
-**`HANDOFF.md`** §5, next tasks: "Stage R12's build (`docs/staging/r12-build-prereg.md`): no model; then its second
-reader; a later stage trains on its menu." §6 item 1: "built as ruled, behind `menuPossible`" once it is.
+**`HANDOFF.md`** §2.0, an entry: "Stage R12's build (written 17 October, about midnight EDT): the menu as ruled, on R15's
+path behind `menuPossible`, built and proved with no model on branch `r12-menu` (`docs/staging/r12-build-prereg.md` §16,
+§17; `docs/staging/r12-build-numbers.md`); not merged." §5, next tasks: "Stage R12's build: its second reader; then a later
+stage trains on its menu (a collection on 48 and 7, real token counts, preflight)." §6 item 1: "built as ruled, behind
+`menuPossible` (branch `r12-menu`)", and the decisions below as new items.
 
 **Decisions that are the user's** (one line each): whether a rules-taught arm may label the opened male partners by the
-rules' formula (recommended: yes, reported apart and named a scaffold); whether ruling 3's count is large enough for a
-slot "known to my community" (no threshold set); whether the choice among settled partners and the targets of the other
-social kinds should open next (not ruled; the rules value each, so a scaffold teacher exists). Added by A1.4 and A1.14:
-whether trees the animal saw itself within 240 h but no longer holds in memory (class c of ruling 3's count) count as
-"perceived or remembered" under ruling 2; a companion's goal tree under "Go to food" or "Go along with a companion" (no
-recommendation; left as R15 built it until the user rules); "Carry on" as an option (recommended yes; not built).
+rules' formula (recommended: yes, reported apart and named a scaffold; until then level 2 stays off and no such row is
+written); whether ruling 3's count is large enough for a slot "known to my community" (no threshold set; M1: 12% and 18%
+of the rules' own food trips went to a listed tree the animal never saw itself); whether trees the animal saw itself
+within 240 h but no longer holds in memory (class c: under 1% of those trips) count as "perceived or remembered" under
+ruling 2; whether the choice among settled partners and the targets of the other social kinds should open next (not
+ruled; the rules value each, so a scaffold teacher exists); a companion's goal tree under "Go to food" or "Go along with a
+companion" (no recommendation; left as R15 built it until the user rules); "Carry on" as an option (recommended yes; not
+built).
 
 **Reading note for R16** (A1.14; read-only, R16's results stand as registered): under R15's contract R16's model saw,
-and could pick or refuse, the three dice acts; ruling 10, made after R16 was frozen, takes them off the R12 menu.
+and could pick or refuse, the three dice acts; ruling 10, made after R16 was frozen, takes them off the R12 menu. R16's
+own receipts can show how often a dice kind was on its kind menu and taken. In M1 no decision of the 10 tapped days had a
+dice act as the rules' best, so the effect is rare.
