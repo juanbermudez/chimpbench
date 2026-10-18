@@ -18,7 +18,7 @@ import { applyDecision, decisionPoint, loopTap, resolveByRules } from '../src/si
 import { dominates, isAdultMale } from '../src/sim/hierarchy';
 import { optionKind, same } from '../src/sim/menu';
 import { paramsOf } from '../src/sim/params';
-import { IMPULSE_GANG, IMPULSE_TRANSFER } from '../src/sim/perception';
+import { IMPULSE_GANG, IMPULSE_INFANTICIDE, IMPULSE_TRANSFER } from '../src/sim/perception';
 import { isDiceOption, settledPartner, socialTargetsFor } from '../src/sim/possible';
 import { buildRequest, targetRequest } from '../src/sim/request';
 import { resourceEligibleActions, resourcePercepts } from '../src/sim/resources';
@@ -126,13 +126,16 @@ test('4b. with the scores of the opened members permuted or replaced, the groups
 });
 
 test('4c. the representative keeps its place when the opened members alone would fill the 8', () => {
-  const { world, c } = social(2), pool = resourcePercepts(world, c);
-  const members = pool.filter(k => candidateMeta.get(k)?.open && k.action === 'groom');
-  // nine opened members plus a representative that is the farthest: the group still holds it
-  const fake = Array.from({ length: 9 }, (_, i) => { const k = { ...members[0], targetId: members[0].targetId }; return k; });
-  const rep = { ...members[members.length - 1] }; candidateMeta.set(rep, candidateMeta.get(members[members.length - 1])!);
-  const group = socialTargetsFor(world, c, 'groom', [...members, ...fake], rep);
-  assert.ok(group.length <= 8 && group.some(k => same(k, rep)));
+  // second reading: ten distinct opened members (living animals at 2 to 11 m) and a representative farther than all of them
+  const { world, c } = social(2), meta = { v: V.NONE, aux: -1, raw: 0, jit: 0, base: 0, open: true as const };
+  const near = world.chimps.filter(o => o.alive && o.id !== c.id).slice(0, 11);
+  near.forEach((o, i) => { o.position = [c.position[0] + 2 + i, c.position[1], c.position[2]]; });
+  const opened = near.slice(0, 10).map(o => { const k = { action: 'groom' as const, targetId: o.id, score: 0.5, reason: '' }; candidateMeta.set(k, meta); return k; });
+  const far = near[10], rep = { action: 'groom' as const, targetId: far.id, score: 0.9, reason: '' }; candidateMeta.set(rep, { v: V.NONE, aux: -1, raw: 0.9, jit: 0, base: 0.9 });
+  const group = socialTargetsFor(world, c, 'groom', [rep, ...opened], rep);
+  assert.equal(group.length, 8);
+  assert.ok(group.some(k => same(k, rep)), 'the representative is kept');
+  assert.deepEqual(group.map(k => k.targetId), [...near.slice(0, 7).map(o => o.id), far.id], 'then the seven nearest opened members, listed nearest first');
 });
 
 // ---- 5: the kind call is R15's -----------------------------------------------------------------------------------------
@@ -273,6 +276,23 @@ test('8d. the dice options leave the list before the nearby animals are ordered:
   // the transfer has no target; the order of the nearby list is that of the list without it
   const a = buildRequest(on.world, on.f).context.social.map(p => p.id), b = buildRequest(off.world, off.f).context.social.map(p => p.id);
   assert.equal(a.length, b.length);
+  // second reading: an attack on an infant has a target. At level 0 (R15) the infant leads the kind packet's nearby list
+  // (the rules' best-valued option names it); at level 1 the option is gone before the list is ordered, and so is the lead
+  const infantWorld = (level: number) => {
+    const world = createWorld(48, { params: { ...BASE, ...R15, menuPossible: level } });
+    world.time = 12 - START_HOUR; world.hour = 12; world.environment.daylight = 1; world.tick = Math.round(world.time / TICK_HOURS);
+    const m = world.chimps.find(o => o.alive && isAdultMale(o))!, x = ix(m), inf = world.chimps.find(o => o.alive && o.troopId !== m.troopId && o.age < 2)!;
+    inf.position = [m.position[0] + 6 * Math.cos(2.2), m.position[1], m.position[2] + 6 * Math.sin(2.2)];
+    x.seen = [inf.id, ...x.seen.filter(id => id !== inf.id)];
+    x.impulse = IMPULSE_INFANTICIDE; x.impulseTarget = inf.id; x.impulseUntil = world.time + 1;
+    return { world, m, inf };
+  };
+  const w1 = infantWorld(1), w0 = infantWorld(0), dice = computeCandidates(w1.world, w1.m, []).find(isDiceOption);
+  assert.ok(dice && dice.targetId === w1.inf.id, 'the fixture opens the attack on an infant');
+  const r1 = buildRequest(w1.world, w1.m), r0 = buildRequest(w0.world, w0.m);
+  assert.ok(!r1.options.some(isDiceOption) && !(r1.groups ?? []).flat().some(isDiceOption), 'never in the request');
+  assert.equal(r0.context.social[0]?.id, w0.inf.id, 'R15: the infant leads the nearby list');
+  assert.notEqual(r1.context.social[0]?.id, w1.inf.id, 'the ruled menu: it does not');
 });
 
 // ---- 9: the decode with a fake kernel ------------------------------------------------------------------------------------
@@ -410,6 +430,25 @@ test('12b. the counts read only: the world hashes the same with and without them
   const p = possibleNotOffered(world, c, computeCandidates(world, c, []));
   assert.ok(p.maleUnsettled >= 1, 'the fixture has unsettled adult males in reach');
   void simOf;
+});
+
+test('12c. ruling 3: a kernel\'s own trip never goes to a tree it knows only from its community\'s list, with the switch off or on (registration §6)', () => {
+  // second reading: the registered test. Two days of a field world, so that the community's list exists; then, for every
+  // animal of 10 and over, the model's legal pool against the rules' own list
+  for (const level of [0, 1]) {
+    const w = createWorld(48, { profile: 'field', params: { ...BASE, ...R15, observeV4: 1, menuParity: 1, menuPossible: level } });
+    for (let i = 0; i < 2 * 5760; i++) tickWorld(w);
+    let rulesListed = 0, kernelTrips = 0;
+    for (const c of w.chimps.filter(o => o.alive && o.age >= 10)) {
+      rulesListed += getEligibleActions(w, c).filter(k => ownTrip(k) && treeSource(w, c, k.targetId) !== 'own').length;
+      for (const k of resourceEligibleActions(w, c).filter(ownTrip)) {
+        kernelTrips++;
+        assert.equal(treeSource(w, c, k.targetId), 'own', `level ${level}: ${c.id} may travel to ${k.targetId}, a tree it knows only from the list`);
+      }
+    }
+    assert.ok(kernelTrips > 0, `level ${level}: the model's pool holds trips`);
+    assert.ok(rulesListed > 0, `level ${level}: the rules' own list holds listed trees (the fixture can show a leak)`);
+  }
 });
 
 // ---- 13: the offer table ---------------------------------------------------------------------------------------------------
