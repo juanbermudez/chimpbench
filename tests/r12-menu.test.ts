@@ -332,13 +332,28 @@ test('10. the social teacher is deterministic and normalized, leaves the world a
   if (l1.detail.social) { assert.equal(l1.detail.social.kind, 'greet_or_appease'); assert.ok(l1.rows.some(x => x.id.endsWith('/social') && x.teacher === R12_SOCIAL_TEACHER)); }
 });
 
-test('10b. a dice act\'s mass in the kind label is excluded, never credited to a kind', () => {
-  const { world, f } = transferring(1), r = buildRequest(world, f), got = r15TrainingRows(world, f, r, 'r12-fixture-dice');
-  if (got.detail.kind) {
-    const k = got.detail.kind, dice = k.label.counts.reduce((s, v, i) => s + (k.originalKinds[i] === null ? v : 0), 0) / k.label.counts.reduce((s, v) => s + v, 0);
-    assert.ok(k.originalKinds.some(x => x === null), 'the transfer is on the rules\' original menu');
-    assert.ok(k.marginal.excluded >= dice - 1e-9, 'its mass is reported as excluded');
-  }
+test('10b. a dice act\'s mass in the kind label is excluded, never credited to a kind; a decision whose rules\' best is a dice act makes no row', () => {
+  // second reading (§8.1): where the rules' own first option is the dice act, the rules start it and no kernel is asked, so no row
+  const first = transferring(1), r1 = buildRequest(first.world, first.f), none = r15TrainingRows(first.world, first.f, r1, 'r12-fixture-dice-first');
+  assert.equal(computeCandidates(first.world, first.f, [])[0].action, 'transfer');
+  assert.deepEqual(none.rows, []); assert.deepEqual(none.exclusions, ['dice act: the rules start it']);
+  // at level 0 (R15) the same decision is labelled as before
+  const r15 = transferring(0); assert.ok(r15TrainingRows(r15.world, r15.f, buildRequest(r15.world, r15.f), 'r12-fixture-dice-first').rows.length > 0);
+  // the transfer on the menu but not first (a dominant male of her community charges her: submitting ranks first): the
+  // kernel is asked, and the transfer's share of the label is excluded
+  const { world, f } = transferring(1), x = ix(f);
+  const ag = world.chimps.find(o => o.alive && o.troopId === f.troopId && isAdultMale(o) && dominates(o, f))!;
+  ag.position = [f.position[0] + 3, f.position[1], f.position[2] + 1]; ag.action = 'charge'; ag.targetId = f.id;
+  x.victimAt = world.time; x.victimOf = ag.id; x.seen = [ag.id, ...x.seen.filter(id => id !== ag.id)];
+  const list = computeCandidates(world, f, []);
+  assert.ok(!isDiceOption(list[0]) && list.some(k => k.action === 'transfer'), 'the transfer is on the rules\' list, not first');
+  const got = r15TrainingRows(world, f, buildRequest(world, f), 'r12-fixture-dice');
+  const k = got.detail.kind!;
+  assert.ok(k, `a kind row (${got.exclusions.join(', ')})`);
+  const dice = k.label.counts.reduce((s, v, i) => s + (k.originalKinds[i] === null ? v : 0), 0) / k.label.counts.reduce((s, v) => s + v, 0);
+  assert.ok(k.originalKinds.some(x => x === null), 'the transfer is on the rules\' original menu');
+  assert.ok(dice > 0, 'the transfer wins some redraws');
+  assert.ok(k.marginal.excluded >= dice - 1e-9, 'its mass is reported as excluded');
 });
 
 test('10c. the contracts refuse each other before any call', () => {

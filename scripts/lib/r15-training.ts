@@ -126,6 +126,10 @@ export function r15TrainingRows(w: World, c: Chimp, request: KernelRequest, id: 
   if (request.context.resourceChoice !== 'kind' || !request.context.resourceKinds || !request.groups) throw new Error('R15 needs a kind request with groups');
   const rows: R15Row[] = [], exclusions: string[] = [], detail: R15LabelDetail = {}, rng = w.rng, version = c.decisionVersion;
   const list = computeCandidates(w, c, []), menu = rgMenu(w, c, list);
+  // stage R12 build, second reading (registration §8.1, A1.2): on the ruled menu a decision whose rules' own first option is a
+  // dice act is the rules' (src/sim/decide.ts diceByRules starts it and asks no kernel), so it makes no row; counted
+  const r12 = request.context.menu !== undefined;
+  if (r12 && list[0] && list[0].action !== 'dead' && isDiceOption(list[0])) return { rows, exclusions: ['dice act: the rules start it'], detail };
   if (menu.length < 2) return { rows, exclusions: ['fewer than two original teacher options'], detail };
   const best = menu.reduce((b, k, i) => k.score > menu[b].score ? i : b, 0), real = opts.realised ? menu.findIndex(k => optionKey(k) === optionKey(opts.realised!.chosen)) : -1;
   const pickAt = opts.realised && real >= 0 ? real : best;
@@ -133,7 +137,6 @@ export function r15TrainingRows(w: World, c: Chimp, request: KernelRequest, id: 
   const label = labelData({ id, options, rgIndex: pickAt }, { w, c, list, menu, chosen: menu[pickAt], rngBefore: opts.realised ? opts.realised.rngBefore : rng }, opts.redraws ?? REDRAWS, !!opts.halves);
   if (typeof label === 'string' || !label.listOk || label.same < SAME_MIN) return { rows, exclusions: [typeof label === 'string' ? label : 'insufficient original-menu label reconstruction'], detail };
   // stage R12 build (§8.1): on the ruled menu a dice act's mass is never credited to a kind (it is the rules' act); it is excluded
-  const r12 = request.context.menu !== undefined;
   const originalKinds = menu.map(k => r12 && isDiceOption(k) ? null : optionKind(k)), marginal = kindMarginal(request.context.resourceKinds, originalKinds, label.counts);
   if (!marginal) return { rows, exclusions: ['zero-retained-kind-mass'], detail };
   const half = (k: number) => label.halves ? kindMarginal(request.context.resourceKinds!, originalKinds, label.halves[k].map(v => v + 0)) : null;
