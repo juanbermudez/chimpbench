@@ -366,7 +366,8 @@ addresssed and we move faster parelalizing more work to get closer to the real r
 Every decision open for the user on 12 October 2026, the most consequential first, each with where it is written
 and what is recommended. Where no recommendation is on file it says so, and what is built stands until a ruling.
 
-1. **The ten rulings on the menu**, nine still open: ruling 2 ("Which tree") was answered yes on 17 October ("the model picks
+1. **The ten rulings on the menu: all settled on 17 October** (the nine left answered "yes to the recomendations"; plan,
+   "User decision (17 October 2026 …), on the remaining nine menu rulings"); stage R12 may be built. As it stood before: ruling 2 ("Which tree") was answered yes on 17 October ("the model picks
    the tree"), as stage R15 built it behind its switch (first page of `docs/staging/r12-menu-table.md`, each with its recommendation;
    four smaller design questions follow in `r12-prereg.md`, whose fifth, on the seeds, is item 11 here): nothing of
    stage R12 is built before them.
