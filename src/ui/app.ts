@@ -421,9 +421,12 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
   const VERB: Partial<Record<string, string>> = {
     groom: 'grooms', play: 'plays with', display: 'displays at', charge: 'charges', chase: 'chases', fight: 'fights', 'pant-grunt': 'pant-grunts to',
     reconcile: 'reconciles with', console: 'consoles', mate: 'mates with', share: 'shares meat with', beg: 'begs meat from', hunt: 'hunts', kill: 'kills',
-    patrol: 'patrols with', intergroup: 'faces', nurse: 'nurses', guard: 'mate-guards', consort: 'consorts with', alarm: 'alarm-calls at',
+    patrol: 'patrols with', intergroup: 'faces', nurse: 'nurses from', guard: 'mate-guards', consort: 'consorts with', alarm: 'alarm-calls at',
     coalition: 'joins forces with', infanticide: 'attacks', transfer: 'leaves with', 'rain-display': 'rain-displays', takeover: 'challenges',
   };
+  // (Stage W14, second reader: a nursing episode's actor is the infant (sim/execution.ts), so 'nurses' read the wrong way
+  // round: "Zamiko nurses Kiboro" named the 1.8-year-old feeding her mother. Now that the caption names the episode the
+  // cinematic view films, it came up in the first shot of the field map's crown feed.)
   /** Cinematic caption: who is on screen and what is happening, from the live interaction list. */
   function updateCaption() {
     if (state.view !== 'cinematic') return;
