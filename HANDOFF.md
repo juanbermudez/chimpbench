@@ -67,6 +67,10 @@ to groom) stays off until the user says yes or the Ngogo route qualifies. Stage 
 preflight on 18 October at 11:19 (R15's preflight worker did not accept the chain's lock; nothing loaded); repaired by
 amendment 25 (`r16-prereg.md` §25, merged as c7644d4; the frozen checkout moved to 6cdf1fa and its pin re-taken by
 `scripts/r16-repin.py`), and session 1 restarted at 11:36.
+Its preflight then failed at 11:41 on one of 24 numeric checks (bfloat16 against float16, 0.0230 against R15's 0.02,
+token ids identical); the user ruled "loosen the lilmit" and amendment 26 (`r16-prereg.md` §26; iteration 2) set it to
+0.05; the frozen checkout moved to f3d3052 and its pin was re-taken (`scripts/r16-repin.py --allow`). Session 1 is
+queued (15:25 EDT) to start once the app the user is watching on port 5182 is closed and the machine is quiet.
 **Stage R16 (written 18:40 EDT, 17 October):** registered, built and reviewed with no model (eight defects repaired by the
 second reader), merged into `track-e` (6c72d70) and frozen as `.claude/worktrees/bench-r16` at 2971e14. The no-model
 dry chain and session 0 run in the detached screen session `r16-s0` (outputs `bench-r16/artifacts/r16-dry.out`,

@@ -580,7 +580,7 @@ absolute harm forecasts, strand marks); G8 (no gross harm at ten animals); G9 (t
 false alarms printed); the population read by R13 §8.1 word for word, then mornings, nights and the target stage; the
 recipe named only when both trainings agree; the app demo only on a viable adapter.
 **Tests**: `tests/r16-scale.test.ts` (19), `tests/r16_chain_test.py` (9); the earlier stages' tests unedited.
-**Status**: Registered and built on branch `r16-scale-and-own-states` (17 October 2026), reviewed by a second reader (eight defects repaired, §23 and §24), merged into `track-e` (6c72d70). Frozen checkout `bench-r16` at 2971e14; the no-model dry chain and session 0 started at 18:39 EDT on 17 October; **no model step has run**. The integrator runs it in three model sessions (about 33 model hours; 27 if s7's population is not
+**Status**: Registered and built on branch `r16-scale-and-own-states` (17 October 2026), reviewed by a second reader (eight defects repaired, §23 and §24), merged into `track-e` (6c72d70). Frozen checkout `bench-r16` at 2971e14; the no-model dry chain and session 0 started at 18:39 EDT on 17 October; **no model step has run**. The integrator runs it in three model sessions (about 33 model hours; 27 if s7's population is not **18 October:** session 1 stopped twice before any training: at 11:19 (the preflight worker did not accept the chain's lock; amendment 25 repaired it) and at 11:41 (one numeric check, bfloat16 against float16, 0.0230 against 0.02; the user ruled "loosen the lilmit"; amendment 26 set it to 0.05, iteration 2). Queued again at 15:25 EDT.
 viable) from a frozen checkout, `docs/staging/r16-prereg.md` §22.
 
 
