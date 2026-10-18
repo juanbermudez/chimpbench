@@ -1354,3 +1354,26 @@ line to the status log. Tests: `tests/r16_chain_test.py`.
 
 **What does not change.** No setting, seed, file, split, teacher, recipe, mark, statement, cap or order of §0 to §24; no
 step already done is run again. This is not an iteration of §21 (no result of the stage existed when it was made).
+
+## 26. Amendment of 18 October 2026: the preflight's tolerance between the training and serving number formats (the user's ruling; written 15:24 EDT)
+
+**What happened.** With §25's repair, session 1 restarted at 11:36; `tokens-zero` was already done, and `preflight-zero`
+loaded the untuned model and ran R15's numerical parity on its 24 fixture rows (`artifacts/r16/ft0/preflight/parity.json`).
+Every row had the same token ids on the training and serving paths, and every gap but one was inside R15's limits: fp32
+against the serving call 0 (limit 0.0001), half against the serving call at most 0.00024 (0.001), fp32 against half at
+most 0.0022 (0.005). One row, a permuted target packet of 342 tokens, had a gap of 0.0230 between bfloat16 (the
+trainer's autocast) and float16 (serving), against R15's limit of 0.02; the step failed at 11:41 and wrote no
+`passed`. R15's own preflight had measured at most 0.0087 on its shorter packets (at most 615 tokens). Nothing was
+trained.
+
+**The ruling.** Put to the user in plain words (a rounding difference between the two number formats on one long
+packet, not a bug; either loosen that one limit to 0.05, which still catches real mismatches, or train in full precision
+at about half again the time per night), the user answered, verbatim: "loosen the lilmit". So R15's `bf16_half_gap`
+limit (`training/decide_ft/r15_preflight.py` `LIMITS`) is 0.05 from this amendment, for R16 and for every later run of
+that preflight. Every other limit, the token-id identity and every setting of §0 to §25 stand. The failed preflight's
+folder is kept, moved aside to `ft0/preflight-failed-20261018-1141` (§22: a failed preflight leaves its folder and a
+person moves it aside after reading it), and the preflight runs again.
+
+**The pin.** `scripts/r16-repin.py` gains `--allow <path>`: a registered source other than this registration may differ
+from the pin only when it is named with `--allow` and the appended amendment names it too; it is used here for
+`training/decide_ft/r15_preflight.py`. This is the stage's second iteration (§21), counted as such.
