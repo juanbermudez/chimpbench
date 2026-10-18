@@ -10,12 +10,19 @@ import zlib
 
 from r15_preflight import (ROOT, SCHEMA, LIMITS, dataset_identity, implementation_identity, runtime_identity,
                            fixture_rows, probability_gap, read, sha, write_new, assert_execution_runtime)
-from train_r15 import MODEL_LOCK, validate
+from train_r15 import MODEL_LOCK, validate, chain_owned
+
+
+def supervisor_lock_ok(lock, root):
+    """The lock its supervisor took (pid, purpose, root), or, under stage R16's chain (docs/staging/r16-prereg.md §25), the
+    chain's lock passed down by its token, as the trainer accepts it (train_r15.chain_owned raises on a wrong token)."""
+    if chain_owned(): return True
+    return lock.get('pid') == os.getppid() and lock.get('purpose') == 'preflight' and lock.get('root') == str(root)
 
 
 def main(root):
     lock = read(MODEL_LOCK)
-    if lock.get('pid') != os.getppid() or lock.get('purpose') != 'preflight' or lock.get('root') != str(root):
+    if not supervisor_lock_ok(lock, root):
         raise ValueError('preflight worker requires its exclusive supervisor lock')
     assert_execution_runtime()
     manifest = validate(root)

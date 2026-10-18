@@ -1332,3 +1332,25 @@ tests fail on the build's code (290 ms booked for a 209 ms recovery; a late adul
 type-check is clean.
 
 Before session 1: the user's word on the decode (§20 item 1) is still the one open question that changes the runs.
+
+## 25. Amendment of 18 October 2026: an operational repair before any model step ran (the integrator; written 11:29 EDT)
+
+**What happened.** Session 0 ended at 20:50 on 17 October with every gate holding. Session 1 was first refused at 23:12
+for swap above 6 GB (§17.8), as registered. On 18 October at 11:18 it started; its first step (`tokens-zero`, the
+tokenizer alone) passed, and its second (`preflight-zero`) exited at once: R15's preflight worker
+(`training/decide_ft/r15_preflight_worker.py`) checks that the lock file names its own supervisor (pid, purpose
+`preflight`, root), and under this chain the lock names the chain (`stage: R16-chain`, its token). The build had taught
+the trainer (`train_r15.py` `chain_owned`) and the scorer (`server/r15-scorer.py`) to accept the chain's lock and left
+this third check out; the dry chain never reached it, because the dry chain's preflight is the fake path. No weight was
+loaded, nothing was trained or scored, and no output of session 0 or of `tokens-zero` was touched.
+
+**The repair (the only code changed).** (1) The preflight worker accepts the lock when `train_r15.chain_owned()` holds
+(the chain's token passed down, `stage` `R16-chain`, the chain's pid among the worker's ancestors), exactly as the
+trainer does; otherwise its old check stands. (2) `scripts/r16-repin.py` (a new script, outside the pinned sources, so `scripts/r16.py` is unchanged) re-takes
+the chain's identity pin (§17) after a repair: it refuses unless the chain is not running, the old commit is an ancestor of the new one, every registered source
+file (`SOURCES`) other than this registration has the hash the pin recorded, and the old registration is a prefix of the
+new one (only an appended section). It keeps the old pin beside the new one as `identity-<old commit>.json` and writes a
+line to the status log. Tests: `tests/r16_chain_test.py`.
+
+**What does not change.** No setting, seed, file, split, teacher, recipe, mark, statement, cap or order of §0 to §24; no
+step already done is run again. This is not an iteration of §21 (no result of the stage existed when it was made).
