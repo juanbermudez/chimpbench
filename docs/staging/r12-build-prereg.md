@@ -6,6 +6,9 @@ graphics probe, no dev server and no browser is started by this stage: it builds
 what a later stage trains. Stage R16's model sessions may be running on this computer from `bench-r16`; nothing here
 touches that checkout, its `screen` sessions or `artifacts/r14-chain.lock`.
 
+**Amended before any code** by amendment A1 (section 16, 17 October 2026, 23:05 EDT), which answers the second reader's
+attack and supersedes every passage it names. Where the two differ, section 16 holds.
+
 **What every result of this stage is called.** This stage trains nothing and runs no model, so its runs are named for
 what decides in them: "no model: the rules' top option on the R12 menu", "no model: a random chooser on the R12 menu",
 "no model: the rules" (a world in which every animal is on the rules). Any later trained arm on this menu is a
@@ -538,6 +541,129 @@ binds; the loop test on fresh seeds.
 - **Machine contention**: whole-suite and build checks may find no gap while R16 runs; they are then reported as not
   done, and the integrator runs them at the merge.
 
+## 16. Amendment A1 (17 October 2026, 23:05 to 23:20 EDT; before any code)
+
+A second reader attacked the registration above (8 corrections, 14 gaps, 14 amendments). Every amendment is accepted,
+one of them with a different reading (A1.2), stated with its reason. Nothing here was run; no code existed when this was
+written.
+
+**A1.1 The adult male pair opening has its own value of the switch, off unless a run names it.** `menuPossible` becomes
+a level, 0 to 2 (whole numbers, 0 in both profiles): **1** gives the greeting target (ruling 7), the removal of the
+dice acts (ruling 10), the counted-rules list and the counts; **2** gives all of that and also an adult male's grooming
+target among the adult males in reach whatever they are doing (ruling 6). Every run of this stage that does not say
+"level 2" is at level 1. Reason: ruling 6 opens the pair class "only where a wild record can teach the choice"; the design's
+own rule (`r12-prereg.md` §10) admits a newly offered option only with a named teacher, and the one wild adapter in hand
+does worse than the three-rule stack (0.400 against 0.487). So, by default, **the export writes no label for a group
+that holds an option the rules' own gate would refuse** (`rulesGate` false, a male who is not settled): that group gives
+no training row, and the exclusion is counted. A labeller option (`scaffold: true`) writes such rows, flagged; any arm
+that uses them is named for it (A1.8). At level 1 the unsettled adult males in reach are counted as possible but not
+offered (section 7). Level 2 may be used for a run only after the user says yes to the open question (section 15,
+"Decisions") or after the Ngogo route passes its qualification and beats 0.487 on the development part.
+
+**A1.2 The dice acts: the order of the steps, and who owns them after they start.** In `decisionPoint`, for an animal a
+kernel decides for, on both paths (the lockstep model path and the in-tick kernel path), with `menuPossible` at 1 or 2:
+(1) perceive; (2) the rules' own list (`getEligibleActions`) and the model's legal pool; (3) the loop's gate, when
+`kernelGate` is 1 (an intention it holds is kept as today, and wins); (4) **the dice check**: if the rules' own first
+option (their argmax) is the gang attack, the attack on an infant or the transfer, the rules start it (`startAction`,
+source `rules`), any intention is dropped, no kernel is asked and no draw is taken, and a read-only tap records it;
+(5) only then the act-in-progress check (model path) or the kernel's step (in-tick path). A rules-started dice act holds
+**no intention**, so `loopGate` can never restart it with source `decide`. At every later decision point step 4 runs
+again: while the act is still the rules' first option the rules continue it (`startAction` on the same act keeps its
+progress) and its source stays `rules`; when it no longer is, the rules have ended it, and the animal is open for its
+kernel as after any other ended act. *The different reading:* the attack asked that the act be "checked against the
+rules' own list". That is not adopted: an act still on the rules' list but no longer their first option would run on
+only until the kernel's answer replaced it, so the kernel would end it, against ruling 10. Here the rules start, continue
+and end it. Tests: a transfer and a gang attack started by the rules each run on under source `rules` while the rules
+rank them first and end by the rules; stop rule: either is set aside for missing from the model's pool, or relabelled
+`decide`.
+
+**A1.3 The dice options leave the candidate list before anything is built from it.** With the switch on, the request
+builder removes them from the list before the bounded flat menu, the kind menu and the kept picks are built (the rules'
+argmax among the kept picks is then their best option that is not a dice act), and the observation that orders the
+kind packet's nearby list is built from the same list without them. So the kind menu is the one R15 would build without
+them, and no animal leads the kind packet because of a removed act. Test 5 then reads: the kind packet equals R15's
+byte for byte at every sampled decision point where no dice option was among the candidates; and a test with a dice
+act among them checks that it is in neither the menu nor the nearby order.
+
+**A1.4 Ruling 3's count, in three classes.** A trip the rules start to a tree that is not in the animal's own memory
+within the horizon came to their menu from the community's list (the list loop skips every tree in its memory, of any
+age). Split by the animal's own list sighting (`x.ls`, `tripBeliefs` bit 1): **(a)** no sighting (never seen by it);
+**(b)** a sighting older than 240 h; **(c)** a sighting within 240 h of a tree no longer in its memory (perception
+records every listed crown in view, but memory keeps only fruiting crowns among the best five in view). Class (c) is
+reported apart as trees the animal saw itself that R15's pool, which reads memory only, cannot show; it is put to the
+user beside the count as a question for ruling 2 ("perceives or remembers"). Test 12's crafted world covers all three.
+
+**A1.5 The pin: what is compared, which paths, and its route.** The pin is recorded by direct library calls (never
+through `scripts/r15-contexts.ts`, which refuses while `artifacts/r14-chain.lock` exists or the tree is dirty, and never
+through `scripts/r15-loop.ts`, which keys every call's identity to git HEAD). Compared exactly: the hashes of every
+request, packet, legal pool and label; the end hashes of worlds; the receipts and journal calls of R15's wiring run,
+with the run identity fixed to the string `r12-pin` instead of one built from git HEAD; for R16's runner (`runDay16`
+with an in-process asker whose odds are a hash of the packet, a short day on seeds 48 and 7), its journal calls, its ask
+and held lines (stage R16's own `comparable16`) and its day hash, with the wall-clock, milliseconds and process fields
+of the day summary left out; for R16's census and selection (`rulesCensus` over one day with no burn-in, then `select`
+with the plan `zero`), the census entries and the selection digest, the census file's commit field set to `r12-pin`.
+Nothing compared carries a time of day, a path or a host name.
+
+**A1.6 The representative's place.** In each new group the members are the current act's target when it is still
+allowed, then R15's representative (chosen by the rules' score: R15's rule, counted as a limit in the list), then the
+nearest; at most 8; listed nearest first. So the option that put the kind on the menu can never fall off. Section 4.1's
+sentence "No rules score ... decides membership or order" is corrected to: no rules score decides the membership or
+order of the opened members. Test 4 permutes the scores of the opened members only, the representative held fixed.
+
+**A1.7 The offer table.** The greeting of every allowed dominant and an adult male's grooming of every adult male in
+reach are two new `offer()` sites behind the switch, which is never on in the rules' enumeration the table audits, so
+both are legacy. The test holds unchanged what the user signed: 69 live and 6 young places; 6, 2 and 61; 58, 25 and 3;
+and every live row's conditions. "All" and "legacy" rise by the new sites (94 to 96 and 19 to 21 if there are two), and
+the valuation ledger's site count, which the table must equal, rises with them. The first page is regenerated with a
+line that names the change and the sites, instead of presenting the totals as the signed ones.
+
+**A1.8 Names.** Any later trained arm on this menu is a "**rules-taught model on a rules menu (the R12 menu)**"; an arm
+whose grooming partner among adult males comes from the wild adapter is a "rules-taught model on a rules menu (the R12
+menu), with the grooming partner among adult males chosen by a wild-taught adapter (`r4-field-groom`, Ngogo male
+grooming)"; an arm taught on the scaffold rows of A1.1 adds "with the adult male partners labelled by the rules' own
+formula past their gate (a scaffold)". The no-model names of the introduction stand.
+
+**A1.9 Facts corrected (section 2 and the counted-rules list).** R15's sample of trees is keyed by the time the animal
+has spent in its current act (`c.actionTime`, seconds, times 3600; `resources.ts` line 43), not by the act's start; it
+is often 0 at a waiting ask, because an animal set aside to wait is set to rest with that clock at 0. This is recorded as
+an existing R15 limit and not changed. The transfer is opened by the dispersal hazard (`src/sim/reproduction.ts` line
+87), not at perception; the gang attack (`perception.ts` line 283) and the attack on an infant (line 335) are rolled at
+perception. The rates of all three are fixed per draw at a decision point, not per hour: perception, and so the rolls,
+run at decision points, so how often decisions come changes the hourly rate. This is named as a limit; M1 and M2 count
+dice acts per animal-hour.
+
+**A1.10 M1's cost.** The share of R15's "Go to food elsewhere" kind label that comes from listed trees needs R11's label
+at a decision point. It is computed only at decision points sampled by a hash of (seed, tick, animal) with probability
+0.02, at most 40 per seed, and stops at a wall-clock cap of 15 minutes per seed (what was done is reported). One
+simulation at a time. M1 and M2 also report the estimated length of every new target packet (the project's token
+estimator, `estimateInputTokens`; the real tokenizer is a model-environment process and does not run), flagged against
+R15's own largest estimated packet in the same run and against the hard limit of 1,280.
+
+**A1.11 Section 7 gains two counts**, which rulings 6 and 7 imply and the design's ledger line 5 lists: an animal in
+greeting reach, of the greeting age, that does not outrank the greeter (a pant-grunt that "only to a dominant" keeps off
+the menu); and an unsettled community member in grooming reach, for every pair other than an adult male with an adult
+male (a grooming that "only a settled partner" keeps off).
+
+**A1.12 Section 8.6 (adopted as recommended).** With the switch on, R15's hash choice among the resource groups is
+unchanged, and a social target row is chosen among the social groups by its own hash. So a decision can give a kind row,
+a resource target row and a social target row, and the resource rows of an R12 collection stay comparable with R15's.
+The social row's teacher draws its own stream (keyed by the row id with a suffix), never the resource row's.
+
+**A1.13 Section 12, iterations.** Iteration 0 (the pin script and the pin on the unchanged source) changes no
+simulation code and is not counted among the three; any repair of the pin script after it has recorded counts as one of
+the three.
+
+**A1.14 For the integrator's lines.** Added: a reading note for R16 (read-only; R16's results stand as registered): under
+R15's contract its model saw, and could pick or refuse, the three dice acts, which ruling 10, made after R16 was frozen,
+takes off the R12 menu; R16's own receipts can show how often a dice kind was on its kind menu and taken. Section 13,
+item 2 is corrected to "**left as R15 built it until the user rules**" (the design made no recommendation and the user
+has not ruled on it), and it joins "Decisions that are the user's", with "Carry on" (recommended yes, not built).
+
+**What the attack's corrections change elsewhere.** Section 4.1's first paragraph on order (A1.6); section 6's two
+classes (A1.4); section 8.4's default (A1.1); section 10.1's pin (A1.5); section 10.2 tests 4, 5, 8 and 13 (A1.6, A1.3,
+A1.2, A1.7); section 10.3's M1 (A1.10); section 12's iterations (A1.13); section 13 item 2 (A1.14); the names
+(A1.8); section 2 rulings 2 and 10 (A1.9).
+
 ## For the integrator (proposed lines; HANDOFF.md, IMPLEMENTATION_PLAN.md and AGENTS.md are not edited by this stage)
 
 **`IMPLEMENTATION_PLAN.md`**, a block after Stage R16:
@@ -571,4 +697,10 @@ reader; a later stage trains on its menu." §6 item 1: "built as ruled, behind `
 **Decisions that are the user's** (one line each): whether a rules-taught arm may label the opened male partners by the
 rules' formula (recommended: yes, reported apart and named a scaffold); whether ruling 3's count is large enough for a
 slot "known to my community" (no threshold set); whether the choice among settled partners and the targets of the other
-social kinds should open next (not ruled; the rules value each, so a scaffold teacher exists).
+social kinds should open next (not ruled; the rules value each, so a scaffold teacher exists). Added by A1.4 and A1.14:
+whether trees the animal saw itself within 240 h but no longer holds in memory (class c of ruling 3's count) count as
+"perceived or remembered" under ruling 2; a companion's goal tree under "Go to food" or "Go along with a companion" (no
+recommendation; left as R15 built it until the user rules); "Carry on" as an option (recommended yes; not built).
+
+**Reading note for R16** (A1.14; read-only, R16's results stand as registered): under R15's contract R16's model saw,
+and could pick or refuse, the three dice acts; ruling 10, made after R16 was frozen, takes them off the R12 menu.
