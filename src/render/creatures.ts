@@ -217,6 +217,9 @@ export interface Anim {
   bodyQ: Float32Array; bx: number; by: number; bz: number; lift: number;
   elevated: number;                // 0 ground .. 1 in a tree
   carry: 0 | 1 | 2; carryBlend: number; carrierId: number;
+  /** Stage W14, second reader: an infant being put down (its carry's blend-out, carryBlend falling): it is placed at its
+   * own place first and the blend mixes from its carrier to there (startPutDown). */
+  putDown: boolean;
   /** Another animal is on its body (an infant it carries, alive or dead), by the carry state of the last frame. */
   holds: boolean;
   // Appearance and overlays.
@@ -505,7 +508,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       attn: createAttention(), lk: [{ x: 0, v: 0 }, { x: 0, v: 0 }, { x: 0, v: 0 }], lookW: 0, eye: [{ x: 0, v: 0 }, { x: 0, v: 0 }], blink: createBlink(chimp.id), exert: 0,
       rs: [{ x: 0, v: 0 }, { x: 0, v: 0 }, { x: 0, v: 0 }],
       tx: chimp.position[0], tz: chimp.position[2], headingTarget: null,
-      bodyQ: new Float32Array([0, 0, 0, 1]), bx: 0, by: 0, bz: 0, lift: 0, elevated: 0, carry: 0, carryBlend: 0, carrierId: -1, holds: false,
+      bodyQ: new Float32Array([0, 0, 0, 1]), bx: 0, by: 0, bz: 0, lift: 0, elevated: 0, carry: 0, carryBlend: 0, carrierId: -1, putDown: false, holds: false,
       fur: new Float32Array(3), skin: new Float32Array(3), gray: 0, beard: 0, bald: 0, tuft: 0, mottle: 0,
       bristle: 0, dim: 0, fade: 0, blinkAt: hash01(chimp.id, 9) * 4, mouth: 0, grin: 0, appearanceAt: -1, deadAt: null,
       px: 0, visible: true, lod: 2, lodFrom: 2, lodT: 99, poseAccum: 99, lastSkinFrame: -1, head: new THREE.Vector3(), top: 1, troopColor: '#cccccc',
@@ -2432,6 +2435,24 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   }
 
   const motherQ = new Float32Array(4), motherP = new Float32Array(3);
+  /**
+   * Stage W14, second reader: an infant put down leaves its carrier from where it is drawn on her. The carry's blend-out
+   * used to ease from the carried place toward the carried place (it stayed on her), and in the frame the carry ended
+   * the body was drawn at its own place at once: every one of 22 put-downs in the stage's films jumped, 2.8 m in a frame
+   * in a crown (1.4 m down) and up to 9 m on the ground at Watch 4x. Its own place now starts where it is drawn: in a
+   * crown, the seat's easing (it clambers to its seat at a clamber's speed: crownStep, clambering); on the ground, its
+   * layout offset (it walks to its path's place, as a partner sliding into place does). During the blend-out it is placed
+   * there first (placeGrounded) and placeCarried mixes from the carrier to it. Not in time-lapse, where places are drawn
+   * at once by design. A drawing rule.
+   */
+  function startPutDown(a: Anim) {
+    a.putDown = true;
+    const tr = a.track;
+    if (tr.y > 0.3) {
+      a.sx = a.cx = a.bx; a.sy = a.cy = a.by; a.sz = a.cz = a.bz; a.seated = true; a.cFrame = frameNo - 1;
+      a.qx = tr.x; a.qy = tr.y; a.qz = tr.z; a.crownH = a.heading;   // (the crown's turn limit starts from the carried heading)
+    } else { a.ox = a.bx - tr.x; a.oz = a.bz - tr.z; }
+  }
   function placeCarried(a: Anim, dt: number) {
     const m = anims.get(a.carrierId);
     if (!m) return;
@@ -2677,8 +2698,11 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     // Carry state.
     for (const a of animList) {
       const mode = carryMode(a);
-      if (mode !== 0) { a.carry = mode; a.carryBlend = Math.min(1, a.carryBlend + dt / 0.4); }
-      else { a.carryBlend = Math.max(0, a.carryBlend - dt / 0.4); if (a.carryBlend <= 0) { a.carry = 0; a.carrierId = -1; } }
+      if (mode !== 0) { a.carry = mode; a.carryBlend = Math.min(1, a.carryBlend + dt / 0.4); a.putDown = false; }
+      else {
+        if (a.carry !== 0 && !a.putDown && a.chimp.alive && curSimRate <= ABOUT_MAX_RATE) startPutDown(a);
+        a.carryBlend = Math.max(0, a.carryBlend - dt / 0.4); if (a.carryBlend <= 0) { a.carry = 0; a.carrierId = -1; a.putDown = false; }
+      }
     }
 
     // Motion, LOD, pose, placement for non-carried animals; carried infants afterwards.
@@ -2723,7 +2747,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         // The body frame comes first: contact planting converts between world and body space.
         // (Second reading of stage W11: a carried body does not clamber. placeGrounded, which alone ends the clamber,
         // is not asked for it: an infant picked up on its way to a seat kept the flag for as long as it was carried.)
-        if (carried) { a.clamber = false; a.clamberK = 0; placeCarried(a, dt); }
+        if (carried) { a.clamber = false; a.clamberK = 0; if (a.putDown) placeGrounded(a); placeCarried(a, dt); }
         else placeGrounded(a);
         if (needPose) {
           const acc = Math.max(dt, a.poseAccum);
