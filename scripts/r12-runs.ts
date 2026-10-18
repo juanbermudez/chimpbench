@@ -16,7 +16,7 @@ import { r15Packet } from '../src/providers/packet';
 import { candidateMeta, computeCandidates, V } from '../src/sim/candidates';
 import { loopTap } from '../src/sim/decide';
 import { isAdultMale } from '../src/sim/hierarchy';
-import { optionKind } from '../src/sim/menu';
+import { optionKind, same } from '../src/sim/menu';
 import { paramsOf } from '../src/sim/params';
 import { isDiceOption, settledPartner } from '../src/sim/possible';
 import { buildRequest, targetRequest } from '../src/sim/request';
@@ -28,7 +28,8 @@ import type { Chimp, World } from '../src/types';
 import { worldHash } from '../tests/fixtures/golden';
 import type { HarnessDecode } from './lib/decoder';
 import { estimatedTokens, listedNotOwn, ownTrip, possibleNotOffered, treeSource, type TreeSource } from './lib/r12-menu';
-import { r15TrainingRows } from './lib/r15-training';
+import { r15TrainingRows, socialTarget } from './lib/r15-training';
+import { published } from './lib/soft-labels';
 import { hashR15, r15FakeKernel, runR15, type R15Call } from './lib/r15-loop';
 import { u01 } from './r4-contexts';
 import { tapRulesDecisions } from './r8-contexts';
@@ -72,7 +73,11 @@ export interface M1Result {
   tokens: { social: { n: number; max: number; mean: number }; resource: { n: number; max: number; mean: number }; over1280: number };
   label: { sampled: number; goToFoodMass: number; fromList: Record<TreeSource, number>; seconds: number; capped: boolean };
   handRules: ReturnType<typeof handRulesOf>;
+  /** The labels of the new target stages against the rules' realised picks (at fresh rules decisions whose pick is a pant-grunt, or an adult male's grooming of an adult male, with a group of two or more). */
+  realised: Record<'greet' | 'groom', Realised>;
 }
+export interface Realised { n: number; inGroup: number; argmaxJitter: number; labelTop: number; mass: number; chance: number }
+const realisedNew = (): Realised => ({ n: 0, inGroup: 0, argmaxJitter: 0, labelTop: 0, mass: 0, chance: 0 });
 
 export function runM1(seed: number, log: (s: string) => void): M1Result {
   if (!SEEDS.includes(seed)) throw new Error('development seeds 48 and 7 only');
@@ -89,7 +94,8 @@ export function runM1(seed: number, log: (s: string) => void): M1Result {
     dice: { best: {}, perAnimalHour: 0 }, ruling3: { trips: 0, bySource: { own: 0, never: 0, old: 0, unremembered: 0 }, listedOnMenu: 0, perAdultDay10: {} },
     possible: {}, listedNotOwn: { never: 0, old: 0, unremembered: 0, decisions: 0 }, packets: { compared: 0, equal: 0, withDice: 0, withDiceEqual: 0 },
     tokens: { social: { n: 0, max: 0, mean: 0 }, resource: { n: 0, max: 0, mean: 0 }, over1280: 0 },
-    label: { sampled: 0, goToFoodMass: 0, fromList: { own: 0, never: 0, old: 0, unremembered: 0 }, seconds: 0, capped: false }, handRules: handRulesOf(params) };
+    label: { sampled: 0, goToFoodMass: 0, fromList: { own: 0, never: 0, old: 0, unremembered: 0 }, seconds: 0, capped: false }, handRules: handRulesOf(params),
+    realised: { greet: realisedNew(), groom: realisedNew() } };
   const tok = { social: [] as number[], resource: [] as number[] };
   let labelMs = 0;
   const untap = tapRulesDecisions(w, { minAge: P.rgMinAge, want: () => true, onDecision: d => {
@@ -119,6 +125,20 @@ export function runM1(seed: number, log: (s: string) => void): M1Result {
         r.groom.adultMaleOnMenu++; const g = req.groups![mi]; hist(r.groom.sizes, g.length);
         r.groom.members += g.length; r.groom.opened += g.filter(k => !settledPartner(index(w).byId.get(k.targetId)!)).length;
         if (pool.filter(k => candidateMeta.get(k)?.open && optionKind(k) === 'groom').length > 7) r.groom.past8++;
+      }
+    }
+    // the labels of the new target stages against the rules' realised pick (the teacher's arithmetic with the realised jitter, and the label's mass on it)
+    const ck = optionKind(d.chosen), co = index(w).byId.get(d.chosen.targetId);
+    const which = d.chosen.action === 'pant-grunt' ? 'greet' : ck === 'groom' && isAdultMale(c) && co && isAdultMale(co) ? 'groom' : null;
+    const ri = which ? kinds.indexOf(which === 'greet' ? 'greet_or_appease' : 'groom') : -1;
+    if (which && ri >= 0 && req.groups![ri].length > 1) {
+      const R = r.realised[which], st = socialTarget(w, c, req, ri, `r12-m1:${seed}:${d.tick}:${c.id}`), at = st.request.options.findIndex(o => same(o, d.chosen));
+      R.n++; R.chance += 1 / st.request.options.length;
+      if (at >= 0) {
+        R.inGroup++; R.mass += st.q[at];
+        if (st.q.indexOf(Math.max(...st.q)) === at) R.labelTop++;
+        const withJitter = st.request.options.map(o => { const m = candidateMeta.get(o); return m?.raw === undefined || m.jit === undefined ? -Infinity : published(m.raw + m.jit); });
+        if (withJitter.indexOf(Math.max(...withJitter)) === at) R.argmaxJitter++;
       }
     }
     // the length of every target packet (A1.10): the new social ones and R15's resource ones
@@ -244,6 +264,9 @@ export function numbersMarkdown(m1: M1Result[], m2: M2Run[]): string {
   row('decisions whose rules\' best option is a dice act; per animal-hour of animals 8 and over', r => `${Object.entries(r.dice.best).map(([k, v]) => `${k} ${v}`).join(', ') || 'none'}; ${r.dice.perAnimalHour.toExponential(2)}`);
   row('kind packets compared with R15\'s at sampled asks: equal (with a dice act among the candidates: equal)', r => `${r.packets.equal} of ${r.packets.compared} (${r.packets.withDiceEqual} of ${r.packets.withDice})`);
   row('estimated tokens of the new social target packets: mean; largest (R15\'s resource target packets in the same run: mean; largest); over 1,280', r => `${r.tokens.social.mean}; ${r.tokens.social.max} (${r.tokens.resource.mean}; ${r.tokens.resource.max}); ${r.tokens.over1280}`);
+  o.push('', '### The labels of the new target stages against the rules\' realised picks', '');
+  o.push('At fresh rules decisions whose pick was a pant-grunt (the greeting group) or an adult male\'s grooming of an adult male (the grooming group at level 2), with a group of two or more: whether the pick is in the group, whether the teacher\'s arithmetic with the realised jitter (the published clamp of raw value plus jitter) ranks it first, whether the label (2,000 redraws of the jitter) ranks it first, and the label\'s mean mass on it against chance (one over the group\'s size). The rules pick the dominant to greet by its score before the jitter, and the grooming partner among settled partners only, so neither agreement is expected to be complete.', '');
+  for (const k of ['greet', 'groom'] as const) row(`${k === 'greet' ? 'greeting' : 'grooming among adult males'}: decisions; pick in the group; first by the realised jitter; first by the label; label mass on it (chance)`, r => { const R = r.realised[k]; return `${R.n}; ${R.inGroup}; ${R.argmaxJitter}; ${R.labelTop}; ${R.n ? (R.mass / R.n).toFixed(3) : '–'} (${R.n ? (R.chance / R.n).toFixed(3) : '–'})`; });
   o.push('', '### Ruling 3: how often the rules go to a tree from the community\'s list (A1.4)', '');
   row('own food trips the rules started', r => String(r.ruling3.trips));
   row('… to a tree in its own memory within 240 h', r => `${r.ruling3.bySource.own} (${pct(r.ruling3.bySource.own, r.ruling3.trips)})`);

@@ -109,8 +109,8 @@ export interface R15LabelOptions {
   anySeed?: boolean;
   /** At a rules decision: the option the rules took and the world's random state before they chose, so that R11's marks (M1 a to c) check the rules' own draw. Absent: they check the menu's top option against the current state, as stage R15 does. */
   realised?: { chosen: Candidate; rngBefore: number };
-  /** Stage R12 build (A1.12): which social group gives the social target row: its own hash choice among the opened social groups ('hash', the default), or none. Read only on a request of the ruled menu. */
-  social?: 'hash' | 'none';
+  /** Stage R12 build (A1.12): which social group gives the social target row: its own hash choice among the opened social groups ('hash', the default), the first of a list of kinds that has one, or none. Read only on a request of the ruled menu. */
+  social?: 'hash' | 'none' | { kinds: Kind[] };
   /** Stage R12 build (A1.1): also write a grooming row whose group holds an adult male the rules' gate would refuse (labelled by the rules' formula past their gate: a scaffold). Default: such a group gives no row, and the exclusion is counted. */
   scaffold?: boolean;
 }
@@ -174,21 +174,32 @@ function socialRow(w: World, c: Chimp, request: KernelRequest, id: string, opts:
   const social = groups.map((group, i) => ({ group, i, kind: request.context.resourceKinds?.[i] }))
     .filter(g => g.kind && isSocialTargetKind(g.kind) && g.group.length > 1 && around[g.i])
     .sort((a, b) => digest(`${id}:social:${a.kind}`).localeCompare(digest(`${id}:social:${b.kind}`)));
-  const chosen = social[0];
+  const want = opts.social ?? 'hash';
+  const chosen = want === 'none' ? undefined : want === 'hash' ? social[0] : want.kinds.map(k => social.find(g => g.kind === k)).find(Boolean);
   if (!chosen) return;
-  const target = targetRequest(request, chosen.i);
-  if (!target || target.context.resourceChoice !== 'target') throw new Error('R12 social target request missing stage');
+  const s = socialTarget(w, c, request, chosen.i, id), opened = !!s.options && s.options.some(f => !f.rulesGate), written = !opened || !!opts.scaffold;
+  detail.social = { kind: chosen.kind!, group: chosen.i, request: s.request, values: s.values, q: s.q, options: s.options, written };
+  if (!written) { exclusions.push('opened partner without a teacher'); return; }
+  rows.push(exportRow(w, c, s.request, id, s.q, R12_SOCIAL_TEACHER, { redraws: R15_TARGET_REDRAWS, matchedMenus: R15_TARGET_REDRAWS, excludedKindMass: 0 }, !!opts.anySeed, { suffix: '/social', ...(s.options ? { options: s.options } : {}) }));
+}
+
+/**
+ * Stage R12 build (§8.3, §8.4): the social teacher on group `index` of a request of the ruled menu: the shown targets, each
+ * valued by the rules' own raw value (the greeting score; the grooming formula, past the rules' gate for a male who is not
+ * settled), the jitter redrawn on a stream keyed by the row id and its own suffix, the published clamp, the share each wins.
+ * On an adult male's grooming group each option carries whether the rules' gate allows it and whether the pair is two adult
+ * males. Pure: no world random state, no write.
+ */
+export function socialTarget(w: World, c: Chimp, request: KernelRequest, index_: number, id: string): { request: KernelRequest; values: TargetValue[]; q: number[]; options: { rulesGate: boolean; pair: boolean }[] | null } {
+  const target = targetRequest(request, index_), kind = request.context.resourceKinds?.[index_];
+  if (!target || target.context.resourceChoice !== 'target' || !kind || !isSocialTargetKind(kind)) throw new Error('R12 social target request missing stage');
   const P = paramsOf(w), byId = index(w).byId, values = target.options.map(k => {
     const meta = candidateMeta.get(k);
     if (meta?.raw === undefined) throw new Error('social target has no true raw valuation');
     return { key: optionKey(k), raw: meta.raw, belief: null };
   });
-  const flags = chosen.kind === 'groom' ? target.options.map(k => { const o = byId.get(k.targetId); return { rulesGate: !!o && settledPartner(o), pair: !!o && isAdultMale(c) && isAdultMale(o) }; }) : null;
-  const t = targetCounts(values, P.candidateJitterSpan, `${id}/social`), q = normalize(t.counts);
-  const opened = !!flags && flags.some(f => !f.rulesGate), written = !opened || !!opts.scaffold;
-  detail.social = { kind: chosen.kind!, group: chosen.i, request: target, values, q, options: flags, written };
-  if (!written) { exclusions.push('opened partner without a teacher'); return; }
-  rows.push(exportRow(w, c, target, id, q, R12_SOCIAL_TEACHER, { redraws: R15_TARGET_REDRAWS, matchedMenus: R15_TARGET_REDRAWS, excludedKindMass: 0 }, !!opts.anySeed, { suffix: '/social', ...(flags ? { options: flags } : {}) }));
+  const options = kind === 'groom' ? target.options.map(k => { const o = byId.get(k.targetId); return { rulesGate: !!o && settledPartner(o), pair: !!o && isAdultMale(c) && isAdultMale(o) }; }) : null;
+  return { request: target, values, q: normalize(targetCounts(values, P.candidateJitterSpan, `${id}/social`).counts), options };
 }
 /** The adapters each training stage may name, with the stage its manifest must carry (stage R16 adds two rounds; docs/staging/r16-prereg.md §8). */
 export const ADAPTER_NAME = /^(r15-resources|r16-zero|r16-agg)-s(7|11)$/;
