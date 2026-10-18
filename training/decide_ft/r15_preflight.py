@@ -13,8 +13,10 @@ import sys
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMA = 'r15-preflight-v1'
 REVISION = '7ee5da4c2415e32259bcdc0b1a7367c32ce8d6f6'
+# bf16_half_gap: 0.02 as R15 registered it; 0.05 from R16's amendment 26 (docs/staging/r16-prereg.md §26, the user's
+# ruling of 18 October 2026), after one long target packet measured 0.0230 with identical token ids.
 LIMITS = {'tokens': 1280, 'rows': 20000, 'dev_per_phase': 6, 'seconds': 2700,
-          'same_precision_gap': 1e-4, 'half_api_gap': .001, 'half_api_sum_error': .001, 'fp32_half_gap': .005, 'bf16_half_gap': .02, 'sum_error': 1e-5}
+          'same_precision_gap': 1e-4, 'half_api_gap': .001, 'half_api_sum_error': .001, 'fp32_half_gap': .005, 'bf16_half_gap': .05, 'sum_error': 1e-5}
 SOURCES = ('src/providers/packet.ts', 'src/kernel/resource-contract.ts', 'src/sim/context-check.ts',
            'scripts/lib/r15-training.ts', 'scripts/r15-preflight.ts', 'training/decide_ft/common.py',
            'training/decide_ft/soft_loss.py', 'training/decide_ft/train.py', 'training/decide_ft/train_r11.py',
