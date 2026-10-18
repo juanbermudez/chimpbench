@@ -1346,8 +1346,8 @@ loaded, nothing was trained or scored, and no output of session 0 or of `tokens-
 
 **The repair (the only code changed).** (1) The preflight worker accepts the lock when `train_r15.chain_owned()` holds
 (the chain's token passed down, `stage` `R16-chain`, the chain's pid among the worker's ancestors), exactly as the
-trainer does; otherwise its old check stands. (2) `scripts/r16.py repin` re-takes the chain's identity pin (§17) after a
-repair: it refuses unless the chain is not running, the old commit is an ancestor of the new one, every registered source
+trainer does; otherwise its old check stands. (2) `scripts/r16-repin.py` (a new script, outside the pinned sources, so `scripts/r16.py` is unchanged) re-takes
+the chain's identity pin (§17) after a repair: it refuses unless the chain is not running, the old commit is an ancestor of the new one, every registered source
 file (`SOURCES`) other than this registration has the hash the pin recorded, and the old registration is a prefix of the
 new one (only an appended section). It keeps the old pin beside the new one as `identity-<old commit>.json` and writes a
 line to the status log. Tests: `tests/r16_chain_test.py`.
