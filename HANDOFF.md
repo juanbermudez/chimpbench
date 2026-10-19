@@ -71,6 +71,12 @@ Its preflight then failed at 11:41 on one of 24 numeric checks (bfloat16 against
 token ids identical); the user ruled "loosen the lilmit" and amendment 26 (`r16-prereg.md` §26; iteration 2) set it to
 0.05; the frozen checkout moved to f3d3052 and its pin was re-taken (`scripts/r16-repin.py --allow`). Session 1 is
 queued (15:25 EDT) to start once the app the user is watching on port 5182 is closed and the machine is quiet.
+**19 October (written 03:30 EDT).** Stage V1 phase 1, "How close to the wild" (the user's request of 18 October), is
+merged and pushed (d8eb138; `docs/staging/v1-field.md`; plan, Stage V1). The Endor test (the user's request of 19
+October) is planned, not run: the SDK is installed outside the repo (`/Volumes/Drive/chimpbench/endor-env`, endor
+0.8.0), the user's key is in the main checkout's `.env` (git-ignored; agents never open it), the account answers with a
+$100 credit, and a visual guide is published for the user (claude.ai artifact "Training on Endor"); nothing has been
+sent, and the user's five answers are awaited. Stage R16's session 1 still waits for swap under 6 GB (a Mac restart).
 **Stage R16 (written 18:40 EDT, 17 October):** registered, built and reviewed with no model (eight defects repaired by the
 second reader), merged into `track-e` (6c72d70) and frozen as `.claude/worktrees/bench-r16` at 2971e14. The no-model
 dry chain and session 0 run in the detached screen session `r16-s0` (outputs `bench-r16/artifacts/r16-dry.out`,
