@@ -3,6 +3,7 @@ import { buildRequest } from './sim/request';
 import { secondRequest } from './sim/decide';
 import { decode, optionKey } from './kernel/decode';
 import { r15FocalIds } from './r15-demo';
+import { drivenIds } from './drive/world';
 import { paramsOf } from './sim/params';
 import { adapterIdentity } from './providers/http';
 import { readAnswer } from './kernel/answer';
@@ -173,6 +174,8 @@ export function focalSet(world: World, selectedId: number): number[] {
 }
 
 function rosterIds(world: World, roster: Roster, selectedId: number): number[] {
+  // the mode "Model decides for every adult" (src/drive): every living animal aged 8 or over, whatever the roster says
+  if (world.modelPolicy.drive) return drivenIds(world);
   if (paramsOf(world).resourceTargets === 1) return r15FocalIds(world);
   if (roster === 'all') return world.chimps.filter(c => c.alive).map(c => c.id);
   if (roster === 'focal-set') return focalSet(world, selectedId);
@@ -187,7 +190,7 @@ function rosterStale(controller: DecisionController, world: World, ids: number[]
 
 /** Writes chimp.controller for every chimp; focalIds is the resulting model-controlled set. */
 export function setRoster(controller: DecisionController, world: World, roster: Roster, selectedId: number): void {
-  controller.roster = paramsOf(world).resourceTargets === 1 ? 'focal-set' : roster;
+  controller.roster = world.modelPolicy.drive ? 'all' : paramsOf(world).resourceTargets === 1 ? 'focal-set' : roster;
   applyRoster(controller, world, rosterIds(world, roster, selectedId));
   internal(controller).world = world;
 }

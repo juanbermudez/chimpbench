@@ -403,6 +403,25 @@ export interface ModelPolicy {
   mode: 'off' | 'async' | 'lockstep';
   /** In async mode, ecological minutes a model-controlled chimp waits before rules decide. */
   asyncGraceMinutes: number;
+  /**
+   * The app mode "Model decides for every adult" (src/drive; docs/staging/app-model-drives.md). Absent on every world
+   * but one created in that mode, so a default world's JSON and hashes are unchanged.
+   */
+  drive?: DriveSpec;
+}
+
+/** How a world in the mode "Model decides for every adult" is driven (src/drive/world.ts). Plain data, saved with the world. */
+export interface DriveSpec {
+  /** Every living animal aged `minAge` or over decides through the trained two-stage path; younger ones stay on the rules. */
+  who: 'adults'; minAge: number;
+  /** The packet contract the world's menu serves (R15's, `resource-targets-v1`); an adapter of another contract is refused. */
+  contract: string;
+  /** Simulated days of the rules' burn-in the world was settled with before the model took over. */
+  burnInDays: number;
+  /** The decode of every call (stage R9; R16's: a draw at salt 1, epochs by act). */
+  decode: { mode: 'top' | 'draw' | 'held'; salt: number; hold: 'act' | 'block' | 'whole' };
+  /** The adapter the world is bound to: set the first time it plays with a verified adapter; null before that. */
+  adapter: { adapter: string; sha256: string; packetVersion: string } | null;
 }
 
 export interface World {
