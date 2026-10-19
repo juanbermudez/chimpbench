@@ -385,3 +385,89 @@ pass. The startup file grew 70 bytes more (the records card reads `modelIdentity
 Proposed change to the AGENTS.md line above, after "and a test.": "A reference row is placed on its band only where
 the scorer scored it: an inconclusive verdict reads "too close to call", a 'scale' row and a row pooled world by world
 get words, not a mark (`src/yardstick/view.ts` `refState`)."
+
+## 10. The whole-scene look by eye (19 October 2026, written 03:20 EDT)
+
+A third reader used the app as a person does, on a no-model probe server (port 5251, stopped when done) with one
+headless browser: a new world on the field map at its defaults, the page opened with K, the ruler and "born · died",
+read top to bottom at 1440 × 900 and at 1280 × 800 (and once at 390 px), the eight chapters, a few rows' details,
+Family and Where, the lane and arm switches, Records on and off at two card zooms and at 1 min/s and 1 day/s, a save
+and a reload, a year of seed 11 (a reference world, not reserved) with the clock run at 1 day/s and the page open, and
+life-course speed set through Settings. No model process ran; nothing was run on a reserved or sealed seed. Pictures
+and probes: `/Volumes/Drive/chimpbench/shots/watch-2026-10-19/v1-field/eye/`.
+
+### 10.1 What a person sees
+
+A calm dark sheet over the forest: a serif title, the one-world sentence, a dense provenance paragraph, a reading
+guide, then "At a glance" (grey rings on a pale blue column) and one chapter after another. Rows are quiet: a pale blue
+band, a grey ring, two lines of words, small chips; no colour says pass or fail. The life record reads well once a
+world has one: the births list with mothers, the death record with quiet Family, Where and Select buttons, the reference
+runs' failed viability world by world. Records on the card draws stepped range outlines, a soft core and small death
+glyphs with a key and hover cards; off, the circles come back. Saving works and a reload resumes the same world (equal
+hashes) with Records still on. The page is readable and honest; it is long (about 13,000 px) and much of it says, row
+after row, "field teams not running in this build", which is true and monotone.
+
+### 10.2 What was wrong by eye, and is repaired (nine commits after the review's)
+
+1. **Words cut off.** At 1280 px sixteen rows lost the ends of their lines ("shown, not sco", "not run in a watched w")
+   and chips ("revised after the freez"); at 1440 px several did. Lines and chips now wrap; none is cut at either size.
+2. **Files of this repository in what a person reads**: "(scripts/e-bench.ts NEEDS_YEAR)" in every row's window,
+   "(data/targets.json protocolLog)" in 89 flag reasons, "covered by tests/sim-relations.test.ts" on a row's own line,
+   "(docs/simulation.md §18)", source keys such as "wilson2012", a list of parameter names, a commit. They are gone or
+   in words (sources by authors and year; the commit on the run date's hover). A test renders every row and detail of
+   every arm and finds none.
+3. **Band edges as stored** ("6.1905", "11.4069" on Patrols after a fission): three significant digits on the strips.
+4. **The header said a model decided** ("untuned model on a rules menu decides for 1 animal") on a server with no model,
+   where the rules decide: it now says "the model is not loaded". "Earlier hours are not recorded" now says what is not.
+5. **"No killing in 0.00014 community-years"** on the first morning, and **"0 deaths in 0.0 infant-years so far: only 0.0
+   infant-years"**: both now read plainly ("no killing yet (less than a day across 3 communities; …)").
+6. **A bare dot at 1.6 deaths a year** in the life table, from one death in 0.6 animal-years: each rate now has its
+   Poisson interval as a line (one or two deaths give one across three decades), with the count in its hover.
+7. **"Where" showed a canopy and said "died here"** with nothing marking the place: the card now rings and names the
+   place ("Dalubi died here") for 20 seconds and the note says so. The card's key now names the outbreak ring.
+8. **The first K did nothing for 1.5 to 5.5 seconds** on a fresh dev server (the page's code is fetched on first use):
+   "Opening How close to the wild…" now shows at once.
+9. **The probe server could not save** (SQLite's WASM refused through the shared node_modules link): fixed in
+   `scripts/vite.probe.config.mjs` as `vite.config.ts` does, so the save, reload and resume check could be done.
+
+Tests: `tests/yardstick-look.test.ts` (4). `tsc --noEmit` passes; the page's, the interface's and the save-shape tests
+pass (87 of 87). The whole suite was not run again (the review ran it after its commits; these commits touch only the
+interface, `src/yardstick/words.ts`, `view.ts`'s words and the probe configuration).
+
+### 10.3 Measured
+
+- **Drawing writes nothing.** Two pages of seed 11, model policy off from the first frame: in one the clock ran (6 h/s,
+  then 1 day/s) with the page open, a detail and a Family line open, the page scrolled and Records on; the other was
+  stepped by the test hook with nothing drawn. Equal hashes after 29,040 ticks (5 days) and, from day 301, after
+  141,064 ticks (24.5 days, a birth during it).
+- **Main-thread cost** (field map, seed 48, 1440 × 900, alternated with the unchanged build, load 2 to 4, no model):
+  page closed, script per frame 2.78 to 2.81 ms against 2.70 to 2.75 at 1 min/s and 8.24 to 8.74 against 8.30 to 8.42 at
+  1 day/s; the interface's share 0.055 to 0.063 against 0.057 to 0.060 ms. Page open: the interface's share falls to
+  0.022 ms; the whole frame moved by −0.03 to +0.35 ms between runs, all of it in the forest and render steps, which
+  change with what the close camera sees. Records on: no change. No long task in any run.
+- **Startup files** (production build): +5.4 KB raw / +3.2 KB gzipped of JavaScript and +0.2 KB of CSS against the
+  unchanged build (the builder's head: +6.7 / +4.3). Still over the design's 2 KB.
+- **First open**: 1.4 to 5.5 s on a freshly started dev server, 0.03 to 0.15 s after; not measured on a production build.
+
+### 10.4 Seen and left (for the integrator or a later stage)
+
+- A ring drawn well outside its band reads "too close to call" (Advance after border stops) because the scorer's
+  interval over the five worlds is not in the scorecard: a person sees a ring outside the band and words that say
+  otherwise. Drawing the five worlds' spread, labelled, would explain it.
+- At 1 day/s the card's call arcs (yellow circles, stage W10) cover the Records outlines and death glyphs; the card is
+  busy. Hiding the arcs while Records is on would calm it. The key takes three short lines over the north of the map
+  (it fades under the pointer).
+- The infant lanes run on a 0 to 5 year axis, so a young world's lanes crowd into the left fifth; the deaths bar is a
+  full-width pastel slab when one cause dominates.
+- After a click in the page's index, a key press draws a heavy focus ring there, and Space presses that button instead
+  of pausing (the app's rule for buttons). The page covers the clock; the clock's keys still work.
+- With the model policy on and no model loaded, the selected animal's choices are settled once per frame, so the same
+  seed run twice at 1 day/s is not the same world (seed 11: 4 deaths by day 338 in one run, 2 by day 341 in the next).
+  The page's record is exact for the world on screen; a rerun matches only with the policy off. Not this stage's.
+- At life-course speed the Infants line still counts infant-years on the ecological clock ("14 deaths in 1.0
+  infant-years") under the note that demography is not compared.
+- Flag reasons keep research shorthand (stage names, parameter names) and the protocol hash in the detail.
+- Not looked at: with a model running; on a production build; on the graphics card.
+
+Proposed line for the integrator, AGENTS.md, Gotchas: "`scripts/vite.probe.config.mjs` allows SQLite's WASM through the
+shared node_modules link (as `vite.config.ts`), so a probe server can save and reopen simulations."
