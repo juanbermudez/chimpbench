@@ -157,4 +157,4 @@ export function createRecordsOverlay() {
 export type RecordsOverlay = ReturnType<typeof createRecordsOverlay>;
 
 /** The key shown on the card while Records is on. */
-export const RECORDS_LEGEND = `<span><i class="rl-line"></i>range used (95%)</span><span><i class="rl-core"></i>core</span><span class="rl-sep">where the dead lie:</span><span><i class="rl-ring"></i>outbreak</span><span><i class="rl-dot"></i>illness</span><span><i class="rl-x"></i>wounds</span><span><i class="rl-tri"></i>starvation</span><span><i class="rl-sq"></i>other</span>`;
+export const RECORDS_LEGEND = `<span><i class="rl-line"></i>range (95%)</span><span><i class="rl-core"></i>core</span><span class="rl-sep">where the dead lie:</span><span><i class="rl-ring"></i>outbreak</span><span><i class="rl-dot"></i>illness</span><span><i class="rl-x"></i>wounds</span><span><i class="rl-tri"></i>starvation</span><span><i class="rl-sq"></i>other</span>`;

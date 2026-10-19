@@ -231,7 +231,7 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
         // under one community-year the window is given in days (review, 19 October: "no killing in 0.00014 community-years")
         const kill = k.length ? `${k.length} killing${k.length === 1 ? '' : 's'} (${k.map(x => `${esc(x.name)}, ${dayWord(x.t)}`).join('; ')})`
           : cy >= 1 ? `no killing in ${sig2(cy)} community-years: below ${sig2(poissonInterval(0)[1] / cy)} a year (95%, the scorer’s interval)`
-          : `no killing yet in ${daysWords(life.days)} of ${w.troops.length} communities (a limit is given from one community-year)`;
+          : `no killing yet (${daysWords(life.days)} across ${w.troops.length} communities; an upper limit is given from one community-year)`;
         return `<div class="w-world">${head()}<p>${w.stats.intergroupEncounters} meetings between communities happened (heard or seen, every pair together) and ${kill}. The field band counts what a followed party detected, so the count of meetings is not placed on it.</p>
           <p class="w-note">${id.profile === 'compressed' ? 'On the 160 m map animals hear strangers 36 m away: encounter rows are not comparable here. ' : ''}A pair of communities whose ranges drift within earshot (1 km) records a heard meeting almost daily, so a single world can run far above the band.</p></div>`;
       }

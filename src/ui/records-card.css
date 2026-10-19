@@ -1,5 +1,5 @@
 /* Records on the range-map card (stage V1): its key and its hover card. Loaded with the overlay. */
-.map-rec-key { position: absolute; z-index: 2; left: 6px; top: 18px; max-width: calc(100% - 12px); display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px;
+.map-rec-key { position: absolute; z-index: 2; left: 6px; top: 18px; max-width: calc(100% - 12px); display: flex; flex-wrap: wrap; align-items: center; gap: 2px 7px;
   padding: 4px 7px; border-radius: 8px; background: rgba(16, 16, 18, .82); font-size: 10px; line-height: 1.3; color: var(--ink-3); transition: opacity .15s; }
 .map-rec-key:hover { opacity: .14; }
 .map-rec-key span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
