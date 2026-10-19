@@ -57,10 +57,12 @@ export function setSpeed(clock: Clock, id: string): void {
  * Runs whole ticks for one rendered frame and returns how many ran. isBlocked
  * is checked before every tick because a model-controlled chimp can reach a
  * decision point mid-frame; the clock stops at once and forgets the time it
- * spent blocked instead of bursting to catch up afterwards.
+ * spent blocked instead of bursting to catch up afterwards. `tick` runs one tick
+ * (tickWorld unless a mode wraps it: the mode "Model decides for every adult",
+ * src/drive/loop.ts, sets membership and books its ledger around each tick).
  */
 export function advance(clock: Clock, world: World, realDtSeconds: number, isBlocked: () => boolean,
-  now: () => number = () => performance.now()): number {
+  now: () => number = () => performance.now(), tick: (world: World) => void = tickWorld): number {
   const dt = Math.min(Math.max(Number.isFinite(realDtSeconds) ? realDtSeconds : 0, 0), MAX_FRAME_SECONDS);
   clock.ticksLastFrame = 0; clock.limited = false; clock.blockedByModel = false;
   if (!clock.playing) { clock.accumulator = 0; smooth(clock, 0, dt); return 0; }
@@ -74,7 +76,7 @@ export function advance(clock: Clock, world: World, realDtSeconds: number, isBlo
     if (!unbounded && clock.accumulator < TICK_SECONDS) break;
     // The first tick always runs so one slow tick cannot stall the world.
     if (ticks >= MAX_TICKS_PER_FRAME || (ticks > 0 && now() - started >= clock.budgetMs)) { clock.limited = true; break; }
-    tickWorld(world);
+    tick(world);
     ticks++;
     if (!unbounded) clock.accumulator -= TICK_SECONDS;
   }

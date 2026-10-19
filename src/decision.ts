@@ -3,6 +3,7 @@ import { buildRequest } from './sim/request';
 import { secondRequest } from './sim/decide';
 import { decode, optionKey } from './kernel/decode';
 import { r15FocalIds } from './r15-demo';
+import { drivenIds } from './drive/world';
 import { paramsOf } from './sim/params';
 import { adapterIdentity } from './providers/http';
 import { readAnswer } from './kernel/answer';
@@ -39,6 +40,8 @@ export type Roster = 'selected' | 'focal-set' | 'all';
 export interface DecisionController {
   enabled: boolean; ready: boolean; busy: boolean; phase: string; status: string; lastError: string;
   provider: string; providerLabel: string; progress: number | null; identity?: AdapterIdentity;
+  /** The provider holds no model (a dry run's fake scorer): every readout says so. */
+  dry?: boolean;
   model: string; device: string; latencyMs: number | null; inputTokens: number | null; calls: number;
   /** Model answers applied: fresh (same version) + revalidated (newer version, still legal). */
   applied: number;
@@ -90,7 +93,7 @@ export function setDecisionProvider(controller: DecisionController, provider: De
   controller.timeoutMs = provider.id === 'r15' ? 22000 : controller.provider === 'r15' ? 6000 : controller.timeoutMs;
   controller.provider = provider.id; controller.providerLabel = provider.label; controller.progress = null;
   controller.ready = false; controller.phase = provider.id === 'browser' ? 'stopped' : 'loading';
-  controller.identity = undefined;
+  controller.identity = undefined; delete controller.dry;
   controller.model = provider.id === 'jev' ? 'jev-latest' : provider.id === 'r15' ? 'R15 adapter not loaded' : MODEL_NAME; controller.device = ''; controller.lastError = '';
   controller.status = idleStatus(controller);
 }
@@ -108,7 +111,7 @@ export async function refreshDecideStatus(controller: DecisionController): Promi
   try {
     const body = await provider.status();
     if (internal(controller).provider !== provider) return;
-    controller.identity = body.identity;
+    controller.identity = body.identity; if (body.dry === true) controller.dry = true; else delete controller.dry;
     controller.ready = body.ready && (controller.provider !== 'r15' || body.identity !== undefined); controller.phase = body.phase;
     controller.model = body.model || controller.model; controller.device = body.device ?? controller.device;
     controller.progress = body.progress ?? null;
@@ -173,6 +176,8 @@ export function focalSet(world: World, selectedId: number): number[] {
 }
 
 function rosterIds(world: World, roster: Roster, selectedId: number): number[] {
+  // the mode "Model decides for every adult" (src/drive): every living animal aged 8 or over, whatever the roster says
+  if (world.modelPolicy.drive) return drivenIds(world);
   if (paramsOf(world).resourceTargets === 1) return r15FocalIds(world);
   if (roster === 'all') return world.chimps.filter(c => c.alive).map(c => c.id);
   if (roster === 'focal-set') return focalSet(world, selectedId);
@@ -187,7 +192,7 @@ function rosterStale(controller: DecisionController, world: World, ids: number[]
 
 /** Writes chimp.controller for every chimp; focalIds is the resulting model-controlled set. */
 export function setRoster(controller: DecisionController, world: World, roster: Roster, selectedId: number): void {
-  controller.roster = paramsOf(world).resourceTargets === 1 ? 'focal-set' : roster;
+  controller.roster = world.modelPolicy.drive ? 'all' : paramsOf(world).resourceTargets === 1 ? 'focal-set' : roster;
   applyRoster(controller, world, rosterIds(world, roster, selectedId));
   internal(controller).world = world;
 }

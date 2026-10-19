@@ -2,7 +2,8 @@ import type { Ctx } from './app';
 import type { SimEvent } from '../types';
 import { TICK_SECONDS } from '../simulation';
 import { feedCat, formatRate, timeParts } from './format';
-import { setAttr, setText } from './morph';
+import { morph, setAttr, setText } from './morph';
+import { driveBlock } from './who-decides';
 import { modelChipState } from './hud';
 
 // Time & model panel: the dropdown under the menu bar's clock control. Rate presets, the achieved-rate readout,
@@ -42,9 +43,10 @@ export function createTimebar(root: HTMLElement, ctx: Ctx) {
     <div class="td-head"><h3 class="eyebrow" id="td-model-h">Decision model</h3><button class="link-btn" data-act="model" aria-keyshortcuts="M">Model panel<kbd>M</kbd></button></div>
     <p class="td-mstate"><span class="led" data-k="led"></span><b data-k="mstate">Rules only</b></p>
     <p class="td-mline" data-k="mline"></p>
+    <div data-k="drive"></div>
   </section>`;
   const $ = (n: string) => root.querySelector<HTMLElement>(`[data-k="${n}"]`)!;
-  const rate = $('rate'), tps = $('tps'), state = $('state'), needle = $('needle'), ticks = $('ticks'), led = $('led'), mstate = $('mstate'), mline = $('mline');
+  const rate = $('rate'), tps = $('tps'), state = $('state'), needle = $('needle'), ticks = $('ticks'), led = $('led'), mstate = $('mstate'), mline = $('mline'), driveEl = $('drive');
   root.querySelectorAll<HTMLButtonElement>('[data-speed]').forEach(b => { b.onclick = () => ctx.setSpeed(b.dataset.speed!); });
   const speeds = [...root.querySelectorAll<HTMLButtonElement>('[data-speed]')];
   const set = setText;
@@ -57,12 +59,21 @@ export function createTimebar(root: HTMLElement, ctx: Ctx) {
       // Below one tick per second (real time: one 15-s tick every 15 s) a rounded rate would read "0 ticks/s", and the
       // measured rate swings by half between ticks although every tick lands on time: show the rate being kept.
       const slow = clock.ecoSecondsPerSecond < TICK_SECONDS && !clock.limited;
-      set(rate, !clock.playing ? 'Paused' : formatRate(slow && !clock.blockedByModel ? clock.ecoSecondsPerSecond : clock.effectiveRate));
-      set(tps, !clock.playing ? '' : slow ? `1 tick / ${+(TICK_SECONDS / clock.ecoSecondsPerSecond).toFixed(1)} s` : `${Math.round(clock.ticksPerSecond).toLocaleString()} ticks/s`);
+      // the mode "Model decides for every adult" (src/drive): the rate achieved over the last real minute, the waits for
+      // the model included, as the menu bar shows it (the half-second rate swings between 0 in a pass and full speed)
+      const driven = ctx.deps.drive?.() ?? null, got = driven?.achieved;
+      if (driven && got) {
+        set(rate, !clock.playing ? 'Paused' : got.rate === null ? 'measuring' : formatRate(got.rate));
+        set(tps, !clock.playing || got.rate === null ? '' : `achieved, last ${got.seconds >= 59 ? 'minute' : `${Math.round(got.seconds)} s`}`);
+      } else {
+        set(rate, !clock.playing ? 'Paused' : formatRate(slow && !clock.blockedByModel ? clock.ecoSecondsPerSecond : clock.effectiveRate));
+        set(tps, !clock.playing ? '' : slow ? `1 tick / ${+(TICK_SECONDS / clock.ecoSecondsPerSecond).toFixed(1)} s` : `${Math.round(clock.ticksPerSecond).toLocaleString()} ticks/s`);
+      }
       const target = clock.ecoSecondsPerSecond;
       // Stage W1: above the rate at which this map's walk can be drawn with real steps the picture is time-lapse; say so.
       let st = 'ok', text = target > (ctx.deps.lapseRate?.() ?? Infinity) ? 'Time-lapse · bodies outrun their steps; every tick still runs' : 'Running · every chimp resolves every tick';
       if (!clock.playing) { st = 'paused'; text = 'Paused · Space to resume'; }
+      else if (driven) { st = clock.blockedByModel ? 'blocked' : 'ok'; text = 'Model decides for every adult · the clock waits for every answer; the rules do not fill in for a slow model'; }
       else if (clock.blockedByModel) { st = 'blocked'; text = 'Waiting on model · lockstep holds the clock until the model answers'; }
       else if (clock.limited) { st = 'limited'; text = `Sim-limited · every tick still runs; capped at ${formatRate(clock.effectiveRate)}${Number.isFinite(target) ? ` of ${formatRate(target)}` : ''}`; }
       if (state.dataset.state !== st) state.dataset.state = st;
@@ -84,9 +95,10 @@ export function createTimebar(root: HTMLElement, ctx: Ctx) {
       }
       lastEv = w.events[w.events.length - 1] ?? null;
       if (add) ticks.insertAdjacentHTML('beforeend', add);
-      const chip = modelChipState(ctx), d = ctx.deps.decider, mode = w.modelPolicy.mode;
-      setAttr(led, 'data-tone', chip.tone); set(mstate, chip.text);
-      set(mline, mode === 'off' ? POLICY_WORD.off : `${POLICY_WORD[mode] ?? mode} · decides for ${ROSTER_WORD[d.roster] ?? d.roster}${d.focalIds.length ? ` (${d.focalIds.length} now)` : ''}`);
+      const chip = modelChipState(ctx), d = ctx.deps.decider, mode = w.modelPolicy.mode, drive = ctx.deps.drive?.() ?? null;
+      setAttr(led, 'data-tone', drive?.problem ? 'warn' : chip.tone); set(mstate, drive ? 'Model decides for every adult' : chip.text);
+      set(mline, drive ? `${POLICY_WORD.lockstep} · every animal aged ${drive.minAge} or over through the trained adapter` : mode === 'off' ? POLICY_WORD.off : `${POLICY_WORD[mode] ?? mode} · decides for ${ROSTER_WORD[d.roster] ?? d.roster}${d.focalIds.length ? ` (${d.focalIds.length} now)` : ''}`);
+      morph(driveEl, drive ? driveBlock(drive, w, clock.playing) : '');
     },
   };
 }

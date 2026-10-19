@@ -170,6 +170,24 @@ body.preview .viewport { background: #3a3d38; }
 .bar-clockctl[data-state="limited"] .tc-achieved { color: var(--warn); }
 .bar-clockctl[data-state="blocked"] .tc-achieved { color: var(--gold-2); animation: pulse .9s infinite; }
 .bar-clockctl[data-state="paused"] .tc-achieved { color: var(--ink-4); }
+/* The mode "Model decides for every adult" (src/drive): a quiet who-decides line beside the clock control. */
+.who-chip { display: grid; line-height: 1.15; height: 36px; align-content: center; padding: 0 9px; border-radius: var(--r); text-align: left; font-variant-numeric: tabular-nums; color: var(--ink-2); transition: background .15s, color .15s; }
+.who-chip:hover { background: var(--hover); color: var(--ink); }
+.who-k { font-size: 10px; letter-spacing: .02em; color: var(--ink-4); white-space: nowrap; }
+.who-v { width: 25ch; font-size: 11.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-who[data-tone="warn"] .who-v { color: var(--warn); }
+.bar-who[data-tone="dry"] .who-k::after { content: ' · dry run, no model'; color: var(--warn); }
+.drive-block { display: grid; gap: 5px; margin-top: 6px; font-size: 11.5px; line-height: 1.4; color: var(--ink-2); }
+.drive-block .mono { font-size: 10.5px; }
+.drive-problem { color: var(--warn); }
+.drive-dry { color: var(--warn); font-weight: 500; }
+.drive-who { display: grid; gap: 4px; margin-bottom: 10px; padding: 8px 10px; border-radius: var(--r); background: var(--raised); border: 1px solid var(--line); font-size: 11.5px; line-height: 1.4; color: var(--ink-2); }
+.drive-who .dw-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+.drive-who .dw-head b { font-weight: 600; color: var(--gold-2); }
+.drive-who.young .dw-head b { color: var(--ink); }
+.drive-who .muted { color: var(--ink-3); font-size: 11px; }
+.drive-who b.warn { color: var(--warn); font-weight: 500; }
+.drive-progress { position: absolute; z-index: 30; left: 50%; top: calc(var(--hud-h) + 24px); transform: translateX(-50%); padding: 10px 16px; border-radius: var(--r); background: var(--overlay); border: 1px solid var(--line-2); box-shadow: var(--shadow); font-size: 12.5px; color: var(--ink-2); }
 .wordmark { font-family: var(--font-display); font-weight: 600; font-size: 17px; letter-spacing: .18em; font-variation-settings: 'opsz' 144; }
 .pop { display: flex; flex-direction: column; gap: 2px; font-variant-numeric: tabular-nums; }
 .pop-main { display: flex; align-items: baseline; gap: 5px; font-size: 12px; color: var(--ink-3); } .pop-main b { font-size: 16px; font-weight: 600; line-height: 1; color: var(--ink); }
@@ -976,6 +994,7 @@ dialog.settings::backdrop { background: rgba(0, 0, 0, .6); }
   .fruitkey { bottom: calc(var(--ch-space) + var(--gap) + 32px); }
   .hud { gap: 12px; padding: 0 8px 0 12px; } .bar-time { gap: 10px; }
   .wx-sub, .pop-sub, .season, .bar-brand, .bar-brand + .bar-sep, .wx-main span, .bar-sim .save-ind { display: none; }
+  .who-k { display: none; } .who-v { width: 21ch; }
   .bar-sim .sim-name { width: 6ch; } .pop-main span { display: none; }
   .chimp-panel { --ch-id-w: 176px; }
   .opt { grid-template-columns: minmax(0, 1.6fr) minmax(0, .8fr) minmax(0, .8fr); gap: 6px; } .opt-val { grid-template-columns: minmax(0, 1fr) 30px; }

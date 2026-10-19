@@ -25,7 +25,7 @@ export function httpProvider(id: 'server' | 'jev' | 'r15', base: () => string): 
       const identity = b.identity as { device?: string } | undefined;
       return { ready: b.ready === true, phase: typeof b.phase === 'string' ? b.phase : 'failed',
         error: typeof b.error === 'string' ? b.error : '', model: typeof b.model === 'string' ? b.model : '',
-        device: typeof b.device === 'string' ? b.device : identity?.device ?? '', identity: adapterIdentity(b.identity) };
+        device: typeof b.device === 'string' ? b.device : identity?.device ?? '', identity: adapterIdentity(b.identity), ...(b.dry === true ? { dry: true } : {}) };
     },
     async start() { await request('/start', { method: 'POST' }); },
     async decide(context: DecisionContext, signal: AbortSignal): Promise<ProviderAnswer> {

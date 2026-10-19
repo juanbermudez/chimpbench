@@ -1,11 +1,16 @@
 import './style.css';
 import { createR15Demo, r15FocalIds } from './r15-demo';
+import { driveSeedRefusal, isDriveWorld, driveArmProblem, DRIVE_BURN_IN_DAYS } from './drive/world';
+import { DriveLoop, fallbackReason } from './drive/loop';
+import { driveKernel } from './drive/kernel';
+import { AchievedRate, buildDriveWorld, driveAnimal, driveReadout, recordPass } from './drive/app';
 import { applyIntervention, createWorld, relationOf, relationshipOf, tickWorld, type Profile } from './simulation';
 import { createScene, type Scene } from './scene';
 import { advance, createClock, frameBudget, SPEED_PRESETS, setSpeed, subTick } from './clock';
 import { cancelDecisionRequests, createDecisionController, isBlocking, pumpDecisions, refreshDecideStatus, setPolicy, setRoster, setDecisionProvider, startLocalModel } from './decision';
 import { DEFAULT_PROVIDER_CONFIG, parseProviderConfig, providerSelection, isProviderId } from './providers/config';
 import { createProvider } from './providers';
+import { httpProvider } from './providers/http';
 import { createModelLoader } from './ui/model-loader';
 import { createApp, defaultSelection } from './ui/app';
 import { icon } from './ui/icons';
@@ -31,6 +36,10 @@ const params = new URLSearchParams(location.search);
 perf.on = params.get('perf') === '1' || params.get('perf') === 'gpu';
 perf.gpu = params.get('perf') === 'gpu';
 const r15Demo = params.get('r15') === '1';
+// The mode "Model decides for every adult" (src/drive; docs/staging/app-model-drives.md): ?drive=adults opens an unsaved
+// world in it (&seed=, and &burnin= for checks: fewer days of the rules' burn-in than R16's 30, said on screen).
+const driveUrl = !r15Demo && params.get('drive') === 'adults';
+const driveBurnIn = Math.max(0, Math.min(DRIVE_BURN_IN_DAYS, Math.round(Number(params.get('burnin') ?? DRIVE_BURN_IN_DAYS)) || 0));
 const debugSeed = Number(params.get('seed') ?? 48), debugPop = Number(params.get('pop') ?? 0);
 // New and scratch worlds use the real-metre field profile (C5b, ~8 km); ?profile=compressed opens an unsaved 160 m world
 // (?profile=field an unsaved field one). New simulations pick their profile in the Simulations dialog; saves keep theirs.
@@ -38,7 +47,7 @@ const debugSeed = Number(params.get('seed') ?? 48), debugPop = Number(params.get
 const APP_PROFILE: Profile = 'field';
 const profileParam = params.get('profile');
 const urlProfile: Profile | undefined = profileParam === 'field' || profileParam === 'compressed' ? profileParam : undefined;
-const scratch = r15Demo || params.has('seed') || params.has('pop') || params.has('fresh') || urlProfile !== undefined;
+const scratch = r15Demo || driveUrl || params.has('seed') || params.has('pop') || params.has('fresh') || urlProfile !== undefined;
 const profileOf = (w: World): Profile => w.size > 1000 ? 'field' : 'compressed';
 function makeWorld(seed: number, profile: Profile = urlProfile ?? APP_PROFILE): World {
   if (r15Demo) return createR15Demo();
@@ -58,7 +67,9 @@ try {
 let savedProvider: string | null = null;
 try { savedProvider = localStorage.getItem('mgogo.decision-provider'); } catch { /* storage may be blocked */ }
 // A build-fixed provider (VITE_DECISION_PROVIDER) is not overridden by ?provider= either.
-const providerId = r15Demo ? 'r15' : providerSelection(providerConfig, import.meta.env.DEV && import.meta.env.VITE_STATIC !== '1', import.meta.env.VITE_DECISION_PROVIDER ? null : params.get('provider'), savedProvider, import.meta.env.VITE_DECISION_PROVIDER);
+// A world in the mode "Model decides for every adult" always uses the R15 route (syncProvider); others use this choice.
+let normalProvider = providerSelection(providerConfig, import.meta.env.DEV && import.meta.env.VITE_STATIC !== '1', import.meta.env.VITE_DECISION_PROVIDER ? null : params.get('provider'), savedProvider, import.meta.env.VITE_DECISION_PROVIDER);
+const providerId = r15Demo || driveUrl ? 'r15' : normalProvider;
 const decider = createDecisionController(createProvider(providerId, providerConfig));
 if (providerConfigError) decider.lastError = providerConfigError;
 // Static hosting (VITE_STATIC=1, e.g. a published artifact): no local model server, no save library and no sound
@@ -79,7 +90,7 @@ const session = (): PersistedSession => ({ clock: { speedId: clock.speedId, play
 const mutationKey = () => `${epoch}|${world.ageRate}|${world.nextId}|${world.events.length}|${decider.calls}|${decider.applied}|${decider.discarded}|${decider.fallbacks}`;
 const persist = createPersistence({
   capture: (): SaveEnvelope => ({ format: SAVE_FORMAT, app: APP_VERSION, stateVersion: STATE_VERSION, stateShape: STATE_SHAPE, savedAt: Date.now(),
-    world, decider: captureDecider(decider), session: session() }),
+    world, decider: { ...captureDecider(decider), ...(drive ? { drive: { owners: drive.ledger.owners() } } : {}) }, session: session() }),
   world: () => world,
   mutationKey,
   dirtyKey: () => `${world.tick}|${mutationKey()}|${JSON.stringify(session())}`,
@@ -108,23 +119,111 @@ function applyClock(saved: PersistedSession['clock'] | undefined) {
 }
 
 // A save waiting on the older-parameters choice keeps its profile for the stand-in world ("start new" reuses it).
-world = resumed ? resumed.env.world : olderParams && opened?.ok ? makeWorld(olderParams.seed, profileOf(opened.env.world)) : makeWorld(Number.isFinite(debugSeed) ? debugSeed : 48);
-setPolicy(decider, world, resumed ? world.modelPolicy.mode : r15Demo ? 'lockstep' : 'async');
+const firstSeed = Number.isFinite(debugSeed) ? debugSeed : 48, driveRefused = driveUrl ? driveSeedRefusal(firstSeed) : '';
+/** The loading screen's line while a world in the mode is settled by the rules (the burn-in runs in slices). */
+const burnNote = (days: number) => (share: number) => {
+  const line = root.querySelector<HTMLElement>('.loading span:last-child');
+  if (line) line.textContent = `Settling the world under the rules (as stage R16): day ${Math.min(days, Math.floor(share * days) + (share < 1 ? 1 : 0))} of ${days}…`;
+};
+world = resumed ? resumed.env.world : olderParams && opened?.ok ? makeWorld(olderParams.seed, profileOf(opened.env.world))
+  : driveUrl && !driveRefused ? await buildDriveWorld(firstSeed, driveBurnIn, burnNote(driveBurnIn)) : makeWorld(firstSeed);
+setPolicy(decider, world, resumed ? world.modelPolicy.mode : r15Demo || isDriveWorld(world) ? 'lockstep' : 'async');
 if (resumed) restoreDecider(decider, resumed.env.decider, resumed.env.savedAt);
 setRoster(decider, world, resumed?.env.decider.roster ?? (r15Demo ? 'focal-set' : 'selected'), savedSelection(resumed?.env.session.ui) ?? defaultSelection(world));
 
+// ---------------------------------------------------------------------------------------------------------------------
+// The mode "Model decides for every adult" (src/drive; docs/staging/app-model-drives.md). A world in it carries
+// modelPolicy.drive; its clock runs the mode's tick (membership, the ledger) and waits for each pass of the model over
+// every waiting adult (lockstep); the R15 route on the local server serves the adapter. Every other world is untouched.
+// ---------------------------------------------------------------------------------------------------------------------
+let drive: DriveLoop | null = null, driveAbort: AbortController | null = null, drivePollAt = 0, driveOk = false, driveBuilding = false, driveFellAt = 0;
+const driveProvider = httpProvider('r15', () => providerConfig.r15.baseUrl);
+/**
+ * A new loop for the world on screen. `owners`: who set each animal's act, from the save it was opened from (the ledger's
+ * hour and the decoder's notes start again; in a draw the notes choose nothing).
+ */
+function attachDrive(owners?: Record<string, 'model' | 'held' | 'rules'>) { driveAbort?.abort(); driveAbort = null; drive = isDriveWorld(world) ? new DriveLoop(world, owners) : null; driveOk = false; driveRate.reset(); }
+/** The speed achieved over the last real minute of play, the waits for the model included (the readout's). */
+const driveRate = new AchievedRate();
+const readout = () => drive ? driveReadout(world, drive, decider, driveRate.read()) : null;
+/** A world in the mode always uses the R15 route; every other world goes back to the provider chosen for the app. */
+function syncProvider() {
+  const want = r15Demo || isDriveWorld(world) ? 'r15' : normalProvider;
+  if (decider.provider === want) return;
+  setDecisionProvider(decider, createProvider(want, providerConfig)); void pollReadiness();
+}
+/** Why the world in the mode may not play now ('' when it may): a verified adapter of its contract, and the one it is bound to. */
+function driveProblem(): string {
+  const spec = world.modelPolicy.drive;
+  if (!spec) return '';
+  if (decider.provider !== 'r15') return 'The R15 route is not selected.';
+  return driveArmProblem(spec, { ready: decider.ready, phase: decider.phase, error: decider.lastError, identity: decider.identity });
+}
+function driveNotify(text: string, severity = 1) { app.ctx.notify({ text, cat: 'model', title: 'Model decides', severity }); }
+/** The first time a world in the mode plays (or is asked) with a verified adapter, it is bound to that adapter for good. */
+function bindAdapter() {
+  const spec = world.modelPolicy.drive, id = decider.identity;
+  if (!spec || spec.adapter || !id) return;
+  spec.adapter = { adapter: id.adapter, sha256: id.sha256, packetVersion: id.packetVersion };
+  epoch++;
+  driveNotify(`This world is now bound to the adapter ${id.adapter} (weights ${id.sha256.slice(0, 12)})${decider.dry ? ', a dry stand-in that holds no model' : ''}. It will play only with it.`);
+}
+/** Once a frame instead of pumpDecisions: readiness, the queue for the interface, and a pass when adults wait. */
+function drivePump(now: number) {
+  const loop = drive!;
+  if (!decider.ready && now >= drivePollAt) { drivePollAt = now + 3000; void refreshDecideStatus(decider); }
+  decider.waiting = loop.waiting(); decider.busy = loop.busy; decider.inflightChimpId = loop.stats.pass?.asking ?? -1;
+  const problem = driveProblem();
+  driveOk = !problem;
+  if (problem && clock.playing) { clock.playing = false; driveNotify(`Paused: ${problem} In this mode the rules do not take over.`, 2); }
+  if (loop.busy || problem || decider.waiting === 0) return;
+  bindAdapter();
+  void runPass(loop);
+}
+async function runPass(loop: DriveLoop) {
+  const w = world, abort = new AbortController(), identity = decider.identity!;
+  driveAbort = abort;
+  let report: Awaited<ReturnType<DriveLoop['pass']>>;
+  // a worker that stops is waited for, not answered by the rules (src/drive/kernel.ts): its state is read at once, so the
+  // next frame pauses the clock and says why; the same call is asked again once the bound adapter is served again
+  const onWait = (why: string) => { if (drive !== loop) return; loop.stats.worker = why; if (why) void refreshDecideStatus(decider); };
+  try { report = await loop.pass(driveKernel(driveProvider, identity, { onWait }), abort.signal); }
+  catch (error) {
+    if (drive === loop) { clock.playing = false; driveNotify(`The model's pass failed and the clock is paused: ${error instanceof Error ? error.message : String(error)}`, 2); }
+    return;
+  } finally { if (driveAbort === abort) driveAbort = null; }
+  if (drive !== loop || w !== world) return;   // the world was replaced while the model answered
+  decider.busy = false; decider.inflightChimpId = -1;
+  recordPass(decider, w, report);
+  // a timeout or a refused answer went to the rules for that ask: counted in the readout, and said here (at most every 10 s)
+  const fell = report.settled.filter(x => x.result.by === 'rules' && x.result.refusal !== 'fewer-than-two-options');
+  if (fell.length && performance.now() - driveFellAt > 10_000) {
+    driveFellAt = performance.now();
+    const first = fell[0].result, name = w.chimps.find(c => c.id === first.chimpId)?.name ?? 'an adult';
+    driveNotify(`The rules decided ${fell.length === 1 ? `one act for ${name}` : `${fell.length} acts in this pass (${name} first)`}: ${fallbackReason(first)}${first.detail ? ` (${first.detail})` : ''}. Counted under “decided by the rules”.`, 2);
+  }
+  // an error that was not a timeout can mean the worker stopped: read its state now (the next frame pauses if it did)
+  if (report.settled.some(x => x.result.refusal === 'kernel-error' && !/no answer within/.test(x.result.detail))) await refreshDecideStatus(decider);
+}
+const driveTick = (w: World) => drive!.tick(w);
+attachDrive(resumed?.env.decider.drive?.owners);
+syncProvider();
+
 /** Swap in another world (new or opened simulation): cancel model requests, rebuild the scene around the selection
  * the UI will show (the saved one, else the default). */
-function replaceWorld(next: World, mode: ModelPolicy['mode'], ui: Record<string, unknown> | null = null) {
+function replaceWorld(next: World, mode: ModelPolicy['mode'], ui: Record<string, unknown> | null = null, owners?: Record<string, 'model' | 'held' | 'rules'>) {
   cancelDecisionRequests(decider);
   epoch++;
   world = next;
+  attachDrive(owners); syncProvider();
   setPolicy(decider, world, mode);
   scene?.dispose();
   scene = startScene(savedSelection(ui) ?? defaultSelection(world), ui === null);
   elapsed = 0;
 }
 function newSimulation(seed: number, name?: string, profile?: Profile) {
+  // a new world keeps the mode, as it keeps the profile (the mode runs on the field map only)
+  if (isDriveWorld(world) && (profile ?? 'field') === 'field') { void newDriveSimulation(seed, name); return; }
   persist.flushBeforeSwitch();
   const ageRate = world.ageRate, mode = world.modelPolicy.mode;
   // Default: the current world's scale profile (field maps are ~8 km across).
@@ -132,6 +231,37 @@ function newSimulation(seed: number, name?: string, profile?: Profile) {
   world.ageRate = ageRate;
   setRoster(decider, world, decider.roster, defaultSelection(world));
   if (persist.canWrite()) void persist.adopt(name ?? `Seed ${seed}`, seed); else persist.attach(null);
+}
+/** A new simulation in the mode: R16's unit settled by the rules for 30 days (in slices, with a line on screen), then saved. */
+async function newDriveSimulation(seed: number, name?: string) {
+  const refused = driveSeedRefusal(seed);
+  if (refused) { driveNotify(refused, 2); return; }
+  if (driveBuilding) return;
+  driveBuilding = true; clock.playing = false;
+  const note = document.createElement('div');
+  note.className = 'drive-progress'; note.setAttribute('role', 'status');
+  root.querySelector('.app')?.append(note);
+  let next: World;
+  try { next = await buildDriveWorld(seed, DRIVE_BURN_IN_DAYS, share => { note.textContent = `New simulation, seed ${seed}: settling the world under the rules (as stage R16), day ${Math.min(DRIVE_BURN_IN_DAYS, Math.floor(share * DRIVE_BURN_IN_DAYS) + (share < 1 ? 1 : 0))} of ${DRIVE_BURN_IN_DAYS}…`; }); }
+  finally { note.remove(); driveBuilding = false; }
+  persist.flushBeforeSwitch();
+  replaceWorld(next, 'lockstep');
+  // the counts and traces the interface shows are this world's from here (the default app carries them across worlds)
+  decider.calls = decider.applied = decider.revalidated = decider.discarded = decider.fallbacks = 0; decider.agreement = { same: 0, total: 0 }; decider.traces = [];
+  setRoster(decider, world, 'all', defaultSelection(world));
+  if (persist.canWrite()) void persist.adopt(name ?? `Seed ${seed} · model, every adult`, seed); else persist.attach(null);
+  app.worldReplaced(null);
+  driveNotify(`New simulation, seed ${seed}: every animal aged 8 or over now decides through the trained adapter, animals under 8 on the rules. It plays once the server reports a verified adapter.`);
+}
+/** Settings › Who decides: a new simulation in the mode, or a new one under the rules (the app's default). */
+function setWhoDecides(who: 'rules' | 'adults', seed: number) {
+  if (who === 'adults') { void newDriveSimulation(seed); return; }
+  persist.flushBeforeSwitch();
+  replaceWorld(makeWorld(seed, 'field'), 'async');
+  setRoster(decider, world, 'selected', defaultSelection(world));
+  if (persist.canWrite()) void persist.adopt(`Seed ${seed}`, seed); else persist.attach(null);
+  app.worldReplaced(null);
+  driveNotify(`New simulation, seed ${seed}: the rules decide for every animal.`);
 }
 function resumedToast(name: string, note = '') {
   notifyUi(`Resumed “${name}” · day ${world.day}, ${String(Math.floor(world.hour)).padStart(2, '0')}:${String(Math.floor((world.hour % 1) * 60)).padStart(2, '0')} · paused, Space to continue${note ? ` · ${note}` : ''}`, note ? 2 : 1,
@@ -147,7 +277,7 @@ async function openSimulation(id: string, acceptOlderParams = false): Promise<Ol
     if (!acceptOlderParams) return { id: r.sim.id, name: r.sim.name, seed: r.sim.seed, saved: r.params.saved, current: r.params.current };
     await persist.acceptParams(r.sim.id, r.params);
   }
-  replaceWorld(r.env.world, r.env.world.modelPolicy.mode, r.env.session.ui);
+  replaceWorld(r.env.world, r.env.world.modelPolicy.mode, r.env.session.ui, r.env.decider.drive?.owners);
   restoreDecider(decider, r.env.decider, r.env.savedAt);
   setRoster(decider, world, r.env.decider.roster, savedSelection(r.env.session.ui) ?? defaultSelection(world));
   applyClock(r.env.session.clock);
@@ -155,6 +285,8 @@ async function openSimulation(id: string, acceptOlderParams = false): Promise<Ol
   const note = r.params ? paramsNote(r.params) : '';
   persist.attach({ id: r.sim.id, name: r.sim.name }, r.savedAt, note);
   resumedToast(r.sim.name, note);
+  const spec = world.modelPolicy.drive;
+  if (spec) driveNotify(`“${r.sim.name}” is in the mode “Model decides for every adult”${spec.adapter ? `, bound to the adapter ${spec.adapter.adapter} (weights ${spec.adapter.sha256.slice(0, 12)}): it plays only when the server serves that adapter` : ''}.`);
 }
 
 const persistenceView: PersistenceView = {
@@ -182,6 +314,7 @@ const app = createApp(root, {
   lapseRate: () => lapseRate(paramsOf(world)),
   setPlaying: playing => {
     if (r15Demo && playing && !decider.ready) { notifyUi('Start the R15 provider and wait for verified weights before playing this demo.'); return; }
+    if (drive && playing) { const why = driveProblem(); if (why) { driveNotify(why, 2); return; } bindAdapter(); }
     clock.playing = playing;
   },
   setPolicy: mode => { epoch++; setPolicy(decider, world, mode); },
@@ -189,9 +322,10 @@ const app = createApp(root, {
   // A build that fixes the provider (VITE_DECISION_PROVIDER, e.g. the hosted GLiNER-only site) offers no picker.
   setProvider: import.meta.env.VITE_DECISION_PROVIDER ? undefined : id => {
     if (!isProviderId(id)) return;
+    if (drive) { driveNotify('In this simulation the model decides for every adult through the R15 route; open another simulation to use another provider.'); return; }
     if (r15Demo && id !== 'r15') { notifyUi('This scratch world uses the R15 provider. Open the normal app for other providers.'); return; }
     if (!r15Demo && id === 'r15') { persist.flushBeforeSwitch(); location.assign(`${location.pathname}?r15=1`); return; }
-    epoch++; setDecisionProvider(decider, createProvider(id, providerConfig));
+    epoch++; setDecisionProvider(decider, createProvider(id, providerConfig)); normalProvider = id;
     try { if (!r15Demo) localStorage.setItem('mgogo.decision-provider', id); } catch { /* storage may be blocked */ }
     void pollReadiness();
   },
@@ -202,8 +336,14 @@ const app = createApp(root, {
   setQuality: quality => scene?.setQuality(quality),
   guideUrl: import.meta.env.VITE_GUIDE_URL || '/about',
   persistence: persist.status.mode === 'off' ? undefined : persistenceView,
+  drive: readout,
+  driveAnimal: id => drive ? driveAnimal(world, drive, id) : null,
+  // the mode needs the local server's R15 route: not offered by a static build
+  setWhoDecides: STATIC || r15Demo ? undefined : setWhoDecides,
 });
 if (r15Demo) { app.ctx.select(r15FocalIds(world)[0] ?? defaultSelection(world)); clock.playing = false; }
+// a world in the mode opens paused: it plays only once the server reports a verified adapter (setPlaying checks)
+if (isDriveWorld(world)) clock.playing = false;
 captureUi = app.captureUi;
 notifyUi = (text, severity = 1, run, label) => app.ctx.notify({ text, cat: 'system', title: 'Simulations', severity, action: run && label ? { label, run } : undefined });
 
@@ -223,6 +363,9 @@ if (resumed) {
   else persist.attach(null);
 }
 if (r15Demo) notifyUi('R15 scratch demo: five animals aged 8+, lockstep, seeded draws. Start the R15 provider, then press Play. This world is not saved.');
+if (driveRefused) notifyUi(`${driveRefused} The rules decide in this unsaved world.`, 2);
+else if (driveUrl) notifyUi(`Model decides for every adult: every animal aged 8 or over through the trained adapter, the younger ones on the rules; settled by the rules for ${driveBurnIn} day${driveBurnIn === 1 ? '' : 's'}${driveBurnIn < DRIVE_BURN_IN_DAYS ? ` (stage R16 uses ${DRIVE_BURN_IN_DAYS})` : ''}. Start the adapter in the model panel (M), then press Play. This world is not saved.`);
+else if (isDriveWorld(world)) notifyUi(`This simulation is in the mode “Model decides for every adult”${world.modelPolicy.drive?.adapter ? `, bound to the adapter ${world.modelPolicy.drive.adapter.adapter} (weights ${world.modelPolicy.drive.adapter.sha256.slice(0, 12)}); it plays only when the server serves that adapter` : ''}.`);
 const ps = persist.status;
 if (ps.mode === 'locked') notifyUi(ps.message, 2, () => persist.requestHandoff(), 'Use this tab');
 else if (ps.mode === 'memory' || ps.mode === 'error' || ps.mode === 'readonly') notifyUi(ps.message, 2);
@@ -270,12 +413,17 @@ function frame(now: number) {
   const selectedId = app.state.selectedId;
   // While a streamed save serializes (a few frames), the clock and the decision pump hold so the slices stay consistent.
   const holding = persist.holdClock;
-  if (!holding && !startupModel?.blocked) pumpDecisions(decider, world, selectedId);
+  if (!holding && !startupModel?.blocked) { if (drive) drivePump(now); else pumpDecisions(decider, world, selectedId); }
   const t1 = performance.now();
   perfEnd('pump', f0);
   let heldForSave = false;
-  if (!startupModel?.blocked) advance(clock, world, realDt, () => { if (isBlocking(decider, world)) return true; if (persist.holdClock) { heldForSave = true; return true; } return false; });
+  if (!startupModel?.blocked) advance(clock, world, realDt, () => {
+    if (drive ? drive.blocking() || !driveOk : isBlocking(decider, world)) return true;
+    if (persist.holdClock) { heldForSave = true; return true; }
+    return false;
+  }, undefined, drive ? driveTick : undefined);
   if (heldForSave) clock.blockedByModel = false; // a save pause is not the model's wait
+  if (drive) driveRate.sample(now, world.time, clock.playing);
   const simMs = performance.now() - t1;
   perfAdd('sim', simMs);
   perfAdd('ticks', clock.ticksLastFrame);
@@ -360,6 +508,7 @@ if (perf.on) (window as unknown as { __MGOGO_PERF__: object }).__MGOGO_PERF__ = 
         lastTrace: last ? { id: last.id, chimpId: last.chimpId, chimpName: last.chimpName, time: last.time, source: last.source, applied: last.applied, discardedReason: last.discardedReason,
           choice: last.options[last.choiceIndex]?.action ?? null, rules: last.options[last.rulesIndex]?.action ?? null, options: last.options.map(o => o.action), probabilities: [...last.probabilities], latencyMs: last.latencyMs, inputTokens: last.inputTokens } : null,
       },
+      drive: readout(),
       renderer: scene?.getDiagnostics() ?? null,
       audio: audio?.snapshot() ?? null,
       persistence: { mode: persist.status.mode, message: persist.status.message, simId: persist.status.simId, simName: persist.status.simName, scratch: persist.status.scratch, paramsNote: persist.status.paramsNote,
@@ -381,6 +530,10 @@ if (params.get('test') === '1') {
     /** Runs whole ticks synchronously through the public tick (no decision pump). */
     tick(n: number) { for (let i = 0; i < n; i++) tickWorld(world); return world.tick; },
     hash: () => fnv(JSON.stringify(world)),
+    /** Read-only evidence of the mode "Model decides for every adult": its record, readout and every animal's place in it. */
+    drive: () => structuredClone({ tick: world.tick, spec: world.modelPolicy.drive ?? null, readout: readout(),
+      animals: world.chimps.filter(c => c.alive).map(c => ({ id: c.id, name: c.name, age: c.age, controller: c.controller, source: c.decisionSource, waiting: c.awaitingDecisionSince !== null,
+        hour: drive ? driveAnimal(world, drive, c.id)?.hour ?? null : null })), traces: decider.traces.slice(-20) }),
     /** Read-only evidence for the bounded R15 browser proof; never drives decisions or ticks. */
     r15Evidence: () => structuredClone({ tick: world.tick, identity: decider.identity, params: paramsOf(world),
       focalIds: r15FocalIds(world), traces: decider.traces.slice(-20),

@@ -23,6 +23,8 @@ export function createSettings(dialog: HTMLDialogElement, ctx: Ctx) {
         <select id="aging"><option value="1">Natural · 1 day per day</option><option value="365">Life course · 1 year per day (365×)</option></select></label>
       <div class="set-row"><span><b>World seed</b><i>Same seed and settings replay the same rule-driven world.</i></span>
         <span class="seed"><input id="seed" type="number" inputmode="numeric" min="0" aria-label="Seed"><button type="button" class="btn" data-act="seed">${icon('dice')}New world</button></span></div>
+      ${ctx.deps.setWhoDecides ? `<div class="set-row"><span><b>Who decides</b><i id="who-note"></i></span>
+        <span class="seg" role="radiogroup" aria-label="Who decides"><button type="button" role="radio" data-who="rules">Rules</button><button type="button" role="radio" data-who="adults">Model, every adult</button></span></div>` : ''}
       <div class="set-row"><span><b>Snapshot</b><i>World state plus the last 200 decision traces, as JSON.</i></span><button type="button" class="btn" data-act="export">${icon('download')}Export</button></div>
       <div class="set-row"><span><b>About ChimpBench</b><i>Model, evidence levels and assumptions.</i></span><a class="btn" href="${esc(ctx.deps.guideUrl)}" target="_blank" rel="noopener">${icon('arrowUR')}Open About</a></div>
     </div>
@@ -35,9 +37,16 @@ export function createSettings(dialog: HTMLDialogElement, ctx: Ctx) {
   const aging = dialog.querySelector<HTMLSelectElement>('#aging')!, seed = dialog.querySelector<HTMLInputElement>('#seed')!;
   const note = dialog.querySelector<HTMLElement>('#aging-note')!, stats = dialog.querySelector<HTMLElement>('#life-stats')!, qnote = dialog.querySelector<HTMLElement>('#quality-note')!;
   const soundSettings = bindSoundSettings(dialog, ctx);
+  const whoNote = dialog.querySelector<HTMLElement>('#who-note');
   const sync = () => {
     soundSettings.sync();
     const w = ctx.world();
+    // the mode "Model decides for every adult" (src/drive): off by default; choosing either starts a new simulation
+    const drive = ctx.deps.drive?.() ?? null;
+    dialog.querySelectorAll<HTMLElement>('[data-who]').forEach(b => b.setAttribute('aria-checked', String((b.dataset.who === 'adults') === !!drive)));
+    if (whoNote) whoNote.textContent = drive
+      ? `This simulation: the model decides for every animal aged ${drive.minAge} or over (${drive.bound ? `adapter ${drive.bound.adapter}` : 'no adapter bound yet'}), the younger ones on the rules. “Rules” starts a new simulation with the seed above.`
+      : 'The default: the rules decide, except for an animal you hand to a model in the model panel (M). “Model, every adult” starts a new simulation with the seed above: the working base settled by the rules for 30 days, as stage R16, then every animal aged 8 or over decides through the trained adapter the local server verifies. It does not play without one.';
     aging.value = w.ageRate === 1 ? '1' : '365';
     note.textContent = w.ageRate === 1 ? 'Natural aging keeps ecological and biological time aligned.' : 'Each ecological day adds one biological year. Exploratory.';
     // Show what the renderer is actually using; auto-downgrade can lower it below the request.
@@ -54,6 +63,11 @@ export function createSettings(dialog: HTMLDialogElement, ctx: Ctx) {
     const q = el.closest<HTMLElement>('[data-quality]'); if (q) { ctx.state.quality = q.dataset.quality as Quality; ctx.deps.setQuality(ctx.state.quality); sync(); }
     const fc = el.closest<HTMLElement>('[data-fpscap]'); if (fc) { ctx.deps.getScene()?.setFrameCap?.(fc.dataset.fpscap === '1'); sync(); }
     const act = el.closest<HTMLElement>('[data-act]')?.dataset.act;
+    const who = el.closest<HTMLElement>('[data-who]')?.dataset.who;
+    if ((who === 'rules' || who === 'adults') && ctx.deps.setWhoDecides && (who === 'adults') !== !!ctx.deps.drive?.()) {
+      const n = Number(seed.value);
+      ctx.deps.setWhoDecides(who, Number.isFinite(n) && seed.value !== '' ? n >>> 0 : ctx.world().seed + 1); dialog.close(); return;
+    }
     if (act === 'seed') { const n = Number(seed.value); ctx.newWorld(Number.isFinite(n) && seed.value !== '' ? n >>> 0 : ctx.world().seed + 1); dialog.close(); }
     if (act === 'export') ctx.exportSnapshot();
   });

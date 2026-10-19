@@ -24,6 +24,8 @@ export interface PersistedDecider {
   roster: Roster; agreement: { same: number; total: number };
   calls: number; applied: number; revalidated: number; discarded: number; fallbacks: number;
   traces: DecisionTrace[];
+  /** The mode "Model decides for every adult" only (src/drive): who set each animal's act in progress (the ledger's owners). */
+  drive?: { owners: Record<string, 'model' | 'held' | 'rules'> };
 }
 export interface PersistedSession {
   clock: { speedId: string; playing: boolean };
