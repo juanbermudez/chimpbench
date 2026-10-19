@@ -102,11 +102,15 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
     const model = Object.keys(id.overrides).length ? `a model with ${Object.keys(id.overrides).length} settings changed from today’s defaults` : 'today’s model';
     const map = id.profile === 'field' ? 'Field map' : 'The 160 m map';
     const deciders = w.chimps.filter(c => c.alive && c.controller === 'model').length;
+    // A model decides only while it is loaded and answering (decision.ts usable): with it unavailable the rules decide
+    // for the animals on its roster too (review, 19 October: a no-model server read "untuned model … decides for 1").
+    const dec = ctx.deps.decider, up = dec.enabled && dec.ready;
     const who = w.modelPolicy.mode === 'off' || !deciders ? 'The rules decide for every animal now.'
-      : `Now ${esc(modelEngine(ctx.deps.decider.model, ctx.deps.decider.provider).label.toLowerCase())} decides for ${deciders} animal${deciders === 1 ? '' : 's'}; animals under 8 are always on the rules.`;
+      : !up ? `The rules decide for every animal now: the model is not loaded (${esc(dec.phase)}), so they decide for the ${deciders === 1 ? 'animal' : `${deciders} animals`} on its roster too.`
+      : `Now ${esc(modelEngine(dec.model, dec.provider).label.toLowerCase())} decides for ${deciders} animal${deciders === 1 ? '' : 's'}; animals under 8 are always on the rules.`;
     const days = Math.max(1, dayOf(w.time));
     const exp = w.stimuli.length ? ` An experiment is under way (${esc(w.stimuli.map(s => s.label).join(', '))}).` : '';
-    return `${map}, seed ${w.seed}, ${model} (patrols from ${id.patrols === 'hazard' ? 'a tuned hazard' : 'the males’ own decision'}). ${who} Earlier hours are not recorded in this build.${exp}
+    return `${map}, seed ${w.seed}, ${model} (patrols from ${id.patrols === 'hazard' ? 'a tuned hazard' : 'the males’ own decision'}). ${who} Who decided before now is not recorded in this build.${exp}
       Exact record (all-seeing): days 1 to ${days}${days <= 30 ? ', inside the settling-in month the reference runs skipped' : ', including the settling-in month the reference runs skipped'}. Field teams: not running in this build.
       Reference: ${esc(arm.name.toLowerCase())}, ${arm.seeds.length} worlds × ${sig2(arm.days / 365)} years after a ${arm.burnInDays}-day settling-in, field map, rules only, run ${esc(dateWords(arm.runDate))}${arm.protocol.current ? '' : ' under an older protocol'}${n.matching.has(arm.id) ? '' : ' (another model, for context only)'}.${arm.id === 'Y3-T0' && n.matching.has(arm.id) ? ` <span class="w-match">${esc(ref!.todayMatch.split(':')[0])}, not re-verified by a run.</span>` : ''}`;
   }
@@ -191,10 +195,12 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
     for (const [c, k] of Object.entries(byCause)) { const cl = causeClass(c); out[cl] = (out[cl] ?? 0) + k; }
     return CAUSE_CLASSES.filter(cl => out[cl]).map(cl => `${out[cl]} ${CAUSE_WORDS[cl]}`).join(', ');
   };
+  /** e-bench's viability reasons in the page's words: worlds, not seeds; no bracket inside a bracket ("(< 80%)"). */
+  const reasonWords = (r: string[]) => r.join('; ').replace(/\ba seed\b/g, 'a world').replace(/\bseeds\b/g, 'worlds').replace(/\s*\(<\s*(\d+%)\)/g, ', below $1');
   function viabilityHtml(arm: RefArm, n: Now): string {
     const v = arm.viability;
     const head = v.pass ? `The reference runs of ${esc(arm.name.toLowerCase())} passed their viability check (births at least deaths, no starvation, no world below 80% of its start).`
-      : `The reference runs of ${esc(arm.name.toLowerCase())} failed their viability check: ${esc(v.reasons.join('; ').replace(/\ba seed\b/g, 'a world').replace(/\bseeds\b/g, 'worlds'))}.`;
+      : `The reference runs of ${esc(arm.name.toLowerCase())} failed their viability check: ${esc(reasonWords(v.reasons))}.`;
     const worlds = v.worlds.map(x => `<li>World ${x.seed}: ${x.livingStart} → ${x.livingEnd} animals, ${x.births} births, ${x.deaths} deaths${x.deaths ? ` (${esc(foldCauses(x.deathsByCause))})` : ''}</li>`).join('');
     return `<div class="w-ref"><p>${head} Over ${arm.seeds.length} worlds × ${sig2(arm.days / 365)} years: ${v.births} births, ${v.deaths} deaths.${n.matching.has(arm.id) ? '' : ' Another model, for context only.'}</p><ul class="w-worlds">${worlds}</ul></div>`;
   }
@@ -222,9 +228,12 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
       case 'encounters': {
         const k = life.deaths.filter(x => isKilling(x.cause));
         const cy = w.troops.length * life.days / 365;
-        const kill = k.length ? `${k.length} killing${k.length === 1 ? '' : 's'} (${k.map(x => `${esc(x.name)}, ${dayWord(x.t)}`).join('; ')})` : `no killing in ${sig2(cy)} community-years${cy >= 1 ? `: below ${sig2(poissonInterval(0)[1] / cy)} a year (95%, the scorer’s interval)` : ''}`;
+        // under one community-year the window is given in days (review, 19 October: "no killing in 0.00014 community-years")
+        const kill = k.length ? `${k.length} killing${k.length === 1 ? '' : 's'} (${k.map(x => `${esc(x.name)}, ${dayWord(x.t)}`).join('; ')})`
+          : cy >= 1 ? `no killing in ${sig2(cy)} community-years: below ${sig2(poissonInterval(0)[1] / cy)} a year (95%, the scorer’s interval)`
+          : `no killing yet in ${daysWords(life.days)} of ${w.troops.length} communities (a limit is given from one community-year)`;
         return `<div class="w-world">${head()}<p>${w.stats.intergroupEncounters} meetings between communities happened (heard or seen, every pair together) and ${kill}. The field band counts what a followed party detected, so the count of meetings is not placed on it.</p>
-          <p class="w-note">${id.profile === 'compressed' ? 'On the 160 m map animals hear strangers 36 m away: encounter rows are not comparable here. ' : ''}A pair of communities whose ranges drift within earshot (1 km) records a heard meeting almost daily, so a single world can run far above the band (docs/simulation.md §18).</p></div>`;
+          <p class="w-note">${id.profile === 'compressed' ? 'On the 160 m map animals hear strangers 36 m away: encounter rows are not comparable here. ' : ''}A pair of communities whose ranges drift within earshot (1 km) records a heard meeting almost daily, so a single world can run far above the band.</p></div>`;
       }
       case 'births': {
         const cen = censusSeries(w);
@@ -233,7 +242,7 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
         const viab = n.arm.viability;
         return `<div class="w-world">${head()}${demoNote}<h4>Population</h4>${pop}<p class="w-sub">Living animals each evening (21:00), rebuilt from birth and death times; births tick above the axis, deaths below it. Population size and age structure are not field targets. The founders’ ages are as the world generator set them (a design choice).</p>
           <h4>Births</h4>${life.births.length ? `<ul class="w-list">${list}</ul>${life.births.length > 8 ? `<p class="w-sub">and ${life.births.length - 8} earlier.</p>` : ''}` : '<p class="w-empty">No birth yet.</p>'}
-          <p class="w-sub">Reference runs of ${esc(n.arm.name.toLowerCase())}: ${viab.births} births in ${n.arm.seeds.length} worlds × ${sig2(n.arm.days / 365)} years (${viab.worlds.map(x => x.births).join(', ')} by world). Their populations went ${viab.worlds.map(x => `${x.livingStart} → ${x.livingEnd}`).join(', ')}; ${viab.pass ? 'they passed their viability check' : `they failed their viability check (${esc(viab.reasons.join('; ').replace(/\ba seed\b/g, 'a world'))}): see Deaths`}.</p></div>`;
+          <p class="w-sub">Reference runs of ${esc(n.arm.name.toLowerCase())}: ${viab.births} births in ${n.arm.seeds.length} worlds × ${sig2(n.arm.days / 365)} years (${viab.worlds.map(x => x.births).join(', ')} by world). Their populations went ${viab.worlds.map(x => `${x.livingStart} → ${x.livingEnd}`).join(', ')}; ${viab.pass ? 'they passed their viability check' : `they failed their viability check (${esc(reasonWords(viab.reasons))}): see Deaths`}.</p></div>`;
       }
       case 'deaths': {
         const counts = deathsByClass(life), dead = ownAges(life.deaths);
@@ -242,7 +251,7 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
         const removed = life.removed.length ? `<p class="w-sub">Removed by an experiment (kept out of every rate): ${life.removed.map(x => `${esc(x.name)}, ${dayWord(x.t)}`).join('; ')}.</p>` : '';
         return `<div class="w-world">${head()}${demoNote}${deathsBarSvg(counts)}${ageBarsSvg(dead)}
           ${life.deaths.length ? `<h4>The death record</h4><ul class="w-list w-deaths">${rec}</ul>${life.deaths.length > 12 ? `<p class="w-sub">and ${life.deaths.length - 12} earlier.</p>` : ''}` : ''}${removed}
-          <p class="w-note">The simulation knows every cause; the field knew the cause of 86 of 130 deaths at Gombe (williams2008). One cause, an infant’s death after losing its mother, is counted under “other causes” on this page: sealed tests protect survival after a mother’s loss. Each animal’s own record still names it.${id.bodiesMove ? ' Bodies stay in this world: “Where” shows where a body ended up, not where the animal died.' : ''}</p></div>
+          <p class="w-note">The simulation knows every cause; the field knew the cause of 86 of 130 deaths at Gombe (Williams et al. 2008). One cause, an infant’s death after losing its mother, is counted under “other causes” on this page: sealed tests protect survival after a mother’s loss. Each animal’s own record still names it.${id.bodiesMove ? ' Bodies stay in this world: “Where” shows where a body ended up, not where the animal died.' : ''}</p></div>
           ${viabilityHtml(n.arm, n)}`;
       }
       case 'mortality': {
@@ -255,7 +264,7 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
         // the rate waits for the row's own minimum window, here as on the row (review, 19 October: the attack's
         // "needs a year: 38 days so far" instead of a number); the counts and the exposure are shown from day 1
         const need = lite!.targets.find(t => t.id === 'T-DEM-1')?.window.days ?? 365;
-        const words = q.value === null ? `${q.basis} so far: ${q.short}`
+        const words = q.value === null ? `${q.basis} so far; the scorer gives a first-year mortality from 3 infant-years`
           : life.days < need ? `${q.basis} so far; the first-year mortality is given after a year of watching (${daysWords(life.days)} so far)`
           : `${q.basis}: first-year mortality ${fmtValue(q.value, q.interval)} (95% ${fmtValue(q.interval![0], q.interval)}–${fmtValue(q.interval![1], q.interval)})`;
         return `<div class="w-world">${head()}${demoNote}${infantLanesSvg(ownAges(life.infants))}<p class="w-sub">${esc(words)}.${life.infants.length ? ' Each lane is one infant, from birth: a diamond where it died, coloured by cause; a dot where it is now, dotted to its first birthday while it is still at risk.' : ''}</p>
@@ -429,7 +438,7 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
     update(force = false) {
       if (!open || !lite || !ref) return;
       const w = ctx.world(), id = w.parties.filter(p => p.kind === 'patrol').map(p => `${p.id}:${p.patrolPhase}`).join(',');
-      const k = `${w.seed}|${w.stats.births}|${w.stats.deaths}|${dayOf(w.time)}|${w.modelPolicy.mode}|${w.stimuli.length}|${id}|${ui.lane}|${ui.arm}`;
+      const k = `${w.seed}|${w.stats.births}|${w.stats.deaths}|${dayOf(w.time)}|${w.modelPolicy.mode}|${ctx.deps.decider.ready}|${w.stimuli.length}|${id}|${ui.lane}|${ui.arm}`;
       const t = performance.now();
       if (!force && (k === liveKey || t - renderedAt < 1000)) return;
       liveKey = k;
