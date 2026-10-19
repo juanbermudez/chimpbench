@@ -12,7 +12,8 @@ booked at the larger of two readings of Endor's billing, each an upper bound of 
   billed call (forward, forward_backward, optim_step, predict, save_checkpoint) at least one second when Endor accepts
   it, and once it has settled, its execution time read from Endor's own future timestamps (completed_at less the later
   of created_at and the previous call's completion: the run executes its calls one at a time) rounded up to the
-  second. A call not settled yet counts as long as the last call that settled (at least a second). A settled call
+  second. A call not settled yet counts as long as the last training step's slower call (at least a second): the calls
+  in flight at a check are training steps (a predict or a save is read as soon as it is sent). A settled call
   without timestamps cannot be timed; then every such call may take as long as the run's whole wall time, so the
   wall time is added to this reading (strict, and it may stop a cheap run early);
 - each further session (a gap of more than two minutes without calls: Endor parks the run, and the next call starts a
@@ -152,9 +153,10 @@ class SpendGuard:
             self._save()
             return CALL_FLOOR_S * self.s["gpu_price_hour"] / 3600
 
-    def settled(self, run_id: str, infos: list) -> None:
+    def settled(self, run_id: str, infos: list, step: bool = True) -> None:
         """Billed calls of the run have settled, in the order they were sent: each is booked at its execution time
-        from Endor's own timestamps, rounded up to the second (the second booked when it was accepted included)."""
+        from Endor's own timestamps, rounded up to the second (the second booked when it was accepted included).
+        `step`: a training step's calls, whose time stands for the steps still in flight; a predict or a save is not."""
         with self.lock:
             r = self.s["runs"].get(run_id)
             if r is None:
@@ -174,7 +176,7 @@ class SpendGuard:
                 r["timed"] += 1
                 ceil = max(ceil, CALL_FLOOR_S, math.ceil(max(0.0, completed - start) - 1e-9))
                 r["timed_s"] += max(CALL_FLOOR_S, math.ceil(max(0.0, completed - start) - 1e-9))
-            if ceil:
+            if ceil and step:
                 r["last_ceil"] = ceil
             self._touch_run(r)
             self._save()

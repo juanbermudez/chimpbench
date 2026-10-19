@@ -465,7 +465,7 @@ def infos(*futures) -> list:
 def predict_dev(run, dev: list[dict], guard: SpendGuard, t0: float) -> tuple[list[list[float]], float]:
     fut = run.predict([W.predict_row(r["packet"]) for r in dev])
     answers = settle([fut], "the development predict", EPOCH_CALL_WAIT_S, guard, t0)[0]
-    guard.settled(run.id, infos(fut))
+    guard.settled(run.id, infos(fut), step=False)
     if len(answers) != len(dev):
         raise W.WireError("run.predict did not answer every development row")
     out, worst = [], 0.0
@@ -530,11 +530,13 @@ def cmd_train(a) -> int:
         its.current().update(server_step_at_start=run.info_.step, lora=run.info_.lora.model_dump(mode="json"))
         its.save()
         k = k0 = sum(len(e) for e in plan[:start_epoch])
-        spent_at_start = guard.spent()
         extra = EPOCH_EXTRA_FLOOR
         if start_epoch == 0:  # the untouched base on the training path: a step-0 predict of the development packets
             probs, worst = predict_dev(run, dev, guard, t0)
             write_json(rundir / "base-predict.json", {"at": local_now(), "dev": W.dev_metrics(dev, probs), "max_sum_error": worst, "probs": probs})
+        # the rate per step is measured from here: before the review the step-0 predict counted as the first step's cost,
+        # and a slow predict (4 minutes) stopped a cheap run for money at its second step
+        spent_at_start = guard.spent()
         for e in range(start_epoch, W.RECIPE["epochs"]):
             status.update(epoch=e + 1)
             inflight: collections.deque = collections.deque()  # (k, datums, forward_backward, optim_step), oldest first
@@ -578,7 +580,7 @@ def cmd_train(a) -> int:
             name = W.checkpoint_name(it, e + 1)
             save = run.save_checkpoint(name, include_optimizer=True, ttl_seconds=W.TTL_SECONDS)
             model = settle([save], f"the checkpoint {name}", EPOCH_CALL_WAIT_S, guard, t0)[0]
-            guard.settled(run.id, infos(save))
+            guard.settled(run.id, infos(save), step=False)
             # the epoch's numbers are on file before anything else can fail: a saved epoch is always scored (before the
             # review a failed balance read here lost them, and a resume skipped the epoch in the best's choice)
             epochs_log.add({"epoch": e + 1, "model": model, "name": name, "at": local_now(), "steps_done": k, "train_loss": round(sum(losses) / max(1, len(losses)), 5),

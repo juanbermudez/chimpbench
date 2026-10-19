@@ -338,7 +338,10 @@ class Guard(unittest.TestCase):
             g.book_call("r")
             g.book_call("r")
             self.assertAlmostEqual(g.gpu_seconds(), 2 + 2 + 1 + 100 * 2 + 2 * 2 + 60)
-            self.assertEqual(g.summary()["calls_timed_by_endor"], 103)
+            g.book_call("r")
+            g.settled("r", [NS(created_at=600.0, completed_at=840.0)], step=False)  # a 4-minute predict read after them
+            self.assertAlmostEqual(g.gpu_seconds(), 2 + 2 + 1 + 100 * 2 + 240 + 2 * 2 + 60)  # the two in flight still at a step's time
+            self.assertEqual(g.summary()["calls_timed_by_endor"], 104)
 
     def test_untimed_calls_add_the_wall_time(self):
         with tempfile.TemporaryDirectory() as t:
@@ -662,6 +665,14 @@ class Runs(unittest.TestCase):
         g = G.SpendGuard(self.root / "ledger.json", 10.0)
         self.assertGreaterEqual(g.spent() + 1e-9, 100.0 - fake.balance_usd)  # never less than what was billed
         self.assertEqual(g.summary()["calls_untimed"], 0)
+
+    def test_a_slow_predict_is_not_read_as_the_rate_of_a_step(self):
+        exp, _, _ = self.export(400)
+        fake = FakeEndor(gpu_seconds_per_call=0.5, exec_by_op={"predict": 240.0}, refuse_share=0)
+        run_fit(ns(self.root, exp, fake))
+        self.assertEqual(run_train(ns(self.root, exp, fake)), 0)  # before the review: stopped for money at step 2
+        g = G.SpendGuard(self.root / "ledger.json", 10.0)
+        self.assertGreaterEqual(g.spent() + 1e-9, 100.0 - fake.balance_usd)
 
     def test_the_projection_stops_a_run_that_would_pass_the_cap(self):
         exp, _, _ = self.export(400)  # 150 steps

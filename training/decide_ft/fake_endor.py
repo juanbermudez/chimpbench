@@ -35,13 +35,15 @@ class FakeEndor:
 
     def __init__(self, *, key: str = FAKE_KEY, balance: float = 100.0, gpu_seconds_per_call: float = 0.5,
                  refuse=None, refuse_share: float = 1 / 256, decisions_per_minute: int = 600_000, fail_optim_at: int | None = None,
-                 lr_echo=None, hang=None, bill: str = "exact", frozen_balance: bool = False, timestamps: bool = True, refuse_datum=None):
+                 lr_echo=None, hang=None, bill: str = "exact", frozen_balance: bool = False, timestamps: bool = True, refuse_datum=None,
+                 exec_by_op: dict | None = None):
         self.key, self.balance_usd, self.balance_start = key, balance, balance
         self.gpu_s, self.dpm = gpu_seconds_per_call, decisions_per_minute
         self.refuse = refuse if refuse is not None else (lambda state, q: _h(json.dumps(state, sort_keys=True)) % round(1 / refuse_share) == 0 if refuse_share else False)
         self.fail_optim_at, self.lr_echo = fail_optim_at, lr_echo
         self.hang = hang  # (op, run step): that call's future stays "running" for ever (a call Endor never finishes)
         self.refuse_datum = refuse_datum  # a datum Endor's renderer refuses in training (422 invalid_datum)
+        self.exec_by_op = exec_by_op or {}  # GPU seconds of a call by its route, where it differs from gpu_seconds_per_call
         # billing: "exact" (each call its GPU seconds) or "ceil" (each call rounded up to the second); a frozen balance
         # stands in for one that lags; futures carry Endor's created_at and completed_at on a server clock where each
         # request takes `rtt` and each billed call runs `gpu_seconds_per_call`, one at a time (timestamps=False: none)
@@ -127,13 +129,14 @@ class FakeEndor:
                              "created_at": stamp(created), "completed_at": stamp(completed)}
         return fid
 
-    def _bill_gpu(self) -> bool:
+    def _bill_gpu(self, op: str = "") -> bool:
         if self.balance_usd <= 0:
             return False
-        secs = math.ceil(self.gpu_s - 1e-9) if self.bill == "ceil" else self.gpu_s
+        gpu_s = self.exec_by_op.get(op, self.gpu_s)
+        secs = math.ceil(gpu_s - 1e-9) if self.bill == "ceil" else gpu_s
         self.gpu_seconds += secs
         self.balance_usd -= secs * 7.0 / 3600
-        self._exec = self.gpu_s
+        self._exec = gpu_s
         return True
 
     # ------------------------------------------------------------------ the toy model
@@ -246,7 +249,7 @@ class FakeEndor:
             if body.get("seq_id") != run["next_seq_id"]:
                 self.violations.append(f"seq_id {body.get('seq_id')} where {run['next_seq_id']} was next")
                 return self._err(409, "seq_conflict", "out of order")
-            if op in ("forward_backward", "optim_step", "predict", "save_checkpoint", "forward") and not self._bill_gpu():
+            if op in ("forward_backward", "optim_step", "predict", "save_checkpoint", "forward") and not self._bill_gpu(op):
                 return self._err(402, "insufficient_balance", "add credit")
             if op == "save_checkpoint" and f"{run['project']}/{body['name']}" in self.models:
                 return self._err(409, "conflict", "the name is used")
