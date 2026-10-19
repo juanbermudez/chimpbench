@@ -394,7 +394,7 @@ that did not pass only when every refused packet has the code `context_too_long`
 test. The reason is written into the iteration record. Every other rule of §0 to §11 stands: the $10 cap, the gate, the
 key, the recipe, at most three iterations. This is not a new iteration of training (none has run).
 
-## 13. Results (the integrator; written 09:40 EDT, 19 October 2026)
+## 13. Results (the integrator; written 09:27 EDT, 19 October 2026)
 
 **What ran.** The fit check ran from 08:21 to 08:26 EDT (§12). The training ran from 08:28:39 to 08:44:12 EDT, 15½
 minutes, from the frozen checkout `bench-endor` at e1547f5a: one iteration, 1,365 steps (455 per epoch, 3,636 rows an
@@ -479,7 +479,7 @@ So the test shows that Endor can teach gliner2.5-decide the rules' choices quick
 - *The revision:* compare the files of 5a7adf72 with 7ee5da4c on Hugging Face (a read over the network), or register
   a separate base path for adapters trained on Endor.
 
-## 14. After the run (the integrator; written 09:40 EDT, 19 October 2026)
+## 14. After the run (the integrator; written 09:27 EDT, 19 October 2026)
 
 Three repairs to the code, none touching what was sent or how the run was judged (commit 71906bb2, 42 tests):
 
