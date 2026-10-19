@@ -393,3 +393,102 @@ summary. The target phase is therefore taught on 82% of its rows and is short of
 that did not pass only when every refused packet has the code `context_too_long`; any other refusal still stops the
 test. The reason is written into the iteration record. Every other rule of §0 to §11 stands: the $10 cap, the gate, the
 key, the recipe, at most three iterations. This is not a new iteration of training (none has run).
+
+## 13. Results (the integrator; written 09:40 EDT, 19 October 2026)
+
+**What ran.** The fit check ran from 08:21 to 08:26 EDT (§12). The training ran from 08:28:39 to 08:44:12 EDT, 15½
+minutes, from the frozen checkout `bench-endor` at e1547f5a: one iteration, 1,365 steps (455 per epoch, 3,636 rows an
+epoch), three epochs, a checkpoint saved after each (08:34, 08:39, 08:44), outcome *done*. No stop rule fired. The
+learning rate Endor echoed matched the one sent on every step.
+
+**Development numbers** against the rules' label, on the 384 development packets Endor answered (265 kind, 119 target;
+lower soft cross-entropy is better; the label's own entropy, the floor, is 0.294 overall, 0.265 kind, 0.359 target;
+chance top-1 is 0.275):
+
+- Endor's untouched base: soft cross-entropy 1.460, top-1 0.438 (kind 1.508 and 0.494; target 1.354 and 0.311). The
+  step-0 predict and the fit check's decisions read the base alike (largest difference of an option's probability
+  0.000002).
+- Epoch 1: 0.701 and 0.763. Epoch 2: 0.672 and 0.773.
+- **Epoch 3, the best: 0.634 and 0.797** (kind 0.681 and 0.777; target 0.531 and 0.840).
+
+**Money.** The guard booked $5.38 against the $10 cap: every one of the 2,737 billed calls at no less than one GPU second,
+its registered floor (§6). Endor bills the GPU time the calls use, about a tenth of a second each: its balance fell by
+$0.43 by 08:44 (218 GPU seconds and $0.0065 of fit-check decisions), equal to its hourly usage rows. The balance lagged
+the run's last four minutes; the settled figure is in §14. The floor overstated the cost about nine times, which is
+what a floor is for.
+
+**A second reading** (an independent recount from the files and two skeptics on each finding, 19 October): every number
+that can be recomputed from files matches the report: both readings of the base, the fit check's counts, the 1,365
+steps and their losses, the 2,737 billed calls, the booked dollars and the balance. The three epochs' development
+numbers rest on totals only, because the run kept each epoch's totals and not its rows (repaired for any later run,
+§14); the totals agree with each other (293, 297 and 306 right of 384). The development rows share no id, decision
+point, packet or state with the training rows, but they come from the same two simulated worlds (seeds 48 and 7) and
+the same days: the numbers measure new decisions in those worlds, not a held-out world.
+
+**The reading §7 allows.** Training on Endor lowered the development soft cross-entropy against the rules' label far
+below Endor's untouched base, in both phases (kind 1.508 to 0.681, target 1.354 to 0.531; top-1 0.438 to 0.797), in 16
+minutes, for well under a dollar. It says nothing about our local model, about a twin trained here, or about the app.
+
+**What the adapter is, and why it cannot drive the app as it is** (the second reading; each point checked against the
+files by two skeptics):
+
+1. *Its weights fit our model.* 288 float32 tensors: LoRA rank 16, alpha 32, on query, key, value, attention output,
+   intermediate and output of all 24 encoder layers; nothing on the classifier (Endor's `train_readout` false). The
+   names and shapes map one to one onto the modules of our local GLiNER2.5-Decide; a PEFT load would find no missing or
+   unexpected key.
+2. *It was trained on another revision of the base.* Endor's gliner2.5-decide is fastino/GLiNER2.5-Decide at
+   5a7adf72; our local stack pins 7ee5da4c and holds only that snapshot. Whether their weights differ cannot be told
+   offline. The local worker refuses an adapter whose manifest names another revision; 7ee5da4c must never be written
+   into this adapter's manifest.
+3. *Endor read the packets in another text than ours.* The question part (instructions, option ids c0 to cN, option
+   texts) is the same. The state is not: Endor writes it as a JSON-style object, our stack as YAML with sorted keys.
+   The token counts show it exactly: on all 4,020 packets Endor answered, its count minus ours (24 to 57) equals the
+   difference of the two renderings' word counts, with no residual; the same rule puts every refused packet over 512
+   and every answered one at or under it, which is why the 512 filter of §2 let through packets Endor refused. Already
+   before training, Endor's base and our local base disagree on the ten development packets both have scored: the
+   largest gap of an option's probability is 0.47 and the top choice differs on two. Whether the skill survives our
+   rendering is not measured.
+4. *It barely learned one whole target menu.* 766 of the 1,898 training target rows (40%) and 72 of the 191
+   development target rows were left out: 517 and 48 over 512 by our count before the upload, 249 and 24 refused. They
+   are nearly all the eight-option menus that choose among remembered fruit trees: 741 of the 760 such training rows
+   were left out and 19 trained on; 69 of the 70 development ones. The target figure of 0.840 is on short menus of
+   mostly two to four options, whose labels are peaked (the label's top option holds 0.84 of it on average, against
+   0.45 on the rows left out). The app sends the long menus.
+5. *The app's checks refuse it, as they should.* Its name (`i1-e3`) is not a registered adapter name; its manifest is
+   this run's, not R15's; no training root has a preflight that passes under the current code (R16's `ft0` failed on
+   18 October; R15's passing one predates amendment 26). These are the fail-closed rules of the app mode
+   (`docs/staging/app-model-drives.md`) and are not to be loosened.
+6. *And the mode's own precondition is not met:* the trained model counts as driving the app only through an adapter
+   that reads viable in R16's population test. None has.
+
+So the test shows that Endor can teach gliner2.5-decide the rules' choices quickly and cheaply on packets that fit its
+512 tokens. It does not give the app a model.
+
+**What could follow** (none started; each is the user's call):
+
+- *A local check of this adapter* (minutes of model time on a quiet machine, under the model lock): score the same 384
+  development packets on the app's own serving path (fp16, our rendering, base 7ee5da4c) with the base and with the
+  adapter, beside Endor's numbers. Pass rule, fixed before it runs: the skill is kept if the local soft cross-entropy is
+  at most 0.70 and top-1 at least 0.76 with neither phase more than 0.10 above Endor's; it does not transfer if under
+  half the gain is kept or top-1 is under 0.62; between is partial and leads to no decision. It reverses the user's "no
+  local comparison" for this adapter and does not settle point 2.
+- *A second Endor run that sends our own text of the state.* Endor's SDK takes a state as text
+  (`JSONContent = str | dict | list`), so Endor can be given the very string the app feeds the model; a fit check of
+  decisions only (cents) would first show whether Endor's count then equals ours. It does not reach the long fruit-tree
+  menus, which are over 512 tokens by our own count: those need a shorter packet (a design change) or local training.
+- *The revision:* compare the files of 5a7adf72 with 7ee5da4c on Hugging Face (a read over the network), or register
+  a separate base path for adapters trained on Endor.
+
+## 14. After the run (the integrator; written 09:40 EDT, 19 October 2026)
+
+Three repairs to the code, none touching what was sent or how the run was judged (commit 71906bb2, 42 tests):
+
+- Each epoch's development answers are now kept row by row (`run-i<n>/dev-e<k>.json`, as the step-0 predict keeps its
+  own), so a later run's epoch numbers can be recomputed from files.
+- `status.json`'s top-level `spent` is written when the run ends; it had stopped at the last step send ($5.3654 against
+  the ledger's $5.3848).
+- The report names Endor's base revision beside ours.
+
+**One more reading, registered here before it is made:** `scripts/endor-run.sh bill` reads Endor's balance and usage
+rows once (two GETs through the same gate: no packet, no billed call, refused while a run holds the lock) and rewrites
+the report, so the test's settled cost is on file. It is made once, at least an hour after the run ended.
