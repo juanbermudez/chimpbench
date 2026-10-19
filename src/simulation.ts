@@ -33,3 +33,30 @@ export function bodyStateOf(world: World, c: Chimp): BodyPercept | null {
   const P = paramsOf(world);
   return P.energyLedger === 1 || P.rhythmSleep === 1 || P.endoStates === 1 ? bodyPercept(world, c, P) : null;
 }
+
+/**
+ * Read-only (stage V1, for the page "How close to the wild", docs/staging/v1-field.md): which model a world runs, in
+ * the terms a comparison must name. The map profile, the parameter overrides the world was created with (a fresh copy;
+ * empty for today's default model), whether the Track E ledgers run, where patrols come from (patrolValue 0: the
+ * patrol hazard, tuned against T-PAT-1; 2 or more: the males' own decision), and the life-history clock (ageRate 1 is
+ * natural aging). Nothing is stored for it and the simulation never calls it. Pure: no world.rng, nothing written.
+ */
+export function modelIdentityOf(world: World): {
+  profile: 'compressed' | 'field'; overrides: Record<string, number>; registry: string | null;
+  energyLedger: boolean; nursing: boolean; water: boolean; patrols: 'hazard' | 'decision'; ageRate: number;
+  /** The population cap (a design limit); fertility rows leave out days at or above 90% of it. */
+  popCap: number;
+  /** Stage ED's bodies (deadBody 1): a dead animal's position is then where its body ended up, not where it died. */
+  bodiesMove: boolean;
+} {
+  const s = (world as World & { sim?: { params?: { registry?: string; profile?: string; overrides?: Record<string, number> } } }).sim?.params;
+  const P = paramsOf(world);
+  return {
+    profile: world.size > 1000 ? 'field' : 'compressed',
+    overrides: { ...(s?.overrides ?? {}) },
+    registry: s?.registry ?? null,
+    energyLedger: P.energyLedger === 1, nursing: P.ledgerNurseBout === 1, water: P.waterLedger === 1,
+    patrols: P.patrolValue >= 2 ? 'decision' : 'hazard',
+    ageRate: world.ageRate, popCap: P.popCap, bodiesMove: P.deadBody === 1,
+  };
+}

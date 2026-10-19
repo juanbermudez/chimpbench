@@ -4,6 +4,7 @@ import { esc, troopShort } from './format';
 import { icon } from './icons';
 import { MAP_ZOOM_MAX, clampView, fromMap, layerOffset, toMap, wheelFactor, zoomAbout, type MapView } from './map-view';
 import { ARC_LIFE_S, arcAlpha, arcRadius } from '../render/callreach';
+import type { RecordsOverlay, MapXform } from './records-card';
 import { ACT_PATROLLING, ACT_TRAVELLING, GOAL_CALL, GOAL_NONE, TRAIL_SAMPLES, createPartyMap, heardLevel, trailPoints, updatePartyMap } from '../render/env/party-map';
 
 // Canvas minimap: static habitat layer cached per world, dynamic layer
@@ -63,13 +64,16 @@ export function createMinimap(root: HTMLElement, ctx: Ctx) {
   // Its entries carry no tooltip: a tip popping up there would cover the map the hover is meant to reveal.
   root.innerHTML = `<div class="map-frame"><canvas class="map" tabindex="0" role="img" aria-label="Community range map. The outlined area is where the camera looks. Click to select the nearest chimp or move the camera there. Scroll, or press + and −, to zoom; 0 shows the whole map; drag to pan when zoomed."></canvas><canvas class="map-view" aria-hidden="true"></canvas><span class="map-n mono" aria-hidden="true">N</span>
     <div class="map-zoom" role="group" aria-label="Map zoom"><button data-zoom="fit" aria-label="Show the whole map (0)" data-tip="Show the whole map" data-key="0" hidden>${icon('fit')}</button><button data-zoom="in" aria-label="Zoom in (+)" data-tip="Zoom in" data-key="+">${icon('plus')}</button><button data-zoom="out" aria-label="Zoom out (−)" data-tip="Zoom out" data-key="−" aria-disabled="true">${icon('minus')}</button></div>
-    <div class="map-legend" role="group" aria-label="Communities: press one to highlight it"></div></div>`;
+    <div class="map-legend" role="group" aria-label="Communities: press one to highlight it"></div><div class="map-rec-key" hidden></div><div class="map-rec-card" role="tooltip" hidden></div></div>`;
   const frameEl = root.querySelector<HTMLElement>('.map-frame')!;
   const canvas = root.querySelector<HTMLCanvasElement>('canvas.map')!;
   const g = canvas.getContext('2d')!;
   const viewCanvas = root.querySelector<HTMLCanvasElement>('canvas.map-view')!;
   const v = viewCanvas.getContext('2d')!;
   const legend = root.querySelector<HTMLElement>('.map-legend')!;
+  // Stage V1: the Records overlay (records-card.ts), set while the layer bar's Records toggle is on; its key and hover card.
+  const recKey = root.querySelector<HTMLElement>('.map-rec-key')!, recCard = root.querySelector<HTMLElement>('.map-rec-card')!;
+  let overlay: RecordsOverlay | null = null;
   const zoomBox = root.querySelector<HTMLElement>('.map-zoom')!;
   const zb = (k: string) => zoomBox.querySelector<HTMLElement>(`[data-zoom="${k}"]`)!;
   const fitBtn = zb('fit'), inBtn = zb('in'), outBtn = zb('out');
@@ -94,6 +98,8 @@ export function createMinimap(root: HTMLElement, ctx: Ctx) {
   }
   const mx = (w: World, x: number) => toMap(x, view.x, view.zoom, w.size, W);
   const mz = (w: World, z: number) => toMap(z, view.z, view.zoom, w.size, H);
+  /** The transforms the Records overlay draws with (one object, its scale rewritten each draw). */
+  const xf: MapXform = { mx, mz, k: 1, zoom: 1 };
 
   // Stage W10: this card's own tracker of the parties and the calls (field map only).
   const pm = createPartyMap();
@@ -267,7 +273,10 @@ export function createMinimap(root: HTMLElement, ctx: Ctx) {
     else { blit(w, base, WHOLE); if (nearView.zoom) blit(w, near, nearView); }
     const k = W / 300, hi = ctx.state.highlightTroopId, hv = ctx.state.hoverTroopId, zoom = view.zoom;
     const troops = w.troops, chimps = w.chimps;
-    for (let i = 0; i < troops.length; i++) {
+    xf.k = k; xf.zoom = zoom;
+    // With Records on, the true range outlines take the circles' place (two range shapes never show at once).
+    if (overlay) overlay.ranges(g, w, xf, hi);
+    else for (let i = 0; i < troops.length; i++) {
       const t = troops[i], on = hi === t.id, hover = hv === t.id, dim = hi !== null && !on;
       const cx = mx(w, t.center[0]), cz = mz(w, t.center[2]), r = (t.radius / w.size) * W * zoom;
       g.fillStyle = rgba(t.color, dim ? A02 : on ? A14 : A06); g.beginPath(); g.arc(cx, cz, r, 0, Math.PI * 2); g.fill();
@@ -285,6 +294,7 @@ export function createMinimap(root: HTMLElement, ctx: Ctx) {
       g.beginPath(); g.arc(mx(w, p.center[0]), mz(w, p.center[2]), Math.max(4 * k, (r + 2) / w.size * W * zoom), 0, Math.PI * 2); g.stroke();
     }
     if (w.size > 1000) drawParties(w, k, hi);   // stage W10: trails, goals, headings, heard (field map)
+    if (overlay) overlay.marks(g, w, xf);          // stage V1: where animals died, under the living
     for (let i = 0; i < w.stimuli.length; i++) {
       const s = w.stimuli[i], x = mx(w, s.position[0]), z = mz(w, s.position[2]);
       g.strokeStyle = 'rgba(226,191,121,.9)'; g.lineWidth = 1.4 * k; stimDash[0] = 3 * k; stimDash[1] = 2 * k; g.setLineDash(stimDash);
@@ -380,6 +390,20 @@ export function createMinimap(root: HTMLElement, ctx: Ctx) {
     const w = ctx.world();
     apply(clampView(w.size, view.zoom, drag.vx - dx / cssW * w.size / view.zoom, drag.vz - dy / cssH * w.size / view.zoom, next));
   });
+  // Records hover card: the nearest death place within 8 px, else the community range under the pointer.
+  let hoverAt = 0;
+  canvas.addEventListener('pointermove', e => {
+    if (!overlay || drag.on) return;
+    const t = performance.now(); if (t - hoverAt < 50) return; hoverAt = t;
+    const w = ctx.world(), r = canvas.getBoundingClientRect();
+    const u = (e.clientX - r.left) / r.width, q = (e.clientY - r.top) / r.height;
+    const html = overlay.hover(w, u * W, q * H, xf, fromMap(u, view.x, view.zoom, w.size), fromMap(q, view.z, view.zoom, w.size));
+    if (!html) { recCard.hidden = true; return; }
+    recCard.innerHTML = html; recCard.hidden = false;
+    const fx = u * r.width, fy = q * r.height, cw = recCard.offsetWidth, ch = recCard.offsetHeight;
+    recCard.style.transform = `translate(${Math.round(Math.min(r.width - cw - 4, Math.max(4, fx + 12)))}px, ${Math.round(fy > ch + 16 ? fy - ch - 10 : fy + 14)}px)`;
+  });
+  canvas.addEventListener('pointerleave', () => { recCard.hidden = true; });
   canvas.addEventListener('pointerup', endDrag);
   canvas.addEventListener('pointercancel', endDrag);
 
@@ -439,6 +463,13 @@ export function createMinimap(root: HTMLElement, ctx: Ctx) {
         legendKey = lk;
         legend.innerHTML = w.troops.map(t => `<button data-troop="${t.id}" aria-pressed="${hi === t.id}" style="--c:${esc(t.color)}"><i></i>${esc(troopShort(t))}</button>`).join('');
       }
+    },
+    /** Stage V1: the Records overlay on (an overlay from records-card.ts) or off (null); redraws at once. */
+    setOverlay(o: RecordsOverlay | null, key = '') {
+      overlay = o; recKey.hidden = !o; recCard.hidden = true;
+      if (o && recKey.innerHTML !== key) recKey.innerHTML = key;
+      drawnVer = -1;
+      const w = ctx.world(); if (cssW >= 1 && cssH >= 1) { size(); prepare(w); draw(w); }
     },
     /** Zoom state and habitat-layer build times (perf hook). */
     debug: () => { const w = ctx.world(); return { zoom: view.zoom, x: view.x, z: view.z, ...stats, recent: [...stats.recent], trees: w.trees.length, water: w.water.length, stream: w.stream?.points.length ?? 0 }; },
