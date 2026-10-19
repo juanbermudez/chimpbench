@@ -209,8 +209,106 @@ made them; `first-pass/` and `second-pass/` hold the earlier rounds the fixes be
 - The hour of the readout is not saved: after a reopen it fills again from empty (the owners of the acts in progress
   are saved). The decoder's notes are not saved (a draw does not read them).
 - Only one browser tab may drive the R15 worker at a time: the route has no queue, so a second tab's calls are refused
-  ("busy"), counted as model errors in that tab.
+  ("busy"), counted as model errors in that tab. (Since the second reading, §6.2, a busy route is asked again within
+  the call's 30 s instead.)
 - The mode's world is new: an existing default world cannot be switched into it (its parameters are fixed at creation).
+
+## 6. Second reading (19 October 2026, 07:27 to 08:25 EDT)
+
+The second reader did not take the build's report on trust: it read the code beside R16's runner, ran the checks
+again, forced the failures, and looked at the app against R16's fake scorer with every answer held 0.3 s (a stand-in
+for a model's time per call; `MGOGO_FAKE_R15_MS`, added to the probe server). No model process was started; one probe
+server (port 5199, `MGOGO_NO_MODEL=1`) and one headless browser at a time, each stopped by its process id. Pictures,
+films and the scripts that made them: `/Volumes/Drive/chimpbench/shots/watch-2026-10-19/app-model-drives/second-reading/`.
+
+### 6.1 What holds
+
+- **Every adult on the model, nobody under 8.** The membership is taken from age before every tick, as R16's runner
+  does; in the page 38 of 38 adults were on the model and the 11 young on the rules, none on the wrong side.
+- **The readout is R7's ledger.** R7's exact split of a run is the run's own counters of minutes under a fresh choice,
+  a held intention and the rules (`r7-ledger.md` §3), which R16's meter keeps. One whole simulated day of the app's loop
+  beside R16's `runDay16` on one world (seed 48, 30 days of burn-in, the fake odds in-process): the same world at the
+  end, 2,301 asks, 2,273 settled by the stand-in, 3,144 calls and 28 rules decisions in both, and every one of the 49
+  animals' minutes by owner equal (56.3% fresh choice, 20.4% held, 23.3% rules).
+- **One thing the ledger does not see,** as R16's meter does not: an act a mechanism changes inside a tick without a
+  new decision (a departure from the nest given up, a fight-back) keeps the owner of the act before. In that day it was
+  1.25 animal-minutes of 70,560.
+- **The default app is unchanged.** R15's and R16's pins: "pin equal: sections A, B, C, D reproduce byte for byte". The
+  golden fixture and the field pin: passed. The whole suite and the build: section 6.4.
+- **Saves** reopen in the mode and play only with the adapter they are bound to (the build's tests and its pictures 09
+  and 10; not repeated in the page).
+
+### 6.2 Defects found and repaired (each a commit with its tests)
+
+1. **A worker that died or stalled handed the rest of the pass to the rules.** Killed while 34 adults waited at dawn:
+   all 34 asks went to the rules ("R15 worker exited"); a stalled call: the server stops its worker at its own 20 s
+   limit and the other 33 went to the rules; a call past the app's limit: the next 32 met "busy" and went to the
+   rules. Counted and shown, but against this stage's own words ("if the worker stops, playback pauses; the rules do not
+   take over"). Now the browser's kernel asks a busy route again within the call's 30 s, and waits for a stopped worker
+   (or a server that serves another adapter, or does not answer) until the bound adapter is served again; the clock
+   pauses and the queue line says why; then it asks the same call once more, as R16's supervisor does. Only a refusal
+   by a working server, a late call, another adapter's answer, or a second stop on the same call goes to the rules,
+   counted ("worker stopped again" is a new reason). In the page: the scorer killed during the dawn pass, the app
+   paused ("Paused: No verified adapter is ready on this server: R15 worker exited… In this mode the rules do not take
+   over."), no rules decision for want of a worker, and after Start in the model panel the pass finished on the model.
+   A second tab driving the same worker now waits for the first's calls instead of counting model errors.
+2. **A world saved between a tick and its pass lost that tick's minutes on reopen.** An autosave starts in the frame a
+   tick ran, so this is the common case; every animal was a quarter-minute short of the run that never stopped. The
+   loop now opens with that tick open and books it when the pass ends.
+3. **The achieved speed was not the achieved speed.** The menu bar showed the clock's rate smoothed over half a second:
+   0 in every pass, the full speed between passes. In one minute at 1 min/s it showed 46 different values from 0 to
+   1 min/s where 14.9 s/s was achieved. It now shows the simulated time gained over the last real minute of play, waits
+   included (menu bar, time panel, queue line). Looked at again it read 17, 20 and 23 s/s where the true last minute
+   was 16.8, 20.6 and 23.8. The chip's label also says "last 27 min" until an hour has run (it said "last hour").
+4. **A long pass was not explained.** At dawn 32 adults were asked in one pass and the world stood still for more
+   than 10 s (0.3 s a call) with nothing in the menu bar saying why. A pass that has run 1.5 s now reads "Asking 12 of
+   32" in the speed slot, in the default app's waiting colour; shorter passes do not, so the line does not flicker.
+
+### 6.3 Looked at by eye
+
+- Honest: yes. The chip ("Who decides · last 27 min · dry run, no model" over "Model 51% · held 13% · rules 36%") is
+  exact to the minute in its tooltip and panels, splits the rules into the young and adults, names the adapter, the
+  dry run and "rules-taught model on the R15 menu". At the start of a world it reads "rules 98%", truly: every act then
+  was set by the rules' burn-in until its animal is first asked.
+- Quiet: yes. One line beside the clock; the long-pass sign shows only at dawn-sized passes.
+- Clear: the panels are dense (five short paragraphs in the time panel), readable. The animals during a dawn pass were
+  in their nests, still and breathing: nothing looked broken, but the world stops, and with a real model it will stop
+  for about 15 s each dawn (21 of the 32 adults had been asked after 10 s at 0.3 s a call; R16's timings will
+  measure it with a model).
+
+### 6.4 Checks run
+
+- `tests/app-model-drives.test.ts`: 17 tests (12 of the build, 5 added), all passing; the new tests and scripts
+  type-checked strict by hand.
+- The whole suite once, four files at a time, on the repaired head (08:14 to 08:21 EDT): 1,649 tests, 1,648 passed,
+  0 failed, 1 skipped (the validation fixture `artifacts/validation/c7a-field1y.json`, not in this worktree, as for the
+  build). The golden fixture and the field pin are in it, unmoved. `pnpm build` passed (08:22 EDT).
+- `scripts/r12-pin.ts check` on the repaired head (08:23 EDT): "pin equal: sections A, B, C, D reproduce byte for byte".
+
+### 6.5 Still open (for the integrator and the user)
+
+- **Dawn choices thrown away.** In a large pass about a fifth to a third of the asks end as "choice no longer legal"
+  and go to the rules (15 of 70 asks in the passes of ten or more of a stand-in day, seed 48 after 2 days of burn-in;
+  10 of 32 in the page's dawn pass; over the whole day of section 6.1, 28 of 2,301 asks, 1.2%). R16's protocol builds
+  every request from one world and applies the answers in animal order, so an earlier animal's applied act raises an
+  event for a later one (its decision version moves) or takes its option away. Counted and shown, and R16's frozen
+  runner does the same, so its result will carry it; asking those animals again instead is a change to R16's
+  protocol, not this stage's.
+- **The menu.** The second reader agrees with section 0.3: the R15 route answers 409 to any context of the ruled menu
+  and R16's runner throws on it, so a mode on the ruled menu could not use any adapter that can pass R16's test. The
+  brief's two asks (the ruled menu, and an R16 adapter driving) cannot both be met until an adapter is trained on the
+  ruled menu. The integrator's call.
+- **R16's launcher does not see this stage's probe server.** `bench-r16/artifacts/r16-launch-s1.sh` holds session 1 back
+  while a process named `vite.probe.config` runs; this probe server runs as `vite.fake-r15.config.ts`. It holds no
+  model, and a headless browser beside it is seen; still, stop it before R16's sessions. (`bench-r16` was not touched.)
+- Not checked: a real adapter, the real scorer, timings with a model, more than one dawn in the page.
+
+Proposed lines, in addition to the build's below: **AGENTS.md** Gotchas: "In the mode 'Model decides for every adult'
+the browser's kernel (`src/drive/kernel.ts`) waits for a busy or stopped worker and asks the same call once more when
+the bound adapter is served again; only a refusal by a working server, a late call, another adapter's answer or a
+second stop goes to the rules. The menu bar's speed there is measured over the last real minute (`AchievedRate`), not
+the clock's half-second rate." Commands: `MGOGO_FAKE_R15_MS=300` on the probe server holds each fake answer (a stand-in
+for a model's time per call).
 
 ## For the integrator
 
