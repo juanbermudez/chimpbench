@@ -479,8 +479,17 @@ def predict_dev(run, dev: list[dict], guard: SpendGuard, t0: float) -> tuple[lis
 def cmd_train(a) -> int:
     root, fake = roots(a)
     fit = read_json(root / "fit/summary.json")
-    if not fit or not fit.get("passed"):
-        raise Refused("the fit check has not passed (run `fit` first)")
+    if not fit:
+        raise Refused("the fit check has not run (run `fit` first)")
+    accepted = None
+    if not fit.get("passed"):
+        # registration §12: a fit check that stopped only on length refusals may be accepted, with the reason recorded
+        if not a.accept_fit_refusals:
+            raise Refused("the fit check has not passed (run `fit` first, or see registration §12: --accept-fit-refusals)")
+        codes = fit.get("codes") or {}
+        if not codes or set(codes) != {"context_too_long"}:
+            raise Refused(f"the fit check's refusals are not all length refusals ({codes}); §12 does not apply")
+        accepted = {"reason": a.accept_fit_refusals, "refused": fit.get("refused"), "codes": codes, "share": fit.get("share")}
     if fake is None and fit.get("export_outputs") != W.EXPORT:
         raise Refused("the fit check was not run on the registered export")
     train, dev = final_rows(root, fit)
@@ -494,6 +503,9 @@ def cmd_train(a) -> int:
         conn = Connection(root, guard, fake, allowed={"datum": W.allowed_packets(train, permuted_too=True), "predict": W.allowed_packets(dev, permuted_too=False)})
         its = Iterations(root / "iterations.json")
         it, resume = its.begin(a.reason)
+        if accepted is not None:
+            its.d["iterations"][-1]["fit_refusals_accepted"] = accepted
+            its.save()
     except BaseException:
         lock.release()
         raise
@@ -768,6 +780,7 @@ def main(argv: list[str]) -> int:
     ap.add_argument("--root", default=None)
     ap.add_argument("--export", default=str(REPO / "artifacts/endor/export"))
     ap.add_argument("--reason", default=None, help="a later iteration: the operational failure it follows")
+    ap.add_argument("--accept-fit-refusals", default=None, help="registration §12: train after a fit check that stopped only on length refusals; the reason is recorded")
     a = ap.parse_args(argv)
     a.fake_options = None
     if a.command in ("fit", "train") and a.cap is None:
