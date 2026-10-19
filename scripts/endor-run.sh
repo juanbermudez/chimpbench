@@ -6,6 +6,7 @@
 #   scripts/endor-run.sh dry      the fit check and the whole run against the fake Endor, under artifacts/endor-dry
 #   scripts/endor-run.sh fit      SENDS: the account check and every exported packet once (exit 3 when over 2% refused)
 #   scripts/endor-run.sh train [--reason "..."]   SENDS: the training run (exit 0 done, 3 a stop, 75 operational, 130 kill)
+#   scripts/endor-run.sh bill     SENDS two GETs after a run: the balance and the usage rows, so the report shows the settled cost
 #   scripts/endor-run.sh status | report | kill
 # A real run's state is in the main checkout's artifacts/endor whatever checkout runs it (one ledger, one cap):
 # progress in its status.json (`status`), logs in its logs/; the cap is $10 for the whole test.
@@ -39,8 +40,9 @@ case "${1:-}" in
   # guard's own clock to run on: AGENTS.md's rule for long runs)
   fit) logged fit caffeinate -i "$PY" -I -B "$TRAIN" fit --cap "$CAP" ;;
   train) shift; logged train caffeinate -i "$PY" -I -B "$TRAIN" train --cap "$CAP" "$@" ;;
+  bill) logged bill "$PY" -I -B "$TRAIN" bill ;;
   status) "$PY" -I -B "$TRAIN" status ;;
   report) "$PY" -I -B "$TRAIN" report ;;
   kill) mkdir -p "$REAL" && touch "$REAL/KILL" && echo "the run stops within 20 seconds (remove $REAL/KILL to allow another)" ;;
-  *) sed -n '2,11p' "$0"; exit 2 ;;
+  *) sed -n '2,12p' "$0"; exit 2 ;;
 esac

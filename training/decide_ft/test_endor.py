@@ -630,6 +630,45 @@ class Runs(unittest.TestCase):
         with self.assertRaises(T.Refused):
             run_train(ns(self.root, exp, fake, reason="again"))
 
+    def test_each_epoch_keeps_its_rows_and_the_status_its_last_spent(self):
+        exp, _, dev = self.export(40)
+        fake = FakeEndor(refuse_share=0)
+        self.assertEqual(run_fit(ns(self.root, exp, fake)), 0)
+        self.assertEqual(run_train(ns(self.root, exp, fake)), 0)
+        final_dev = W.read_jsonl(self.root / "fit/dev-final.jsonl")
+        epochs = [json.loads(line) for line in (self.root / "run-i1/epochs.jsonl").read_text().splitlines()]
+        for rec in epochs:  # the epoch's numbers recomputed from its own rows
+            kept = json.loads((self.root / f"run-i1/dev-e{rec['epoch']}.json").read_text())
+            self.assertEqual(kept["ids"], [r["id"] for r in final_dev])
+            self.assertEqual(W.dev_metrics(final_dev, kept["probs"]), rec["dev"])
+        status = json.loads((self.root / "status.json").read_text())
+        self.assertEqual(status["spent"], round(G.SpendGuard(self.root / "ledger.json", 10.0).spent(), 4))
+        self.assertEqual(status["spent"], epochs[-1]["spent"])  # nothing billed after the last epoch's save
+        # the report names Endor's base revision beside ours
+        self.assertIn(f"at revision {'0' * 8}; our local stack pins {T.LOCAL_REVISION[:8]} (another revision", (self.root / "report.md").read_text())
+
+    def test_the_bill_reads_only_the_balance_and_the_usage_rows(self):
+        exp, _, _ = self.export(40)
+        with self.assertRaises(T.Refused):  # nothing has run
+            T.cmd_bill(ns(self.root, exp, FakeEndor()))
+        fake = FakeEndor(refuse_share=0, frozen_balance=True)  # Endor's balance lags the whole run
+        self.assertEqual(run_fit(ns(self.root, exp, fake)), 0)
+        self.assertEqual(run_train(ns(self.root, exp, fake)), 0)
+        self.assertEqual(G.SpendGuard(self.root / "ledger.json", 10.0).summary()["measured_from_balance"], 0.0)
+        billed = round(fake.balance_start - fake.balance_usd, 4)
+        self.assertGreater(billed, 0)
+        fake.frozen_balance = False  # the hour has settled
+        before = len(fake.requests)
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(T.cmd_bill(ns(self.root, exp, fake)), 0)
+        new = fake.requests[before:]
+        self.assertEqual(sorted((r["method"], r["path"]) for r in new), [("GET", "/v1/balance"), ("GET", "/v1/usage")])
+        self.assertEqual(round(fake.balance_start - fake.balance_usd, 4), billed)  # nothing billed
+        self.assertEqual(G.SpendGuard(self.root / "ledger.json", 10.0).summary()["measured_from_balance"], billed)
+        self.assertIn(f"from the balance ${billed:.2f}", (self.root / "report.md").read_text())
+        self.assertFalse((self.root / "run.lock").exists())
+        self.assertNotIn(FAKE_KEY.encode(), every_file_bytes(self.root))
+
     def test_more_than_two_percent_refused_stops(self):
         exp, train, _ = self.export(61)
         bad = {train[i]["packet"]["state"]["me"] for i in (3, 9)}  # 2 of 61 = 3.3%

@@ -37,6 +37,7 @@ import httpx  # noqa: E402
 import endor_wire as W  # noqa: E402
 from endor_client import Connection, EndorCallError, GateRefused  # noqa: E402
 from endor_guard import SpendGuard, Stop  # noqa: E402
+from r15_preflight import REVISION as LOCAL_REVISION  # noqa: E402  (stdlib only at import)
 
 REPO = HERE.parents[1]
 # A real run keeps its state (the ledger and its cap, the fit check, the iterations, receipts, logs, the adapter) in one
@@ -589,6 +590,9 @@ def cmd_train(a) -> int:
             before = guard.spent()
             probs, worst = predict_dev(run, dev, guard, t0)
             metrics = W.dev_metrics(dev, probs)
+            # every row's answer, as the step-0 predict keeps its own (before 19 October only the totals were kept, so the
+            # first run's epoch numbers cannot be recomputed from files: registration §14)
+            write_json(rundir / f"dev-e{e + 1}.json", {"at": local_now(), "epoch": e + 1, "ids": [r["id"] for r in dev], "max_sum_error": worst, "probs": probs})
             name = W.checkpoint_name(it, e + 1)
             save = run.save_checkpoint(name, include_optimizer=True, ttl_seconds=W.TTL_SECONDS)
             model = settle([save], f"the checkpoint {name}", EPOCH_CALL_WAIT_S, guard, t0)[0]
@@ -627,7 +631,7 @@ def cmd_train(a) -> int:
             except Exception as e:  # noqa: BLE001 - recorded, the run closes itself after an hour without a heartbeat
                 detail = (detail or "") + f"; close failed ({conn.error(e).kind}): close it with `endor runs close {run.id}`"
         its.end(outcome, detail)
-        status.update(state="ended", outcome=outcome, detail=detail, ledger=guard.summary())
+        status.update(state="ended", outcome=outcome, detail=detail, spent=round(guard.spent(), 4), ledger=guard.summary())
     try:
         best = best_epoch(root)
         if best and outcome in ("done", "stopped-money", "stopped-refused", "stopped-kill", "stopped-signal", "failed-operational", "failed-unexpected"):
@@ -735,6 +739,10 @@ def write_report(root: Path, fake: bool) -> None:
         lines += ["", f"Best epoch: {best['epoch']} ({best['model']}), by development soft cross-entropy."]
         if adapter:
             lines.append(f"Downloaded, not loaded: {rep['adapter']['folder']} (" + ", ".join(f"{n} {v['sha256'][:12]}" for n, v in adapter["files"].items()) + ").")
+            em = adapter.get("endor_manifest") or {}
+            if em.get("hf_revision"):
+                lines.append(f"Endor trained it on {em.get('hf_repo')} at revision {em['hf_revision'][:8]}; our local stack pins {LOCAL_REVISION[:8]}"
+                             + (" (the same)." if em["hf_revision"] == LOCAL_REVISION else " (another revision: the local stack refuses it, registration §13)."))
         else:
             why = (read_json(root / "status.json", {}) or {}).get("download_error")
             lines.append("Not downloaded" + (f": {why}" if why else "") + f". It stays on Endor as {best['model']} for 7 days from its save; `scripts/endor-run.sh train` does not fetch it again, a download is one call to project.models.download.")
@@ -757,6 +765,32 @@ def base_agreement(root: Path, base: dict | None) -> dict | None:
     return {"n": len(worst), "max": round(worst[-1], 5), "median": round(worst[len(worst) // 2], 5)}
 
 
+def cmd_bill(a) -> int:
+    """After the run (registration §14): Endor's balance and usage rows read once more, so the report shows what the
+    test cost once Endor's hourly billing has caught up. Two GETs; no packet, no billed call. Refused while a run holds
+    the lock."""
+    root, fake = roots(a)
+    ledger = read_json(root / "ledger.json")
+    if not ledger:
+        raise Refused("nothing has run: no ledger")
+    lock = RunLock(root)
+    try:
+        conn = Connection(root, SpendGuard(root / "ledger.json", ledger["cap"]), fake, allowed={"datum": frozenset(), "predict": frozenset()})
+        try:
+            conn.client.balance()  # the gate gives it to the guard: the ledger's last balance
+            now = datetime.now(timezone.utc)
+            usage = [u.model_dump(mode="json") for u in conn.client.usage(now - timedelta(days=13), now + timedelta(hours=1), project=W.PROJECT)]
+            write_json(root / "usage.json", usage)
+        finally:
+            conn.close()
+            keep_fake(fake, root)
+    finally:
+        lock.release()
+    write_report(root, fake is not None)
+    print((root / "report.md").read_text())
+    return 0
+
+
 def cmd_report(a) -> int:
     root, fake = roots(a)
     write_report(root, fake is not None)
@@ -774,7 +808,7 @@ def cmd_status(a) -> int:
 
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("command", choices=("plan", "fit", "train", "report", "status"))
+    ap.add_argument("command", choices=("plan", "fit", "train", "bill", "report", "status"))
     ap.add_argument("--cap", type=float, default=None, help="the dollar cap of the whole test (required for fit and train; 10)")
     ap.add_argument("--fake", action="store_true", help="the fake Endor: nothing sent, no key read, under artifacts/endor-dry")
     ap.add_argument("--root", default=None)
@@ -788,7 +822,7 @@ def main(argv: list[str]) -> int:
         return 2
     _signals()
     try:
-        return {"plan": cmd_plan, "fit": cmd_fit, "train": cmd_train, "report": cmd_report, "status": cmd_status}[a.command](a)
+        return {"plan": cmd_plan, "fit": cmd_fit, "train": cmd_train, "bill": cmd_bill, "report": cmd_report, "status": cmd_status}[a.command](a)
     except Refused as e:
         print(f"refused: {e}", file=sys.stderr)
         return 2
