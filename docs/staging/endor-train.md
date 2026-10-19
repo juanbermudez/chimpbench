@@ -489,6 +489,10 @@ Three repairs to the code, none touching what was sent or how the run was judged
   the ledger's $5.3848).
 - The report names Endor's base revision beside ours.
 
-**One more reading, registered here before it is made:** `scripts/endor-run.sh bill` reads Endor's balance and usage
-rows once (two GETs through the same gate: no packet, no billed call, refused while a run holds the lock) and rewrites
-the report, so the test's settled cost is on file. It is made once, at least an hour after the run ended.
+**One more reading, registered here before it is made:** `scripts/endor-run.sh bill`, run from a checkout at 658977ed
+or later (not from `bench-endor`, which predates it), reads Endor's balance and its usage rows once. The gate lets out
+those two GETs and nothing else (no packet, no billed route); the usage window starts at the hour of the test's first
+call. The reading is made once, at least an hour after the last run closed, under the run's lock, and is kept in its own
+files (`bill.json`, `usage-bill.json`): the run's own `usage.json`, read at 08:44:26, stays as it is. The report and
+`status.json` are rewritten from it. A failure writes nothing and can be retried. Its second reading (19 October) also
+repaired the code before it was made: commit 658977ed, 44 tests and the dry run.
