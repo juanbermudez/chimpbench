@@ -115,7 +115,8 @@ export function worldState(t: LiteTarget, world: World, life: LifeRecord, popCap
   if (INPUT_ROWS[t.id]) return words('an input, not a test', INPUT_ROWS[t.id]);
   const days = life.days;
   if (!SAME_DEFINITION[t.id]) {
-    if (t.truth) return words('read from the simulation: reference values only', 'A live reader of this row would need a hook in the simulation’s tick, which this build does not add.');
+    // the row's chip already says "read from the simulation"; the words line keeps to one line at 1280 px (review, 19 October)
+    if (t.truth) return words('reference values only in this build', 'This row is read from the simulation directly. A live reader of it would need a hook in the simulation’s tick, which this build does not add.');
     if (w.kind === 'decades') return words('needs decades of natural aging', `${w.why}; about ${(w.days ?? 0) / 365} years of watching, ${daysWords(days)} so far: ${wallWords((w.days ?? 0) - days)} more.`);
     return words('field teams not running in this build', `The virtual field teams come in a later build. Shortest window once they run: ${w.why}.`);
   }
