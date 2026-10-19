@@ -67,6 +67,10 @@ export class DriveLoop {
     this.ledger = new DriveLedger(world, this.minAge, owners);
     const d = world.modelPolicy.drive?.decode ?? DRIVE_DECODE;
     this.decoder = newDecoder({ mode: d.mode, salt: d.salt, hold: d.hold });
+    // a world saved between a tick and its pass (an autosave starts in the frame the tick ran) reopens with adults
+    // waiting: that tick's attribution and holds are in the saved owners, and its minutes are booked when the pass ends,
+    // as in the run that never stopped (second reading; without this the reopened ledger lost one tick)
+    this.open = this.waiting() > 0;
   }
   get busy(): boolean { return this.inFlight; }
   /** Animals on the model waiting at a decision point. */

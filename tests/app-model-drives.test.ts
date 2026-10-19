@@ -401,3 +401,21 @@ test('end to end: a worker killed while adults wait is waited for; once it is st
   assert.equal(loop.fallbackCount() - before, report.settled.filter(s => s.result.by === 'rules').length);
   assert.equal(waits.at(-1), ''); assert.equal(loop.stats.worker, '');
 });
+
+test('a world saved between a tick and its pass (adults waiting) reopens and books its minutes exactly as one that never stopped', async () => {
+  const w = settled(), a = new DriveLoop(w);
+  await runDriveTicks(a, fakeKernel, 60);
+  untilWaiting(a);
+  const saved = JSON.parse(JSON.stringify({ world: w, owners: a.ledger.owners() })) as { world: World; owners: Record<string, 'model' | 'held' | 'rules'> };
+  const before = a.ledger.totals(), ticksBefore = a.ledger.ticks, b = new DriveLoop(saved.world, saved.owners);
+  assert.ok(b.waiting() > 0);
+  await a.pass(fakeKernel); await b.pass(fakeKernel);
+  await runDriveTicks(a, fakeKernel, 60); await runDriveTicks(b, fakeKernel, 60);
+  assert.equal(worldHash(saved.world), worldHash(w));
+  assert.equal(b.ledger.ticks, a.ledger.ticks - ticksBefore, 'the tick the save fell into is booked once');
+  const after = a.ledger.totals();
+  for (const [id, m] of b.ledger.totals()) {
+    const was = before.get(id) ?? { model: 0, held: 0, rules: 0 }, now = after.get(id)!;
+    assert.deepEqual(m, { model: now.model - was.model, held: now.held - was.held, rules: now.rules - was.rules }, `animal ${id}`);
+  }
+});
