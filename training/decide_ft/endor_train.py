@@ -484,12 +484,12 @@ def cmd_train(a) -> int:
     accepted = None
     if not fit.get("passed"):
         # registration §12: a fit check that stopped only on length refusals may be accepted, with the reason recorded
-        if not a.accept_fit_refusals:
+        if not getattr(a, "accept_fit_refusals", None):
             raise Refused("the fit check has not passed (run `fit` first, or see registration §12: --accept-fit-refusals)")
         codes = fit.get("codes") or {}
         if not codes or set(codes) != {"context_too_long"}:
             raise Refused(f"the fit check's refusals are not all length refusals ({codes}); §12 does not apply")
-        accepted = {"reason": a.accept_fit_refusals, "refused": fit.get("refused"), "codes": codes, "share": fit.get("share")}
+        accepted = {"reason": getattr(a, "accept_fit_refusals"), "refused": fit.get("refused"), "codes": codes, "share": fit.get("share")}
     if fake is None and fit.get("export_outputs") != W.EXPORT:
         raise Refused("the fit check was not run on the registered export")
     train, dev = final_rows(root, fit)
