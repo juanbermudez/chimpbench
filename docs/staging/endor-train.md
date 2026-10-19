@@ -72,8 +72,10 @@ logs. The SDK's `user_report` is never called, whatever an error message says.
   exported, printed, logged, or put in a receipt, URL, exception or status file.
 - `EndorClient(capture=False, report_latency=False)`: no git commit, no dirty flag, no latency report.
 - Every request passes one gate in our code (an `httpx` transport under the SDK) that refuses any other host with the
-  key, any route we do not use (the report route above all), a body holding the key, a local path, the host name or a
-  row id, and any request to the storage host (model downloads) that carries the key.
+  key, any route we do not use (the report route above all), any body whose fields are not the ones listed in §2, any
+  packet that is not one of the exported rows (by its sha256, both option orders of a training row), a body holding the
+  key, a local path, the host name or a row id, and any request to the storage host (model downloads) that carries the
+  key or comes outside a download.
 
 ## 4. The fit check (S1)
 
@@ -142,8 +144,9 @@ Our recipe is `training/decide_ft/train_r11.py` as `train_r15.py` launches it (s
   least one second** of GPU time, the run's open wall time if that is larger, and a 60-second minimum per run, at the
   larger of $7.00 an hour and the price the base-model list gives; decisions at the larger of $0.005 per million
   tokens and the listed price, on the tokens Endor reports (or 1.5 times our count when it reports none).
-- It reads `GET /v1/balance` at the start, every 25 steps and at each epoch's end; spent is the larger of what it booked
-  and what the balance shows.
+- It reads `GET /v1/balance` at the start, after the first, fifth and tenth steps (to measure the rate), every 25 steps,
+  at each epoch's end, and after every step once 25 steps would cost a tenth of the cap; spent is the larger of what it
+  booked and what the balance shows (if Endor's balance lags, the booking is the floor).
 - **A projection after 50 steps** (and every 50 steps after): spent plus the cost per step so far times the steps left,
   plus each remaining epoch's predict and save. If that passes $9.50, the run stops at once.
 - **It stops before $10**: before every step, if spent plus the cost of the next 25 steps at the measured rate plus a
@@ -197,6 +200,71 @@ against the same $10.
   for seed 7 pinned to its sha256, no key or path leaving, the guard stopping before $10) and
   `tests/endor-export.test.ts`.
 
-## For the integrator
+## 10. For the integrator (written 07:16 EDT, 19 October, after the build)
 
-See §10, appended after the build with the dry run's numbers and the exact commands.
+**Built and tested against a fake Endor. Nothing has been sent to Endor and the key has not been read.**
+
+### What the dry run showed
+
+- **The exporter on the real files** (`scripts/endor-run.sh check`, nothing written): both files, the manifest and the
+  token file matched their sha256; every row passed R16's reader. Training: 4,402 read, **3,885 kept** (seed 48:
+  1,291 kind and 694 target; seed 7: 1,213 kind and 687 target), 517 target rows dropped as over 512 tokens (255 and
+  262). Development: 456 read, **408 kept** (seed 48: 132 kind, 75 target; seed 7: 133 kind, 68 target), 48 target
+  rows dropped (22 and 26). The written export (`artifacts/endor/export`, local) has train.jsonl
+  `6402dbdbf28ef509d956e76de96545189793bcd48f4d446a636887ecf8faf5c8` and dev.jsonl
+  `fe1481626328dbc0772869f52ee61c6ba74b76593a94f908641e48ec8ab7b0b5`.
+- **The plan** (`scripts/endor-run.sh plan`, offline): 486 steps an epoch, 1,458 steps, 11,655 datums; each epoch ends
+  on a step of five examples weighted 1, 1, 1, 1, 2; the learning rate rises over 145 steps to 2e-4 and falls to
+  1.5e-7; the booking floor (a second a call) is $5.67. It prints one datum, one decision, one development row and one
+  optimizer step exactly as they would be sent.
+- **The whole path against the fake Endor** (`scripts/endor-run.sh dry`, under `artifacts/endor-dry`, about two
+  minutes): the fit check sent 4,293 decisions; the fake refused 12 (0.3%, its own rule, not Endor's) and the check
+  passed; the training ran 1,455 steps on the 3,873 rows left, in train_r11.py's order for seed 7 (checked against
+  that file's own lines), with every learning rate as sent and echoed; three checkpoints, a development score each and
+  a step-0 base score; the best epoch named and its files downloaded with our manifest, not loaded; the report written.
+  The fake saw 4,298 and 4,455 requests with no violation (no key outside the API's Authorization header, no path,
+  host name or row id, no report, no latency header, no git commit, no credentials to storage); the key is in no file
+  the run wrote; the guard booked $5.68 against the fake's own $2.84.
+- **Tests**: `training/decide_ft/test_endor.py` (24, the Endor SDK's Python) and `tests/endor-export.test.ts` (6) pass.
+
+### The commands
+
+From a frozen checkout of this branch, in a shell where `ENDOR_API_KEY` is **not** exported (the scripts refuse
+otherwise; the client reads the key from `/Volumes/Drive/chimpbench/MGOGO/.env` itself):
+
+```sh
+cd /Volumes/Drive/chimpbench/MGOGO
+git worktree add --detach .claude/worktrees/bench-endor endor-test
+ln -s /Volumes/Drive/chimpbench/MGOGO/node_modules .claude/worktrees/bench-endor/node_modules
+cd .claude/worktrees/bench-endor
+scripts/endor-run.sh check          # sends nothing: the tests and the exporter's dry run (about 15 s)
+scripts/endor-run.sh export         # writes artifacts/endor/export (local only)
+scripts/endor-run.sh plan | head -40
+screen -dmS endor-fit scripts/endor-run.sh fit      # SENDS (the fit check); then: scripts/endor-run.sh status
+screen -dmS endor-train scripts/endor-run.sh train  # SENDS (the training); then: scripts/endor-run.sh status
+scripts/endor-run.sh report         # artifacts/endor/report.md, from the files
+```
+
+- **fit** sends the account calls (who am I, balance, the base-model list), creates the project `trial-a` with
+  `gliner2.5-decide` if it is missing, then each of the 4,293 exported packets once as a decision (no label, no id,
+  `exclude_from_training` true). About 1.3 million input tokens, about one cent. Time: the organisation's decision rate
+  sets it (the client uses 90% of it): about 80 minutes at 60 a minute, about 4 at 1,200 a minute, plus a cold start
+  of 1 to 3 minutes. Exit 0 passed; **exit 3 when more than 2% of either file is refused (the test ends there)**;
+  75 an operational failure (run `fit` again: it resumes); 130 the kill switch or a signal.
+- **train** sends the run (rank 16, alpha 32, LoRA seed 7, name `run-1`, Weights & Biases off), a step-0 predict of the
+  development packets, 1,458 `forward_backward` calls (up to 8 datums each) and 1,458 `optim_step` calls (the full
+  AdamW settings), at each epoch's end a predict and a checkpoint (`i1-e1` to `i1-e3`, optimizer kept, 7-day
+  lifetime), balance reads, the close, the download of the best epoch and Endor's usage rows. Cost: the guard books at
+  least $5.7 (a second a call); Endor bills its real GPU time, likely less. Time: Endor publishes no time per step;
+  about 15 to 50 minutes plus 1 to 4 minutes of provisioning; a 3-hour wall limit. Exit 0 done; **3 a registered stop**
+  (money: spent plus the next 25 steps plus $0.50 reaching $10, or the projection after 50 steps passing $9.50; a
+  learning rate Endor changed; the gate); **75 an operational failure**: `scripts/endor-run.sh train --reason "<what
+  failed>"` starts the next iteration from the last saved epoch (at most three, the cap shared); 130 the kill switch
+  (`scripts/endor-run.sh kill`) or a signal. The run is closed in every case.
+- **Where to look**: `artifacts/endor/status.json` (`scripts/endor-run.sh status`), `artifacts/endor/logs/`,
+  `artifacts/endor/receipts/` (one line per call), `artifacts/endor/ledger.json` (the money), `fit/summary.json`,
+  `run-i1/epochs.jsonl`, `report.md`, `adapters/<best>/`.
+- **Left to the user**: Endor's data terms (not reviewed); whether to delete the project and revoke the key afterwards
+  (the checkpoints expire after 7 days; Endor keeps request bodies for an unstated time). The fit check records
+  Endor's listing of `gliner2.5-decide` (weights repository and revision, contract, adapter targets, window) in
+  `fit/account.json`; nothing here compares it with our local model (the user's word: no local comparison).

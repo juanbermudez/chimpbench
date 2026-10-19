@@ -50,6 +50,7 @@ M = r"i[1-3]-e[1-3]"
 # (method, path pattern, body check, kind): kind "train" is a billed training call, "decision" a billed decision
 ROUTES: list[tuple[str, re.Pattern, str, str]] = [(m, re.compile(p), c, k) for m, p, c, k in [
     ("GET", r"/v1/whoami", "none", ""), ("GET", r"/v1/balance", "none", ""), ("GET", r"/v1/base_models", "none", ""),
+    ("GET", r"/v1/models", "none", ""),  # the SDK's fallback for the base-model list on an older API
     ("GET", r"/v1/usage", "none", ""), ("GET", rf"/v1/projects/{P}", "none", ""), ("POST", r"/v1/projects", "project", ""),
     ("POST", rf"/v1/projects/{P}/base_models", "base", ""), ("POST", rf"/v1/projects/{P}/runs", "run", "run"),
     ("GET", rf"/v1/runs/{ID}", "none", ""), ("POST", rf"/v1/runs/{ID}/forward_backward", "fb", "train"),

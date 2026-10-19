@@ -189,10 +189,10 @@ def account(conn: Connection, need_balance: float | None) -> dict:
 
 
 class Rate:
-    """Decisions at 80% of the organisation's rate (60 a minute when it gives none)."""
+    """Decisions at 90% of the organisation's rate (60 a minute when it gives none)."""
 
     def __init__(self, per_minute: float | None):
-        self.gap, self.next, self.lock = 60.0 / (0.8 * float(per_minute or 60)), 0.0, threading.Lock()
+        self.gap, self.next, self.lock = 60.0 / (0.9 * float(per_minute or 60)), 0.0, threading.Lock()
 
     def wait(self) -> None:
         with self.lock:
@@ -248,6 +248,8 @@ def final_rows(root: Path, fit: dict) -> tuple[list[dict], list[dict]]:
 def cmd_fit(a) -> int:
     root, fake = roots(a)
     train, dev, export = W.load_export(Path(a.export))
+    if (root / "iterations.json").exists():
+        raise Refused("training has begun on this fit check's rows; the fit check is not run again")
     lock = RunLock(root)
     status = Status(root / "status.json")
     fitdir = root / "fit"
@@ -599,7 +601,7 @@ def write_report(root: Path, fake: bool) -> None:
     its = (read_json(root / "iterations.json", {"iterations": []}) or {"iterations": []})["iterations"]
     recs = epoch_records(root)
     best = best_epoch(root)
-    base = read_json(root / "run-i1/base-predict.json")
+    base = next((read_json(root / f"run-i{it['n']}/base-predict.json") for it in its if (root / f"run-i{it['n']}/base-predict.json").exists()), None)
     ledger = SpendGuard(root / "ledger.json", read_json(root / "ledger.json")["cap"]).summary() if (root / "ledger.json").exists() else None
     usage = read_json(root / "usage.json")
     usage_usd = round(sum((u.get("cost_usd") or 0) for u in usage), 4) if usage else None
