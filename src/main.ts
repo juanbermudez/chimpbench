@@ -1,7 +1,7 @@
 import './style.css';
 import { createR15Demo, r15FocalIds } from './r15-demo';
 import { driveSeedRefusal, isDriveWorld, driveArmProblem, DRIVE_BURN_IN_DAYS } from './drive/world';
-import { DriveLoop } from './drive/loop';
+import { DriveLoop, fallbackReason } from './drive/loop';
 import { driveKernel } from './drive/kernel';
 import { buildDriveWorld, driveAnimal, driveReadout, recordPass } from './drive/app';
 import { applyIntervention, createWorld, relationOf, relationshipOf, tickWorld, type Profile } from './simulation';
@@ -194,7 +194,7 @@ async function runPass(loop: DriveLoop) {
   if (fell.length && performance.now() - driveFellAt > 10_000) {
     driveFellAt = performance.now();
     const first = fell[0].result, name = w.chimps.find(c => c.id === first.chimpId)?.name ?? 'an adult';
-    driveNotify(`The rules decided ${fell.length === 1 ? `one act for ${name}` : `${fell.length} acts in this pass (${name} first)`}: ${first.detail || first.refusal}. Counted under “decided by the rules”.`, 2);
+    driveNotify(`The rules decided ${fell.length === 1 ? `one act for ${name}` : `${fell.length} acts in this pass (${name} first)`}: ${fallbackReason(first)}${first.detail ? ` (${first.detail})` : ''}. Counted under “decided by the rules”.`, 2);
   }
   // an error that was not a timeout can mean the worker stopped: read its state now (the next frame pauses if it did)
   if (report.settled.some(x => x.result.refusal === 'kernel-error' && !/no answer within/.test(x.result.detail))) await refreshDecideStatus(decider);
