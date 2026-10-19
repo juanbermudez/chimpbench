@@ -116,7 +116,7 @@ export function worldState(t: LiteTarget, world: World, life: LifeRecord, popCap
   const days = life.days;
   if (!SAME_DEFINITION[t.id]) {
     if (t.truth) return words('read from the simulation: reference values only', 'A live reader of this row would need a hook in the simulation’s tick, which this build does not add.');
-    if (w.kind === 'decades') return words('needs decades of natural aging', `${w.why}; ${(w.days ?? 0) / 365} years is ${wallWords((w.days ?? 0) - days)}.`);
+    if (w.kind === 'decades') return words('needs decades of natural aging', `${w.why}; about ${(w.days ?? 0) / 365} years of watching, ${daysWords(days)} so far: ${wallWords((w.days ?? 0) - days)} more.`);
     return words('field teams not running in this build', `The virtual field teams come in a later build. Shortest window once they run: ${w.why}.`);
   }
   // every row read from the life record is a birth or death rate: killings (T-LET-1) as much as T-DEM (review, 19 October)

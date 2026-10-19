@@ -107,7 +107,8 @@ export function fmtValue(v: number | null | undefined, interval?: [number, numbe
 export function daysWords(days: number): string {
   if (days < 1) return 'less than a day';
   if (days < 365) { const d = Math.floor(days); return `${d} day${d === 1 ? '' : 's'}`; }
-  return `${sig2(days / 365)} years`;
+  const y = sig2(days / 365);
+  return `${y} year${y === '1' ? '' : 's'}`;
 }
 
 /**

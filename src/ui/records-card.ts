@@ -12,6 +12,7 @@
 
 import type { Troop, World } from '../types';
 import { causeClass, causeWords, type CauseClass } from '../yardstick/life';
+import { modelIdentityOf } from '../simulation';
 import { esc, troopShort } from './format';
 import './records-card.css';
 
@@ -111,7 +112,9 @@ export function createRecordsOverlay() {
         if (c) {
           const t = w.troops.find(x => x.id === c.troopId), age = c.age < 1 ? `${Math.max(1, Math.round(c.age * 12))} months` : `${c.age.toFixed(1)} years`;
           const day = c.deathTime !== null ? Math.floor((c.deathTime + 6.5) / 24) + 1 : 0;
-          return `<b>${esc(c.name)}</b><span>${c.sex}, ${age} · ${esc(troopShort(t))}</span><span>died on day ${day}: ${esc(causeWords(c.causeOfDeath))}</span>`;
+          // with stage ED's bodies on, the dead record's place is where the body ended up (review, 19 October)
+          const moved = modelIdentityOf(w).bodiesMove;
+          return `<b>${esc(c.name)}</b><span>${c.sex}, ${age} · ${esc(troopShort(t))}</span><span>died on day ${day}: ${esc(causeWords(c.causeOfDeath))}</span>${moved ? '<span>where the body ended up, not where it died</span>' : ''}`;
         }
       }
       for (const t of w.troops) {
@@ -120,8 +123,10 @@ export function createRecordsOverlay() {
         if (cx < 0 || cz < 0 || cx >= r.n || cz >= r.n) continue;
         const k = cz * r.n + cx;
         if (!r.cells.includes(k)) continue;
-        const km = (n: number) => { const v = n * r.cell * r.cell / 1e6; return v < 10 ? v.toFixed(1) : String(Math.round(v)); };
-        return `<b>${esc(troopShort(t))} community</b><span>range used: ${km(r.cells.length)} km² (95% of its use), core ${km(r.core.length)} km² (50%)</span><span>use of about the last half year, not the field’s annual range</span>`;
+        // km² on the field map; square metres on the 160 m map (its areas are not comparable with the field's anyway)
+        const field = w.size > 1000, unit = field ? 'km²' : 'm²';
+        const km = (n: number) => { const v = n * r.cell * r.cell / (field ? 1e6 : 1); return v < 10 ? v.toFixed(1) : Math.round(v).toLocaleString('en-GB'); };
+        return `<b>${esc(troopShort(t))} community</b><span>range used: ${km(r.cells.length)} ${unit} (95% of its use), core ${km(r.core.length)} ${unit} (50%)</span><span>use of about the last half year, not the field’s annual range</span>`;
       }
       return null;
     },
@@ -130,4 +135,4 @@ export function createRecordsOverlay() {
 export type RecordsOverlay = ReturnType<typeof createRecordsOverlay>;
 
 /** The key shown on the card while Records is on. */
-export const RECORDS_LEGEND = `<span><i class="rl-line"></i>range used (95%)</span><span><i class="rl-core"></i>core</span><span class="rl-sep">died here:</span><span><i class="rl-dot"></i>illness</span><span><i class="rl-x"></i>wounds</span><span><i class="rl-tri"></i>starvation</span><span><i class="rl-sq"></i>other</span>`;
+export const RECORDS_LEGEND = `<span><i class="rl-line"></i>range used (95%)</span><span><i class="rl-core"></i>core</span><span class="rl-sep">where the dead lie:</span><span><i class="rl-dot"></i>illness</span><span><i class="rl-x"></i>wounds</span><span><i class="rl-tri"></i>starvation</span><span><i class="rl-sq"></i>other</span>`;

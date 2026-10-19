@@ -231,3 +231,22 @@ test('at life-course speed no row of the life record is compared, killings inclu
   const life = lifeRecord(w), refused = refusal(w, false);
   for (const id of Object.keys(SAME_DEFINITION)) assert.equal((worldState(T(id), w, life, 120, refused) as { words: string }).words, 'not compared at life-course speed', id);
 });
+
+test('labels the review added: pooled life history, model values seen, community sizes, every source (review)', async () => {
+  const { refCaveats, detailHtml, rowHtml } = await import('../src/ui/yardstick');
+  const t0 = ref.arms.find(a => a.id === 'Y3-T0')!;
+  for (const id of ['T-DEM-2', 'T-DEM-3']) {
+    const c = refCaveats(T(id), t0, refState(T(id), t0)).join(' | ');
+    assert.match(c, /pooled, not a life expectancy: built from \d+ (adult )?deaths in 5 worlds × 3 years; 28 of the run’s 59 deaths were in two worlds’ respiratory outbreaks/, id);
+  }
+  assert.match(refCaveats(T('T-DEM-13'), t0, refState(T('T-DEM-13'), t0)).join(), /\(n 4\): 1 of 5 give a value on their own/);
+  // a held-out row written with simulated values in view says so on the row
+  assert.ok(T('T-INF-6').flags.some(f => f.key === 'seenModelValues' && /field values only/.test(f.reason)));
+  const v = { t: T('T-INF-6'), arm: t0, ref: refState(T('T-INF-6'), t0), world: { kind: 'words' as const, words: '', more: '' }, communities: '', open: false, detail: '' };
+  assert.match(rowHtml(v), /model values seen/);
+  // bands written for a community size name it, so the page can set this world's sizes beside them
+  assert.deepEqual(T('T-PAT-3').scaled?.adultMales, [1, 10]); assert.equal(T('T-PTY-1').scaled?.members, 22);
+  // sources a target cites that no field row names are listed too (T-RNG-5's revised band)
+  const d = detailHtml({ ...v, t: T('T-RNG-5'), ref: refState(T('T-RNG-5'), t0), open: true }, lite.sources, ref.arms, new Set(['Y3-T0']));
+  for (const k of T('T-RNG-5').sources) assert.ok(d.includes(lite.sources[k].title.replace(/&/g, '&amp;')) || d.includes(k), k);
+});

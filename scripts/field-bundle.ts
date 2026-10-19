@@ -46,7 +46,7 @@ type Target = {
   accept: { lo: number | null; hi: number | null; units: string; basis: string }; evidence: string; role: 'fitted' | 'held-out';
   encoded: boolean; notes?: string; sources?: string[]; tuned?: string; revisedPostFreeze?: string; protocolRevisedPostHoc?: boolean;
   compromised?: boolean; compromisedReason?: string; heldAsFail?: string; notScorable?: string; partiallyEncoded?: string; contested?: boolean;
-  instrumentWarning?: string; scoredOn?: string; truthDefinition?: { definition: string }; comparisonBand?: { lo: number; hi: number; units: string; basis: string };
+  instrumentWarning?: string; scoredOn?: string; seenModelValues?: boolean; truthDefinition?: { definition: string }; comparisonBand?: { lo: number; hi: number; units: string; basis: string };
 };
 interface TargetsJson { protocolFreeze: Freeze & { hash: string; date: string; stage: string }; targets: Target[]; sources: Record<string, { authors: string; year: number | string; title: string; journal: string; doi: string }> }
 
@@ -91,7 +91,9 @@ const TUNED_LINE: Readonly<Record<string, string>> = {
 /** Bands written for a community size (accept.basis), with the size they name. */
 const SCALED: Readonly<Record<string, { words: string; members?: number; adultMales?: [number, number] }>> = {
   'T-RNG-1': { words: 'written for a community of 22 members with 7 adult males', members: 22 },
-  'T-PTY-1': { words: 'scaled between Kanyawara’s parties (a community of about 45 to 50) and Kanyawara’s composition scaled to the model’s community' },
+  'T-PTY-1': { words: 'written for a 22-member community: between Kanyawara’s per-follow composition scaled to it and Kanyawara’s parties unscaled (a community of about 45 to 50)', members: 22 },
+  // review (19 October): the band's units name the community size it holds for
+  'T-PAT-3': { words: 'written for communities of at most 10 adult males (Gombe, Taï)', adultMales: [1, 10] },
   'T-PAT-1': { words: 'written for communities of 3 to 10 adult males (Gombe and Taï); Ngogo, with 25 males, patrols more', adultMales: [3, 10] },
   'T-HUN-1': { words: 'Kanyawara’s and Ngogo’s rates per adult male, scaled to the model’s adult males' },
   'T-FIS-1': { words: 'no fission below about 10 adult males' },
@@ -109,6 +111,8 @@ function flagsOf(t: Target): LiteFlag[] {
   if (t.partiallyEncoded) f.push({ key: 'partiallyEncoded', label: 'partly encoded', reason: t.partiallyEncoded });
   if (t.revisedPostFreeze) f.push({ key: 'revisedPostFreeze', label: 'revised after the freeze', reason: t.revisedPostFreeze });
   if (t.instrumentWarning) f.push({ key: 'instrumentWarning', label: 'instrument below its bar', reason: t.instrumentWarning });
+  // review (19 October): a held-out row written with simulated values in view says so (T-INF-6)
+  if (t.seenModelValues) f.push({ key: 'seenModelValues', label: 'model values seen', reason: /Seen when[^]*?field values only\./.exec(t.notes ?? '')?.[0] ?? 'simulated values were seen when this row was written (data/targets.json)' });
   if (t.protocolRevisedPostHoc) f.push({ key: 'protocolRevisedPostHoc', label: 'method revised after values were seen', reason: 'its protocol was changed after its value had been seen, for a source-text or bug reason (data/targets.json protocolLog)' });
   return f;
 }
@@ -245,7 +249,7 @@ function checkAll(file: TargetsJson, lite: TargetsLite, ref: ReferenceFile): str
     if (!eq(t.field, s.field.map(x => ({ population: x.population, years: x.years, value: x.value, n: x.n, method: x.method, source: x.source, note: x.note })))) bad.push(`${t.id}: field rows differ`);
     if (!eq(t.sources, s.sources ?? [])) bad.push(`${t.id}: sources differ`);
     if (t.truth !== (s.scoredOn === 'truth')) bad.push(`${t.id}: truth flag differs`);
-    for (const k of ['compromised', 'tuned', 'heldAsFail', 'notScorable', 'contested', 'partiallyEncoded', 'revisedPostFreeze', 'protocolRevisedPostHoc'] as const)
+    for (const k of ['compromised', 'tuned', 'heldAsFail', 'notScorable', 'contested', 'partiallyEncoded', 'revisedPostFreeze', 'protocolRevisedPostHoc', 'instrumentWarning', 'seenModelValues'] as const)
       if (!!s[k] !== t.flags.some(f => f.key === k)) bad.push(`${t.id}: flag ${k} differs`);
     if (t.partBands) for (const [k, b] of Object.entries(t.partBands)) if (!(typeof b.lo === 'number' || b.lo === null)) bad.push(`${t.id}: part band ${k} not numeric`);
   }

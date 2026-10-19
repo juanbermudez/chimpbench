@@ -16,7 +16,7 @@ const W = 360;          // strip width in its own units (the SVG scales down wit
 const PAD = 10;
 const EVIDENCE: Record<string, string> = { H: 'strong evidence', M: 'moderate evidence', L: 'weak evidence' };
 export const roleWords = (t: LiteTarget) => (t.role === 'held-out' ? 'held out' : 'fitted');
-const CHIP_FLAGS = ['compromised', 'tuned', 'heldAsFail', 'notScorable', 'contested', 'encoded', 'partiallyEncoded', 'revisedPostFreeze'];
+const CHIP_FLAGS = ['compromised', 'tuned', 'heldAsFail', 'notScorable', 'contested', 'encoded', 'partiallyEncoded', 'revisedPostFreeze', 'seenModelValues'];
 
 /** The value range a strip shows: the band, the marks and their intervals, padded; far marks are held at the edge. */
 function domainOf(band: OpenBand, marks: Mark[]): [number, number] {
@@ -88,13 +88,23 @@ export function refCaveats(t: LiteTarget, arm: RefArm, st: RefState): string[] {
   const c: string[] = [];
   if (st.kind === 'marks') {
     const alone = st.row.perSeed.filter(v => v !== null && v !== undefined).length;
-    if (st.row.perSeed.length && alone < st.row.perSeed.length) c.push(`pooled from the ${arm.seeds.length} worlds together: ${alone} of ${st.row.perSeed.length} give a value on their own`);
-    if (t.id === 'T-DEM-2') c.push('pooled, not a life expectancy');
-    if (t.id === 'T-DEM-3') c.push('pooled, not a survival curve');
+    // the count it rests on stands beside it (review, 19 October: T-DEM-13 is "inside" on 4 intervals)
+    const lifeHistory = t.id === 'T-DEM-2' || t.id === 'T-DEM-3';
+    if (st.row.perSeed.length && alone < st.row.perSeed.length) c.push(`pooled from the ${arm.seeds.length} worlds together${lifeHistory ? '' : ` (n ${st.row.n})`}: ${alone} of ${st.row.perSeed.length} give a value on their own`);
+    // life expectancy at 15 and survival to 45 from a few years of deaths (the attack on the design: say so)
+    if (lifeHistory) c.push(`pooled, not a life expectancy: built from ${st.row.n} ${t.id === 'T-DEM-2' ? 'adult ' : ''}deaths in ${arm.seeds.length} worlds × ${sig2(arm.days / 365)} years${outbreakWords(arm)}`);
   }
   if ((st.kind === 'marks' || st.kind === 'pattern') && st.row.flags.includes('instrument below bar')) c.push('shown, not scored: the field teams’ detector is below its bar');
   if (!arm.protocol.current) c.push('older protocol');
   return c;
+}
+
+/** ", 28 of its 59 deaths in two worlds' outbreaks (worlds 11 and 5)" when two worlds' respiratory outbreaks hold at
+ * least 40% of an arm's deaths (Y3-T0: the life-history values rest mostly on them); else nothing. */
+function outbreakWords(arm: RefArm): string {
+  const v = arm.viability, resp = v.worlds.map(w => ({ seed: w.seed, n: Object.entries(w.deathsByCause).filter(([c]) => c.startsWith('respiratory')).reduce((a, [, k]) => a + k, 0) })).sort((a, b) => b.n - a.n);
+  const two = (resp[0]?.n ?? 0) + (resp[1]?.n ?? 0);
+  return v.deaths && resp.length >= 2 && two >= 0.4 * v.deaths ? `; ${two} of the run’s ${v.deaths} deaths were in two worlds’ respiratory outbreaks (worlds ${resp[0].seed} and ${resp[1].seed})` : '';
 }
 
 /** A pattern row's reference result in a few words (the scorer's note is in the detail). */
@@ -183,6 +193,9 @@ export function detailHtml(v: RowView, sources: Record<string, LiteSource>, arms
   const wide = bands.map(b => wideBand(b.band)).filter(Boolean);
   const flags = t.flags.map(f => `<li><b>${esc(f.label)}</b> ${esc(f.reason)}</li>`).join('');
   const field = t.field.map(f => `<li><b>${esc(f.population)}</b>${f.years ? ` · ${esc(f.years)}` : ''} · ${esc(f.value)}${f.n ? ` · n ${esc(f.n)}` : ''}${f.method ? ` · ${esc(f.method)}` : ''}<span class="ys-src">${f.source.split(/[;,]\s*/).map(k => srcWords(k, sources)).join('; ')}</span>${f.note ? `<span class="ys-src">${esc(f.note)}</span>` : ''}</li>`).join('');
+  // sources the target cites that no field row names (review, 19 October: T-RNG-5's band revision rests on them)
+  const inRows = new Set(t.field.flatMap(f => f.source.split(/[;,]\s*/)));
+  const extra = t.sources.filter(k => !inRows.has(k));
   const bandLine = bands.length ? bands.map(b => `${b.part ? `${esc(b.part)} ` : ''}${esc(bandText(b.band))}`).join(', ') + ` ${esc(t.accept.units)}` : `a pattern: ${esc(t.accept.basis)}`;
   const seed = (x: number | null, i: number) => `world ${arm.seeds[i] ?? i + 1}: ${x === null || x === undefined ? '—' : esc(fmtValue(x))}`;
   let refBlock: string;
@@ -209,6 +222,7 @@ export function detailHtml(v: RowView, sources: Record<string, LiteSource>, arms
     ${t.comparisonBand ? `<p class="ys-sub">With the source’s method corrected: ${esc(String(t.comparisonBand.lo))}–${esc(String(t.comparisonBand.hi))} ${esc(t.comparisonBand.units)} (${esc(t.comparisonBand.basis)}).</p>` : ''}
     ${t.scaled ? `<p class="ys-sub">The band is ${esc(t.scaled.words)}. ${esc(v.communities)}</p>` : ''}
     ${field ? `<ul class="ys-field">${field}</ul>` : ''}
+    ${extra.length ? `<p class="ys-sub">Also cited for this row: ${extra.map(k => srcWords(k, sources)).join('; ')}</p>` : ''}
     <h4>This world</h4><p>${worldLine(world)}${world.kind === 'marks' ? ` · ${esc(world.marks.map(m => `${m.part ? `${m.part}: ` : ''}${distWords(m.dist)}`).join('; '))} · ${esc(world.seen.basis)}` : world.kind === 'waiting' && world.seen ? ` · ${esc(world.seen.basis)} so far` : ''}</p>
     ${world.kind !== 'marks' && world.more ? `<p class="ys-sub">${esc(world.more)}</p>` : ''}
     ${SAME_DEFINITION[t.id] ? `<p class="ys-sub">Exact record (all-seeing), not what a field team could see. Same definition as the field’s: ${esc(SAME_DEFINITION[t.id])}</p>` : ''}

@@ -117,7 +117,7 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
       <h3>How to read this page</h3>
       <ul>
         <li><i class="g-band"></i><span>The <b>blue bar</b> is the <b>field band</b>: the range of values field studies of wild chimpanzees report for that measure. Its studies are listed under each row.</span></li>
-        <li><i class="g-ring"></i><span>A <b>ring</b> is the <b>reference runs</b> of this model: several worlds watched for three years by virtual field teams. A <b>square</b> is <b>this world’s exact record</b>, drawn only where it counts what the field counts. A hollow mark has no interval.</span></li>
+        <li><i class="g-ring"></i><span>A <b>ring</b> is the <b>reference runs</b>: five worlds of one model watched for three years by virtual field teams (rows read from the simulation itself say so); the menu says which model, and whether it is this world’s. A <b>square</b> is <b>this world’s exact record</b>, drawn only where it counts what the field counts; a hollow square has no interval. “Too close to call” means an interval reaches across an edge of the band.</span></li>
         <li><i class="g-scale"></i><span>Distances are in <b>band widths</b>: “1 band width above” is as far above the band as the band is wide. A wide band makes “inside” easy, so wide bands are marked.</span></li>
         <li><i class="g-none"></i><span>Nothing here is a score. The middle column of “At a glance” is where the field is, not a target. Field numbers are yardsticks, not settings: nothing on this page changes the simulation.</span></li>
       </ul>
@@ -396,7 +396,8 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
     ctx.setView('rts');
     ctx.deps.getScene()?.panTo(c.position[0], c.position[2]);
     ctx.showRecords?.(true);
-    ctx.notify({ text: `${c.name} died here${c.deathTime !== null ? ` on day ${dayOf(c.deathTime)}` : ''}. Records on the map card show every death place.`, cat: 'life', title: 'Where' });
+    const day = c.deathTime !== null ? ` on day ${dayOf(c.deathTime)}` : '';
+    ctx.notify({ text: modelIdentityOf(w).bodiesMove ? `${c.name}’s body lies here (died${day}; bodies can be moved after death in this world). Records on the map card show where every body lies.` : `${c.name} died here${day}. Records on the map card show every death place.`, cat: 'life', title: 'Where' });
   }
 
   function close() {
