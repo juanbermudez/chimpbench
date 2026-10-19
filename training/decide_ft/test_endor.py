@@ -580,6 +580,20 @@ class Runs(unittest.TestCase):
         self.assertEqual(fake.runs, {})  # no run opened, nothing billed
         self.assertEqual(json.loads((self.root / "iterations.json").read_text())["iterations"][-1]["outcome"], "stopped-kill")
 
+    def test_the_kill_switch_stops_the_fit_check_at_once(self):
+        exp, _, _ = self.export(400)
+        seen, root = [0], self.root
+
+        def refuse(state, q):  # the integrator pulls the switch while the 100th decision is answered
+            seen[0] += 1
+            if seen[0] == 100:
+                (root / "KILL").write_text("")
+            return False
+        fake = FakeEndor(refuse=refuse)
+        self.assertEqual(run_fit(ns(self.root, exp, fake)), 130)
+        self.assertLess(len(sent(fake, "/v1/systemone")), 100 + T.FIT_WORKERS + 1)  # the queued decisions are cancelled
+        self.assertFalse((self.root / "fit/summary.json").exists())
+
     def test_an_export_of_other_files_is_refused(self):
         exp, _, _ = self.export(8)
         summary = json.loads((exp / "export.json").read_text())

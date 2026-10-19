@@ -225,7 +225,7 @@ against the same $10.
   The fake saw 4,298 and 4,455 requests with no violation (no key outside the API's Authorization header, no path,
   host name or row id, no report, no latency header, no git commit, no credentials to storage); the key is in no file
   the run wrote; the guard booked $5.68 against the fake's own $2.84.
-- **Tests**: `training/decide_ft/test_endor.py` (24, the Endor SDK's Python) and `tests/endor-export.test.ts` (6) pass.
+- **Tests**: `training/decide_ft/test_endor.py` (26, the Endor SDK's Python) and `tests/endor-export.test.ts` (6) pass.
 
 ### The commands
 

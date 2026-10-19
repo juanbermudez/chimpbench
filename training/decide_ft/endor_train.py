@@ -297,13 +297,16 @@ def cmd_fit(a) -> int:
             answers.add(r0)
             done[r0["id"]] = r0
             todo = todo[1:]
-        with ThreadPoolExecutor(FIT_WORKERS) as pool:
+        pool = ThreadPoolExecutor(FIT_WORKERS)
+        try:
             for i in range(0, len(todo), 64):
                 guard.check_decisions(per, len(todo) - i)
                 for r in pool.map(lambda sr: one(*sr), todo[i:i + 64]):
                     answers.add(r)
                     done[r["id"]] = r
                 status.update(fit_done=len(done), spent=round(guard.spent(), 4))
+        finally:  # a stop sends nothing more: the queued decisions are cancelled
+            pool.shutdown(wait=True, cancel_futures=True)
         code = summarize_fit(root, train, dev, done, export, status)
         outcome = "passed" if code == 0 else "stopped-fit"
     except Stop as s:
@@ -315,7 +318,7 @@ def cmd_fit(a) -> int:
     except KeyboardInterrupt:
         code, outcome = 130, "stopped-signal"
     except GateRefused as e:
-        code, outcome = 3, "stopped-gate"
+        code, outcome = (130, "stopped-kill") if guard.killed() else (3, "stopped-gate")
         status.update(detail=str(e))
     except (endor.EndorError, httpx.HTTPError, TimeoutError, W.WireError) as e:
         err = conn.error(e)
@@ -524,7 +527,7 @@ def cmd_train(a) -> int:
     except KeyboardInterrupt as e:
         outcome, detail, code = "stopped-signal", str(e), 130
     except GateRefused as e:
-        outcome, detail, code = "stopped-gate", str(e), 3
+        outcome, detail, code = ("stopped-kill", str(e), 130) if guard.killed() else ("stopped-gate", str(e), 3)
     except endor.InsufficientBalanceError as e:
         outcome, detail, code = "stopped-money", str(conn.error(e)), 3
     except (endor.EndorError, httpx.HTTPError, TimeoutError, W.WireError) as e:
