@@ -247,7 +247,7 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
       }
       case 'mortality': {
         const ay = life.exposure.male.concat(life.exposure.female).reduce((a, b) => a + b, 0);
-        return `<div class="w-world">${head()}${demoNote}${course ? '' : lifeTableSvg(life.exposure, life.deathsByBin)}${life.deaths.length && !course ? `<p class="w-sub">Deaths per animal-year in the scorer’s age bins, females filled and males hollow, over ${sig2(ay)} animal-years. Bins with no death are left blank.</p>` : ''}
+        return `<div class="w-world">${head()}${demoNote}${course ? '' : lifeTableSvg(life.exposure, life.deathsByBin)}${life.deaths.length && !course ? `<p class="w-sub">Deaths per animal-year in the scorer’s age bins, females filled and males hollow, over ${sig2(ay)} animal-years; each line is the 95% interval, very wide where a bin has one or two deaths. Bins with no death are left blank.</p>` : ''}
           <p class="w-note">Life expectancy at 15 and survival to 45 need decades of natural aging: 20 years is ${esc(wallWords(20 * 365))}. The reference runs’ values for them are pooled from 5 worlds × 3 years: not a life expectancy.</p></div>`;
       }
       case 'infants': {

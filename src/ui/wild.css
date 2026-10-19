@@ -155,6 +155,7 @@ svg.lc-age { max-width: 420px; }
 .lc-key i { width: 9px; height: 9px; border-radius: 2px; background: var(--kc); }
 .lc-agebar { fill: #7d7d85; }
 .lc-lt.female { fill: var(--mine); } .lc-lt.male { fill: var(--overlay); stroke: var(--mine); stroke-width: 1.3; }
+.lc-ltw { stroke: var(--mine-2); stroke-width: 1.3; opacity: .6; }
 .lc-lane { stroke: #6c6c73; stroke-width: 1.3; }
 .lc-rule { stroke: rgba(236, 236, 238, .28); stroke-width: 1; stroke-dasharray: 2 3; }
 .lc-end { fill: var(--kc); }

@@ -5,6 +5,7 @@
 // alternative.
 
 import { BINS, CAUSE_CLASSES, CAUSE_WORDS, type CauseClass, type DeathRow, type InfantRow } from '../yardstick/life';
+import { poissonInterval } from '../yardstick/field';
 import { esc } from './format';
 
 const nice = (max: number) => { const m = 10 ** Math.floor(Math.log10(Math.max(1, max))); return [1, 2, 2.5, 5, 10].map(k => k * m).find(v => v >= max) ?? 10 * m; };
@@ -55,20 +56,27 @@ export function ageBarsSvg(deaths: DeathRow[]): string {
   return `<svg class="lc lc-age" viewBox="0 0 ${Wd} ${AGE_CLASSES.length * row}" role="img" aria-label="${esc(`Deaths by age: ${AGE_CLASSES.map((a, i) => `${n[i]} ${a.label}`).join(', ')}.`)}">${bars}</svg>`;
 }
 
-/** Deaths per animal-year in the scorer's age bins, by sex, on a log axis (females filled, males hollow). Bins with no
- * death are left blank, never drawn as zero. */
+/** Deaths per animal-year in the scorer's age bins, by sex, on a log axis (females filled, males hollow), each with the
+ * scorer's Poisson interval as a whisker (review, 19 October: one death in a few animal-years was a bare dot at a
+ * rate above 1, read as a fact). Bins with no death are left blank, never drawn as zero. */
 export function lifeTableSvg(exposure: { male: number[]; female: number[] }, deaths: { male: number[]; female: number[] }): string {
-  const pts: { i: number; sex: 'male' | 'female'; r: number; d: number; e: number }[] = [];
-  for (const sex of ['female', 'male'] as const) for (let i = 0; i < BINS.length - 1; i++) if (deaths[sex][i] > 0 && exposure[sex][i] > 0) pts.push({ i, sex, r: deaths[sex][i] / exposure[sex][i], d: deaths[sex][i], e: exposure[sex][i] });
+  const pts: { i: number; sex: 'male' | 'female'; r: number; d: number; e: number; lo: number; hi: number }[] = [];
+  for (const sex of ['female', 'male'] as const) for (let i = 0; i < BINS.length - 1; i++) if (deaths[sex][i] > 0 && exposure[sex][i] > 0) {
+    const d = deaths[sex][i], e = exposure[sex][i], [a, b] = poissonInterval(d);
+    pts.push({ i, sex, r: d / e, d, e, lo: a / e, hi: b / e });
+  }
   if (!pts.length) return '<p class="w-empty">No death yet: the life table has nothing to place.</p>';
   const Wd = 860, H = 140, L = 46, R = 10, T = 10, B = 30, nb = BINS.length - 1;
-  const lo = Math.min(...pts.map(p => p.r)), hi = Math.max(...pts.map(p => p.r));
+  const lo = Math.min(...pts.map(p => p.lo)), hi = Math.max(...pts.map(p => p.hi));
   const a = 10 ** Math.floor(Math.log10(lo)), b = 10 ** Math.ceil(Math.log10(hi) + 1e-9);
   const X = (i: number) => L + (i + 0.5) / nb * (Wd - L - R), Y = (v: number) => T + (1 - (Math.log10(v) - Math.log10(a)) / Math.max(1e-9, Math.log10(b) - Math.log10(a))) * (H - T - B);
   let s = '';
   for (let e = Math.log10(a); e <= Math.log10(b) + 1e-9; e++) s += `<line class="lc-grid" x1="${L}" x2="${Wd - R}" y1="${Y(10 ** e).toFixed(1)}" y2="${Y(10 ** e).toFixed(1)}"/><text class="lc-lab" x="${L - 6}" y="${(Y(10 ** e) + 3.5).toFixed(1)}" text-anchor="end">${10 ** e >= 1 ? 10 ** e : (10 ** e).toPrecision(1)}</text>`;
   for (let i = 0; i < nb; i++) s += `<text class="lc-lab" x="${X(i).toFixed(1)}" y="${H - 8}" text-anchor="middle">${BINS[i]}–${BINS[i + 1]}</text>`;
-  for (const p of pts) s += `<circle class="lc-lt ${p.sex}" cx="${(X(p.i) + (p.sex === 'female' ? -5 : 5)).toFixed(1)}" cy="${Y(p.r).toFixed(1)}" r="3.5"><title>${p.sex === 'female' ? 'Females' : 'Males'} ${BINS[p.i]}–${BINS[p.i + 1]} y: ${p.d} death${p.d === 1 ? '' : 's'} in ${p.e.toFixed(1)} animal-years</title></circle>`;
+  for (const p of pts) {
+    const cx = (X(p.i) + (p.sex === 'female' ? -5 : 5)).toFixed(1);
+    s += `<g><title>${p.sex === 'female' ? 'Females' : 'Males'} ${BINS[p.i]}–${BINS[p.i + 1]} y: ${p.d} death${p.d === 1 ? '' : 's'} in ${p.e.toFixed(1)} animal-years (95% ${p.lo.toPrecision(2)}–${p.hi.toPrecision(2)} a year)</title><line class="lc-ltw" x1="${cx}" x2="${cx}" y1="${Y(p.hi).toFixed(1)}" y2="${Y(p.lo).toFixed(1)}"/><circle class="lc-lt ${p.sex}" cx="${cx}" cy="${Y(p.r).toFixed(1)}" r="3.5"/></g>`;
+  }
   const alt = `Deaths per animal-year by age: ${pts.map(p => `${p.sex} ${BINS[p.i]} to ${BINS[p.i + 1]}: ${p.d} in ${p.e.toFixed(1)} animal-years`).join('; ')}.`;
   return `<svg class="lc lc-table" viewBox="0 0 ${Wd} ${H}" role="img" aria-label="${esc(alt)}">${s}</svg>`;
 }
