@@ -46,7 +46,7 @@ export function createSettings(dialog: HTMLDialogElement, ctx: Ctx) {
     dialog.querySelectorAll<HTMLElement>('[data-who]').forEach(b => b.setAttribute('aria-checked', String((b.dataset.who === 'adults') === !!drive)));
     if (whoNote) whoNote.textContent = drive
       ? `This simulation: the model decides for every animal aged ${drive.minAge} or over (${drive.bound ? `adapter ${drive.bound.adapter}` : 'no adapter bound yet'}), the younger ones on the rules. “Rules” starts a new simulation with the seed above.`
-      : 'The rules decide for every animal (the default). “Model, every adult” starts a new simulation with the seed above: the working base settled by the rules for 30 days, as stage R16, then every animal aged 8 or over decides through the trained adapter the local server verifies. It does not play without one.';
+      : 'The default: the rules decide, except for an animal you hand to a model in the model panel (M). “Model, every adult” starts a new simulation with the seed above: the working base settled by the rules for 30 days, as stage R16, then every animal aged 8 or over decides through the trained adapter the local server verifies. It does not play without one.';
     aging.value = w.ageRate === 1 ? '1' : '365';
     note.textContent = w.ageRate === 1 ? 'Natural aging keeps ecological and biological time aligned.' : 'Each ecological day adds one biological year. Exploratory.';
     // Show what the renderer is actually using; auto-downgrade can lower it below the request.

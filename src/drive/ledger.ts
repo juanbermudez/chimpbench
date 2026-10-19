@@ -29,11 +29,17 @@ export class DriveLedger {
   private head = 0; private filled = 0;
   /** Ticks counted since the ledger began. */
   ticks = 0;
-  constructor(world: World, readonly minAge: number) {
-    // R16's meterStart: every animal alive when the run begins starts on the rules' account
-    for (const c of world.chimps) if (c.alive) this.animals.set(c.id, this.fresh());
+  /**
+   * `owners`: who set each animal's act in progress, as a saved simulation recorded it (R16 carries its meter's owners in
+   * every checkpoint the same way). Absent: R16's meterStart, every animal alive when the run begins on the rules' account
+   * (the burn-in's acts are the rules'). The hour itself is not saved: after a reopen the window fills again from empty.
+   */
+  constructor(world: World, readonly minAge: number, owners?: Record<string, Owner>) {
+    for (const c of world.chimps) if (c.alive) { const a = this.fresh(); const o = owners?.[c.id]; if (o === 'model' || o === 'held' || o === 'rules') a.owner = o; this.animals.set(c.id, a); }
   }
   private fresh(): Animal { return { owner: 'rules', total: { model: 0, held: 0, rules: 0 }, ring: new Uint8Array(WINDOW) }; }
+  /** Who set each animal's act in progress, for a save (plain data). */
+  owners(): Record<string, Owner> { return Object.fromEntries([...this.animals].map(([id, a]) => [String(id), a.owner])); }
 
   /** After the tick: an animal not on the model whose decision count rose inside it was set going by the rules. */
   afterTick(world: World, before: Map<number, number>, byId: Map<number, World['chimps'][number]>): void {

@@ -7,10 +7,12 @@
 // "dry run: a fake scorer, no model" on every readout. Never 5173 or 5182.
 //   MGOGO_NO_MODEL=1 MGOGO_PROBE_PORT=5197 pnpm exec vite --config scripts/vite.fake-r15.config.ts
 // then open http://127.0.0.1:5197/?drive=adults&burnin=1 and start the adapter in the model panel (M).
+// MGOGO_FAKE_R15_ADAPTER=r16-agg-s11 serves another dry adapter (a saved world bound to the first must refuse it).
 import { existsSync, mkdirSync, appendFileSync, unlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import type { Plugin } from 'vite';
+// @ts-expect-error: a plain JavaScript config with no declaration file (scripts/vite.probe.config.mjs)
 import probe from './vite.probe.config.mjs';
 import { createR15Handler } from '../server/r15';
 import { R15Worker } from '../server/r15-worker';
@@ -20,7 +22,8 @@ const scratch = resolve(process.env.MGOGO_FAKE_R15_DIR || resolve(tmpdir(), 'chi
 const fakeR15: Plugin = {
   name: 'fake-r15',
   configureServer(server) {
-    const adapter = fakeR15Root(root);
+    // MGOGO_FAKE_R15_ADAPTER: another dry adapter name (r16-zero|agg-s7|11), to check that a saved world refuses it
+    const adapter = fakeR15Root(root, process.env.MGOGO_FAKE_R15_ADAPTER || 'r16-agg-s7');
     // the worker's lock in this scratch directory (its "main checkout"): a lock left by a server stopped hard is this probe's own
     const lock = resolve(scratch, 'artifacts', 'r14-chain.lock');
     mkdirSync(resolve(scratch, 'artifacts'), { recursive: true });

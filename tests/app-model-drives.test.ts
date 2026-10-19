@@ -268,7 +268,7 @@ test('end to end against R16\'s fake scorer: the app\'s R15 route, the real work
   await provider.start();
   let status = await provider.status();
   for (let i = 0; i < 200 && !status.ready; i++) { await new Promise(done => setTimeout(done, 25)); status = await provider.status(); }
-  assert.equal(status.ready, true, status.error); assert.equal(status.dry, true); assert.equal(status.identity?.adapter, adapter);
+  assert.equal(status.ready, true, status.error ?? ''); assert.equal(status.dry, true); assert.equal(status.identity?.adapter, adapter);
   assert.equal(driveArmProblem(spec, status), '');
   spec.adapter = { ...status.identity! };
   const loop = new DriveLoop(w), kernel = driveKernel(provider, status.identity!);
@@ -283,4 +283,22 @@ test('end to end against R16\'s fake scorer: the app\'s R15 route, the real work
   // the same answers as R16's fake scorer computes from the same packets (the route builds the packet from the context)
   for (const s of report.settled) for (const call of s.calls) assert.deepEqual(call.probabilities.map(p => +p.toFixed(12)), fakeOdds(r15Packet(call.context)).map(p => +p.toFixed(12)));
   assert.equal(loop.waiting(), 0);
+});
+
+test('a reopened world goes on with the ledger\'s owners it was saved with: the same attribution as a run that never stopped', async () => {
+  const w = settled(), a = new DriveLoop(w);
+  await runDriveTicks(a, fakeKernel, 120);
+  const saved = JSON.parse(JSON.stringify({ world: w, owners: a.ledger.owners() })) as { world: World; owners: Record<string, 'model' | 'held' | 'rules'> };
+  assert.ok(Object.values(saved.owners).includes('model') && Object.values(saved.owners).includes('held'));
+  const before = a.ledger.totals(), b = new DriveLoop(saved.world, saved.owners);
+  await runDriveTicks(a, fakeKernel, 120); await runDriveTicks(b, fakeKernel, 120);
+  assert.equal(worldHash(saved.world), worldHash(w));
+  const after = a.ledger.totals();
+  for (const [id, m] of b.ledger.totals()) {
+    const was = before.get(id) ?? { model: 0, held: 0, rules: 0 }, now = after.get(id)!;
+    assert.deepEqual(m, { model: now.model - was.model, held: now.held - was.held, rules: now.rules - was.rules }, `animal ${id}`);
+  }
+  // without the saved owners every act would read as the rules' until the animal is asked again
+  const fresh = new DriveLoop(structuredClone(saved.world));
+  assert.ok(Object.values(fresh.ledger.owners()).every(o => o === 'rules'));
 });

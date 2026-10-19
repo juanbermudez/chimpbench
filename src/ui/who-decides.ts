@@ -80,6 +80,6 @@ export function driveMind(r: DriveReadout, a: DriveAnimalView, name: string): st
   return `<section class="drive-who ${a.onModel ? 'on' : 'young'}" aria-label="Who decides for ${esc(name)}">
     <p class="dw-head"><b>${a.onModel ? 'On the model' : 'On the rules'}</b><span>${a.onModel ? `aged ${years}: every animal aged ${a.minAge} or over decides through the trained adapter (activity, then target)` : `aged ${years}: animals under ${a.minAge} stay on the rules in this mode`}</span></p>
     <p>${own}</p>
-    <p class="muted">Everyone, last hour: ${p ? `model ${p[0]}% · held ${p[1]}% · rules ${p[2]}%` : 'no minute yet'} · ${esc(adultsText(r))} ${esc(adapterText(r))}</p>
+    <p class="muted">Everyone, last hour: ${p ? `model ${p[0]}% · held ${p[1]}% · rules ${p[2]}%` : 'no minute yet'} · ${r.onModel} of ${r.adults} adults on the model · ${esc((r.bound ?? r.serving)?.adapter ?? 'no adapter yet')}${r.dry ? ' (<b class="warn">dry run, no model</b>)' : ''} · ${esc(r.result)}</p>
   </section>`;
 }

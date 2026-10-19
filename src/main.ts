@@ -90,7 +90,7 @@ const session = (): PersistedSession => ({ clock: { speedId: clock.speedId, play
 const mutationKey = () => `${epoch}|${world.ageRate}|${world.nextId}|${world.events.length}|${decider.calls}|${decider.applied}|${decider.discarded}|${decider.fallbacks}`;
 const persist = createPersistence({
   capture: (): SaveEnvelope => ({ format: SAVE_FORMAT, app: APP_VERSION, stateVersion: STATE_VERSION, stateShape: STATE_SHAPE, savedAt: Date.now(),
-    world, decider: captureDecider(decider), session: session() }),
+    world, decider: { ...captureDecider(decider), ...(drive ? { drive: { owners: drive.ledger.owners() } } : {}) }, session: session() }),
   world: () => world,
   mutationKey,
   dirtyKey: () => `${world.tick}|${mutationKey()}|${JSON.stringify(session())}`,
@@ -138,8 +138,11 @@ setRoster(decider, world, resumed?.env.decider.roster ?? (r15Demo ? 'focal-set' 
 // ---------------------------------------------------------------------------------------------------------------------
 let drive: DriveLoop | null = null, driveAbort: AbortController | null = null, drivePollAt = 0, driveOk = false, driveBuilding = false, driveFellAt = 0;
 const driveProvider = httpProvider('r15', () => providerConfig.r15.baseUrl);
-/** A new loop for the world on screen (the ledger and the decoder's notes start again; neither is part of the world). */
-function attachDrive() { driveAbort?.abort(); driveAbort = null; drive = isDriveWorld(world) ? new DriveLoop(world) : null; driveOk = false; }
+/**
+ * A new loop for the world on screen. `owners`: who set each animal's act, from the save it was opened from (the ledger's
+ * hour and the decoder's notes start again; in a draw the notes choose nothing).
+ */
+function attachDrive(owners?: Record<string, 'model' | 'held' | 'rules'>) { driveAbort?.abort(); driveAbort = null; drive = isDriveWorld(world) ? new DriveLoop(world, owners) : null; driveOk = false; }
 /** A world in the mode always uses the R15 route; every other world goes back to the provider chosen for the app. */
 function syncProvider() {
   const want = r15Demo || isDriveWorld(world) ? 'r15' : normalProvider;
@@ -197,16 +200,16 @@ async function runPass(loop: DriveLoop) {
   if (report.settled.some(x => x.result.refusal === 'kernel-error' && !/no answer within/.test(x.result.detail))) await refreshDecideStatus(decider);
 }
 const driveTick = (w: World) => drive!.tick(w);
-attachDrive();
+attachDrive(resumed?.env.decider.drive?.owners);
 syncProvider();
 
 /** Swap in another world (new or opened simulation): cancel model requests, rebuild the scene around the selection
  * the UI will show (the saved one, else the default). */
-function replaceWorld(next: World, mode: ModelPolicy['mode'], ui: Record<string, unknown> | null = null) {
+function replaceWorld(next: World, mode: ModelPolicy['mode'], ui: Record<string, unknown> | null = null, owners?: Record<string, 'model' | 'held' | 'rules'>) {
   cancelDecisionRequests(decider);
   epoch++;
   world = next;
-  attachDrive(); syncProvider();
+  attachDrive(owners); syncProvider();
   setPolicy(decider, world, mode);
   scene?.dispose();
   scene = startScene(savedSelection(ui) ?? defaultSelection(world), ui === null);
@@ -237,8 +240,10 @@ async function newDriveSimulation(seed: number, name?: string) {
   finally { note.remove(); driveBuilding = false; }
   persist.flushBeforeSwitch();
   replaceWorld(next, 'lockstep');
+  // the counts and traces the interface shows are this world's from here (the default app carries them across worlds)
+  decider.calls = decider.applied = decider.revalidated = decider.discarded = decider.fallbacks = 0; decider.agreement = { same: 0, total: 0 }; decider.traces = [];
   setRoster(decider, world, 'all', defaultSelection(world));
-  if (persist.canWrite()) void persist.adopt(name ?? `Seed ${seed} · model decides for every adult`, seed); else persist.attach(null);
+  if (persist.canWrite()) void persist.adopt(name ?? `Seed ${seed} · model, every adult`, seed); else persist.attach(null);
   app.worldReplaced(null);
   driveNotify(`New simulation, seed ${seed}: every animal aged 8 or over now decides through the trained adapter, animals under 8 on the rules. It plays once the server reports a verified adapter.`);
 }
@@ -266,7 +271,7 @@ async function openSimulation(id: string, acceptOlderParams = false): Promise<Ol
     if (!acceptOlderParams) return { id: r.sim.id, name: r.sim.name, seed: r.sim.seed, saved: r.params.saved, current: r.params.current };
     await persist.acceptParams(r.sim.id, r.params);
   }
-  replaceWorld(r.env.world, r.env.world.modelPolicy.mode, r.env.session.ui);
+  replaceWorld(r.env.world, r.env.world.modelPolicy.mode, r.env.session.ui, r.env.decider.drive?.owners);
   restoreDecider(decider, r.env.decider, r.env.savedAt);
   setRoster(decider, world, r.env.decider.roster, savedSelection(r.env.session.ui) ?? defaultSelection(world));
   applyClock(r.env.session.clock);
@@ -331,6 +336,8 @@ const app = createApp(root, {
   setWhoDecides: STATIC || r15Demo ? undefined : setWhoDecides,
 });
 if (r15Demo) { app.ctx.select(r15FocalIds(world)[0] ?? defaultSelection(world)); clock.playing = false; }
+// a world in the mode opens paused: it plays only once the server reports a verified adapter (setPlaying checks)
+if (isDriveWorld(world)) clock.playing = false;
 captureUi = app.captureUi;
 notifyUi = (text, severity = 1, run, label) => app.ctx.notify({ text, cat: 'system', title: 'Simulations', severity, action: run && label ? { label, run } : undefined });
 

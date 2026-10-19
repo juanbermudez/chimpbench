@@ -156,7 +156,8 @@ export function createHud(root: HTMLElement, ctx: Ctx) {
       if (drive) {
         // in the mode the clock waits for every answer: the line is the rate achieved with the waits, not "waiting"
         set(whoText, chipText(drive)); attr(whoBtn, 'title', whoTitle(drive)); attr(whoGroup, 'data-tone', drive.problem ? 'warn' : drive.dry ? 'dry' : 'ok');
-        set(el.achieved, st === 'paused' ? 'Paused' : `${formatRate(clk.effectiveRate)} · lockstep`);
+        set(el.achieved, st === 'paused' ? 'Paused' : formatRate(clk.effectiveRate));
+        attr(el.achieved, 'title', 'Achieved: simulated time per real second, the waits for the model included (lockstep)');
         attr(clockCtl, 'data-state', st === 'paused' ? 'paused' : 'drive');
       } else {
         set(el.achieved, st === 'paused' ? 'Paused' : st === 'blocked' ? 'Waiting on model' : lapse ? 'time-lapse' : `${formatRate(kept)}${st === 'limited' ? ' · capped' : ''}`);

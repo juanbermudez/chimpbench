@@ -6,7 +6,7 @@ import { loopTap } from '../sim/decide';
 import { index } from '../sim/state';
 import { tickWorld } from '../simulation';
 import type { DecisionContext, World } from '../types';
-import { DriveLedger } from './ledger';
+import { DriveLedger, type Owner } from './ledger';
 import { DRIVE_DECODE, DRIVE_MIN_AGE, isDrivenAdult, setMembership } from './world';
 
 // The per-tick protocol of the mode "Model decides for every adult": the one R16's day runner runs
@@ -59,9 +59,10 @@ export class DriveLoop {
   private inFlight = false;
   private held: number[] = [];
   private before = new Map<number, number>();
-  constructor(readonly world: World) {
+  /** `owners`: the ledger's owners as a saved simulation recorded them (src/persist/envelope.ts PersistedDecider.drive). */
+  constructor(readonly world: World, owners?: Record<string, Owner>) {
     this.minAge = world.modelPolicy.drive?.minAge ?? DRIVE_MIN_AGE;
-    this.ledger = new DriveLedger(world, this.minAge);
+    this.ledger = new DriveLedger(world, this.minAge, owners);
     const d = world.modelPolicy.drive?.decode ?? DRIVE_DECODE;
     this.decoder = newDecoder({ mode: d.mode, salt: d.salt, hold: d.hold });
   }
