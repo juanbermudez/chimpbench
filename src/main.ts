@@ -3,7 +3,7 @@ import { createR15Demo, r15FocalIds } from './r15-demo';
 import { driveSeedRefusal, isDriveWorld, driveArmProblem, DRIVE_BURN_IN_DAYS } from './drive/world';
 import { DriveLoop, fallbackReason } from './drive/loop';
 import { driveKernel } from './drive/kernel';
-import { buildDriveWorld, driveAnimal, driveReadout, recordPass } from './drive/app';
+import { AchievedRate, buildDriveWorld, driveAnimal, driveReadout, recordPass } from './drive/app';
 import { applyIntervention, createWorld, relationOf, relationshipOf, tickWorld, type Profile } from './simulation';
 import { createScene, type Scene } from './scene';
 import { advance, createClock, frameBudget, SPEED_PRESETS, setSpeed, subTick } from './clock';
@@ -142,7 +142,10 @@ const driveProvider = httpProvider('r15', () => providerConfig.r15.baseUrl);
  * A new loop for the world on screen. `owners`: who set each animal's act, from the save it was opened from (the ledger's
  * hour and the decoder's notes start again; in a draw the notes choose nothing).
  */
-function attachDrive(owners?: Record<string, 'model' | 'held' | 'rules'>) { driveAbort?.abort(); driveAbort = null; drive = isDriveWorld(world) ? new DriveLoop(world, owners) : null; driveOk = false; }
+function attachDrive(owners?: Record<string, 'model' | 'held' | 'rules'>) { driveAbort?.abort(); driveAbort = null; drive = isDriveWorld(world) ? new DriveLoop(world, owners) : null; driveOk = false; driveRate.reset(); }
+/** The speed achieved over the last real minute of play, the waits for the model included (the readout's). */
+const driveRate = new AchievedRate();
+const readout = () => drive ? driveReadout(world, drive, decider, driveRate.read()) : null;
 /** A world in the mode always uses the R15 route; every other world goes back to the provider chosen for the app. */
 function syncProvider() {
   const want = r15Demo || isDriveWorld(world) ? 'r15' : normalProvider;
@@ -333,7 +336,7 @@ const app = createApp(root, {
   setQuality: quality => scene?.setQuality(quality),
   guideUrl: import.meta.env.VITE_GUIDE_URL || '/about',
   persistence: persist.status.mode === 'off' ? undefined : persistenceView,
-  drive: () => drive ? driveReadout(world, drive, decider) : null,
+  drive: readout,
   driveAnimal: id => drive ? driveAnimal(world, drive, id) : null,
   // the mode needs the local server's R15 route: not offered by a static build
   setWhoDecides: STATIC || r15Demo ? undefined : setWhoDecides,
@@ -420,6 +423,7 @@ function frame(now: number) {
     return false;
   }, undefined, drive ? driveTick : undefined);
   if (heldForSave) clock.blockedByModel = false; // a save pause is not the model's wait
+  if (drive) driveRate.sample(now, world.time, clock.playing);
   const simMs = performance.now() - t1;
   perfAdd('sim', simMs);
   perfAdd('ticks', clock.ticksLastFrame);
@@ -504,7 +508,7 @@ if (perf.on) (window as unknown as { __MGOGO_PERF__: object }).__MGOGO_PERF__ = 
         lastTrace: last ? { id: last.id, chimpId: last.chimpId, chimpName: last.chimpName, time: last.time, source: last.source, applied: last.applied, discardedReason: last.discardedReason,
           choice: last.options[last.choiceIndex]?.action ?? null, rules: last.options[last.rulesIndex]?.action ?? null, options: last.options.map(o => o.action), probabilities: [...last.probabilities], latencyMs: last.latencyMs, inputTokens: last.inputTokens } : null,
       },
-      drive: drive ? driveReadout(world, drive, decider) : null,
+      drive: readout(),
       renderer: scene?.getDiagnostics() ?? null,
       audio: audio?.snapshot() ?? null,
       persistence: { mode: persist.status.mode, message: persist.status.message, simId: persist.status.simId, simName: persist.status.simName, scratch: persist.status.scratch, paramsNote: persist.status.paramsNote,
@@ -527,7 +531,7 @@ if (params.get('test') === '1') {
     tick(n: number) { for (let i = 0; i < n; i++) tickWorld(world); return world.tick; },
     hash: () => fnv(JSON.stringify(world)),
     /** Read-only evidence of the mode "Model decides for every adult": its record, readout and every animal's place in it. */
-    drive: () => structuredClone({ tick: world.tick, spec: world.modelPolicy.drive ?? null, readout: drive ? driveReadout(world, drive, decider) : null,
+    drive: () => structuredClone({ tick: world.tick, spec: world.modelPolicy.drive ?? null, readout: readout(),
       animals: world.chimps.filter(c => c.alive).map(c => ({ id: c.id, name: c.name, age: c.age, controller: c.controller, source: c.decisionSource, waiting: c.awaitingDecisionSince !== null,
         hour: drive ? driveAnimal(world, drive, c.id)?.hour ?? null : null })), traces: decider.traces.slice(-20) }),
     /** Read-only evidence for the bounded R15 browser proof; never drives decisions or ticks. */

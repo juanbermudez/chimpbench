@@ -57,7 +57,7 @@ export function createModelPanel(root: HTMLElement, ctx: Ctx) {
       const agree = d.agreement.total ? Math.round((d.agreement.same / d.agreement.total) * 100) : NaN;
       // the mode "Model decides for every adult" (src/drive): its own block; provider, policy and roster are the mode's
       const drive = ctx.deps.drive?.() ?? null;
-      morph(driveEl, drive ? driveBlock(drive, w, ctx.deps.clock.effectiveRate, ctx.deps.clock.playing) : '');
+      morph(driveEl, drive ? driveBlock(drive, w, ctx.deps.clock.playing) : '');
       root.querySelectorAll<HTMLElement>('fieldset.radios').forEach(f => { f.hidden = !!drive || (f.querySelector('input[name="roster"]') !== null && d.provider === 'r15'); });
       const k = [d.provider, d.model, d.identity?.sha256, d.progress, mode, d.roster, d.ready, d.phase, d.status, d.lastError, d.calls, d.applied, d.revalidated, d.discarded, d.fallbacks, d.waiting, d.agreement.same, d.agreement.total, d.focalIds.join(','), d.device, model.length, !!drive, d.dry].join('|');
       if (k === key) return; key = k;

@@ -11,8 +11,8 @@ import { KernelError, type Kernel } from '../src/kernel/types';
 import { ProviderError, type DecisionProvider } from '../src/providers/types';
 import { httpProvider } from '../src/providers/http';
 import { driveKernel } from '../src/drive/kernel';
-import { driveAnimal, driveReadout, recordPass } from '../src/drive/app';
-import { chipText, driveMind, fallbackText, percents, queueText } from '../src/ui/who-decides';
+import { AchievedRate, driveAnimal, driveReadout, recordPass } from '../src/drive/app';
+import { achievedText, chipText, driveMind, fallbackText, percents, queueText, spanText } from '../src/ui/who-decides';
 import { createR15Handler } from '../server/r15';
 import { R15Worker } from '../server/r15-worker';
 import { fakeR15Root } from '../scripts/lib/fake-r15-root';
@@ -389,7 +389,7 @@ test('end to end: a worker killed while adults wait is waited for; once it is st
   assert.match(loop.stats.worker, /R15 worker exited/, 'the pass waits for the worker and says why');
   assert.equal(loop.busy, true); assert.equal(loop.waiting(), waiting, 'nobody was decided meanwhile');
   const r = driveReadout(w, loop, { ready: false, phase: 'failed', lastError: 'R15 worker exited', identity })!;
-  assert.match(queueText(r, w, 0, false), /waiting for the worker \(R15 worker exited\).*the rules do not step in/);
+  assert.match(queueText(r, w, false), /waiting for the worker \(R15 worker exited\).*the rules do not step in/);
   await startWorker();
   const report = await pass;
   assert.equal(report.settled.length, waiting);
@@ -418,4 +418,30 @@ test('a world saved between a tick and its pass (adults waiting) reopens and boo
     const was = before.get(id) ?? { model: 0, held: 0, rules: 0 }, now = after.get(id)!;
     assert.deepEqual(m, { model: now.model - was.model, held: now.held - was.held, rules: now.rules - was.rules }, `animal ${id}`);
   }
+});
+
+test('the achieved speed is the simulated time gained over the last real minute of play, waits included, not the clock\'s half-second rate', async () => {
+  const a = new AchievedRate();
+  assert.deepEqual(a.read(), { rate: null, seconds: 0 });
+  // 90 real seconds at 60 fps: the clock runs at 1 min/s for 1 s, then waits 3 s for a pass, again and again (15 s/s)
+  let hours = 10, t = 0;
+  for (let f = 0; f < 90 * 60; f++) { t = f * (1000 / 60); if ((t % 4000) < 1000) hours += (60 / 3600) / 60; a.sample(t, hours, true); }
+  const r = a.read();
+  assert.ok(r.rate !== null && Math.abs(r.rate - 15) < 0.6, `15 s/s achieved (${r.rate})`); assert.ok(r.seconds >= 59.5 && r.seconds <= 60.5, `one minute (${r.seconds})`);
+  // a pause, a jump back in time (another world) and a short span start the measure again
+  a.sample(t + 16, hours, false); assert.equal(a.read().rate, null);
+  a.sample(t + 32, hours, true); a.sample(t + 1032, hours + 1 / 60, true); assert.equal(a.read().rate, null, 'under 2 s of play: being measured');
+  a.sample(t + 3032, hours + 2 / 60, true); assert.equal(Math.round(a.read().rate!), 40);
+  a.sample(t + 3232, 5, true); assert.equal(a.read().rate, null);
+  // the readout carries it; the panels say over how long it was measured
+  const w = settled(), loop = new DriveLoop(w);
+  const ro = driveReadout(w, loop, { ready: true, phase: 'ready', lastError: '', identity }, { rate: 15, seconds: 60 })!;
+  assert.deepEqual(ro.achieved, { rate: 15, seconds: 60 });
+  assert.equal(achievedText(ro, true), '15 s/s over the last minute of play'); assert.equal(achievedText(ro, false), 'paused');
+  assert.match(queueText(ro, w, true), /achieved 15 s\/s over the last minute of play/);
+  assert.equal(achievedText({ ...ro, achieved: { rate: 90, seconds: 12.4 } }, true), '1.5 min/s over the last 12 s of play');
+  // the window the shares cover, in words, until an hour has run
+  assert.equal(spanText(ro), 'last hour', 'no minute yet: the window is named, the chip says no minute yet');
+  await runDriveTicks(loop, fakeKernel, 61);
+  assert.equal(spanText(driveReadout(w, loop, { ready: true, phase: 'ready', lastError: '', identity })!), 'last 15.25 min');
 });

@@ -45,14 +45,25 @@ export function fallbackText(r: DriveReadout): string {
   if (!r.fallbackTotal) return `Decided by the rules for adults on the model: none of ${r.asks} asks.`;
   return `Decided by the rules for adults on the model: ${r.fallbackTotal} of ${r.asks} asks (${r.fallbacks.map(([why, n]) => `${why} ${n}`).join(', ')}).`;
 }
-export function queueText(r: DriveReadout, w: World, achieved: number, playing: boolean): string {
+/** The achieved speed in words: over how long it was measured. */
+export function achievedText(r: DriveReadout, playing: boolean): string {
+  if (!playing) return 'paused';
+  const a = r.achieved;
+  return a.rate === null ? 'being measured' : `${formatRate(a.rate)} over the last ${a.seconds >= 59 ? 'minute' : `${Math.round(a.seconds)} s`} of play`;
+}
+/** The window the readout covers: the last hour, or as much of it as has run in this mode. */
+export function spanText(r: DriveReadout): string {
+  const of = r.hour.ticks * 0.25;
+  return of >= 60 || of === 0 ? 'last hour' : `last ${of} min`;
+}
+export function queueText(r: DriveReadout, w: World, playing: boolean): string {
   const q = r.queue;
   const now = q.busy && q.worker ? `waiting for the worker (${q.worker}); ${q.asking >= 0 ? nameOf(w, q.asking) : 'this adult'} is asked again once it serves the adapter again, and the rules do not step in`
     : q.busy ? `asking ${q.asking >= 0 ? nameOf(w, q.asking) : '…'}, call ${q.passCalls + 1} of this pass (${q.passWaiting} adult${q.passWaiting === 1 ? '' : 's'} waiting at its start)`
     : q.waiting ? `${q.waiting} adult${q.waiting === 1 ? '' : 's'} waiting` : 'nobody waiting';
   const per = q.msPerCall !== null ? ` · ${(q.msPerCall / 1000).toFixed(2)} s a call` : '';
   const last = q.lastPass ? ` · last pass ${q.lastPass.asks} ask${q.lastPass.asks === 1 ? '' : 's'}, ${q.lastPass.calls} call${q.lastPass.calls === 1 ? '' : 's'} in ${(q.lastPass.ms / 1000).toFixed(1)} s` : '';
-  return `Queue: ${now}${per}${last} · achieved ${playing ? formatRate(achieved) : 'paused'} (the clock waits for every answer).`;
+  return `Queue: ${now}${per}${last} · achieved ${achievedText(r, playing)} (the clock waits for every answer).`;
 }
 /** The chip's tooltip: everything above in plain lines. */
 export function whoTitle(r: DriveReadout): string {
@@ -60,13 +71,13 @@ export function whoTitle(r: DriveReadout): string {
 }
 
 /** The block for the time panel and the model panel. */
-export function driveBlock(r: DriveReadout, w: World, achieved: number, playing: boolean): string {
+export function driveBlock(r: DriveReadout, w: World, playing: boolean): string {
   return `<div class="drive-block">
     ${r.dry ? '<p class="drive-dry">Dry run: the answers come from a fake scorer that holds no model.</p>' : ''}
     ${r.problem ? `<p class="drive-problem">${esc(r.problem)}</p>` : ''}
     <p>${esc(hourText(r))}</p>
     <p>${esc(adultsText(r))} Settled by the rules for ${r.burnInDays} day${r.burnInDays === 1 ? '' : 's'} first${r.burnInDays < 30 ? ' (stage R16 uses 30)' : ', as stage R16'}.</p>
-    <p>${esc(queueText(r, w, achieved, playing))}</p>
+    <p>${esc(queueText(r, w, playing))}</p>
     <p>${esc(fallbackText(r))}</p>
     <p class="mono muted" title="${esc(r.resultLong)}">${esc(adapterText(r))}</p>
   </div>`;
@@ -81,6 +92,6 @@ export function driveMind(r: DriveReadout, a: DriveAnimalView, name: string): st
   return `<section class="drive-who ${a.onModel ? 'on' : 'young'}" aria-label="Who decides for ${esc(name)}">
     <p class="dw-head"><b>${a.onModel ? 'On the model' : 'On the rules'}</b><span>${a.onModel ? `aged ${years}: every animal aged ${a.minAge} or over decides through the trained adapter (activity, then target)` : `aged ${years}: animals under ${a.minAge} stay on the rules in this mode`}</span></p>
     <p>${own}</p>
-    <p class="muted">Everyone, last hour: ${p ? `model ${p[0]}% · held ${p[1]}% · rules ${p[2]}%` : 'no minute yet'} · ${r.onModel} of ${r.adults} adults on the model · ${esc((r.bound ?? r.serving)?.adapter ?? 'no adapter yet')}${r.dry ? ' (<b class="warn">dry run, no model</b>)' : ''} · ${esc(r.result)}</p>
+    <p class="muted">Everyone, ${spanText(r)}: ${p ? `model ${p[0]}% · held ${p[1]}% · rules ${p[2]}%` : 'no minute yet'} · ${r.onModel} of ${r.adults} adults on the model · ${esc((r.bound ?? r.serving)?.adapter ?? 'no adapter yet')}${r.dry ? ' (<b class="warn">dry run, no model</b>)' : ''} · ${esc(r.result)}</p>
   </section>`;
 }

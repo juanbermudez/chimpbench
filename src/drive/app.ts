@@ -58,6 +58,39 @@ export function recordPass(d: DecisionController, w: World, r: PassReport): numb
   return fallbacks;
 }
 
+/**
+ * The speed achieved in the mode over the last real minute of play: simulated seconds gained per real second, the waits
+ * for every answer included (second reading). The clock's own rate (src/clock.ts) is smoothed over half a second, so in
+ * lockstep it read 0 during a pass and the full speed between passes: with 0.3 s a call it showed 46 different values
+ * from 0 to 1 min/s in one minute where 14.9 s/s was achieved. Samples at most every 200 ms in a fixed ring (no
+ * allocation per frame); a pause, a world change or a jump back in time starts it again.
+ */
+export class AchievedRate {
+  private readonly real = new Float64Array(512); private readonly sim = new Float64Array(512);
+  private head = 0; private n = 0;
+  constructor(readonly windowMs = 60_000, readonly everyMs = 200) {}
+  reset(): void { this.n = 0; }
+  /** Once a frame: real time (ms), the world's time (hours), and whether the clock plays. */
+  sample(nowMs: number, worldHours: number, playing: boolean): void {
+    if (!playing) { this.n = 0; return; }
+    if (this.n) {
+      const last = (this.head + this.n - 1) % this.real.length;
+      if (worldHours < this.sim[last] || nowMs < this.real[last]) this.n = 0;
+      else if (nowMs - this.real[last] < this.everyMs) return;
+    }
+    if (this.n === this.real.length) { this.head = (this.head + 1) % this.real.length; this.n--; }
+    const at = (this.head + this.n) % this.real.length;
+    this.real[at] = nowMs; this.sim[at] = worldHours; this.n++;
+    while (this.n > 2 && nowMs - this.real[(this.head + 1) % this.real.length] >= this.windowMs) { this.head = (this.head + 1) % this.real.length; this.n--; }
+  }
+  /** Simulated seconds per real second over the window, and its length in real seconds; no rate before 2 s of play. */
+  read(): { rate: number | null; seconds: number } {
+    if (this.n < 2) return { rate: null, seconds: 0 };
+    const a = this.head, b = (this.head + this.n - 1) % this.real.length, seconds = (this.real[b] - this.real[a]) / 1000;
+    return { rate: seconds >= 2 ? ((this.sim[b] - this.sim[a]) * 3600) / seconds : null, seconds };
+  }
+}
+
 /** What the interface shows of the mode, built on demand (the top bar, the time panel, the model panel, the Mind tab). */
 export interface DriveReadout {
   /** The adapter the world is bound to, and the one the server serves now. */
@@ -73,9 +106,12 @@ export interface DriveReadout {
     worker: string };
   asks: number; byModel: number; calls: number; targetCalls: number;
   fallbacks: [string, number][]; fallbackTotal: number;
+  /** The speed achieved over the last real minute of play (AchievedRate), the waits for the model included. */
+  achieved: { rate: number | null; seconds: number };
 }
 
-export function driveReadout(w: World, loop: DriveLoop, d: Pick<DecisionController, 'ready' | 'phase' | 'lastError' | 'identity' | 'dry'>): DriveReadout | null {
+export function driveReadout(w: World, loop: DriveLoop, d: Pick<DecisionController, 'ready' | 'phase' | 'lastError' | 'identity' | 'dry'>,
+  achieved: { rate: number | null; seconds: number } = { rate: null, seconds: 0 }): DriveReadout | null {
   const spec = w.modelPolicy.drive;
   if (!spec) return null;
   let living = 0, adults = 0, onModel = 0;
@@ -93,7 +129,7 @@ export function driveReadout(w: World, loop: DriveLoop, d: Pick<DecisionControll
     living, adults, onModel, young: living - adults, hour, share: shares(hour),
     queue: { waiting: loop.waiting(), asking: s.pass?.asking ?? -1, passCalls: s.pass?.calls ?? 0, passWaiting: s.pass?.waiting ?? 0, busy: loop.busy,
       msPerCall: s.calls ? s.callMs / s.calls : null, lastPass: s.last, worker: s.worker },
-    asks: s.asks, byModel: s.byModel, calls: s.calls, targetCalls: s.targetCalls, fallbacks, fallbackTotal: loop.fallbackCount(),
+    asks: s.asks, byModel: s.byModel, calls: s.calls, targetCalls: s.targetCalls, fallbacks, fallbackTotal: loop.fallbackCount(), achieved,
   };
 }
 
