@@ -39,6 +39,10 @@ from endor_client import Connection, EndorCallError, GateRefused  # noqa: E402
 from endor_guard import SpendGuard, Stop  # noqa: E402
 
 REPO = HERE.parents[1]
+# A real run keeps its state (the ledger and its cap, the fit check, the iterations, receipts, logs, the adapter) in one
+# place, the main checkout's, whatever checkout runs it: a second frozen checkout cannot open a second $10 or a fourth
+# iteration (review of 19 October). Git-ignored, like the .env beside it.
+REAL_ROOT = Path("/Volumes/Drive/chimpbench/MGOGO/artifacts/endor")
 MIN_BALANCE = 11.0            # the account must hold more than the cap, so Endor's own 402 never cuts a step
 WALL_LIMIT_S = 3 * 3600       # per iteration
 POLL_EVERY = 25               # steps between balance reads
@@ -161,9 +165,13 @@ def roots(a) -> tuple[Path, object]:
     if a.fake:
         from fake_endor import FakeEndor
         root = Path(a.root or REPO / "artifacts/endor-dry").resolve()
+        if root == REAL_ROOT:
+            raise Refused("the fake writes under artifacts/endor-dry, never in the real run's folder")
         root.mkdir(parents=True, exist_ok=True)
         return root, FakeEndor.load(root / "fake-endor.json")
-    return Path(a.root or REPO / "artifacts/endor").resolve(), None
+    if a.root is not None and Path(a.root).resolve() != REAL_ROOT:
+        raise Refused(f"a real run keeps its state in {REAL_ROOT} only (one ledger, one cap)")
+    return REAL_ROOT, None
 
 
 def keep_fake(fake, root: Path) -> None:
@@ -218,8 +226,8 @@ class Rate:
 # ------------------------------------------------------------------ plan (offline)
 
 def cmd_plan(a) -> int:
-    train, dev, summary = W.load_export(Path(a.export))
-    root, _ = roots(a)
+    root, fake = roots(a)
+    train, dev, summary = W.load_export(Path(a.export), pinned=fake is None)
     fit = read_json(root / "fit/summary.json")
     if fit and fit.get("passed"):
         train, dev = final_rows(root, fit)
@@ -259,7 +267,7 @@ def final_rows(root: Path, fit: dict) -> tuple[list[dict], list[dict]]:
 
 def cmd_fit(a) -> int:
     root, fake = roots(a)
-    train, dev, export = W.load_export(Path(a.export))
+    train, dev, export = W.load_export(Path(a.export), pinned=fake is None)
     if (root / "iterations.json").exists():
         raise Refused("training has begun on this fit check's rows; the fit check is not run again")
     lock = RunLock(root)
@@ -269,7 +277,7 @@ def cmd_fit(a) -> int:
     done = {r["id"]: r for r in answers.rows()}
     try:
         guard = SpendGuard(root / "ledger.json", a.cap, root / "KILL")
-        conn = Connection(root, guard, fake, allowed=W.allowed_packets(train + dev, permuted_too=False))
+        conn = Connection(root, guard, fake, allowed={"decision": W.allowed_packets(train + dev, permuted_too=False)})
     except BaseException:
         lock.release()
         raise
@@ -470,14 +478,17 @@ def cmd_train(a) -> int:
     fit = read_json(root / "fit/summary.json")
     if not fit or not fit.get("passed"):
         raise Refused("the fit check has not passed (run `fit` first)")
+    if fake is None and fit.get("export_outputs") != W.EXPORT:
+        raise Refused("the fit check was not run on the registered export")
     train, dev = final_rows(root, fit)
     lock = RunLock(root)
     try:
         guard = SpendGuard(root / "ledger.json", a.cap, root / "KILL")
         if guard.killed():  # read before an iteration begins: a switch left on uses up no iteration
             raise KillOn("the kill switch is on (artifacts/endor/KILL or MGOGO_ENDOR_KILL=1); remove it to train")
-        # the gate lets out the final training rows (both option orders) and the development packets, nothing else
-        conn = Connection(root, guard, fake, allowed=W.allowed_packets(train, permuted_too=True) | W.allowed_packets(dev, permuted_too=False))
+        # the gate lets out the final training rows (both option orders) as datums and the development packets as
+        # predict rows (no label), nothing else
+        conn = Connection(root, guard, fake, allowed={"datum": W.allowed_packets(train, permuted_too=True), "predict": W.allowed_packets(dev, permuted_too=False)})
         its = Iterations(root / "iterations.json")
         it, resume = its.begin(a.reason)
     except BaseException:

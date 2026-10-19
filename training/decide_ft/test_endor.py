@@ -435,12 +435,56 @@ class Client(unittest.TestCase):
 
     def test_only_exported_packets_leave(self):
         rows = make_rows(3)
-        self.gate.allowed = W.allowed_packets(rows[:2], permuted_too=False)
+        self.gate.allowed = {"decision": W.allowed_packets(rows[:2], permuted_too=False)}
         client = C.make_client(FAKE_KEY, self.gate)
         client.system_one(*W.decision_parts(rows[0]["packet"]), model=f"{W.PROJECT}/{W.BASE_MODEL}", exclude_from_training=True)
         with self.assertRaises(C.GateRefused):  # a well-formed packet that is not on the list
             client.system_one(*W.decision_parts(rows[2]["packet"]), model=f"{W.PROJECT}/{W.BASE_MODEL}", exclude_from_training=True)
         self.assertEqual(len(sent(self.fake, "/v1/systemone")), 1)
+
+    def test_each_packet_leaves_only_in_its_own_kind_of_body(self):
+        # before the review one list held the training and development packets: a development row went out as a
+        # training datum, its label with it
+        train, dev = make_rows(4), make_rows(2, seed=2, split="dev")
+        self.gate.allowed = {"datum": W.allowed_packets(train, permuted_too=True), "predict": W.allowed_packets(dev, permuted_too=False)}
+        client = C.make_client(FAKE_KEY, self.gate)
+        run = client.projects.get_or_create(W.PROJECT, base_models=[W.BASE_MODEL]).runs.create(
+            W.BASE_MODEL, rank=16, alpha=32.0, seed=7, name="run-1", total_steps=1, wandb=False, wait=False)
+
+        def datum(r):
+            d = W.datum(r["packet"], r["pick"], r["soft"], 1.0)
+            return endor.Datum(state=d["state"], question=d["question"], target=endor.Target(**d["target"]), weight=1.0)
+        run.forward_backward([datum(train[0])]).result()
+        with self.assertRaises(C.GateRefused):  # a development row and its label as a training datum
+            run.forward_backward([datum(dev[0])])
+        run.predict([W.predict_row(dev[0]["packet"])]).result()
+        with self.assertRaises(C.GateRefused):  # a training packet as a development row
+            run.predict([W.predict_row(train[0]["packet"])])
+        with self.assertRaises(C.GateRefused):  # no decision in the training phase
+            client.system_one(*W.decision_parts(train[0]["packet"]), model=f"{W.PROJECT}/{W.BASE_MODEL}", exclude_from_training=True)
+        bodies = "".join((r["raw"] or b"").decode() for r in self.fake.requests)
+        self.assertNotIn(json.dumps(dev[0]["packet"]["state"]["me"]), "".join((r["raw"] or b"").decode() for r in self.fake.requests if r["path"].endswith("forward_backward")))
+        self.assertIn(dev[0]["packet"]["state"]["me"], bodies)  # it did leave, as a predict row without its label
+
+    def test_a_real_connection_needs_its_list_and_its_own_certificate_store(self):
+        old = C.read_key
+        C.read_key = lambda *a: self.fail("the key was read")
+        try:
+            with self.assertRaises(C.GateRefused):  # refused before the key is read
+                C.Connection(self.root, self.guard, None, None)
+        finally:
+            C.read_key = old
+        before = os.environ.get("SSL_CERT_FILE")
+        os.environ["SSL_CERT_FILE"] = str(self.root / "no-such-store.pem")
+        try:
+            with self.assertRaises(FileNotFoundError):  # httpx alone would read the environment's store
+                httpx.HTTPTransport(retries=0)
+            C.https_transport().close()  # ours does not
+        finally:
+            os.environ.pop("SSL_CERT_FILE") if before is None else os.environ.__setitem__("SSL_CERT_FILE", before)
+        with self.assertRaises(C.GateRefused):  # the key never in a storage link
+            with self.gate.downloads():
+                self.gate.handle_request(httpx.Request("GET", f"https://{FakeEndor.STORAGE}/x?k={FAKE_KEY}"))
 
     def test_a_download_client_closing_leaves_the_connections_open(self):
         class Spy(httpx.BaseTransport):
@@ -716,14 +760,25 @@ class Runs(unittest.TestCase):
 
     def test_an_export_of_other_files_is_refused(self):
         exp, _, _ = self.export(8)
+        with self.assertRaises(W.WireError):  # a real run reads the registered export only
+            W.load_export(exp)
+        W.load_export(exp, pinned=False)
         summary = json.loads((exp / "export.json").read_text())
         summary["inputs"]["train"] = "0" * 64
         (exp / "export.json").write_text(json.dumps(summary))
         with self.assertRaises(W.WireError):
-            W.load_export(exp)
+            W.load_export(exp, pinned=False)
         exp2 = write_export(self.dir / "e2", [dict(make_rows(1)[0], seed=21)], make_rows(1, split="dev"))
         with self.assertRaises(W.WireError):
-            W.load_export(exp2)
+            W.load_export(exp2, pinned=False)
+
+    def test_a_real_run_keeps_one_folder(self):
+        real = argparse.Namespace(root=str(self.dir / "another"), fake=False)
+        with self.assertRaises(T.Refused):  # a second folder would be a second ledger and a second $10
+            T.roots(real)
+        self.assertEqual(T.roots(argparse.Namespace(root=None, fake=False)), (T.REAL_ROOT, None))
+        with self.assertRaises(T.Refused):  # the fake never writes in the real folder
+            T.roots(argparse.Namespace(root=str(T.REAL_ROOT), fake=True))
 
 
 if __name__ == "__main__":

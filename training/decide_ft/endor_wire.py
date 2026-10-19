@@ -45,6 +45,10 @@ INPUTS = {"train": "4175e6bd4ccd395ec08479bb59fe12c0b88c0fdb39abdd5055dc6c9d04fa
           "dev": "1ecd363048aa47ab24f919fe25d054cb12bbcbc1685b10d1d8f9f3715564fa79",
           "manifest": "48344b7665bd3b2e50e384f052c2632f85833c002008c6b16a3f97c38774510e",
           "tokens": "9cab90002cc7d0a3ac409b1454f31473b4b16a6e3cc68e768218f1019e757d36"}
+# the export the registration names (docs/staging/endor-train.md §10, §11): a real run reads rows of these two files
+# only, whatever directory holds them (scripts/endor-export.ts writes them byte for byte from the registered inputs)
+EXPORT = {"train.jsonl": "6402dbdbf28ef509d956e76de96545189793bcd48f4d446a636887ecf8faf5c8",
+          "dev.jsonl": "fe1481626328dbc0772869f52ee61c6ba74b76593a94f908641e48ec8ab7b0b5"}
 CHECKPOINT = re.compile(r"^i[1-3]-e[1-3]$")
 RUN_NAME = re.compile(r"^run-[1-3]$")
 TTL_SECONDS = 7 * 86400
@@ -112,12 +116,15 @@ def read_jsonl(path: Path) -> list[dict]:
     return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
 
 
-def load_export(export_dir: Path) -> tuple[list[dict], list[dict], dict]:
-    """The exporter's rows, each file checked against export.json's sha256, export.json against the registered inputs,
-    and every row and packet hash checked again."""
+def load_export(export_dir: Path, pinned: bool = True) -> tuple[list[dict], list[dict], dict]:
+    """The exporter's rows, each file checked against export.json's sha256, export.json against the registered inputs
+    (and, `pinned`, the two files against the registered export: every real run), and every row and packet hash
+    checked again."""
     summary = json.loads((export_dir / "export.json").read_text())
     if summary.get("schema") != EXPORT_SCHEMA or summary.get("inputs") != INPUTS:
         raise WireError("export.json is not this test's export of the registered files")
+    if pinned and summary.get("outputs") != EXPORT:
+        raise WireError("the export is not the registered one (train.jsonl and dev.jsonl by sha256)")
     out = []
     for split in ("train", "dev"):
         raw = (export_dir / f"{split}.jsonl").read_bytes()

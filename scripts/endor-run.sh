@@ -7,19 +7,21 @@
 #   scripts/endor-run.sh fit      SENDS: the account check and every exported packet once (exit 3 when over 2% refused)
 #   scripts/endor-run.sh train [--reason "..."]   SENDS: the training run (exit 0 done, 3 a stop, 75 operational, 130 kill)
 #   scripts/endor-run.sh status | report | kill
-# Progress: artifacts/endor/status.json (`status`); logs: artifacts/endor/logs; the cap is $10 for the whole test.
+# A real run's state is in the main checkout's artifacts/endor whatever checkout runs it (one ledger, one cap):
+# progress in its status.json (`status`), logs in its logs/; the cap is $10 for the whole test.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PY=/Volumes/Drive/chimpbench/endor-env/bin/python
 TRAIN="$ROOT/training/decide_ft/endor_train.py"
 CAP=10
+REAL=/Volumes/Drive/chimpbench/MGOGO/artifacts/endor   # endor_train.py REAL_ROOT
 cd "$ROOT"
 if [[ -n "${ENDOR_API_KEY:-}" ]]; then echo "refused: ENDOR_API_KEY is exported in this shell; unset it (the client reads the key from the main checkout's .env itself)" >&2; exit 2; fi
 unset ENDOR_BASE_URL ENDOR_DEFAULT_MODEL ENDOR_LOG_LEVEL ENDOR_REPORT_LATENCY 2>/dev/null || true
-logged() {  # name, command...: the command's output also to artifacts/endor/logs/<name>-<time>.log
+logged() {  # name, command...: the command's output also to $REAL/logs/<name>-<time>.log
   local name=$1; shift
-  mkdir -p artifacts/endor/logs
-  local f="artifacts/endor/logs/$name-$(date +%Y%m%dT%H%M%S).log"
+  mkdir -p "$REAL/logs"
+  local f="$REAL/logs/$name-$(date +%Y%m%dT%H%M%S).log"
   echo "$(date): $name (log $f)"
   "$@" 2>&1 | tee "$f"
 }
@@ -39,6 +41,6 @@ case "${1:-}" in
   train) shift; logged train caffeinate -i "$PY" -I -B "$TRAIN" train --cap "$CAP" "$@" ;;
   status) "$PY" -I -B "$TRAIN" status ;;
   report) "$PY" -I -B "$TRAIN" report ;;
-  kill) mkdir -p artifacts/endor && touch artifacts/endor/KILL && echo "the run stops at its next step (remove artifacts/endor/KILL to allow another)" ;;
+  kill) mkdir -p "$REAL" && touch "$REAL/KILL" && echo "the run stops within 20 seconds (remove $REAL/KILL to allow another)" ;;
   *) sed -n '2,11p' "$0"; exit 2 ;;
 esac

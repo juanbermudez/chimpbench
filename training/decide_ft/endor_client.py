@@ -147,9 +147,12 @@ def forbidden_markers(extra: tuple[str, ...] = ()) -> tuple[str, ...]:
 
 class Gate(httpx.BaseTransport):
     def __init__(self, inner: httpx.BaseTransport, key: str, receipts: Receipts, guard: SpendGuard, *, storage_hosts: tuple[str, ...] = (),
-                 allowed: frozenset[str] | None = None):
+                 allowed: dict[str, frozenset[str]] | None = None):
         self._inner, self._key, self.receipts, self.guard = inner, key, receipts, guard
-        self.allowed = allowed  # the sha256 of every packet that may leave (endor_wire.allowed_packets); None: shape checks only
+        # by body kind ("decision", "datum", "predict"), the sha256 of every packet that may leave in it
+        # (endor_wire.allowed_packets): a development packet is never a datum (its label would leave with it), a
+        # training packet never a predict row; a kind with no list lets nothing out. None: shape checks only (tests)
+        self.allowed = allowed
         self.markers = forbidden_markers()
         self._downloads = 0
         self._storage = storage_hosts  # empty: any https host, only during a download
@@ -179,11 +182,11 @@ class Gate(httpx.BaseTransport):
             if m in text:
                 self._refuse(f"{what} holds a forbidden marker ({'host name' if m in socket.gethostname() else m})")
 
-    def _packet(self, state, question) -> None:
+    def _packet(self, state, question, kind: str) -> None:
         W.check_state(state)
         W.check_question(question)
-        if self.allowed is not None and W.packet_hash(state, question) not in self.allowed:
-            self._refuse("a packet that is not one of the exported rows")
+        if self.allowed is not None and W.packet_hash(state, question) not in self.allowed.get(kind, frozenset()):
+            self._refuse(f"a packet that is not one of the exported rows that may leave as a {kind}")
 
     def _route(self, method: str, path: str) -> tuple[str, str]:
         for m, pat, check, kind in ROUTES:
@@ -210,7 +213,7 @@ class Gate(httpx.BaseTransport):
                 keys(body, ["model", "state", "questions", "exclude_from_training"])
                 if body["exclude_from_training"] is not True or body["model"] != f"{W.PROJECT}/{W.BASE_MODEL}" or list(body["questions"]) != [W.QUESTION]:
                     self._refuse("a decision that is not the fit check's (untouched base, excluded from training)")
-                self._packet(body["state"], body["questions"][W.QUESTION])
+                self._packet(body["state"], body["questions"][W.QUESTION], "decision")
             elif check == "fb":
                 keys(body, ["data", "loss_fn", "seq_id"])
                 if body["loss_fn"] != "cross_entropy" or not 1 <= len(body["data"]) <= W.RECIPE["batch"] * W.RECIPE["accum"]:
@@ -218,7 +221,7 @@ class Gate(httpx.BaseTransport):
                 for d in body["data"]:
                     keys(d, ["state", "question", "target", "weight"])
                     keys(d["target"], ["probs"])
-                    self._packet(d["state"], d["question"])
+                    self._packet(d["state"], d["question"], "datum")
                     if list(d["target"]["probs"]) != list(d["question"]["criteria"]) or d["weight"] not in (1.0, 2.0):
                         self._refuse("a datum whose target or weight is not train_r11's")
             elif check == "optim":
@@ -233,7 +236,7 @@ class Gate(httpx.BaseTransport):
                     keys(r, ["state", "questions"])
                     if list(r["questions"]) != [W.QUESTION]:
                         self._refuse("a predict row with another question")
-                    self._packet(r["state"], r["questions"][W.QUESTION])
+                    self._packet(r["state"], r["questions"][W.QUESTION], "predict")
             elif check == "save":
                 keys(body, ["name", "include_optimizer", "ttl_seconds", "user_metadata", "seq_id"])
                 if not W.CHECKPOINT.match(str(body["name"])) or body["include_optimizer"] is not True or body["ttl_seconds"] != W.TTL_SECONDS or body["user_metadata"] != {}:
@@ -271,7 +274,7 @@ class Gate(httpx.BaseTransport):
         if url.host != API_HOST:
             # model files: presigned storage links, fetched by the SDK with a client of its own and no Endor header
             if self._downloads <= 0 or request.method != "GET" or auth is not None or (self._storage and url.host not in self._storage) \
-                    or not set(k.lower() for k in request.headers) <= STORAGE_HEADERS or request.content:
+                    or not set(k.lower() for k in request.headers) <= STORAGE_HEADERS or request.content or self._key in str(url):
                 self._refuse("a request to a host other than Endor's API outside a model download, or with credentials")
             response = self._inner.handle_request(request)
             self.receipts.write({"at": _now(), "method": "GET", "route": "storage (model file)", "status": response.status_code,
@@ -355,18 +358,26 @@ def make_client(key: str, gate: Gate) -> endor.EndorClient:
     return endor.EndorClient(api_key=key, base_url=BASE_URL, capture=False, report_latency=False, transport=gate, gzip=True)
 
 
+def https_transport() -> httpx.HTTPTransport:
+    """The real connection: no retries of its own (the SDK's policy retries), and trust_env off, so SSL_CERT_FILE or
+    SSL_CERT_DIR in the environment cannot put another certificate store between the key and Endor."""
+    return httpx.HTTPTransport(retries=0, trust_env=False)
+
+
 class Connection:
     """The client, its gate and its guard. Real: the key from the main checkout's .env and the network. Fake: a fake key
     and the fake Endor's handler (nothing can leave: httpx.MockTransport never opens a socket)."""
 
-    def __init__(self, root: Path, guard: SpendGuard, fake=None, allowed: frozenset[str] | None = None):
+    def __init__(self, root: Path, guard: SpendGuard, fake=None, allowed: dict[str, frozenset[str]] | None = None):
+        if fake is None and allowed is None:  # refused before the key is read
+            raise GateRefused("a real connection needs the list of the packets that may leave")
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         self.receipts = Receipts(root / "receipts" / f"{stamp}-{os.getpid()}.jsonl")
         self.guard = guard
         if fake is not None:
             key, inner, storage = fake.key, httpx.MockTransport(fake.handler), (fake.STORAGE,)
         else:
-            key, inner, storage = read_key(), httpx.HTTPTransport(retries=0), ()
+            key, inner, storage = read_key(), https_transport(), ()
         self.gate = Gate(inner, key, self.receipts, guard, storage_hosts=storage, allowed=allowed)
         self.client = make_client(key, self.gate)
         self._secrets = (key,)
