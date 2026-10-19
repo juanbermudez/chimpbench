@@ -65,7 +65,7 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
   let lifeFor = '', lifeCache: LifeRecord | null = null;
   function now(): Now {
     const w = ctx.world(), id = modelIdentityOf(w), refused = refusal(w, stressClones(w));
-    const k = `${w.seed}|${w.chimps.length}|${w.stats.deaths}|${w.stats.births}|${dayOf(w.time)}|${w.troops.length}`;
+    const k = `${w.seed}|${w.chimps.length}|${w.stats.deaths}|${w.stats.births}|${dayOf(w.time)}|${w.troops.length}|${w.time < 24 ? Math.floor(w.time) : ''}`;
     if (k !== lifeFor || !lifeCache) { lifeFor = k; lifeCache = lifeRecord(w); }
     const matching = new Set(ref!.arms.filter(a => armMatches(a, id)).map(a => a.id));
     const arm = ref!.arms.find(a => a.id === ui.arm) ?? ref!.arms.find(a => matching.has(a.id)) ?? ref!.arms[0];
@@ -125,14 +125,17 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
 
   // ---- At a glance: every row placed by its distance from its band, one lane (the reference runs until this world has values)
   function glanceHtml(n: Now): string {
-    const ln = lane(n), Wd = 780, L = 150, G = 168, rowH = 30, top = 34;
+    // On a phone the overview is drawn narrow, with its counts left to each chapter (no horizontal scroll, no tiny text).
+    const compact = main.clientWidth > 0 && main.clientWidth < 600;
+    const ln = lane(n), Wd = compact ? 380 : 780, L = compact ? 96 : 150, G = compact ? 0 : 168, rowH = 30, top = 34;
     const xc = L + (Wd - L - G) / 2, unit = (Wd - L - G) / 9.6;
     const X = (p: number) => xc + p * unit;
     const secs = SECTIONS;
     const H = top + secs.length * rowH + 8;
     let s = `<rect class="gl-in" x="${X(-0.5)}" y="${top - 6}" width="${unit}" height="${H - top}"/>`;
     for (const [p, lab] of [[1.5, '1'], [2.5, '2'], [3.5, '4'], [4.5, '8']] as const) for (const sgn of [-1, 1]) s += `<line class="gl-hair" x1="${X(sgn * p)}" x2="${X(sgn * p)}" y1="${top - 6}" y2="${H - 2}"/><text class="gl-lab" x="${X(sgn * p)}" y="${top - 10}" text-anchor="middle">${lab}</text>`;
-    s += `<text class="gl-side" x="${X(-4.5)}" y="12" text-anchor="start">lower than the wild</text><text class="gl-side" x="${X(4.5)}" y="12" text-anchor="end">higher than the wild</text><text class="gl-mid" x="${xc}" y="12" text-anchor="middle">inside the field band</text><text class="gl-lab" x="${X(4.5) + 4}" y="${top - 10}" text-anchor="start">band widths</text>`;
+    s += compact ? `<text class="gl-side" x="${X(-4.5)}" y="12" text-anchor="start">lower</text><text class="gl-side" x="${X(4.5)}" y="12" text-anchor="end">higher</text><text class="gl-mid" x="${xc}" y="12" text-anchor="middle">inside the band</text>`
+      : `<text class="gl-side" x="${X(-4.5)}" y="12" text-anchor="start">lower than the wild</text><text class="gl-side" x="${X(4.5)}" y="12" text-anchor="end">higher than the wild</text><text class="gl-mid" x="${xc}" y="12" text-anchor="middle">inside the field band</text><text class="gl-lab" x="${X(4.5) + 10}" y="${top - 10}" text-anchor="start">band widths</text>`;
     const lines: string[] = [];
     secs.forEach((sec, i) => {
       const y0 = top + i * rowH;
@@ -160,8 +163,8 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
         const numeric = rows.length - pattern - never;
         counts.push(`${role === 'held-out' ? 'held out' : 'fitted'}: ${withV} of ${numeric} placed${never ? `, ${never} never counted` : ''}${pattern ? `, ${pattern} pattern${pattern === 1 ? '' : 's'}` : ''}`);
         const bits = [...(numeric ? [`<tspan class="gl-n">${withV} of ${numeric}</tspan>`] : []), ...(never ? [`${never} ✕`] : []), ...(pattern ? [`${pattern} pattern${pattern === 1 ? '' : 's'}`] : [])];
-        s += `<text class="gl-count" x="${Wd - G + 12}" y="${y + 3.5}">${bits.join(' · ')}</text>`;
-        if (i === 0) s += `<text class="gl-role" x="${L - 6}" y="${y + 3}" text-anchor="end">${role === 'held-out' ? 'held out' : 'fitted'}</text>`;
+        if (!compact) s += `<text class="gl-count" x="${Wd - G + 12}" y="${y + 3.5}">${bits.join(' · ')}</text>`;
+        if (i === 0 && !compact) s += `<text class="gl-role" x="${L - 6}" y="${y + 3}" text-anchor="end">${role === 'held-out' ? 'held out' : 'fitted'}</text>`;
         void waiting;
       });
       lines.push(`${sec.title}: ${counts.join('; ')}`);
@@ -248,7 +251,9 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
         return `<div class="w-world">${head()}<p>${id.energyLedger ? 'This world runs the energy ledger. Its live readers need a hook in the simulation’s tick, so this build shows the reference runs’ energy rows only.' : 'Today’s model has no energy budget: hunger and energy are abstract meters, and the bellies and coats drawn in the forest are stylizations, not measurements.'}</p>
           <p class="w-note">The forest’s fruit follows the Ngogo phenology record (an input), so the phenology row is not a test. Rows read from the simulation directly show reference values only.</p></div>`;
       case 'movement': {
-        const rng = w.troops.map(t => { const r = t.range; if (!r) return `${troopShort(t)}: no range yet`; const km = (k: number) => k * r.cell * r.cell / 1e6; return `${troopShort(t)} ${sig2(km(r.cells.length))} km² (core ${sig2(km(r.core.length))} km²)`; }).join(', ');
+        // km² on the field map; square metres on the 160 m map, whose areas are not comparable with the field's anyway
+        const field = id.profile === 'field', unit = field ? 'km²' : 'm²';
+        const rng = w.troops.map(t => { const r = t.range; if (!r) return `${troopShort(t)}: no range yet`; const a = (k: number) => k * r.cell * r.cell / (field ? 1e6 : 1); const f = (v: number) => (field ? sig2(v) : Math.round(v).toLocaleString('en-GB')); return `${troopShort(t)} ${f(a(r.cells.length))} ${unit} (core ${f(a(r.core.length))} ${unit})`; }).join(', ');
         return `<div class="w-world">${head()}<p>The simulation’s own ranges: ${esc(rng)}. ${esc(n.communities)}</p>
           <p class="w-note">These ranges are the use of the last half year or so (decayed over about 180 days), not the field’s annual kernel from followed animals, so they are never placed on the range band. Turn on “Records” on the map card to see their true outlines.${id.profile === 'compressed' ? ' The 160 m map compresses space about 50 times: lengths and areas are not comparable here, and the reference runs are field-map runs.' : ''}</p></div>`;
       }
@@ -285,15 +290,27 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
     const el = key === 'prov' ? root.querySelector<HTMLElement>('[data-part="prov"]') : main.querySelector<HTMLElement>(`[data-part="${key}"]`);
     if (el) morph(el, html);
   }
+  // A first open fills the chapters one per animation frame, so no single task builds the whole page (the header, the
+  // guide and the overview come first). A section asked for (the menu bar's "born · died" opens Births) is filled at
+  // once together with everything above it, so the scroll lands where it should.
+  let pending: string[] | null = null;
+  const section = (id: string, n: Now) => { if (SECTIONS.find(s => s.id === id)?.chapter) setPart(`world-${id}`, worldBlock(id, n)); setPart(`rows-${id}`, rowsHtml(id, n)); };
+  function drain() {
+    if (!pending || !open) return;
+    const id = pending.shift();
+    if (id && lite && ref) section(id, now());
+    if (pending.length) requestAnimationFrame(drain); else pending = null;
+  }
   /** Re-renders every part whose words changed. */
-  function render() {
+  function render(upTo?: string) {
     if (!lite || !ref) { morph(main, failed ? `<p class="w-empty">${esc(failed)}.</p>` : '<p class="w-empty">Loading the yardsticks…</p>'); return; }
-    if (!built) { built = true; parts.clear(); main.innerHTML = skeleton(); nav.innerHTML = navHtml(); }
+    if (!built) { built = true; parts.clear(); main.innerHTML = skeleton(); nav.innerHTML = navHtml(); pending = SECTIONS.map(s => s.id); requestAnimationFrame(drain); }
     const n = now();
     setPart('prov', provenance(n));
     setPart('guide', guideHtml());
     setPart('glance', glanceHtml(n));
-    for (const s of SECTIONS) { if (s.chapter) setPart(`world-${s.id}`, worldBlock(s.id, n)); setPart(`rows-${s.id}`, rowsHtml(s.id, n)); }
+    if (upTo && pending) { const k = pending.indexOf(upTo); if (k >= 0) for (const id of pending.splice(0, k + 1)) section(id, n); }
+    for (const s of SECTIONS) if (!pending?.includes(s.id)) section(s.id, n);
     renderedAt = performance.now();
   }
 
@@ -303,7 +320,8 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
   }
   function openRow(id: string) {
     openRows.add(id);
-    render();
+    const t = lite?.targets.find(x => x.id === id);
+    render(t?.section);
     const d = main.querySelector<HTMLDetailsElement>(`details[data-row="${CSS.escape(id)}"]`);
     if (d) { d.open = true; d.scrollIntoView({ block: 'center' }); d.querySelector<HTMLElement>('summary')?.focus({ preventScroll: true }); }
   }
@@ -313,9 +331,10 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
     const el = e.target as HTMLElement;
     const act = el.closest<HTMLElement>('[data-wact]')?.dataset.wact;
     if (act === 'close') { close(); return; }
+    if (el.closest('.wild-prov')) { el.closest('.wild-prov')!.classList.toggle('open'); return; }
     if (act === 'guide') { guide = !guide; render(); if (guide) main.scrollTop = 0; return; }
     if (act === 'guide-ok') { guide = false; writePref(GUIDE_KEY, '1'); render(); return; }
-    const g = el.closest<HTMLElement>('[data-wgo]'); if (g) { go(g.dataset.wgo!); return; }
+    const g = el.closest<HTMLElement>('[data-wgo]'); if (g) { if (pending?.includes(g.dataset.wgo!)) render(g.dataset.wgo); go(g.dataset.wgo!); return; }
     const l = el.closest<HTMLElement>('[data-wlane]'); if (l) { ui.lane = l.dataset.wlane as 'ref' | 'world'; render(); return; }
     const m = el.closest<HTMLElement>('[data-glance]'); if (m) { openRow(m.dataset.glance!); return; }
     const fam = el.closest<HTMLElement>('[data-wfamily]'); if (fam) { toggleFamily(Number(fam.dataset.wfamily)); return; }
@@ -387,7 +406,7 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
       requestAnimationFrame(() => panel.querySelector<HTMLElement>('[data-wact="close"]')?.focus({ preventScroll: true }));
       await load();
       if (!open) return;
-      render();
+      render(section);
       if (section) requestAnimationFrame(() => go(section));
     },
     close,
@@ -402,7 +421,7 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
       render();
     },
     /** Another world was opened: the page forgets this world's parts. */
-    reset() { built = false; parts.clear(); openRows.clear(); lifeCache = null; lifeFor = ''; if (open) render(); },
+    reset() { built = false; pending = null; parts.clear(); openRows.clear(); lifeCache = null; lifeFor = ''; if (open) render(); },
   };
 }
 export type WildPage = ReturnType<typeof createWildPage>;

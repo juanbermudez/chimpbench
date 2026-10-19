@@ -132,7 +132,8 @@ svg.ys-strip { display: block; width: 100%; height: auto; max-height: 48px; over
 .w-list .mono { font-size: 11px; color: var(--ink-3); margin-right: 6px; }
 .w-list b { font-weight: 500; color: var(--ink); }
 .w-cause { color: var(--kc, var(--ink-2)); }
-.w-acts { display: inline-flex; gap: 4px; margin-left: 8px; }
+.w-acts { display: inline-flex; gap: 4px; margin-left: 8px; opacity: .6; transition: opacity .15s; }
+.w-list li:hover .w-acts, .w-acts:focus-within { opacity: 1; }
 .w-acts button { font-size: 11px; color: var(--ink-3); padding: 1px 7px; border-radius: 5px; border: 1px solid var(--line-2); }
 .w-acts button:hover { color: var(--ink); background: var(--hover); }
 .w-family:empty { display: none; }
@@ -166,7 +167,8 @@ svg.lc-age { max-width: 420px; }
 @media (max-width: 720px) {
   .wild-panel { width: 100%; height: 100%; max-height: none; border-radius: 0; }
   .wild-head { padding: 12px 12px 4px 16px; gap: 8px; } .wild-head h2 { font-size: 22px; } .wild-link { display: none; }
-  .wild-prov { padding: 0 16px 10px; font-size: 11.5px; }
+  .wild-prov { padding: 0 16px 10px; font-size: 11.5px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; cursor: pointer; }
+  .wild-prov.open { display: block; }
   .wild-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
   .wild-index { flex-direction: row; overflow-x: auto; overflow-y: hidden; padding: 6px 12px; border-right: 0; border-bottom: 1px solid var(--line); scrollbar-width: none; }
   .wild-index button { white-space: nowrap; padding: 5px 9px; font-size: 12px; }
