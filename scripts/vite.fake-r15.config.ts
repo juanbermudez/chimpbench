@@ -8,6 +8,8 @@
 //   MGOGO_NO_MODEL=1 MGOGO_PROBE_PORT=5197 pnpm exec vite --config scripts/vite.fake-r15.config.ts
 // then open http://127.0.0.1:5197/?drive=adults&burnin=1 and start the adapter in the model panel (M).
 // MGOGO_FAKE_R15_ADAPTER=r16-agg-s11 serves another dry adapter (a saved world bound to the first must refuse it).
+// MGOGO_FAKE_R15_MS=300 holds every answer that long, a stand-in for a model's time per call (0.25 to 0.4 s on this
+// computer, AGENTS.md), so the queue and the achieved speed can be looked at as they will read with a model.
 import { existsSync, mkdirSync, appendFileSync, unlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
@@ -30,7 +32,9 @@ const fakeR15: Plugin = {
     if (existsSync(lock)) unlinkSync(lock);
     // processes: the fake holds no model, so the one-model-at-a-time rule is not at stake here (the real route keeps it)
     const worker = new R15Worker({ trainingRoot: root, adapter, mainRoot: scratch, python: resolve(import.meta.dirname, 'lib', 'r16-fake-scorer.mjs') }, { processes: () => '' });
-    const dry = { start: () => worker.start(), status: () => ({ ...worker.status(), dry: true }), score: (b: Parameters<R15Worker['score']>[0]) => worker.score(b) };
+    const hold = Math.max(0, Number(process.env.MGOGO_FAKE_R15_MS ?? 0) || 0);
+    const dry = { start: () => worker.start(), status: () => ({ ...worker.status(), dry: true }),
+      score: async (b: Parameters<R15Worker['score']>[0]) => { if (hold) await new Promise(done => setTimeout(done, hold)); return worker.score(b); } };
     server.middlewares.use(createR15Handler(dry, row => appendFileSync(resolve(scratch, 'receipts.jsonl'), JSON.stringify(row) + '\n')));
     server.httpServer?.once('close', () => { void worker.close(); });
     for (const signal of ['SIGINT', 'SIGTERM'] as const) process.once(signal, () => { void worker.close().finally(() => process.exit(0)); });
