@@ -459,8 +459,8 @@ files by two skeptics):
 4. *It was hardly trained on, and not measured on, one whole target menu.* The target menu after "go to food
    elsewhere" (trees the animal sees or remembers; 4 to 8 options) is 794 of the 1,898 training target rows: 29 were
    trained on, and 3 of its 75 development rows were scored. Its eight-option form: 19 of 760 trained, 1 of 70 scored.
-   The rows were left out before the upload (517 training and 48 development target rows over 512 by our count) or
-   refused by Endor (249 and 24). The other two target menus ("feed here", "go and drink") were trained on whole. The
+   Of all target rows, 766 training and 72 development were left out, before the upload (517 and 48, over 512 by our
+   count) or refused by Endor (249 and 24); 765 and 72 of them are from this menu. The other two target menus ("feed here", "go and drink") were trained on whole. The
    target figure of 0.840 is therefore on short menus of mostly two to four options, whose labels are peaked (the
    label's top option holds 0.84 of it on average, against 0.45 on the rows left out). The app sends the long menus.
 5. *The app's checks refuse it, as they should.* Its name (`i1-e3`) is not a registered adapter name; its manifest is
