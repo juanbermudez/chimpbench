@@ -223,3 +223,11 @@ test('reference words follow the scorer: inconclusive is never "inside", a row i
       assert.ok(s.row.verdict === 'pass' || (s.row.verdict === 'fail' && t.flags.some(f => f.key === 'heldAsFail')), `${arm.id} ${t.id}: inside but ${s.row.verdict}`);
   }
 });
+
+test('at life-course speed no row of the life record is compared, killings included (review)', () => {
+  const w = createWorld(48);
+  w.ageRate = 365;
+  w.time = 400 * 24;
+  const life = lifeRecord(w), refused = refusal(w, false);
+  for (const id of Object.keys(SAME_DEFINITION)) assert.equal((worldState(T(id), w, life, 120, refused) as { words: string }).words, 'not compared at life-course speed', id);
+});

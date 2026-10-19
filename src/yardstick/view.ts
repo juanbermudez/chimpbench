@@ -119,7 +119,8 @@ export function worldState(t: LiteTarget, world: World, life: LifeRecord, popCap
     if (w.kind === 'decades') return words('needs decades of natural aging', `${w.why}; ${(w.days ?? 0) / 365} years is ${wallWords((w.days ?? 0) - days)}.`);
     return words('field teams not running in this build', `The virtual field teams come in a later build. Shortest window once they run: ${w.why}.`);
   }
-  if (refused.demography && /^T-DEM-/.test(t.id)) return words('not compared at life-course speed', refused.demography);
+  // every row read from the life record is a birth or death rate: killings (T-LET-1) as much as T-DEM (review, 19 October)
+  if (refused.demography) return words('not compared at life-course speed', refused.demography);
   const seen = seenOf(t.id, world, life, popCap);
   const need = w.days ?? 0;
   if (days < need) {

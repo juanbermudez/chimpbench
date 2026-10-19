@@ -12,6 +12,7 @@ import { SECTIONS } from '../yardstick/sections';
 import { SAME_DEFINITION } from '../yardstick/same';
 import { armMatches, isPattern, neverCounted, refState, refusal, stressClones, worldState, type Mark } from '../yardstick/view';
 import { axisOf, dateWords, fmtValue, sig2, wallWords } from '../yardstick/words';
+import { poissonInterval } from '../yardstick/field';
 import { CAUSE_CLASSES, CAUSE_WORDS, causeClass, causeWords, censusSeries, dayOf, deathsByClass, firstYearMortality, isKilling, lifeRecord, type CauseClass, type LifeRecord } from '../yardstick/life';
 import { modelIdentityOf } from '../simulation';
 import { modelEngine } from './mind-card';
@@ -204,7 +205,11 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
     const { w, life, id } = n;
     const head = (extra = '') => `<p class="w-eyebrow">This world · exact record (all-seeing), days 1 to ${Math.max(1, dayOf(w.time))}${extra}</p>`;
     if (n.refused.all) return `<div class="w-world"><p class="w-note">${esc(n.refused.all)}</p></div>`;
-    const demoNote = n.refused.demography ? `<p class="w-note">${esc(n.refused.demography)} The charts below stay, as exploration.</p>` : '';
+    // At life-course speed the animals age faster than the clock their birth and death times are on: ages are then their
+    // own (chimp.age), mothers' ages at a birth are not known, and the life table is not drawn (review, 19 October).
+    const course = !!n.refused.demography;
+    const demoNote = course ? `<p class="w-note">${esc(n.refused.demography)} The charts below stay, as exploration. Ages are each animal’s own; the life table and mothers’ ages are left out, because at this speed ages run faster than the clock the record keeps.</p>` : '';
+    const ownAges = <T extends { age: number; ownAge: number }>(rows: T[]) => (course ? rows.map(r => ({ ...r, age: r.ownAge })) : rows);
     switch (sec) {
       case 'patrols': {
         const out = w.parties.filter(p => p.kind === 'patrol');
@@ -217,38 +222,38 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
       case 'encounters': {
         const k = life.deaths.filter(x => isKilling(x.cause));
         const cy = w.troops.length * life.days / 365;
-        const kill = k.length ? `${k.length} killing${k.length === 1 ? '' : 's'} (${k.map(x => `${esc(x.name)}, ${dayWord(x.t)}`).join('; ')})` : `no killing in ${sig2(cy)} community-years${cy >= 1 ? `: below ${sig2(3.689 / cy)} a year (95%)` : ''}`;
+        const kill = k.length ? `${k.length} killing${k.length === 1 ? '' : 's'} (${k.map(x => `${esc(x.name)}, ${dayWord(x.t)}`).join('; ')})` : `no killing in ${sig2(cy)} community-years${cy >= 1 ? `: below ${sig2(poissonInterval(0)[1] / cy)} a year (95%, the scorer’s interval)` : ''}`;
         return `<div class="w-world">${head()}<p>${w.stats.intergroupEncounters} meetings between communities happened (heard or seen, every pair together) and ${kill}. The field band counts what a followed party detected, so the count of meetings is not placed on it.</p>
           <p class="w-note">${id.profile === 'compressed' ? 'On the 160 m map animals hear strangers 36 m away: encounter rows are not comparable here. ' : ''}A pair of communities whose ranges drift within earshot (1 km) records a heard meeting almost daily, so a single world can run far above the band (docs/simulation.md §18).</p></div>`;
       }
       case 'births': {
         const cen = censusSeries(w);
         const pop = populationSvg(cen, life.births.map(b => ({ day: dayOf(b.t) })), life.deaths.map(x => ({ day: dayOf(x.t), klass: x.klass })), id.popCap);
-        const list = life.births.slice(0, 8).map(b => `<li><span class="mono">${dayWord(b.t)}</span> ${esc(b.name)}, ${b.sex} · mother ${esc(b.motherName || 'unknown')}${b.motherAge !== null ? `, ${esc(ageWord(b.motherAge))}` : ''} · ${esc(troopShort(w.troops.find(t => t.id === b.troopId)))}${b.alive ? '' : ' · died since'}</li>`).join('');
+        const list = life.births.slice(0, 8).map(b => `<li><span class="mono">${dayWord(b.t)}</span> ${esc(b.name)}, ${b.sex} · mother ${esc(b.motherName || 'unknown')}${b.motherAge !== null && !course ? `, ${esc(ageWord(b.motherAge))}` : ''} · ${esc(troopShort(w.troops.find(t => t.id === b.troopId)))}${b.alive ? '' : ' · died since'}</li>`).join('');
         const viab = n.arm.viability;
         return `<div class="w-world">${head()}${demoNote}<h4>Population</h4>${pop}<p class="w-sub">Living animals each evening (21:00), rebuilt from birth and death times; births tick above the axis, deaths below it. Population size and age structure are not field targets. The founders’ ages are as the world generator set them (a design choice).</p>
           <h4>Births</h4>${life.births.length ? `<ul class="w-list">${list}</ul>${life.births.length > 8 ? `<p class="w-sub">and ${life.births.length - 8} earlier.</p>` : ''}` : '<p class="w-empty">No birth yet.</p>'}
           <p class="w-sub">Reference runs of ${esc(n.arm.name.toLowerCase())}: ${viab.births} births in ${n.arm.seeds.length} worlds × ${sig2(n.arm.days / 365)} years (${viab.worlds.map(x => x.births).join(', ')} by world). Their populations went ${viab.worlds.map(x => `${x.livingStart} → ${x.livingEnd}`).join(', ')}; ${viab.pass ? 'they passed their viability check' : `they failed their viability check (${esc(viab.reasons.join('; ').replace(/\ba seed\b/g, 'a world'))}): see Deaths`}.</p></div>`;
       }
       case 'deaths': {
-        const counts = deathsByClass(life);
-        const rec = life.deaths.slice(0, 12).map(x => `<li data-dead="${x.id}"><span class="mono">${dayWord(x.t)}</span> <b>${esc(x.name)}</b>, ${x.sex}, ${esc(ageWord(x.age))} · ${esc(troopShort(w.troops.find(t => t.id === x.troopId)))} · <span class="k-${x.klass} w-cause">${esc(causeWords(x.cause))}</span>
+        const counts = deathsByClass(life), dead = ownAges(life.deaths);
+        const rec = dead.slice(0, 12).map(x => `<li data-dead="${x.id}"><span class="mono">${dayWord(x.t)}</span> <b>${esc(x.name)}</b>, ${x.sex}, ${esc(ageWord(x.age))} · ${esc(troopShort(w.troops.find(t => t.id === x.troopId)))} · <span class="k-${x.klass} w-cause">${esc(causeWords(x.cause))}</span>
           <span class="w-acts"><button data-wfamily="${x.id}">Family</button><button data-wwhere="${x.id}">Where</button><button data-wselect="${x.id}">Select</button></span><div class="w-family" data-family-of="${x.id}"></div></li>`).join('');
         const removed = life.removed.length ? `<p class="w-sub">Removed by an experiment (kept out of every rate): ${life.removed.map(x => `${esc(x.name)}, ${dayWord(x.t)}`).join('; ')}.</p>` : '';
-        return `<div class="w-world">${head()}${demoNote}${deathsBarSvg(counts)}${ageBarsSvg(life.deaths)}
+        return `<div class="w-world">${head()}${demoNote}${deathsBarSvg(counts)}${ageBarsSvg(dead)}
           ${life.deaths.length ? `<h4>The death record</h4><ul class="w-list w-deaths">${rec}</ul>${life.deaths.length > 12 ? `<p class="w-sub">and ${life.deaths.length - 12} earlier.</p>` : ''}` : ''}${removed}
           <p class="w-note">The simulation knows every cause; the field knew the cause of 86 of 130 deaths at Gombe (williams2008). One cause, an infant’s death after losing its mother, is counted under “other causes” on this page: sealed tests protect survival after a mother’s loss. Each animal’s own record still names it.${id.bodiesMove ? ' Bodies stay in this world: “Where” shows where a body ended up, not where the animal died.' : ''}</p></div>
           ${viabilityHtml(n.arm, n)}`;
       }
       case 'mortality': {
         const ay = life.exposure.male.concat(life.exposure.female).reduce((a, b) => a + b, 0);
-        return `<div class="w-world">${head()}${demoNote}${lifeTableSvg(life.exposure, life.deathsByBin)}${life.deaths.length ? `<p class="w-sub">Deaths per animal-year in the scorer’s age bins, females filled and males hollow, over ${sig2(ay)} animal-years. Bins with no death are left blank.</p>` : ''}
+        return `<div class="w-world">${head()}${demoNote}${course ? '' : lifeTableSvg(life.exposure, life.deathsByBin)}${life.deaths.length && !course ? `<p class="w-sub">Deaths per animal-year in the scorer’s age bins, females filled and males hollow, over ${sig2(ay)} animal-years. Bins with no death are left blank.</p>` : ''}
           <p class="w-note">Life expectancy at 15 and survival to 45 need decades of natural aging: 20 years is ${esc(wallWords(20 * 365))}. The reference runs’ values for them are pooled from 5 worlds × 3 years: not a life expectancy.</p></div>`;
       }
       case 'infants': {
         const q = firstYearMortality(life);
         const words = q.value === null ? `${q.basis} so far: ${q.short}` : `${q.basis} so far: first-year mortality ${fmtValue(q.value, q.interval)} (95% ${fmtValue(q.interval![0], q.interval)}–${fmtValue(q.interval![1], q.interval)})${life.days < 365 ? ', placed on the band only after a year of watching' : ''}`;
-        return `<div class="w-world">${head()}${demoNote}${infantLanesSvg(life.infants)}<p class="w-sub">${esc(words)}.${life.infants.length ? ' Each lane is one infant, from birth: a diamond where it died, coloured by cause; a dot where it is now, dotted to its first birthday while it is still at risk.' : ''}</p>
+        return `<div class="w-world">${head()}${demoNote}${infantLanesSvg(ownAges(life.infants))}<p class="w-sub">${esc(words)}.${life.infants.length ? ' Each lane is one infant, from birth: a diamond where it died, coloured by cause; a dot where it is now, dotted to its first birthday while it is still at risk.' : ''}</p>
           <p class="w-note">Nursing, suckling and weaning rows are read from the simulation directly in the reference runs; their live readers would need a hook in the simulation’s tick, so this build shows their reference values only.</p></div>`;
       }
       case 'nutrition':

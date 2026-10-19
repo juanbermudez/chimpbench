@@ -145,3 +145,19 @@ test('the life reader agrees with e-bench’s viability counter where births and
   const v = bothCounters(w, 8 * 5760);
   assert.ok(v.births > 5 && v.deaths > 5, `births ${v.births}, deaths ${v.deaths}`);
 });
+
+test('ages: exact on the clock at natural aging, the animal’s own at life-course speed (review)', () => {
+  // natural aging (a hand-built world: the clock age and the animal's own age agree)
+  const D = 24, nat = hand(400 * D, [{ birthTime: 10 * D, deathTime: 300 * D, causeOfDeath: 'illness', age: 290 / 365.25 }]);
+  const rn = lifeRecord(nat);
+  assert.ok(Math.abs(rn.deaths[0].age - rn.deaths[0].ownAge) < 0.01);
+  // life-course speed: the animals age 365 times faster than the clock; the rows carry their own ages beside the clock's
+  const w = createWorld(48);
+  w.ageRate = 365;
+  for (let i = 0; i < 4 * 5760; i++) tickWorld(w);
+  const r = lifeRecord(w);
+  assert.ok(r.deaths.length > 0, 'deaths at life-course speed');
+  for (const d of r.deaths) assert.equal(d.ownAge, w.chimps.find(c => c.id === d.id)!.age);
+  assert.ok(r.deaths.some(d => Math.abs(d.age - d.ownAge) > 1), 'the clock age is not the animal’s age at this speed');
+  for (const f of r.infants) assert.equal(f.ownAge, w.chimps.find(c => c.id === f.id)!.age);
+});

@@ -62,8 +62,11 @@ export const ageAt = (c: Chimp, t: number) => (t - c.birthTime) / YEAR_H;
 export const aliveAt = (c: Chimp, t: number) => c.birthTime <= t && (c.deathTime === null || c.deathTime > t);
 
 export interface BirthRow { id: number; name: string; sex: Chimp['sex']; t: number; troopId: number; motherId: number; motherName: string; motherAge: number | null; fatherId: number; alive: boolean }
-export interface DeathRow { id: number; name: string; sex: Chimp['sex']; t: number; age: number; troopId: number; cause: string; klass: CauseClass; x: number; z: number; stage: LifeStage; founder: boolean }
-export interface InfantRow { id: number; name: string; sex: Chimp['sex']; t: number; troopId: number; motherId: number; age: number; died: boolean; klass: CauseClass | null }
+/** `age` is exact on the ecological clock (time since birth), as the rates need it; `ownAge` is the animal's own age
+ * (chimp.age, which stops at death). They agree at natural aging (to the slow step, under 0.01 y); at life-course speed
+ * only `ownAge` is the animal's age (review, 19 October). */
+export interface DeathRow { id: number; name: string; sex: Chimp['sex']; t: number; age: number; ownAge: number; troopId: number; cause: string; klass: CauseClass; x: number; z: number; stage: LifeStage; founder: boolean }
+export interface InfantRow { id: number; name: string; sex: Chimp['sex']; t: number; troopId: number; motherId: number; age: number; ownAge: number; died: boolean; klass: CauseClass | null }
 
 export interface LifeRecord {
   /** The window: from the world's start (time 0, day 1 at 06:30) to now. */
@@ -95,12 +98,12 @@ export function lifeRecord(world: World, t0 = 0): LifeRecord {
     const dead = !c.alive && dt !== null && dt > t0 && dt <= t1;
     const klass = dead ? causeClass(c.causeOfDeath) : null;
     if (dead) {
-      const row: DeathRow = { id: c.id, name: c.name, sex: c.sex, t: dt!, age: ageAt(c, dt!), troopId: c.troopId, cause: c.causeOfDeath ?? 'unknown', klass: klass!, x: c.position[0], z: c.position[2], stage: c.stage, founder: c.birthTime < 0 };
+      const row: DeathRow = { id: c.id, name: c.name, sex: c.sex, t: dt!, age: ageAt(c, dt!), ownAge: c.age, troopId: c.troopId, cause: c.causeOfDeath ?? 'unknown', klass: klass!, x: c.position[0], z: c.position[2], stage: c.stage, founder: c.birthTime < 0 };
       (klass === 'removed' ? removed : deaths).push(row);
     }
     if (born) {
       const end = dead ? dt! : t1;
-      infants.push({ id: c.id, name: c.name, sex: c.sex, t: c.birthTime, troopId: c.natalTroopId, motherId: c.motherId, age: ageAt(c, end), died: dead && klass !== 'removed', klass: dead ? klass : null });
+      infants.push({ id: c.id, name: c.name, sex: c.sex, t: c.birthTime, troopId: c.natalTroopId, motherId: c.motherId, age: ageAt(c, end), ownAge: c.age, died: dead && klass !== 'removed', klass: dead ? klass : null });
     }
     // life table: from the later of t0 and birth to the earlier of now and death (or removal)
     const from = Math.max(t0, c.birthTime), to = Math.min(t1, dt ?? t1);
