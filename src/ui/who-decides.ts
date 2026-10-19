@@ -51,6 +51,19 @@ export function achievedText(r: DriveReadout, playing: boolean): string {
   const a = r.achieved;
   return a.rate === null ? 'being measured' : `${formatRate(a.rate)} over the last ${a.seconds >= 59 ? 'minute' : `${Math.round(a.seconds)} s`} of play`;
 }
+/** A pass that has run this long (ms) is said in the menu bar: below it the line would flicker at every one-call pass. */
+export const LONG_PASS_MS = 1500;
+/**
+ * The menu bar's achieved slot in the mode: "Paused", the rate over the last minute, or, while a pass has run for
+ * LONG_PASS_MS or more (at dawn most adults are asked at once and the world stands still for the whole pass), how far
+ * it has come, in the waiting state of the default app's "Waiting on model" (second reading).
+ */
+export function achievedSlot(r: DriveReadout, playing: boolean, nowMs: number): { text: string; state: 'paused' | 'blocked' | 'drive' } {
+  if (!playing) return { text: 'Paused', state: 'paused' };
+  const q = r.queue;
+  if (q.busy && q.passStarted > 0 && nowMs - q.passStarted >= LONG_PASS_MS) return { text: q.worker ? 'Worker stopped' : `Asking ${q.passAsked} of ${q.passWaiting}`, state: 'blocked' };
+  return { text: r.achieved.rate === null ? 'measuring' : formatRate(r.achieved.rate), state: 'drive' };
+}
 /** The window the readout covers: the last hour, or as much of it as has run in this mode. */
 export function spanText(r: DriveReadout): string {
   const of = r.hour.ticks * 0.25;
@@ -59,7 +72,7 @@ export function spanText(r: DriveReadout): string {
 export function queueText(r: DriveReadout, w: World, playing: boolean): string {
   const q = r.queue;
   const now = q.busy && q.worker ? `waiting for the worker (${q.worker}); ${q.asking >= 0 ? nameOf(w, q.asking) : 'this adult'} is asked again once it serves the adapter again, and the rules do not step in`
-    : q.busy ? `asking ${q.asking >= 0 ? nameOf(w, q.asking) : '…'}, call ${q.passCalls + 1} of this pass (${q.passWaiting} adult${q.passWaiting === 1 ? '' : 's'} waiting at its start)`
+    : q.busy ? `asking ${q.asking >= 0 ? nameOf(w, q.asking) : '…'}, adult ${Math.max(1, q.passAsked)} of ${q.passWaiting} in this pass (call ${q.passCalls + 1}); the world waits until all have answered`
     : q.waiting ? `${q.waiting} adult${q.waiting === 1 ? '' : 's'} waiting` : 'nobody waiting';
   const per = q.msPerCall !== null ? ` · ${(q.msPerCall / 1000).toFixed(2)} s a call` : '';
   const last = q.lastPass ? ` · last pass ${q.lastPass.asks} ask${q.lastPass.asks === 1 ? '' : 's'}, ${q.lastPass.calls} call${q.lastPass.calls === 1 ? '' : 's'} in ${(q.lastPass.ms / 1000).toFixed(1)} s` : '';

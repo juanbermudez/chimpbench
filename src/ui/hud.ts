@@ -6,7 +6,7 @@ import { setAttr, setText } from './morph';
 import { saveIndicator } from './simulations';
 import { presetLabel } from './timebar';
 import { TICK_SECONDS } from '../simulation';
-import { achievedText, chipText, spanText, whoTitle } from './who-decides';
+import { achievedSlot, achievedText, chipText, spanText, whoTitle } from './who-decides';
 
 // Menu bar: one opaque bar (brand · simulation · clock control · time · weather · population |
 // sound · panels · settings · guide). Every changing readout sits in a fixed-width slot (see style.css),
@@ -158,9 +158,11 @@ export function createHud(root: HTMLElement, ctx: Ctx) {
         // waits (the clock's own rate, smoothed over half a second, swings between 0 in a pass and the full speed)
         set(whoKey, `Who decides · ${spanText(drive)}`);
         set(whoText, chipText(drive)); attr(whoBtn, 'title', whoTitle(drive)); attr(whoGroup, 'data-tone', drive.problem ? 'warn' : drive.dry ? 'dry' : 'ok');
-        set(el.achieved, st === 'paused' ? 'Paused' : drive.achieved.rate === null ? 'measuring' : formatRate(drive.achieved.rate));
-        attr(el.achieved, 'title', `Achieved ${achievedText(drive, st !== 'paused')}: simulated time gained per real second, the waits for every answer included (lockstep)`);
-        attr(clockCtl, 'data-state', st === 'paused' ? 'paused' : 'drive');
+        const slot = achievedSlot(drive, st !== 'paused', Date.now());
+        set(el.achieved, slot.text);
+        attr(el.achieved, 'title', slot.state === 'blocked' ? 'The world waits while the model answers every adult asked in this pass (lockstep); the rules do not fill in'
+          : `Achieved ${achievedText(drive, st !== 'paused')}: simulated time gained per real second, the waits for every answer included (lockstep)`);
+        attr(clockCtl, 'data-state', slot.state);
       } else {
         set(el.achieved, st === 'paused' ? 'Paused' : st === 'blocked' ? 'Waiting on model' : lapse ? 'time-lapse' : `${formatRate(kept)}${st === 'limited' ? ' · capped' : ''}`);
         attr(clockCtl, 'data-state', st);

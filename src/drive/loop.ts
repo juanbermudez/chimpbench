@@ -44,8 +44,9 @@ export interface DriveStats {
   passes: number; asks: number; byModel: number; calls: number; targetCalls: number; callMs: number;
   /** Rules decisions for adults on the model, by reason (fallbackReason). */
   fallbacks: Record<string, number>;
-  /** The pass under way: adults waiting at its start, calls made so far, the animal being asked (-1: none). */
-  pass: { waiting: number; calls: number; asking: number } | null;
+  /** The pass under way: adults waiting at its start, calls made so far, the animal being asked (-1: none), how many adults
+   * have been asked so far (the one being asked included), and when it began (Date.now()). */
+  pass: { waiting: number; calls: number; asking: number; asked: number; started: number } | null;
   last: { ms: number; asks: number; calls: number } | null;
   /** Why the pass under way waits for the worker ('' when it does not): set by the kernel (src/drive/kernel.ts onWait). */
   worker: string;
@@ -103,9 +104,10 @@ export class DriveLoop {
     if (this.inFlight) throw new Error('a pass is already under way');
     const w = this.world, t0 = Date.now(), seen = new Map<number, CallSeen[]>();
     this.inFlight = true;
-    this.stats.pass = { waiting: this.waiting(), calls: 0, asking: -1 };
+    this.stats.pass = { waiting: this.waiting(), calls: 0, asking: -1, asked: 0, started: t0 };
     const watched: Kernel = { id: kernel.id, label: kernel.label, decide: async (request: KernelRequest, env) => {
       const id = request.context.chimpId, stage = request.context.resourceChoice === 'target' ? 'target' : 'kind', c0 = Date.now();
+      if (this.stats.pass!.asking !== id) this.stats.pass!.asked++;
       this.stats.pass!.asking = id;
       const answer: KernelAnswer = await kernel.decide(request, env);
       // a wait for a stopped worker (src/drive/kernel.ts) is not the call's time

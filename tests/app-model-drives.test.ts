@@ -12,7 +12,7 @@ import { ProviderError, type DecisionProvider } from '../src/providers/types';
 import { httpProvider } from '../src/providers/http';
 import { driveKernel } from '../src/drive/kernel';
 import { AchievedRate, driveAnimal, driveReadout, recordPass } from '../src/drive/app';
-import { achievedText, chipText, driveMind, fallbackText, percents, queueText, spanText } from '../src/ui/who-decides';
+import { achievedSlot, achievedText, chipText, driveMind, fallbackText, LONG_PASS_MS, percents, queueText, spanText } from '../src/ui/who-decides';
 import { createR15Handler } from '../server/r15';
 import { R15Worker } from '../server/r15-worker';
 import { fakeR15Root } from '../scripts/lib/fake-r15-root';
@@ -444,4 +444,27 @@ test('the achieved speed is the simulated time gained over the last real minute 
   assert.equal(spanText(ro), 'last hour', 'no minute yet: the window is named, the chip says no minute yet');
   await runDriveTicks(loop, fakeKernel, 61);
   assert.equal(spanText(driveReadout(w, loop, { ready: true, phase: 'ready', lastError: '', identity })!), 'last 15.25 min');
+});
+
+test('a long pass is said in the menu bar (how many adults of the pass have been asked), a short one is not, and the queue line names the adult', async () => {
+  const w = settled(), loop = new DriveLoop(w);
+  untilWaiting(loop);
+  for (let i = 0; i < 3000 && loop.waiting() < 3; i++) { if (loop.waiting()) await loop.pass(fakeKernel); loop.tick(); }
+  const n = loop.waiting();
+  let release!: () => void, seen = 0;
+  const gate = new Promise<void>(done => { release = done; });
+  const slow: Kernel = { ...fakeKernel, async decide(request, env) { if (++seen === 3) await gate; return fakeKernel.decide(request, env); } };
+  const pass = loop.pass(slow);
+  for (let i = 0; i < 100 && seen < 3; i++) await new Promise(done => setTimeout(done, 5));
+  const r = driveReadout(w, loop, { ready: true, phase: 'ready', lastError: '', identity }, { rate: 30, seconds: 60 })!;
+  assert.equal(r.queue.passWaiting, n); assert.ok(r.queue.passAsked >= 2 && r.queue.passAsked <= 3, `${r.queue.passAsked} asked so far`);
+  const t = r.queue.passStarted;
+  assert.deepEqual(achievedSlot(r, true, t + 200), { text: '30 s/s', state: 'drive' }, 'a short pass: the rate, no flicker');
+  assert.deepEqual(achievedSlot(r, true, t + LONG_PASS_MS), { text: `Asking ${r.queue.passAsked} of ${n}`, state: 'blocked' });
+  assert.deepEqual(achievedSlot({ ...r, queue: { ...r.queue, worker: 'R15 worker exited' } }, true, t + LONG_PASS_MS), { text: 'Worker stopped', state: 'blocked' });
+  assert.deepEqual(achievedSlot(r, false, t + LONG_PASS_MS), { text: 'Paused', state: 'paused' });
+  assert.match(queueText(r, w, true), new RegExp(`adult ${r.queue.passAsked} of ${n} in this pass .*the world waits until all have answered`));
+  release(); await pass;
+  const after = driveReadout(w, loop, { ready: true, phase: 'ready', lastError: '', identity }, { rate: null, seconds: 0 })!;
+  assert.equal(after.queue.passStarted, 0); assert.deepEqual(achievedSlot(after, true, Date.now() + 10_000), { text: 'measuring', state: 'drive' });
 });
