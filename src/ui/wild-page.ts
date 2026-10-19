@@ -106,7 +106,7 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
     // for the animals on its roster too (review, 19 October: a no-model server read "untuned model … decides for 1").
     const dec = ctx.deps.decider, up = dec.enabled && dec.ready;
     const who = w.modelPolicy.mode === 'off' || !deciders ? 'The rules decide for every animal now.'
-      : !up ? `The rules decide for every animal now: the model is not loaded (${esc(dec.phase)}), so they decide for the ${deciders === 1 ? 'animal' : `${deciders} animals`} on its roster too.`
+      : !up ? 'The rules decide for every animal now (the model is not loaded).'
       : `Now ${esc(modelEngine(dec.model, dec.provider).label.toLowerCase())} decides for ${deciders} animal${deciders === 1 ? '' : 's'}; animals under 8 are always on the rules.`;
     const days = Math.max(1, dayOf(w.time));
     const exp = w.stimuli.length ? ` An experiment is under way (${esc(w.stimuli.map(s => s.label).join(', '))}).` : '';
