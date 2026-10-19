@@ -309,8 +309,12 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     refresh() { update(true); },
     openWild(section) {
       if (state.society.open) ctx.closeSociety();
-      wildLoading ??= import('./wild-page').then(m => (wildPage = m.createWildPage(q('.wild'), ctx, wildUi)));
-      void wildLoading.then(p => { void p.show(section); syncPanels(); });
+      // The page loads on first use; until it has, say so at once (a fresh dev server took 3 to 5 s with nothing shown).
+      const root = q('.wild');
+      if (!wildPage) { root.hidden = false; root.innerHTML = '<p class="wild-wait" role="status">Opening How close to the wild…</p>'; }
+      wildLoading ??= import('./wild-page').then(m => (wildPage = m.createWildPage(root, ctx, wildUi)))
+        .catch(e => { wildLoading = null; root.hidden = true; root.innerHTML = ''; ctx.notify({ text: `The page could not load: ${e instanceof Error ? e.message : String(e)}`, severity: 2 }); return Promise.reject(e); });
+      void wildLoading.then(p => { void p.show(section); syncPanels(); }, () => {});
     },
     wildClosed() { syncPanels(); ctx.refresh(); },
     showRecords(on, focus) {

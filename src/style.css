@@ -175,6 +175,7 @@ body.preview .viewport { background: #3a3d38; }
 .pop-main { display: flex; align-items: baseline; gap: 5px; font-size: 12px; color: var(--ink-3); } .pop-main b { font-size: 16px; font-weight: 600; line-height: 1; color: var(--ink); }
 .pop-sub { font-size: 11px; color: var(--ink-3); white-space: nowrap; text-align: left; border-radius: 4px; } .pop-sub b { font-weight: 500; color: var(--ink-2); }
 .pop-sub:hover, .pop-sub:hover b { color: var(--ink); } /* stage V1: opens How close to the wild at Births */
+.wild-wait { position: absolute; inset: 0; z-index: 41; display: grid; place-items: center; background: rgba(0, 0, 0, .6); color: var(--ink-2); animation: fadeIn .15s; } /* until the page has loaded */
 .bar-time { gap: 10px; }
 .clock-big { font-family: var(--font-display); font-size: 26px; font-weight: 500; line-height: 1; letter-spacing: -.01em; font-variant-numeric: tabular-nums lining-nums; font-variation-settings: 'opsz' 144; color: var(--ink); }
 .date-block { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--ink-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
