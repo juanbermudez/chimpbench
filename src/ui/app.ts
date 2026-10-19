@@ -28,6 +28,7 @@ import { menuButton } from './menu';
 import { experimentTarget, partyWaking, wakeWatch } from './watch-rules';
 // Stage V1 (docs/staging/v1-field.md): the page "How close to the wild" and the card's Records overlay load on first use.
 import type { WildPage, WildUi } from './wild-page';
+import type { RecordsOverlay } from './records-card';
 
 // UI composition root. Owns UI state and wires components; knows nothing
 // about how the world is simulated or rendered (see UiDeps). main.ts and the
@@ -68,7 +69,7 @@ export interface Ctx {
   refresh(): void;
   /** Stage V1: the page "How close to the wild" (K), opened at a section; the range-map card's Records overlay. */
   openWild?(section?: string): void;
-  showRecords?(on?: boolean): void;
+  showRecords?(on?: boolean, focus?: number): void;
   wildClosed?(): void;
 }
 
@@ -164,6 +165,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
   // Stage V1: the page's lane and reference arm (saved with the simulation's view state), the Records overlay switch.
   const wildUi: WildUi = { lane: null, arm: null };
   let wildPage: WildPage | null = null, wildLoading: Promise<WildPage> | null = null, recordsOn = false, recordsLoading = false;
+  let records: { overlay: RecordsOverlay; key: string } | null = null, recordsFocus: number | null = null;
   let timeOpen = false;
   // Stage W14: the animals whose waking ends the field map's dawn fast-forward (watch-rules.ts), read every frame.
   let prologueWatch: Chimp[] = [];
@@ -311,12 +313,22 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
       void wildLoading.then(p => { void p.show(section); syncPanels(); });
     },
     wildClosed() { syncPanels(); ctx.refresh(); },
-    showRecords(on) {
+    showRecords(on, focus) {
       recordsOn = on ?? !recordsOn; syncDock();
-      if (!recordsOn) { minimap.setOverlay(null); return; }
+      if (!recordsOn) { records = null; minimap.setOverlay(null); return; }
+      if (focus !== undefined) recordsFocus = focus;
+      // already on: only a place to name (the page's "Where") redraws it
+      if (records) { if (focus !== undefined) { records.overlay.focus(focus); minimap.setOverlay(records.overlay, records.key); } return; }
       if (recordsLoading) return;
       recordsLoading = true;
-      void import('./records-card').then(m => { recordsLoading = false; if (recordsOn) minimap.setOverlay(m.createRecordsOverlay(), m.RECORDS_LEGEND); });
+      void import('./records-card').then(m => {
+        recordsLoading = false;
+        if (!recordsOn) return;
+        records = { overlay: m.createRecordsOverlay(), key: m.RECORDS_LEGEND };
+        if (recordsFocus !== null) records.overlay.focus(recordsFocus);
+        recordsFocus = null;
+        minimap.setOverlay(records.overlay, records.key);
+      });
     },
   };
 

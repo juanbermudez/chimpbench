@@ -8,6 +8,8 @@
 .rl-line { width: 12px; height: 0; border-top: 1.5px solid var(--ink-2); }
 .rl-core { width: 11px; height: 7px; border-radius: 3px; background: rgba(236, 236, 238, .22); }
 .rl-dot { width: 6px; height: 6px; border-radius: 50%; background: #c3b4e0; }
+/* the respiratory-outbreak glyph is a dot in a ring: named in the key, as every ring must be (review, 19 October) */
+.rl-ring { width: 10px; height: 10px; border-radius: 50%; border: 1px solid #a990d6; background: radial-gradient(circle, #a990d6 0 2.4px, transparent 2.9px); }
 .rl-x { width: 7px; height: 7px; background: linear-gradient(45deg, transparent 40%, #d27a5e 40%, #d27a5e 60%, transparent 60%), linear-gradient(-45deg, transparent 40%, #d27a5e 40%, #d27a5e 60%, transparent 60%); }
 .rl-tri { width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 7px solid #b08e5c; }
 .rl-sq { width: 6px; height: 6px; background: #9a9aa2; }

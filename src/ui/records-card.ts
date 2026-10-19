@@ -19,6 +19,8 @@ import './records-card.css';
 /** What the card passes in: its transforms from metres to device pixels, and its scale. */
 export interface MapXform { mx(w: World, x: number): number; mz(w: World, z: number): number; k: number; zoom: number }
 
+/** How long the card names the place the page's "Where" asked for (design assumption). */
+const FOCUS_MS = 20000;
 const CLASS_CODE: Record<CauseClass, number> = { respiratory: 0, illness: 1, wounds: 2, starvation: 3, other: 4, removed: 5 };
 const CLASS_COLOR = ['#a990d6', '#c3b4e0', '#d27a5e', '#b08e5c', '#9a9aa2', '#6a6a72'];
 const hexA = (hex: string, a: number) => { const n = parseInt(hex.slice(1), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`; };
@@ -30,6 +32,9 @@ export function createRecordsOverlay() {
   let rangeWorld: World | null = null;
   // death places: x, z, class code, young (1) — rebuilt when the dead count or the world changes
   let dead = new Float32Array(0), deadIds: number[] = [], deadN = 0, deadKey = '';
+  // The death the page's "Where" asked for: ringed and named on the card for a while (review, 19 October: nothing in
+  // the forest marks the place, and a ring is never drawn without its label).
+  let focusId = -1, focusUntil = 0;
 
   function rangeOf(w: World, t: Troop): RangeCache | null {
     const r = t.range;
@@ -101,7 +106,24 @@ export function createRecordsOverlay() {
         else if (code === 3) { g.moveTo(x, z - r * 1.1); g.lineTo(x + r, z + r * 0.8); g.lineTo(x - r, z + r * 0.8); g.closePath(); g.fill(); }
         else { g.rect(x - r * 0.8, z - r * 0.8, r * 1.6, r * 1.6); if (code === 5) { g.lineWidth = f.k; g.stroke(); } else g.fill(); }
       }
+      if (focusId < 0) return;
+      const i = deadIds.indexOf(focusId);
+      if (i < 0 || performance.now() > focusUntil) { focusId = -1; return; }
+      const c = w.chimps.find(x => x.id === focusId);
+      const x = f.mx(w, dead[i * 4]), z = f.mz(w, dead[i * 4 + 1]), k = f.k;
+      g.strokeStyle = 'rgba(236,236,238,.95)'; g.lineWidth = 1.4 * k;
+      g.beginPath(); g.arc(x, z, 7 * k, 0, Math.PI * 2); g.stroke();
+      if (c) {
+        g.font = `600 ${11 * k}px 'Instrument Sans', system-ui, sans-serif`; g.textBaseline = 'middle';
+        const label = `${c.name} died here`, tw = g.measureText(label).width, left = x + 11 * k + tw > g.canvas.width - 4 * k;
+        g.textAlign = left ? 'right' : 'left';
+        g.lineWidth = 3 * k; g.strokeStyle = 'rgba(16,16,18,.85)'; g.strokeText(label, left ? x - 11 * k : x + 11 * k, z);
+        g.fillStyle = 'rgba(236,236,238,.95)'; g.fillText(label, left ? x - 11 * k : x + 11 * k, z);
+        g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+      }
     },
+    /** Ring and name one animal's place of death for FOCUS_MS (the page's "Where"). */
+    focus(id: number) { focusId = id; focusUntil = performance.now() + FOCUS_MS; },
     /** The hover card for a pointer at device pixel (px, pz) on the card, or null. */
     hover(w: World, px: number, pz: number, f: MapXform, mapX: number, mapZ: number): string | null {
       sync(w);
@@ -135,4 +157,4 @@ export function createRecordsOverlay() {
 export type RecordsOverlay = ReturnType<typeof createRecordsOverlay>;
 
 /** The key shown on the card while Records is on. */
-export const RECORDS_LEGEND = `<span><i class="rl-line"></i>range used (95%)</span><span><i class="rl-core"></i>core</span><span class="rl-sep">where the dead lie:</span><span><i class="rl-dot"></i>illness</span><span><i class="rl-x"></i>wounds</span><span><i class="rl-tri"></i>starvation</span><span><i class="rl-sq"></i>other</span>`;
+export const RECORDS_LEGEND = `<span><i class="rl-line"></i>range used (95%)</span><span><i class="rl-core"></i>core</span><span class="rl-sep">where the dead lie:</span><span><i class="rl-ring"></i>outbreak</span><span><i class="rl-dot"></i>illness</span><span><i class="rl-x"></i>wounds</span><span><i class="rl-tri"></i>starvation</span><span><i class="rl-sq"></i>other</span>`;

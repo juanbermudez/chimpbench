@@ -409,9 +409,11 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
     close();
     ctx.setView('rts');
     ctx.deps.getScene()?.panTo(c.position[0], c.position[2]);
-    ctx.showRecords?.(true);
+    // Nothing in the forest marks the place in this build: the card names it (review, 19 October: "died here" over a
+    // canopy with no mark left a person looking for "here").
+    ctx.showRecords?.(true, id);
     const day = c.deathTime !== null ? ` on day ${dayOf(c.deathTime)}` : '';
-    ctx.notify({ text: modelIdentityOf(w).bodiesMove ? `${c.name}’s body lies here (died${day}; bodies can be moved after death in this world). Records on the map card show where every body lies.` : `${c.name} died here${day}. Records on the map card show every death place.`, cat: 'life', title: 'Where' });
+    ctx.notify({ text: modelIdentityOf(w).bodiesMove ? `The view is over where ${c.name}’s body lies (died${day}; bodies can be moved after death in this world). The map card names the place.` : `The view is over the place where ${c.name} died${day}. The map card names the place.`, cat: 'life', title: 'Where' });
   }
 
   function close() {
