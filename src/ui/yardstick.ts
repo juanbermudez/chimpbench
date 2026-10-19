@@ -121,6 +121,8 @@ function refLine(st: RefState, t: LiteTarget, arm: RefArm): string {
   if (st.kind === 'input') return `<span class="g-none" aria-hidden="true"></span>an input, not a test`;
   if (st.kind === 'recount') return `${glyph}reference: needs a recount`;
   if (t.window.kind === 'scenario') return `${glyph}reference: a scenario row, not in these runs`;
+  // reported by the scorer but not scored (too few range cells): its value in words, never a mark on the band
+  if (st.kind === 'none' && st.row?.verdict === 'scale') return `${glyph}reference ${st.row.pooled === null ? '' : `${esc(fmtValue(st.row.pooled))} · `}not scored: one range cell moves it`;
   return `${glyph}reference: ${esc(st.kind === 'none' && st.row ? patternLine(st.row.note, st.row.verdict) : 'no value')}`;
 }
 function worldLine(ws: WorldState): string {
@@ -192,7 +194,8 @@ export function detailHtml(v: RowView, sources: Record<string, LiteSource>, arms
       ${Object.keys(row.parts).length ? `<p class="ys-sub">Parts: ${Object.entries(row.parts).map(([k, x]) => `${esc(partWords(k))} ${x === null ? '—' : esc(fmtValue(x))}`).join(' · ')}</p>` : ''}
       ${row.truthValue !== null && row.from === 'card' ? `<p class="ys-sub">What happened (simulation truth, not by a field team): ${esc(fmtValue(row.truthValue))}</p>` : ''}
       ${refCaveats(t, arm, ref).length ? `<p class="ys-sub">${esc(refCaveats(t, arm, ref).join(' · '))}</p>` : ''}`;
-  } else refBlock = `<p>${esc(ref.kind === 'none' ? ref.why : ref.why)}</p>`;
+  } else refBlock = `<p>${esc(ref.why)}</p>`;
+  if (ref.kind === 'none' && ref.row?.verdict === 'scale') refBlock = `<p class="ys-sub">${esc(ref.why)}.</p>${refBlock}`;
   const others = arms.filter(a => a.id !== arm.id).map(a => {
     const r = a.rows[t.id], p = r?.pooled;
     return `<li>${esc(a.name)}${matching.has(a.id) ? '' : ' · <em>another model, for context only</em>'}: ${a.recount[t.id] ? 'needs a recount' : p === null || p === undefined ? 'no pooled value' : esc(fmtValue(p, r.interval))}${!a.protocol.current ? ' · older protocol' : ''}</li>`;

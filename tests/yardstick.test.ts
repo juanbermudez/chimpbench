@@ -9,7 +9,7 @@ import { openBandDistance } from '../src/yardstick/band-distance';
 import { axisOf, bandText, dateWords, distanceOf, fmtValue, patternWords, sig2, wideBand } from '../src/yardstick/words';
 import { ALSO, SECTIONS, homeOf } from '../src/yardstick/sections';
 import { SAME_DEFINITION } from '../src/yardstick/same';
-import { armMatches, bandsOf, refState, refusal, stressClones, worldState } from '../src/yardstick/view';
+import { NOT_SCORED, armMatches, bandsOf, refState, refusal, stressClones, worldState } from '../src/yardstick/view';
 import type { LiteTarget, ReferenceFile, TargetsLite } from '../src/yardstick/bundle';
 import { lifeRecord } from '../src/yardstick/life';
 import { METRICS } from '../src/field/metrics';
@@ -194,4 +194,32 @@ test('scaled bands, tuned rows and the Gombe path figure', () => {
   // the held-out Gombe path figure is never bundled
   const both = readFileSync(new URL('../public/field/targets-lite.json', import.meta.url), 'utf8') + readFileSync(new URL('../public/field/reference.json', import.meta.url), 'utf8');
   assert.ok(!/gombe-paths|guide-paths/.test(both));
+});
+
+test('reference words follow the scorer: inconclusive is never "inside", a row it did not score gets no mark (review)', () => {
+  const t0 = ref.arms.find(a => a.id === 'Y3-T0')!;
+  // cell-based rows on too few cells: reported by the scorer, not scored ('scale'): no ring, no distance
+  for (const id of ['T-RNG-2', 'T-RNG-3', 'T-RNG-6']) {
+    assert.equal(t0.rows[id].verdict, 'scale', id);
+    const s = refState(T(id), t0);
+    assert.equal(s.kind, 'none', id); if (s.kind === 'none') assert.equal(s.why, NOT_SCORED);
+  }
+  // inconclusive by the interval over the worlds (no interval in the scorecard) or by it alone (T-DEM-8: the Poisson
+  // interval stays above the band, the interval over the worlds crosses it)
+  for (const id of ['T-PAT-6', 'T-PAT-9', 'T-BRD-1', 'T-FOOD-3', 'T-DEM-8']) {
+    const s = refState(T(id), t0);
+    assert.ok(s.kind === 'marks', id);
+    if (s.kind === 'marks') { assert.equal(s.marks[0].dist!.words, 'too close to call', id); assert.equal(s.marks[0].dist!.tooClose, true, id); }
+  }
+  // rows with a number on a band that the scorer decides world by world: the count of worlds, never a place
+  for (const arm of ref.arms) assert.equal(refState(T('T-HUN-5'), arm).kind, 'pattern', arm.id);   // (T-SOC-4, the other, is compromised: never counted)
+  // every arm, every row placed on a single band: "inside the field band" only where the scorer said pass (or held a
+  // pass as a fail), and never a mark for a row the scorer did not score
+  for (const arm of ref.arms) for (const t of lite.targets) {
+    const s = refState(t, arm), row = arm.rows[t.id];
+    if (row && (row.verdict === 'scale' || row.verdict === 'n/a' || row.verdict === 'structural')) assert.notEqual(s.kind, 'marks', `${arm.id} ${t.id}`);
+    if (s.kind !== 'marks') continue;
+    for (const m of s.marks) if (m.part === null && m.dist?.words === 'inside the field band')
+      assert.ok(s.row.verdict === 'pass' || (s.row.verdict === 'fail' && t.flags.some(f => f.key === 'heldAsFail')), `${arm.id} ${t.id}: inside but ${s.row.verdict}`);
+  }
 });

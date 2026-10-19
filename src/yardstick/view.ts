@@ -33,6 +33,14 @@ export type RefState =
   | { kind: 'never'; why: string }
   | { kind: 'input'; why: string };
 
+/** The scorer's note on a row pooled by the majority of its worlds (src/field/targets.ts pool 'pattern'). */
+const PATTERN_NOTE = /^\d+\/\d+ seeds show the pattern/;
+/** The words of a reference row the scorer reported but did not score ('scale': a cell-based row on too few cells). */
+export const NOT_SCORED = 'not scored: on the field map one 500 m range cell moves this value (the scorer reports it, never counts it)';
+/** The words of a reference value the scorer called inconclusive: an interval (its Poisson interval or the 95%
+ * interval over the worlds) crosses a band edge, so neither inside nor outside is established. */
+const TOO_CLOSE: Distance = { side: 0, d: 0, unit: 'width', tooClose: true, words: 'too close to call' };
+
 /** The reference arm's value of a row, as marks (one per part), or why there is none. */
 export function refState(t: LiteTarget, arm: RefArm): RefState {
   if (INPUT_ROWS[t.id]) return { kind: 'input', why: INPUT_ROWS[t.id] };
@@ -40,13 +48,23 @@ export function refState(t: LiteTarget, arm: RefArm): RefState {
   if (arm.recount[t.id]) return { kind: 'recount', why: 'needs a recount: scored before the observer fix of 7 October 2026' };
   const row = arm.rows[t.id] ?? null;
   if (!row) return { kind: 'none', row: null, why: 'not in this reference run' };
-  if (isPattern(t)) return { kind: 'pattern', row };
+  // A row with a number on a band whose scorer pools it as a pattern (T-HUN-5: r² and a positive slope; T-SOC-4: an
+  // index and male above female) is decided world by world: its words are the scorer's count of worlds, never a
+  // place on the band (an r² inside the band with the slope the wrong way is no match).
+  if (isPattern(t) || PATTERN_NOTE.test(row.note)) return { kind: 'pattern', row };
+  // Review (19 October): the scorer reports a cell-based row on too few range cells but does not score it
+  // (src/field/targets.ts 'scale'; band-distance.ts rowDistance counts it unscored): no mark on its band, no distance.
+  if (row.verdict === 'scale') return { kind: 'none', row, why: NOT_SCORED };
   const marks: Mark[] = [];
   for (const { part, band } of bandsOf(t)) {
     const v = part === null ? row.pooled : row.parts[part];
     if (v === null || v === undefined || !Number.isFinite(v)) continue;
     const interval = part === null ? row.interval : null;
-    marks.push({ part, band, value: v, interval, dist: distanceOf(v, band, interval) });
+    let dist = distanceOf(v, band, interval);
+    // Review (19 October): where the scorer found the value inconclusive (its interval over the worlds, which the
+    // scorecard does not store, or its Poisson interval crosses a band edge), the words say so too, never "inside".
+    if (part === null && row.verdict === 'inconclusive' && dist && !dist.tooClose) dist = { ...TOO_CLOSE, unit: dist.unit };
+    marks.push({ part, band, value: v, interval, dist });
   }
   if (!marks.length) return { kind: 'none', row, why: row.note ? `no value: ${row.note}` : `no value (${row.verdict})` };
   return { kind: 'marks', marks, row };

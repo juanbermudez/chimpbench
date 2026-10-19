@@ -149,14 +149,17 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
         for (const t of rows) {
           if (neverCounted(t)) { never++; continue; }
           if (isPattern(t)) { pattern++; continue; }
-          let marks: Mark[] = [];
-          if (ln === 'ref') { const r = refState(t, n.arm); if (r.kind === 'marks') marks = r.marks; }
+          let marks: Mark[] = [], caveat = '';
+          if (ln === 'ref') { const r = refState(t, n.arm); if (r.kind === 'marks') { marks = r.marks; if (r.row.flags.includes('instrument below bar')) caveat += ' · shown, not scored: the detector is below its bar'; } }
           else { const ws = worldState(t, n.w, n.life, n.id.popCap, n.refused); if (ws.kind === 'marks') marks = ws.marks; }
           if (!marks.length) { waiting++; continue; }
           withV++;
+          // the labels that change what a place on the axis means travel with it (review, 19 October)
+          if (t.flags.some(f => f.key === 'heldAsFail')) caveat += ' · held as a fail whatever its value';
+          if (t.flags.some(f => f.key === 'tuned')) caveat += ' · tuned against this band';
           for (const m of marks) {
             const a = axisOf(m.value, m.band); if (!a) continue;
-            const tip = `${t.metric}${m.part ? ` (${m.part})` : ''}, ${roleWords(t)}: ${fmtValue(m.value, m.interval)} ${t.accept.units} · ${m.dist?.words ?? ''}`;
+            const tip = `${t.metric}${m.part ? ` (${m.part})` : ''}, ${roleWords(t)}: ${fmtValue(m.value, m.interval)} ${t.accept.units} · ${m.dist?.words ?? ''}${caveat}`;
             const x = X(a.pos);
             s += `<g class="gl-m" data-glance="${esc(t.id)}" data-tip="${esc(tip)}" tabindex="-1">${ln === 'ref' ? `<circle class="gl-ring" cx="${x.toFixed(1)}" cy="${y}" r="3.6"/>` : `<rect class="gl-sq" x="${(x - 3).toFixed(1)}" y="${y - 3}" width="6" height="6"/>`}${a.clamped ? `<path class="gl-arrow" d="M${(x + (a.pos > 0 ? 6 : -6)).toFixed(1)} ${y} l${a.pos > 0 ? -4 : 4} -3 v6 Z"/>` : ''}</g>`;
           }
