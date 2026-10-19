@@ -68,7 +68,9 @@ export interface DriveReadout {
   living: number; adults: number; onModel: number; young: number;
   /** The last simulated hour, in animal-minutes, and its shares (model, held, rules). */
   hour: WindowMinutes; share: Minutes;
-  queue: { waiting: number; asking: number; passCalls: number; passWaiting: number; busy: boolean; msPerCall: number | null; lastPass: { ms: number; asks: number; calls: number } | null };
+  queue: { waiting: number; asking: number; passCalls: number; passWaiting: number; busy: boolean; msPerCall: number | null; lastPass: { ms: number; asks: number; calls: number } | null;
+    /** Why the pass under way waits for the worker ('' when it does not). */
+    worker: string };
   asks: number; byModel: number; calls: number; targetCalls: number;
   fallbacks: [string, number][]; fallbackTotal: number;
 }
@@ -90,7 +92,7 @@ export function driveReadout(w: World, loop: DriveLoop, d: Pick<DecisionControll
     result: DRIVE_RESULT, resultLong: DRIVE_RESULT_LONG, burnInDays: spec.burnInDays, minAge: spec.minAge,
     living, adults, onModel, young: living - adults, hour, share: shares(hour),
     queue: { waiting: loop.waiting(), asking: s.pass?.asking ?? -1, passCalls: s.pass?.calls ?? 0, passWaiting: s.pass?.waiting ?? 0, busy: loop.busy,
-      msPerCall: s.calls ? s.callMs / s.calls : null, lastPass: s.last },
+      msPerCall: s.calls ? s.callMs / s.calls : null, lastPass: s.last, worker: s.worker },
     asks: s.asks, byModel: s.byModel, calls: s.calls, targetCalls: s.targetCalls, fallbacks, fallbackTotal: loop.fallbackCount(),
   };
 }

@@ -8,11 +8,11 @@ import { resolve } from 'node:path';
 import { advance, createClock, setSpeed } from '../src/clock';
 import { topIndex } from '../src/kernel/decode';
 import { KernelError, type Kernel } from '../src/kernel/types';
-import type { DecisionProvider } from '../src/providers/types';
+import { ProviderError, type DecisionProvider } from '../src/providers/types';
 import { httpProvider } from '../src/providers/http';
 import { driveKernel } from '../src/drive/kernel';
 import { driveAnimal, driveReadout, recordPass } from '../src/drive/app';
-import { chipText, driveMind, fallbackText, percents } from '../src/ui/who-decides';
+import { chipText, driveMind, fallbackText, percents, queueText } from '../src/ui/who-decides';
 import { createR15Handler } from '../server/r15';
 import { R15Worker } from '../server/r15-worker';
 import { fakeR15Root } from '../scripts/lib/fake-r15-root';
@@ -301,4 +301,103 @@ test('a reopened world goes on with the ledger\'s owners it was saved with: the 
   // without the saved owners every act would read as the rules' until the animal is asked again
   const fresh = new DriveLoop(structuredClone(saved.world));
   assert.ok(Object.values(fresh.ledger.owners()).every(o => o === 'rules'));
+});
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Second reading (docs/staging/app-model-drives.md §6): a worker that is busy or stops is waited for, not answered by the
+// rules; a save between a tick and its pass; the achieved speed over the last real minute
+// ---------------------------------------------------------------------------------------------------------------------
+
+/** A stand-in R15 route: `decide` and `status` scripted per call. */
+function scripted(steps: (() => Promise<unknown>)[], statuses: (() => { ready: boolean; phase: string; error?: string; identity?: typeof identity })[]): DecisionProvider & { asked: number; polled: number } {
+  const p = { id: 'r15' as const, label: 'R15', asked: 0, polled: 0,
+    async status() { const s = statuses[Math.min(p.polled, statuses.length - 1)](); p.polled++; return s; },
+    async start() {},
+    decide: (async () => { const step = steps[Math.min(p.asked, steps.length - 1)]; p.asked++; return step(); }) as DecisionProvider['decide'] };
+  return p;
+}
+const ok = async () => ({ index: 0, probabilities: [0.6, 0.4], identity });
+const refuse = (status: number, message: string) => async () => { throw new ProviderError(message, status); };
+const ready = () => ({ ready: true, phase: 'ready', identity }), failed = (error: string) => () => ({ ready: false, phase: 'failed', error });
+const request0 = { context: { chimpId: 1 } as never, options: [], rulesIndex: -1 };
+
+test('the browser kernel waits for a busy or stopped worker and asks the same call again; only a refusal by a working server, a late call or a second stop goes to the rules', async () => {
+  // busy (a call still scoring; the route has no queue): asked again within the call's own limit
+  const busy = scripted([refuse(429, 'R15 is busy; no inference queue'), refuse(429, 'R15 is busy; no inference queue'), ok], [ready]);
+  assert.deepEqual(await driveKernel(busy, identity, { pollMs: 5 }).decide(request0, { random: Math.random }), await ok());
+  assert.equal(busy.asked, 3); assert.equal(busy.polled, 0);
+  // busy past the call's limit: no answer in time (the rules decide that one ask, counted)
+  const stuck = scripted([refuse(429, 'R15 is busy; no inference queue')], [ready]);
+  await assert.rejects(Promise.resolve(driveKernel(stuck, identity, { callMs: 30, pollMs: 5 }).decide(request0, { random: Math.random })), /no answer within 0 s \(the worker stayed busy\)/);
+  // the worker stopped (the score failed and the server released it): waited for, said why, then the same call once more
+  const waits: string[] = [];
+  const stopped = scripted([refuse(502, 'R15 worker exceeded 20000 ms'), ok], [failed('R15 worker exceeded 20000 ms'), failed('R15 worker exceeded 20000 ms'), () => ({ ready: false, phase: 'loading' }), ready]);
+  const answer = await driveKernel(stopped, identity, { pollMs: 5, onWait: why => waits.push(why) }).decide(request0, { random: Math.random }) as { waitedMs?: number };
+  assert.equal(stopped.asked, 2); assert.equal(stopped.polled, 4);
+  assert.deepEqual(waits, ['R15 worker exceeded 20000 ms', 'R15 worker exceeded 20000 ms', 'the worker is loading', '']);
+  assert.ok(typeof answer.waitedMs === 'number' && answer.waitedMs >= 10, 'the wait is reported, so the time per call leaves it out');
+  // a server that now serves another adapter is waited for too (the world is bound to its adapter), not asked
+  const other = scripted([refuse(503, 'R15 is not ready'), ok], [failed('R15 worker exited'), () => ({ ready: true, phase: 'ready', identity: { ...identity, adapter: 'r16-agg-s11' } }), ready]);
+  const seen: string[] = [];
+  await driveKernel(other, identity, { pollMs: 5, onWait: why => seen.push(why) }).decide(request0, { random: Math.random });
+  assert.equal(other.asked, 2); assert.deepEqual(seen, ['R15 worker exited', 'the server now serves r16-agg-s11', '']);
+  // a server that does not answer at all: waited for as a stopped worker
+  let down = true;
+  const gone: DecisionProvider = { id: 'r15', label: 'R15', async status() { if (down) throw new TypeError('Failed to fetch'); return ready(); }, async start() {},
+    decide: (async () => { if (down) throw new TypeError('Failed to fetch'); return ok(); }) as DecisionProvider['decide'] };
+  const goneWaits: string[] = [];
+  const pending = driveKernel(gone, identity, { pollMs: 5, onWait: why => { goneWaits.push(why); if (goneWaits.length === 3) down = false; } }).decide(request0, { random: Math.random });
+  const back = await pending as { waitedMs?: number }; delete back.waitedMs;
+  assert.deepEqual(back, await ok()); assert.match(goneWaits[0], /the server does not answer/);
+  // the worker stops again on the same call: that ask goes to the rules (counted as "worker stopped again")
+  const twice = scripted([refuse(502, 'R15 worker exited'), refuse(502, 'R15 worker exited'), ok], [failed('R15 worker exited'), ready, failed('R15 worker exited')]);
+  await assert.rejects(Promise.resolve(driveKernel(twice, identity, { pollMs: 5 }).decide(request0, { random: Math.random })), /the worker stopped again on this call \(R15 worker exited\)/);
+  assert.equal(fallbackReason({ chimpId: 1, kernel: 'gliner', by: 'rules', refusal: 'kernel-error', detail: 'the worker stopped again on this call (R15 worker exited)', index: -1, request: null, calls: 0 } as never), 'worker stopped again');
+  // a working server that refuses this call (an invalid context): the rules decide it, counted; nothing waits
+  const refused = scripted([refuse(400, 'R15 requires a valid marked kind or target context')], [ready]);
+  await assert.rejects(Promise.resolve(driveKernel(refused, identity, { pollMs: 5 }).decide(request0, { random: Math.random })), /R15 requires a valid marked kind/);
+  assert.equal(refused.asked, 1);
+  // a wait is cut short when the pass is cancelled (another world opened)
+  const cancel = new AbortController(), never = scripted([refuse(503, 'R15 is not ready')], [failed('R15 worker exited')]);
+  const cut = driveKernel(never, identity, { pollMs: 5, onWait: why => { if (why) cancel.abort(); } }).decide(request0, { random: Math.random, signal: cancel.signal });
+  await assert.rejects(Promise.resolve(cut), /cancelled/);
+});
+
+test('end to end: a worker killed while adults wait is waited for; once it is started again every ask is the model\'s, none goes to the rules for want of a worker', async t => {
+  const dir = mkdtempSync(resolve(tmpdir(), 'app-drive-kill-')), root = resolve(dir, 'dry', 'ft');
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const adapter = fakeR15Root(root);
+  const worker = new R15Worker({ trainingRoot: root, adapter, mainRoot: dir, python: resolve('scripts/lib/r16-fake-scorer.mjs') }, { processes: () => '' });
+  const handler = createR15Handler({ start: () => worker.start(), status: () => ({ ...worker.status(), dry: true }), score: b => worker.score(b) });
+  const server = createServer((req, res) => { void handler(req, res, () => { res.statusCode = 404; res.end(); }); });
+  server.listen(0, '127.0.0.1'); await once(server, 'listening');
+  t.after(async () => { await worker.close(); await new Promise<void>(done => server.close(() => done())); });
+  const address = server.address(); assert.ok(address && typeof address !== 'string');
+  const provider = httpProvider('r15', () => `http://127.0.0.1:${address.port}/api/providers/r15`);
+  const startWorker = async () => { await provider.start(); let s = await provider.status(); for (let i = 0; i < 400 && !s.ready; i++) { await new Promise(done => setTimeout(done, 25)); s = await provider.status(); } assert.equal(s.ready, true, s.error ?? ''); return s; };
+  const status = await startWorker();
+  const w = settled(), loop = new DriveLoop(w);
+  w.modelPolicy.drive!.adapter = { ...status.identity! };
+  const waits: string[] = [], kernel = driveKernel(provider, status.identity!, { pollMs: 20, onWait: why => { waits.push(why); loop.stats.worker = why; } });
+  for (let i = 0; i < 3000 && loop.waiting() < 4; i++) { if (loop.waiting()) await loop.pass(kernel); loop.tick(); }
+  const waiting = loop.waiting(), before = loop.fallbackCount();
+  assert.ok(waiting >= 4, `${waiting} adults wait`);
+  process.kill(worker.pid()!, 'SIGKILL');
+  for (let i = 0; i < 100 && (await provider.status()).ready; i++) await new Promise(done => setTimeout(done, 10));
+  const pass = loop.pass(kernel);
+  for (let i = 0; i < 200 && !loop.stats.worker; i++) await new Promise(done => setTimeout(done, 10));
+  assert.match(loop.stats.worker, /R15 worker exited/, 'the pass waits for the worker and says why');
+  assert.equal(loop.busy, true); assert.equal(loop.waiting(), waiting, 'nobody was decided meanwhile');
+  const r = driveReadout(w, loop, { ready: false, phase: 'failed', lastError: 'R15 worker exited', identity })!;
+  assert.match(queueText(r, w, 0, false), /waiting for the worker \(R15 worker exited\).*the rules do not step in/);
+  await startWorker();
+  const report = await pass;
+  assert.equal(report.settled.length, waiting);
+  assert.ok(report.settled.every(s => s.result.refusal !== 'kernel-error'), JSON.stringify(report.settled.map(s => [s.result.refusal, s.result.detail])));
+  // the model settles the pass; the rules only where R16's runner also counts them (a menu of one, or a choice an earlier
+  // animal's applied choice in the same pass made illegal)
+  assert.ok(report.settled.some(s => s.result.by === 'kernel'));
+  assert.ok(report.settled.every(s => s.result.by === 'kernel' || ['fewer-than-two-options', 'not-applied'].includes(s.result.refusal)), JSON.stringify(report.settled.map(s => [s.result.by, s.result.refusal])));
+  assert.equal(loop.fallbackCount() - before, report.settled.filter(s => s.result.by === 'rules').length);
+  assert.equal(waits.at(-1), ''); assert.equal(loop.stats.worker, '');
 });

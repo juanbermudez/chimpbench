@@ -181,7 +181,10 @@ async function runPass(loop: DriveLoop) {
   const w = world, abort = new AbortController(), identity = decider.identity!;
   driveAbort = abort;
   let report: Awaited<ReturnType<DriveLoop['pass']>>;
-  try { report = await loop.pass(driveKernel(driveProvider, identity), abort.signal); }
+  // a worker that stops is waited for, not answered by the rules (src/drive/kernel.ts): its state is read at once, so the
+  // next frame pauses the clock and says why; the same call is asked again once the bound adapter is served again
+  const onWait = (why: string) => { if (drive !== loop) return; loop.stats.worker = why; if (why) void refreshDecideStatus(decider); };
+  try { report = await loop.pass(driveKernel(driveProvider, identity, { onWait }), abort.signal); }
   catch (error) {
     if (drive === loop) { clock.playing = false; driveNotify(`The model's pass failed and the clock is paused: ${error instanceof Error ? error.message : String(error)}`, 2); }
     return;

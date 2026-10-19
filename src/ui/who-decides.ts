@@ -47,7 +47,8 @@ export function fallbackText(r: DriveReadout): string {
 }
 export function queueText(r: DriveReadout, w: World, achieved: number, playing: boolean): string {
   const q = r.queue;
-  const now = q.busy ? `asking ${q.asking >= 0 ? nameOf(w, q.asking) : '…'}, call ${q.passCalls + 1} of this pass (${q.passWaiting} adult${q.passWaiting === 1 ? '' : 's'} waiting at its start)`
+  const now = q.busy && q.worker ? `waiting for the worker (${q.worker}); ${q.asking >= 0 ? nameOf(w, q.asking) : 'this adult'} is asked again once it serves the adapter again, and the rules do not step in`
+    : q.busy ? `asking ${q.asking >= 0 ? nameOf(w, q.asking) : '…'}, call ${q.passCalls + 1} of this pass (${q.passWaiting} adult${q.passWaiting === 1 ? '' : 's'} waiting at its start)`
     : q.waiting ? `${q.waiting} adult${q.waiting === 1 ? '' : 's'} waiting` : 'nobody waiting';
   const per = q.msPerCall !== null ? ` · ${(q.msPerCall / 1000).toFixed(2)} s a call` : '';
   const last = q.lastPass ? ` · last pass ${q.lastPass.asks} ask${q.lastPass.asks === 1 ? '' : 's'}, ${q.lastPass.calls} call${q.lastPass.calls === 1 ? '' : 's'} in ${(q.lastPass.ms / 1000).toFixed(1)} s` : '';

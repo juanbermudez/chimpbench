@@ -34,7 +34,7 @@ export function fallbackReason(r: StepResult): string {
     case '': return '';
     case 'fewer-than-two-options': return 'one option only';
     case 'invalid-context': return 'request failed validation';
-    case 'kernel-error': return /no answer within/.test(r.detail) ? 'no answer in time' : /another adapter/.test(r.detail) ? 'answer from another adapter' : 'model error';
+    case 'kernel-error': return /no answer within/.test(r.detail) ? 'no answer in time' : /another adapter/.test(r.detail) ? 'answer from another adapter' : /stopped again/.test(r.detail) ? 'worker stopped again' : 'model error';
     case 'invalid-answer': return 'answer did not fit the menu';
     case 'not-applied': return 'choice no longer legal';
   }
@@ -47,13 +47,15 @@ export interface DriveStats {
   /** The pass under way: adults waiting at its start, calls made so far, the animal being asked (-1: none). */
   pass: { waiting: number; calls: number; asking: number } | null;
   last: { ms: number; asks: number; calls: number } | null;
+  /** Why the pass under way waits for the worker ('' when it does not): set by the kernel (src/drive/kernel.ts onWait). */
+  worker: string;
 }
 
 export class DriveLoop {
   readonly ledger: DriveLedger;
   readonly decoder: Decoder;
   readonly minAge: number;
-  stats: DriveStats = { passes: 0, asks: 0, byModel: 0, calls: 0, targetCalls: 0, callMs: 0, fallbacks: {}, pass: null, last: null };
+  stats: DriveStats = { passes: 0, asks: 0, byModel: 0, calls: 0, targetCalls: 0, callMs: 0, fallbacks: {}, pass: null, last: null, worker: '' };
   /** A tick whose ledger entry waits for its pass. */
   private open = false;
   private inFlight = false;
@@ -102,7 +104,8 @@ export class DriveLoop {
       const id = request.context.chimpId, stage = request.context.resourceChoice === 'target' ? 'target' : 'kind', c0 = Date.now();
       this.stats.pass!.asking = id;
       const answer: KernelAnswer = await kernel.decide(request, env);
-      const read = readAnswer(answer, request.options.length), ms = Date.now() - c0;
+      // a wait for a stopped worker (src/drive/kernel.ts) is not the call's time
+      const waited = (answer as { waitedMs?: unknown }).waitedMs, read = readAnswer(answer, request.options.length), ms = Date.now() - c0 - (typeof waited === 'number' ? waited : 0);
       this.stats.pass!.calls++; this.stats.calls++; this.stats.callMs += ms; if (stage === 'target') this.stats.targetCalls++;
       if (read) {
         const list = seen.get(id) ?? []; seen.set(id, list);
@@ -125,7 +128,7 @@ export class DriveLoop {
       this.stats.last = { ms: report.ms, asks: results.length, calls: report.calls };
       if (this.open) this.closeTick();
       return report;
-    } finally { this.inFlight = false; this.stats.pass = null; }
+    } finally { this.inFlight = false; this.stats.pass = null; this.stats.worker = ''; }
   }
 
   /** Total rules decisions for adults on the model (every reason). */
