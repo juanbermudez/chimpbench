@@ -11,7 +11,7 @@ import type { LiteTarget, RefArm, ReferenceFile, TargetsLite } from '../yardstic
 import { SECTIONS } from '../yardstick/sections';
 import { SAME_DEFINITION } from '../yardstick/same';
 import { armMatches, isPattern, neverCounted, refState, refusal, stressClones, worldState, type Mark } from '../yardstick/view';
-import { axisOf, dateWords, fmtValue, sig2, wallWords } from '../yardstick/words';
+import { axisOf, dateWords, daysWords, fmtValue, sig2, wallWords } from '../yardstick/words';
 import { poissonInterval } from '../yardstick/field';
 import { CAUSE_CLASSES, CAUSE_WORDS, causeClass, causeWords, censusSeries, dayOf, deathsByClass, firstYearMortality, isKilling, lifeRecord, type CauseClass, type LifeRecord } from '../yardstick/life';
 import { modelIdentityOf } from '../simulation';
@@ -252,7 +252,12 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
       }
       case 'infants': {
         const q = firstYearMortality(life);
-        const words = q.value === null ? `${q.basis} so far: ${q.short}` : `${q.basis} so far: first-year mortality ${fmtValue(q.value, q.interval)} (95% ${fmtValue(q.interval![0], q.interval)}–${fmtValue(q.interval![1], q.interval)})${life.days < 365 ? ', placed on the band only after a year of watching' : ''}`;
+        // the rate waits for the row's own minimum window, here as on the row (review, 19 October: the attack's
+        // "needs a year: 38 days so far" instead of a number); the counts and the exposure are shown from day 1
+        const need = lite!.targets.find(t => t.id === 'T-DEM-1')?.window.days ?? 365;
+        const words = q.value === null ? `${q.basis} so far: ${q.short}`
+          : life.days < need ? `${q.basis} so far; the first-year mortality is given after a year of watching (${daysWords(life.days)} so far)`
+          : `${q.basis}: first-year mortality ${fmtValue(q.value, q.interval)} (95% ${fmtValue(q.interval![0], q.interval)}–${fmtValue(q.interval![1], q.interval)})`;
         return `<div class="w-world">${head()}${demoNote}${infantLanesSvg(ownAges(life.infants))}<p class="w-sub">${esc(words)}.${life.infants.length ? ' Each lane is one infant, from birth: a diamond where it died, coloured by cause; a dot where it is now, dotted to its first birthday while it is still at risk.' : ''}</p>
           <p class="w-note">Nursing, suckling and weaning rows are read from the simulation directly in the reference runs; their live readers would need a hook in the simulation’s tick, so this build shows their reference values only.</p></div>`;
       }
