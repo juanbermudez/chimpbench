@@ -576,12 +576,14 @@ def cmd_train(a) -> int:
             save = run.save_checkpoint(name, include_optimizer=True, ttl_seconds=W.TTL_SECONDS)
             model = settle([save], f"the checkpoint {name}", EPOCH_CALL_WAIT_S, guard, t0)[0]
             guard.settled(run.id, infos(save))
-            its.saved(e + 1, name, model)
-            conn.client.balance()
-            extra = max(EPOCH_EXTRA_FLOOR, guard.spent() - before)
+            # the epoch's numbers are on file before anything else can fail: a saved epoch is always scored (before the
+            # review a failed balance read here lost them, and a resume skipped the epoch in the best's choice)
             epochs_log.add({"epoch": e + 1, "model": model, "name": name, "at": local_now(), "steps_done": k, "train_loss": round(sum(losses) / max(1, len(losses)), 5),
                             "dev": metrics, "max_sum_error": worst, "spent": round(guard.spent(), 4), "seconds": round(time.time() - t0)})
+            its.saved(e + 1, name, model)
             status.update(saved=name, dev_nll=metrics["all"]["nll"])
+            conn.client.balance()
+            extra = max(EPOCH_EXTRA_FLOOR, guard.spent() - before)
         outcome = "done"
     except Stop as s:
         outcome, detail = {"kill": "stopped-kill", "wall": "failed-operational", "recipe": "stopped-recipe"}.get(s.kind, "stopped-money"), s.detail
@@ -670,13 +672,20 @@ def write_report(root: Path, fake: bool) -> None:
     best = best_epoch(root)
     base = next((read_json(root / f"run-i{it['n']}/base-predict.json") for it in its if (root / f"run-i{it['n']}/base-predict.json").exists()), None)
     ledger = SpendGuard(root / "ledger.json", read_json(root / "ledger.json")["cap"]).summary() if (root / "ledger.json").exists() else None
+    agree = base_agreement(root, base)
+    sums = {"base_step0_predict": base and base.get("max_sum_error"), "base_decisions": fit.get("max_sum_error"),
+            **{r["name"]: r.get("max_sum_error") for r in recs}}
+    worst_sum = max((v for v in sums.values() if v is not None), default=None)
     usage = read_json(root / "usage.json")
     usage_usd = round(sum((u.get("cost_usd") or 0) for u in usage), 4) if usage else None
     adapter = read_json(root / f"adapters/{best['name']}/manifest.json") if best else None
     rep = {"name_of_results": W.NAME_OF_RESULTS, "fake": fake, "written_at": local_now(), "iterations": its, "fit": {k: fit.get(k) for k in ("passed", "exported", "refused", "refused_by_phase", "share", "codes", "final_rows")},
-           "dev": {"base_step0_predict": base["dev"] if base else None, "base_decisions": fit.get("base_dev_decisions"), "epochs": [{k: r[k] for k in ("iteration", "epoch", "name", "dev", "train_loss", "spent", "seconds")} for r in recs]},
+           "dev": {"base_step0_predict": base["dev"] if base else None, "base_decisions": fit.get("base_dev_decisions"), "epochs": [{k: r[k] for k in ("iteration", "epoch", "name", "dev", "train_loss", "spent", "seconds")} for r in recs],
+                   "base_agreement": agree, "max_sum_error": sums},
            "best": {k: best[k] for k in ("iteration", "epoch", "name", "model")} if best else None, "adapter": adapter and {"files": adapter["files"], "folder": f"artifacts/{root.name}/adapters/{best['name']}"},
-           "dollars": {"cap": ledger and ledger["cap"], "booked": ledger and ledger["booked"], "from_balance": ledger and ledger["measured_from_balance"], "from_usage_rows": usage_usd},
+           "dollars": {"cap": ledger and ledger["cap"], "booked": ledger and ledger["booked"], "from_balance": ledger and ledger["measured_from_balance"], "from_usage_rows": usage_usd,
+                       "usage_read_at": datetime.fromtimestamp((root / "usage.json").stat().st_mtime).astimezone().isoformat(timespec="seconds") if usage else None,
+                       "calls_timed_by_endor": ledger and ledger.get("calls_timed_by_endor"), "calls_untimed": ledger and ledger.get("calls_untimed"), "sessions": ledger and ledger.get("sessions")},
            "data_terms_reviewed_by_the_user": False, "gaps": GAPS}
     write_json(root / "report.json", rep)
     f = lambda m: f"soft cross-entropy {m['nll']:.4f}, top-1 {m['acc']:.3f} (n {m['n']})" if m and m.get("n") else "none"
@@ -687,7 +696,9 @@ def write_report(root: Path, fake: bool) -> None:
         lines += [f"- Ran {first['started_at']} to {last['ended_at']}; {len(its)} iteration(s); last outcome: {last['outcome']}" + (f" ({last['detail']})" if last.get("detail") else "") + "."]
     if ledger:
         lines += [f"- Dollars: ${ledger['spent']:.2f} counted against the ${ledger['cap']:.0f} cap (booked ${ledger['booked']:.2f}, from the balance ${ledger['measured_from_balance']:.2f}"
-                  + (f", Endor's usage rows ${usage_usd:.2f}" if usage_usd is not None else "") + ")."]
+                  + (f", Endor's hourly usage rows ${usage_usd:.2f} as read at {rep['dollars']['usage_read_at']}, which may lag" if usage_usd is not None else "") + ")."
+                  + f" Booked from {ledger.get('billed_calls')} billed calls, {ledger.get('calls_timed_by_endor')} timed by Endor's own timestamps"
+                  + (f", {ledger.get('calls_untimed')} untimed (booked by the strict bound)" if ledger.get("calls_untimed") else "") + f", {ledger.get('sessions')} GPU session(s)."]
     if fit:
         lines += [f"- Fit check: {fit['refused']['train']} of {fit['exported']['train']} training and {fit['refused']['dev']} of {fit['exported']['dev']} development packets refused"
                   f" ({'passed' if fit['passed'] else 'stopped: over 2%'}); trained on {fit['final_rows']['train']} rows, scored on {fit['final_rows']['dev']}."]
@@ -695,12 +706,34 @@ def write_report(root: Path, fake: bool) -> None:
     for label, d in [("untouched base, step-0 predict", base and base["dev"]), ("untouched base, fit-check decisions", fit.get("base_dev_decisions"))] + [(f"epoch {r['epoch']} ({r['name']})", r["dev"]) for r in recs]:
         if d:
             lines.append(f"- {label}: all {f(d['all'])}; kind {f(d['kind'])}; target {f(d['target'])}")
+    if worst_sum is not None:
+        lines += ["", f"Largest gap of an answer's probabilities from a sum of 1: {worst_sum:.4f}" + (
+            " (over 0.02: Endor's answers are not one distribution over the options; the numbers above are read after dividing by the sum)" if worst_sum > W.SUM_TOLERANCE else ".")]
+    if agree:
+        lines += [f"The untouched base read twice on the same {agree['n']} development packets (step-0 predict against the fit check's decisions): "
+                  f"largest difference of an option's probability {agree['max']:.4f}, median of the rows' largest {agree['median']:.4f}"
+                  + (" (over 0.05: the two readings disagree beyond the few hundredths Endor states; read the development numbers with care)" if agree["max"] > 0.05 else ".")]
     if best:
         lines += ["", f"Best epoch: {best['epoch']} ({best['model']}), by development soft cross-entropy."]
         if adapter:
             lines.append(f"Downloaded, not loaded: {rep['adapter']['folder']} (" + ", ".join(f"{n} {v['sha256'][:12]}" for n, v in adapter["files"].items()) + ").")
     lines += ["", "Endor's data terms were not reviewed by the user. The gaps from our recipe are in docs/staging/endor-train.md §5.", ""]
     (root / "report.md").write_text("\n".join(lines))
+
+
+def base_agreement(root: Path, base: dict | None) -> dict | None:
+    """The untouched base read on two paths, row by row on the same development packets: run.predict at step 0 and the
+    fit check's decisions. Endor says they agree within a few hundredths; a larger difference (answers in another
+    order, another model) would make every development number suspect."""
+    fit_dev, answers = root / "fit/dev-final.jsonl", root / "fit/answers.jsonl"
+    if not base or not fit_dev.exists() or not answers.exists():
+        return None
+    by_id = {r["id"]: r for r in W.read_jsonl(answers)}
+    rows = W.read_jsonl(fit_dev)
+    if len(rows) != len(base["probs"]):
+        return None
+    worst = sorted(max(abs(p - q) for p, q in zip(pa, by_id[r["id"]]["probs"])) for r, pa in zip(rows, base["probs"]))
+    return {"n": len(worst), "max": round(worst[-1], 5), "median": round(worst[len(worst) // 2], 5)}
 
 
 def cmd_report(a) -> int:

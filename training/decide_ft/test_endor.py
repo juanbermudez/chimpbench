@@ -601,6 +601,8 @@ class Runs(unittest.TestCase):
         # what it made: an epoch per checkpoint, the best named, the adapter downloaded (not loaded), the report
         rep = json.loads((self.root / "report.json").read_text())
         self.assertEqual(len(rep["dev"]["epochs"]), 3)
+        self.assertEqual((rep["dev"]["base_agreement"]["n"], rep["dev"]["base_agreement"]["max"]), (len(dev), 0.0))  # both readings of the base agree
+        self.assertLessEqual(max(rep["dev"]["max_sum_error"].values()), 1e-6)
         best = rep["best"]["name"]
         self.assertEqual(best, min(rep["dev"]["epochs"], key=lambda e: e["dev"]["all"]["nll"])["name"])
         folder = self.root / "adapters" / best
@@ -691,6 +693,64 @@ class Runs(unittest.TestCase):
         self.assertEqual([b["adam_params"]["learning_rate"] for b in sent(fake, "optim_step")[-100:]], lrs[50:])
         rep = json.loads((self.root / "report.json").read_text())
         self.assertEqual([e["name"] for e in rep["dev"]["epochs"]], ["i1-e1", "i2-e2", "i2-e3"])
+
+    def test_a_saved_epoch_keeps_its_numbers_when_what_follows_fails(self):
+        # the balance read after the second save fails: before the review epoch 2's numbers were lost, and after the
+        # resume the best epoch was chosen without it
+        exp, _, _ = self.export(400, 12)
+        fake = FakeEndor(refuse_share=0)
+        run_fit(ns(self.root, exp, fake))
+        handler, saves = fake.handler, [0]
+
+        def failing(request):
+            if request.url.path.endswith("/save_checkpoint"):
+                saves[0] += 1
+            if request.url.path == "/v1/balance" and saves[0] == 2:
+                return fake._err(500, "internal", "balance service down")
+            return handler(request)
+        fake.handler = failing
+        self.assertEqual(run_train(ns(self.root, exp, fake)), 75)
+        self.assertEqual([r["name"] for r in T.epoch_records(self.root)], ["i1-e1", "i1-e2"])
+        fake.handler = handler
+        self.assertEqual(run_train(ns(self.root, exp, fake, reason="the balance read failed after i1-e2")), 0)
+        rep = json.loads((self.root / "report.json").read_text())
+        self.assertEqual([e["name"] for e in rep["dev"]["epochs"]], ["i1-e1", "i1-e2", "i2-e3"])
+        self.assertEqual(rep["best"]["name"], min(rep["dev"]["epochs"], key=lambda e: e["dev"]["all"]["nll"])["name"])
+
+    def test_answers_off_one_distribution_or_out_of_order_are_flagged(self):
+        exp, _, dev = self.export(61)
+        fake = FakeEndor(refuse_share=0)
+        answer = fake._answer
+
+        def loose(q, steps):  # probabilities summing to about 1.8
+            a = answer(q, steps)
+            a["probabilities"] = {k: min(1.0, v * 1.8) for k, v in a["probabilities"].items()}
+            return a
+        fake._answer = loose
+        run_fit(ns(self.root, exp, fake))
+        handler = fake.handler
+
+        swapped = []
+
+        def swapped_predict(request):  # the step-0 predict answers two rows of the same width in each other's place
+            r = handler(request)
+            if request.url.path.endswith("/predict") and not swapped:
+                answers = fake.futures[json.loads(r.content)["future_id"]]["result"]["answers"]
+                widths = [len(a["action"]["probabilities"]) for a in answers]
+                i, j = next((i, j) for i in range(len(widths)) for j in range(i + 1, len(widths)) if widths[i] == widths[j])
+                answers[i], answers[j] = answers[j], answers[i]
+                swapped.append((i, j))
+            return r
+        fake.handler = swapped_predict
+        self.assertEqual(run_train(ns(self.root, exp, fake)), 0)
+        rep = json.loads((self.root / "report.json").read_text())
+        md = (self.root / "report.md").read_text()
+        self.assertGreater(rep["dev"]["max_sum_error"]["base_decisions"], 0.02)
+        self.assertIn("not one distribution", md)
+        self.assertGreater(rep["dev"]["base_agreement"]["max"], 0.05)
+        self.assertIn("disagree", md)
+        probs, err = W.answer_probs({"c0": 0.9, "c1": 0.9}, {"state": {"me": "x"}, "questions": {"action": {"type": "choice", "instructions": "i", "criteria": {"c0": "a", "c1": "b"}}}})
+        self.assertEqual((probs, round(err, 6)), ([0.5, 0.5], 0.8))  # scored as one distribution, the gap reported
 
     def test_a_learning_rate_endor_changes_stops_the_run(self):
         exp, _, _ = self.export(61)

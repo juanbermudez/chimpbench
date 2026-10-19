@@ -251,15 +251,22 @@ def run_name(iteration: int) -> str:
 
 # ------------------------------------------------------------------ development scoring (train_r11.evaluate's numbers)
 
+SUM_TOLERANCE = 0.02           # Endor's own tolerance on a soft label's sum; an answer further from 1 is flagged
+
 def answer_probs(probabilities: dict, packet: dict) -> tuple[list[float], float]:
-    """An answer's probabilities in criteria order, and how far their sum is from 1. Refuses another option set."""
+    """An answer's probabilities in criteria order, put on one scale over the offered options (divided by their sum,
+    as our soft cross-entropy reads one distribution), and how far their sum was from 1 before: the report prints
+    the largest. Refuses another option set."""
     keys = check_question(packet["questions"][QUESTION])
     if set(probabilities) != set(keys):
         raise WireError("an answer names other options than the question")
     probs = [float(probabilities[k]) for k in keys]
     if any(not math.isfinite(p) or p < 0 or p > 1 for p in probs):
         raise WireError("an answer's probability is outside [0, 1]")
-    return probs, abs(sum(probs) - 1.0)
+    total = sum(probs)
+    if not total > 0:
+        raise WireError("an answer gives every option probability 0")
+    return [p / total for p in probs], abs(total - 1.0)
 
 
 def dev_metrics(rows: list[dict], probs: list[list[float]]) -> dict:
