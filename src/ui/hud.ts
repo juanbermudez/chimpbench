@@ -52,13 +52,14 @@ export function createHud(root: HTMLElement, ctx: Ctx) {
   <div class="bar-sep"></div>
   <div class="pop" title="Living individuals · births · deaths since the run started">
     <span class="pop-main"><b data-k="alive">0</b><span>alive</span></span>
-    <span class="pop-sub"><b data-k="births">0</b> born · <b data-k="deaths">0</b> died</span>
+    <button class="pop-sub" data-act="wild" data-section="births" aria-label="Births and deaths since the run started: open How close to the wild (K)"><b data-k="births">0</b> born · <b data-k="deaths">0</b> died</button>
   </div>
   <div class="bar-spacer"></div>
   <div class="bar-group bar-actions">
     <span class="snd-slot" data-slot="sound"></span>
     <button class="hud-btn" data-act="society" aria-keyshortcuts="T" aria-controls="right-sidebar" aria-expanded="false" title="Society: kinship, dominance, bonds, alpha history (T)">${icon('tree')}<span>Society</span></button>
     <button class="hud-btn" data-act="experiments" aria-keyshortcuts="E" aria-controls="right-sidebar" aria-expanded="false" title="Field experiments (E)">${icon('flask')}<span>Experiments</span></button>
+    <button class="hud-btn icon-only" data-act="wild" aria-keyshortcuts="K" aria-label="How close to the wild (K)" title="How close to the wild: this simulation beside field studies of wild chimpanzees (K)">${icon('ruler')}</button>
     <div class="bar-sep"></div>
     <button class="hud-btn icon-only" data-act="settings" aria-label="Settings" title="Settings">${icon('gear')}</button>
     <a class="hud-btn icon-only" href="${esc(ctx.deps.guideUrl)}" target="_blank" rel="noopener noreferrer" data-guide aria-label="About ChimpBench (opens in a new tab)" title="About ChimpBench (new tab)">${icon('help')}</a>

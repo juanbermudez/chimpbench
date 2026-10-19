@@ -26,6 +26,8 @@ import { installTooltips } from './tooltip';
 import { installPopovers } from './popover';
 import { menuButton } from './menu';
 import { experimentTarget, partyWaking, wakeWatch } from './watch-rules';
+// Stage V1 (docs/staging/v1-field.md): the page "How close to the wild" and the card's Records overlay load on first use.
+import type { WildPage, WildUi } from './wild-page';
 
 // UI composition root. Owns UI state and wires components; knows nothing
 // about how the world is simulated or rendered (see UiDeps). main.ts and the
@@ -64,6 +66,10 @@ export interface Ctx {
   openSimulations(): void;
   notify(n: { text: string; cat?: FeedCat; severity?: number; actor?: number; title?: string; action?: { label: string; run(): void } }): void;
   refresh(): void;
+  /** Stage V1: the page "How close to the wild" (K), opened at a section; the range-map card's Records overlay. */
+  openWild?(section?: string): void;
+  showRecords?(on?: boolean): void;
+  wildClosed?(): void;
 }
 
 // Tips say what each layer draws in the forest (scene.ts setLayer and the render modules it gates).
@@ -113,7 +119,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
           <div class="cam"><button class="cam-btn" data-act="camera-menu" aria-haspopup="menu" aria-expanded="false" aria-controls="cam-menu"></button>
             <div class="cam-menu" id="cam-menu" role="menu" aria-label="Camera" hidden>${VIEWS.map(v => `<button role="menuitemradio" data-viewmode="${v.id}" aria-checked="false" tabindex="-1">${icon(v.ic)}<span>${v.label}</span><kbd>${v.key}</kbd></button>`).join('')}<div class="cm-sep" role="separator"></div><button role="menuitem" data-act="reset-camera" tabindex="-1">${icon('focus')}<span>Reset camera</span></button></div>
           </div>
-          <div class="map-layers" role="group" aria-label="Layers">${LAYERS.map(l => `<button data-layer="${l.id}" aria-label="${l.label}${l.key ? ` (${l.key})` : ''}" data-tip="${esc(l.tip)}"${l.key ? ` data-key="${l.key}"` : ''}>${icon(l.ic)}</button>`).join('')}</div>
+          <div class="map-layers" role="group" aria-label="Layers">${LAYERS.map(l => `<button data-layer="${l.id}" aria-label="${l.label}${l.key ? ` (${l.key})` : ''}" data-tip="${esc(l.tip)}"${l.key ? ` data-key="${l.key}"` : ''}>${icon(l.ic)}</button>`).join('')}<button data-act="records" aria-pressed="false" aria-label="Records" data-tip="Records: each community’s true range and the places where animals died (map overlay)">${icon('records')}</button></div>
         </div>
       </section>
     </aside>
@@ -137,6 +143,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     <div class="mobile-bar" data-occluder><button data-mobile="left" aria-pressed="false">${icon('history')}<span>Field log</span></button><button data-mobile="right" aria-pressed="false">${icon('users')}<span>Communities</span></button></div>
     <div class="toasts" aria-live="polite"></div>
     <div class="society" hidden data-occluder></div>
+    <div class="wild" hidden data-occluder></div>
     <dialog class="settings glass" data-occluder></dialog>
     <dialog class="sims" aria-label="Simulations" data-occluder></dialog>
     <div class="loading" role="status"><span class="load-name">ChimpBench</span><span>Growing a living forest…</span></div>
@@ -154,6 +161,9 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     panelTroopId: null,
   };
   const ranks = createRankTracker();
+  // Stage V1: the page's lane and reference arm (saved with the simulation's view state), the Records overlay switch.
+  const wildUi: WildUi = { lane: null, arm: null };
+  let wildPage: WildPage | null = null, wildLoading: Promise<WildPage> | null = null, recordsOn = false, recordsLoading = false;
   let timeOpen = false;
   // Stage W14: the animals whose waking ends the field map's dawn fast-forward (watch-rules.ts), read every frame.
   let prologueWatch: Chimp[] = [];
@@ -295,6 +305,19 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
       setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 400); }, severity >= 3 ? 6500 : 4800);
     },
     refresh() { update(true); },
+    openWild(section) {
+      if (state.society.open) ctx.closeSociety();
+      wildLoading ??= import('./wild-page').then(m => (wildPage = m.createWildPage(q('.wild'), ctx, wildUi)));
+      void wildLoading.then(p => { void p.show(section); syncPanels(); });
+    },
+    wildClosed() { syncPanels(); ctx.refresh(); },
+    showRecords(on) {
+      recordsOn = on ?? !recordsOn; syncDock();
+      if (!recordsOn) { minimap.setOverlay(null); return; }
+      if (recordsLoading) return;
+      recordsLoading = true;
+      void import('./records-card').then(m => { recordsLoading = false; if (recordsOn) minimap.setOverlay(m.createRecordsOverlay(), m.RECORDS_LEGEND); });
+    },
   };
 
   const hud = createHud(q('.hud'), ctx);
@@ -339,6 +362,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
       b.setAttribute('aria-label', `Camera: ${v.label}`); b.dataset.tip = `Camera: ${v.label}`;
     }
     root.querySelectorAll<HTMLElement>('[data-layer]').forEach(b => b.setAttribute('aria-pressed', String(state.layers[b.dataset.layer as Layer])));
+    setAttr(q('[data-act="records"]'), 'aria-pressed', String(recordsOn));
   }
   let peekMode = '';
   function syncPanels() {
@@ -506,9 +530,11 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
   root.addEventListener('click', e => {
     const el = e.target as HTMLElement;
     // Mouse clicks release focus so Space/number shortcuts keep driving the clock; keyboard activation (detail 0) keeps focus.
-    if (e.detail > 0) { const b = el.closest<HTMLElement>('button'); if (b && !b.closest('dialog, .society')) requestAnimationFrame(() => { if (document.activeElement === b) b.blur(); }); }
+    if (e.detail > 0) { const b = el.closest<HTMLElement>('button'); if (b && !b.closest('dialog, .society, .wild')) requestAnimationFrame(() => { if (document.activeElement === b) b.blur(); }); }
     const v = el.closest<HTMLElement>('[data-viewmode]'); if (v) { ctx.setView(v.dataset.viewmode as ViewMode); return; }
     const l = el.closest<HTMLElement>('[data-layer]'); if (l) { ctx.toggleLayer(l.dataset.layer as Layer); return; }
+    if (el.closest('[data-act="records"]')) { ctx.showRecords?.(); return; }
+    const wb = el.closest<HTMLElement>('[data-act="wild"]'); if (wb) { if (wildPage?.open) wildPage.close(); else ctx.openWild?.(wb.dataset.section); return; }
     const md = el.closest<HTMLElement>('.rs-tabs [data-mode]'); if (md) { setMode(md.dataset.mode as RightMode); return; }
     if (el.closest('[data-act="open-right"]')) { ctx.setRight(true); return; }
     if (el.closest('[data-act="collapse-right"]')) { ctx.setRight(false); return; }
@@ -541,8 +567,11 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 's' && sims.available) { e.preventDefault(); void sims.saveNow(); return; }
     if (e.metaKey || e.ctrlKey || e.altKey || /^(INPUT|TEXTAREA|SELECT)$/.test(tgt.tagName) || q<HTMLDialogElement>('dialog.settings').open || q<HTMLDialogElement>('dialog.sims').open) return;
     const k = e.key;
+    // While the page "How close to the wild" is open, only its own keys, Escape, K and the clock's keys act.
+    if (wildPage?.open && !(k === 'Escape' || k === ' ' || /^[1-9kK]$/.test(k))) return;
     if (k === 'Escape') {
       if (timeOpen) { ctx.toggleTimePanel(false); return; }
+      if (wildPage?.open) { wildPage.close(); return; }
       if (state.picking) { ctx.setPicking(false); return; }
       if (state.view === 'cinematic') ctx.setView('rts');
       else if (state.society.open) ctx.closeSociety();
@@ -559,6 +588,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
       case 'v': ctx.setView(state.view === 'cinematic' ? 'rts' : 'cinematic'); break;
       case 'r': ctx.setView('rts'); break;
       case 't': state.society.open ? ctx.closeSociety() : ctx.toggleSide('society'); break;
+      case 'k': if (wildPage?.open) wildPage.close(); else ctx.openWild?.(); break;
       case 'e': ctx.toggleSide('experiments'); break;
       case 'm': ctx.toggleSide('model'); break;
       case 'l': ctx.toggleLayer('labels'); break;
@@ -587,7 +617,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
    * view, the sidebar panes that are not showing) do no DOM work; they refresh in full the moment they come back.
    */
   function visibility() {
-    const narrow = isNarrow(), cine = state.view === 'cinematic', covered = cine || state.society.open;
+    const narrow = isNarrow(), cine = state.view === 'cinematic', covered = cine || state.society.open || !!wildPage?.open;
     return {
       bar: !cine,
       left: !covered && (narrow ? leftOpen : state.sidebarOpen),
@@ -608,6 +638,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     force => {
       const w = deps.getWorld();
       if (state.society.open) society.update(force);
+      if (wildPage?.open) wildPage.update(force);
       // (Stage W14: the dawn fast-forward's end is checked every frame, in tick: checkPrologue.)
       updateCaption();
       syncPanels();
@@ -648,7 +679,9 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
   /** View state worth resuming with a saved simulation. Layout preferences (sidebars, the chimp panel) stay per browser. */
   function captureUi(): Record<string, unknown> {
     return { selectedId: state.selectedId, highlightTroopId: state.highlightTroopId, tab: state.tab, view: state.view, layers: { ...state.layers }, panelTroopId: state.panelTroopId,
-      society: { troop: state.society.troop, view: state.society.view }, feedMuted: [...state.feedMuted] };
+      society: { troop: state.society.troop, view: state.society.view }, feedMuted: [...state.feedMuted],
+      // stage V1: interface keys only; older builds ignore them
+      records: recordsOn, wild: { lane: wildUi.lane, arm: wildUi.arm } };
   }
   /** Applies saved view state defensively: unknown or stale values keep the current ones. */
   function applyUi(ui: Record<string, unknown>) {
@@ -668,6 +701,10 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     if (Array.isArray(ui.feedMuted)) state.feedMuted = new Set(ui.feedMuted.filter((x): x is string => typeof x === 'string'));
     const pt = ui.panelTroopId;
     state.panelTroopId = typeof pt === 'number' && w.troops.some(t => t.id === pt) ? pt : null;
+    const wi = ui.wild as { lane?: unknown; arm?: unknown } | undefined;
+    wildUi.lane = wi && (wi.lane === 'ref' || wi.lane === 'world') ? wi.lane : null;
+    wildUi.arm = wi && typeof wi.arm === 'string' ? wi.arm : null;
+    if (typeof ui.records === 'boolean' && ui.records !== recordsOn) ctx.showRecords?.(ui.records);
   }
   /** After main.ts swapped the world (new or opened simulation): reset UI caches, then apply saved view state if any. */
   function worldReplaced(ui: Record<string, unknown> | null) {
@@ -676,6 +713,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     if (ui) { applyUi(ui); resumed = true; endPrologue(false); }
     else if (prologue) prologueWatch = deps.getWorld().size > 1000 ? wakeWatch(deps.getWorld(), ctx.selected()) : [];
     ranks.reset(); feed.reset(); feed.prime(); applySceneState(); syncDock(); syncPanels();
+    wildPage?.reset();
     ctx.refresh();
   }
 

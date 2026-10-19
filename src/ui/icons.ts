@@ -17,6 +17,9 @@ const P: Record<string, string> = {
   drop: '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z"/>',
   users: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20v-1.5A5.5 5.5 0 0 1 8.5 13h1a5.5 5.5 0 0 1 5.5 5.5V20"/><path d="M16 5.2a3 3 0 0 1 0 5.6M18 13.3a5 5 0 0 1 3 4.7V20"/>',
   sprout: '<path d="M12 21v-9"/><path d="M12 12C12 8 9 5 4 5c0 4 3 7 8 7ZM12 14c0-3 2.5-6 7-6 0 3.5-2.5 6-7 6Z"/>',
+  // stage V1: the page "How close to the wild" (a ruler) and the map card's Records (a range outline with a mark inside)
+  ruler: '<path d="M3.5 16.5 16.5 3.5l4 4-13 13Z"/><path d="m7 13 1.6 1.6M9.8 10.2l2.4 2.4M12.6 7.4l1.6 1.6M15.4 4.6l2.4 2.4"/>',
+  records: '<path d="M5.5 7.5c2.5-3.5 9-4.2 12.5-1.2s2.5 9.4-1.5 11.4-10.5 1.8-11.8-2.2c-.8-2.6-.8-5.5.8-8Z" stroke-dasharray="0"/><path d="m10 10.5 3.5 3.5M13.5 10.5 10 14"/>',
   dagger: '<path d="M12 2v14M8 8h8M10 16h4l-1 6h-2Z"/>',
   brain: '<path d="M9 4a3 3 0 0 0-3 3 3 3 0 0 0-2 5 3 3 0 0 0 2 5 3 3 0 0 0 6 1V5a2 2 0 0 0-3-1ZM15 4a3 3 0 0 1 3 3 3 3 0 0 1 2 5 3 3 0 0 1-2 5 3 3 0 0 1-6 1"/><path d="M12 9h-2M12 14h2"/>',
   tree: '<circle cx="12" cy="5" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><circle cx="12" cy="18" r="2"/><path d="M12 7v9M12 11H6v5M12 11h6v5"/>',
