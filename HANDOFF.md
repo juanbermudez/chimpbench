@@ -77,7 +77,7 @@ October) is planned, not run: the SDK is installed outside the repo (`/Volumes/D
 0.8.0), the user's key is in the main checkout's `.env` (git-ignored; agents never open it), the account answers with a
 $100 credit, and a visual guide is published for the user (claude.ai artifact "Training on Endor"); nothing has been
 sent, and the user's five answers are awaited. Stage R16's session 1 still waits for swap under 6 GB (a Mac restart).
-**19 October (written 09:30 EDT).** The Endor test ran (the user: "Do the real training run on endor, …" and "i dont
+**19 October (written 09:30 EDT, updated 10:09 EDT).** The Endor test ran (the user: "Do the real training run on endor, …" and "i dont
 care about the local, I trust endor works, run the trainging."): 08:21 to 08:44 EDT from the frozen checkout
 `bench-endor`, outcome done. Against the rules' label on 384 development packets, top-1 went from 0.438 (Endor's
 untouched base) to 0.797, soft cross-entropy from 1.460 to 0.634; it cost $0.62 by Endor's settled bill (read once at
