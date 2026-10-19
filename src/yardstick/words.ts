@@ -83,6 +83,47 @@ export function bandText(band: OpenBand): string {
   if (band.hi !== null) return `at most ${band.hi}`;
   return 'no numeric band';
 }
+/** A band edge as a strip label: at most three significant digits ("6.19", "11.4"; "0.0385" and "1900" unchanged). The
+ * detail keeps the band as written (bandText). Review of 19 October: T-FIS-5's strip read "6.1905" and "11.4069". */
+export const edgeText = (v: number) => fmtValue(v);
+/** The band in strip labels: bandText with edgeText's precision. */
+export function bandShort(band: OpenBand): string {
+  if (band.lo !== null && band.hi !== null) return `${edgeText(band.lo)}–${edgeText(band.hi)}`;
+  if (band.lo !== null) return `at least ${edgeText(band.lo)}`;
+  if (band.hi !== null) return `at most ${edgeText(band.hi)}`;
+  return 'no numeric band';
+}
+
+/** A file of this repository cited in a text, with what may follow it ("scripts/e-bench.ts NEEDS_YEAR",
+ * "docs/realism-design.md §5.3.1 P5 rule", "scripts/signals-metrics.ts --calibrate", "data/targets.json protocolLog"). */
+const REPO_REF = /\b(?:scripts|src|docs|data|tests|artifacts)\/[\w./-]*\w(?:\s+(?:--[\w-]+|§[\d.]*\d(?:\s+P\d+\s+rule)?|[A-Z][A-Z_]{3,}\b|protocolLog\b))*/g;
+/** A bracketed aside that only lists code names ("(bodyBonesDays, bodyFleshDays, …)"). */
+const CODE_LIST = /\s*\((?:\s*[a-z]+[A-Z]\w*\s*,)+\s*[a-z]+[A-Z]\w*\s*\)/g;
+
+/**
+ * A text of the bundles in plain words for a person (review of 19 October): the targets' definitions, flag reasons,
+ * windows and the scorer's notes cite this repository's files ("(scripts/e-bench.ts NEEDS_YEAR)", "covered by
+ * tests/sim-relations.test.ts") and source keys ("wilson2012"). The files go (a phrase that names one keeps its sense:
+ * "scored by scripts/c9-scenario.ts" is "scored on paired scenario runs"), asides left empty go, lists of code names go,
+ * and a source key with an entry in `sources` becomes its authors and year. Nothing else is changed.
+ */
+export function plainWords(s: string, sources?: Record<string, { authors: string; year: number | string }>): string {
+  let t = s
+    .replace(/\bscored by (?:scripts\/[\w.-]+)(?:\s*(?:,|and)\s*scripts\/[\w.-]+)*/g, 'scored on paired scenario runs')
+    .replace(/\bcovered by tests\/[\w.-]+/g, 'covered by the simulation’s tests')
+    .replace(/\bSim: scripts\/[\w.-]+\s+/g, 'In the simulation: the ')
+    .replace(REPO_REF, '')
+    .replace(CODE_LIST, '');
+  for (let i = 0; i < 3; i++) t = t.replace(/\(\s*[,;]\s*/g, '(').replace(/\s*[,;]\s*\)/g, ')').replace(/\s*\(\s*\)/g, '');
+  t = t.replace(/\s*[;,]\s*$/, '').replace(/\s+([,.;:])/g, '$1').replace(/ {2,}/g, ' ').trim();
+  if (sources) t = t.replace(/\b([a-z][a-z-]*?)(\d{4}[a-z]?)\b/g, (m: string) => {
+    const src = sources[m];
+    if (!src) return m;
+    const lead = src.authors.split(/,\s*/)[0].replace(/\s+\S+$/, '') || src.authors;
+    return `${lead}${/,/.test(src.authors) ? ' et al.' : ''} ${src.year}`;
+  });
+  return t;
+}
 
 /**
  * A number with no more precision than its interval supports: two significant digits of the interval's width; with no

@@ -6,7 +6,7 @@
 // page morphs them in.
 
 import type { LiteSource, LiteTarget, RefArm } from '../yardstick/bundle';
-import { bandText, dateWords, fmtValue, patternWords, sig2, wideBand, type Distance } from '../yardstick/words';
+import { bandShort, bandText, dateWords, edgeText, fmtValue, patternWords, plainWords, sig2, wideBand, type Distance } from '../yardstick/words';
 import { bandsOf, type Mark, type RefState, type WorldState } from '../yardstick/view';
 import { SAME_DEFINITION } from '../yardstick/same';
 import type { OpenBand } from '../yardstick/band-distance';
@@ -45,8 +45,8 @@ function stripLine(y: number, band: OpenBand, ref: Mark | undefined, mine: Mark 
   s += `<rect class="ys-band${openL ? ' open-l' : ''}${openR ? ' open-r' : ''}" x="${bl.toFixed(1)}" y="${y - 5}" width="${Math.max(2, br - bl).toFixed(1)}" height="10" rx="5"/>`;
   if (openL || openR) s += `<rect class="ys-fade-${openL ? 'l' : 'r'}" x="${(openL ? x0 : br - 24).toFixed(1)}" y="${y - 5}" width="24" height="10"/>`;
   if (labels) {
-    const t = (x: number, v: number, anchor: string) => `<text class="ys-edge" x="${x.toFixed(1)}" y="${y + 17}" text-anchor="${anchor}">${esc(String(v))}</text>`;
-    if (band.lo !== null && band.hi !== null && br - bl < 34) s += `<text class="ys-edge" x="${((bl + br) / 2).toFixed(1)}" y="${y + 17}" text-anchor="middle">${esc(bandText(band))}</text>`;
+    const t = (x: number, v: number, anchor: string) => `<text class="ys-edge" x="${x.toFixed(1)}" y="${y + 17}" text-anchor="${anchor}">${esc(edgeText(v))}</text>`;
+    if (band.lo !== null && band.hi !== null && br - bl < 34) s += `<text class="ys-edge" x="${((bl + br) / 2).toFixed(1)}" y="${y + 17}" text-anchor="middle">${esc(bandShort(band))}</text>`;
     else { if (band.lo !== null) s += t(bl, band.lo, band.hi === null ? 'start' : 'middle'); if (band.hi !== null) s += t(br, band.hi, band.lo === null ? 'end' : 'middle'); }
   }
   const whisker = (m: Mark, cls: string, dy: number) => (m.interval ? `<line class="${cls}" x1="${X(m.interval[0]).toFixed(1)}" x2="${X(m.interval[1]).toFixed(1)}" y1="${y + dy}" y2="${y + dy}"/>` : '');
@@ -73,7 +73,7 @@ export function stripSvg(t: LiteTarget, ref: Mark[], mine: Mark[]): string {
   if (bands.length === 1) return `<svg class="ys-strip" viewBox="0 0 ${W} 36" aria-hidden="true">${stripLine(14, bands[0].band, ref[0], mine[0], PAD, W - PAD, true)}</svg>`;
   const lines = bands.map((b, i) => {
     const y = 10 + i * 17;
-    return `<text class="ys-part" x="0" y="${y + 3.5}">${esc(b.part!)} ${esc(bandText(b.band))}</text>${stripLine(y, b.band, ref.find(m => m.part === b.part), mine.find(m => m.part === b.part), 96, W - PAD, false)}`;
+    return `<text class="ys-part" x="0" y="${y + 3.5}">${esc(b.part!)} ${esc(bandShort(b.band))}</text>${stripLine(y, b.band, ref.find(m => m.part === b.part), mine.find(m => m.part === b.part), 96, W - PAD, false)}`;
   }).join('');
   return `<svg class="ys-strip" viewBox="0 0 ${W} ${12 + bands.length * 17}" aria-hidden="true">${lines}</svg>`;
 }
@@ -113,7 +113,7 @@ function patternLine(note: string, verdict: string): string {
   if (note.startsWith('simulation-truth row: no readout')) return 'no readout in these runs';
   if (verdict === 'n/a' || verdict === 'not scorable') return 'not measured in these runs';
   if (verdict === 'insufficient') return 'not enough data in these runs';
-  return note || 'no value';
+  return plainWords(note) || 'no value';
 }
 /** "perMaleFollowWeek" → "per male follow week": the scorer's part names in words. */
 const partWords = (k: string) => k.replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase();
@@ -163,7 +163,7 @@ export function rowHtml(v: RowView): string {
   const aria = `${t.metric}, ${roleWords(t)}. Field band ${bandsOf(t).map(b => `${b.part ? `${b.part} ` : ''}${bandText(b.band)}`).join(', ') || 'a pattern'} ${t.accept.units}. ${plain(lineR)}. ${plain(lineW)}.`;
   // The tuned sentence and the community sizes beside a scaled band stand on the row itself, not behind a click.
   const notes: string[] = [];
-  if (t.tunedLine) notes.push(`<span class="ys-note">${esc(t.tunedLine)}</span>`);
+  if (t.tunedLine) notes.push(`<span class="ys-note">${esc(plainWords(t.tunedLine))}</span>`);
   if (t.scaled && v.communities) notes.push(`<span class="ys-note">The band is ${esc(t.scaled.words)}. ${esc(v.communities)}</span>`);
   // Reference values pooled across worlds that give none on their own (life history above all) say so on the row.
   const pooled = refCaveats(t, v.arm, ref).filter(c => c.startsWith('pooled'));
@@ -189,26 +189,28 @@ const srcWords = (key: string, sources: Record<string, LiteSource>) => {
 /** The row's detail: what is measured, the wild, this world, the reference runs, and every flag with its reason. */
 export function detailHtml(v: RowView, sources: Record<string, LiteSource>, arms: RefArm[], matching: Set<string>): string {
   const { t, arm, ref, world } = v;
+  // The bundles' texts in plain words: no file of this repository, source keys as authors and year (review, 19 October).
+  const P = (x: string) => esc(plainWords(x, sources));
   const bands = bandsOf(t);
   const wide = bands.map(b => wideBand(b.band)).filter(Boolean);
-  const flags = t.flags.map(f => `<li><b>${esc(f.label)}</b> ${esc(f.reason)}</li>`).join('');
-  const field = t.field.map(f => `<li><b>${esc(f.population)}</b>${f.years ? ` · ${esc(f.years)}` : ''} · ${esc(f.value)}${f.n ? ` · n ${esc(f.n)}` : ''}${f.method ? ` · ${esc(f.method)}` : ''}<span class="ys-src">${f.source.split(/[;,]\s*/).map(k => srcWords(k, sources)).join('; ')}</span>${f.note ? `<span class="ys-src">${esc(f.note)}</span>` : ''}</li>`).join('');
+  const flags = t.flags.map(f => `<li><b>${esc(f.label)}</b> ${P(f.reason)}</li>`).join('');
+  const field = t.field.map(f => `<li><b>${esc(f.population)}</b>${f.years ? ` · ${esc(f.years)}` : ''} · ${esc(f.value)}${f.n ? ` · n ${esc(f.n)}` : ''}${f.method ? ` · ${P(f.method)}` : ''}<span class="ys-src">${f.source.split(/[;,]\s*/).map(k => srcWords(k, sources)).join('; ')}</span>${f.note ? `<span class="ys-src">${P(f.note)}</span>` : ''}</li>`).join('');
   // sources the target cites that no field row names (review, 19 October: T-RNG-5's band revision rests on them)
   const inRows = new Set(t.field.flatMap(f => f.source.split(/[;,]\s*/)));
   const extra = t.sources.filter(k => !inRows.has(k));
-  const bandLine = bands.length ? bands.map(b => `${b.part ? `${esc(b.part)} ` : ''}${esc(bandText(b.band))}`).join(', ') + ` ${esc(t.accept.units)}` : `a pattern: ${esc(t.accept.basis)}`;
+  const bandLine = bands.length ? bands.map(b => `${b.part ? `${esc(b.part)} ` : ''}${esc(bandText(b.band))}`).join(', ') + ` ${esc(t.accept.units)}` : `a pattern: ${P(t.accept.basis)}`;
   const seed = (x: number | null, i: number) => `world ${arm.seeds[i] ?? i + 1}: ${x === null || x === undefined ? '—' : esc(fmtValue(x))}`;
   let refBlock: string;
   if (ref.kind === 'marks' || ref.kind === 'pattern' || (ref.kind === 'none' && ref.row)) {
     const row = ref.kind === 'none' ? ref.row! : ref.row;
     const dists = ref.kind === 'marks' ? `<p class="ys-sub">${esc(ref.marks.map(m => `${m.part ? `${m.part}: ` : ''}${distWords(m.dist)}`).join('; '))}.</p>` : '';
-    refBlock = `${dists}<p>${row.pooled !== null ? `Pooled ${esc(fmtValue(row.pooled, row.interval))}${row.interval ? ` (95% ${esc(fmtValue(row.interval[0], row.interval))}–${esc(fmtValue(row.interval[1], row.interval))})` : ', no interval given'}` : 'No pooled value'} · n ${esc(String(row.n))} · the scorer’s word: ${esc(row.verdict)}${row.note ? ` (${esc(patternWords(row.note))})` : ''}.</p>
+    refBlock = `${dists}<p>${row.pooled !== null ? `Pooled ${esc(fmtValue(row.pooled, row.interval))}${row.interval ? ` (95% ${esc(fmtValue(row.interval[0], row.interval))}–${esc(fmtValue(row.interval[1], row.interval))})` : ', no interval given'}` : 'No pooled value'} · n ${esc(String(row.n))} · the scorer’s word: ${esc(row.verdict)}${row.note ? ` (${P(patternWords(row.note))})` : ''}.</p>
       ${row.perSeed.length ? `<p class="ys-sub">${row.perSeed.map(seed).join(' · ')}</p>` : ''}
       ${Object.keys(row.parts).length ? `<p class="ys-sub">Parts: ${Object.entries(row.parts).map(([k, x]) => `${esc(partWords(k))} ${x === null ? '—' : esc(fmtValue(x))}`).join(' · ')}</p>` : ''}
       ${row.truthValue !== null && row.from === 'card' ? `<p class="ys-sub">What happened (simulation truth, not by a field team): ${esc(fmtValue(row.truthValue))}</p>` : ''}
       ${refCaveats(t, arm, ref).length ? `<p class="ys-sub">${esc(refCaveats(t, arm, ref).join(' · '))}</p>` : ''}`;
-  } else refBlock = `<p>${esc(ref.why)}</p>`;
-  if (ref.kind === 'none' && ref.row?.verdict === 'scale') refBlock = `<p class="ys-sub">${esc(ref.why)}.</p>${refBlock}`;
+  } else refBlock = `<p>${P(ref.why)}</p>`;
+  if (ref.kind === 'none' && ref.row?.verdict === 'scale') refBlock = `<p class="ys-sub">${P(ref.why)}.</p>${refBlock}`;
   const others = arms.filter(a => a.id !== arm.id).map(a => {
     const r = a.rows[t.id], p = r?.pooled;
     return `<li>${esc(a.name)}${matching.has(a.id) ? '' : ' · <em>another model, for context only</em>'}: ${a.recount[t.id] ? 'needs a recount' : p === null || p === undefined ? 'no pooled value' : esc(fmtValue(p, r.interval))}${!a.protocol.current ? ' · older protocol' : ''}</li>`;
@@ -217,17 +219,17 @@ export function detailHtml(v: RowView, sources: Record<string, LiteSource>, arms
   return `<div class="ys-d">
     <p class="ys-head"><span class="mono">${esc(t.id)}</span> · ${t.role === 'held-out' ? 'held out: never used to set anything' : 'fitted: settings were chosen with published values like this in view, so agreement is expected, not a test'} · ${esc(EVIDENCE[t.evidence] ?? t.evidence)}</p>
     ${flags ? `<ul class="ys-flags">${flags}</ul>` : ''}
-    <h4>What is measured</h4><p>${esc(t.definition)}</p><p class="ys-sub">The field teams’ method: ${esc(t.method)}, per ${esc(t.unit)}.${t.notMeasured ? ` Not measured in a watched world: ${esc(t.notMeasured)}.` : ''}</p>
-    <h4>The wild</h4><p>Field band ${bandLine}.${t.partBands && t.accept.lo === null && t.accept.hi === null ? '' : ` ${esc(t.accept.basis)}.`}${wide.length ? ` <em>${esc(wide.join('; '))}: inside it is easy.</em>` : ''}</p>
-    ${t.comparisonBand ? `<p class="ys-sub">With the source’s method corrected: ${esc(String(t.comparisonBand.lo))}–${esc(String(t.comparisonBand.hi))} ${esc(t.comparisonBand.units)} (${esc(t.comparisonBand.basis)}).</p>` : ''}
+    <h4>What is measured</h4><p>${P(t.definition)}</p><p class="ys-sub">The field teams’ method: ${P(t.method)}, per ${esc(t.unit)}.${t.notMeasured ? ` Not measured in a watched world: ${P(t.notMeasured)}.` : ''}</p>
+    <h4>The wild</h4><p>Field band ${bandLine}.${t.partBands && t.accept.lo === null && t.accept.hi === null ? '' : ` ${P(t.accept.basis)}.`}${wide.length ? ` <em>${esc(wide.join('; '))}: inside it is easy.</em>` : ''}</p>
+    ${t.comparisonBand ? `<p class="ys-sub">With the source’s method corrected: ${esc(String(t.comparisonBand.lo))}–${esc(String(t.comparisonBand.hi))} ${esc(t.comparisonBand.units)} (${P(t.comparisonBand.basis)}).</p>` : ''}
     ${t.scaled ? `<p class="ys-sub">The band is ${esc(t.scaled.words)}. ${esc(v.communities)}</p>` : ''}
     ${field ? `<ul class="ys-field">${field}</ul>` : ''}
     ${extra.length ? `<p class="ys-sub">Also cited for this row: ${extra.map(k => srcWords(k, sources)).join('; ')}</p>` : ''}
     <h4>This world</h4><p>${worldLine(world)}${world.kind === 'marks' ? ` · ${esc(world.marks.map(m => `${m.part ? `${m.part}: ` : ''}${distWords(m.dist)}`).join('; '))} · ${esc(world.seen.basis)}` : world.kind === 'waiting' && world.seen ? ` · ${esc(world.seen.basis)} so far` : ''}</p>
-    ${world.kind !== 'marks' && world.more ? `<p class="ys-sub">${esc(world.more)}</p>` : ''}
-    ${SAME_DEFINITION[t.id] ? `<p class="ys-sub">Exact record (all-seeing), not what a field team could see. Same definition as the field’s: ${esc(SAME_DEFINITION[t.id])}</p>` : ''}
-    <p class="ys-sub">Shortest window: ${esc(t.window.why)}.</p>
-    <h4>Reference runs</h4><p class="ys-sub">${esc(arm.name)}: ${esc(arm.what)}. ${arm.seeds.length} worlds × ${sig2(arm.days / 365)} years after a ${arm.burnInDays}-day settling-in, ${esc(arm.profile)} map, rules only, run ${esc(dateWords(arm.runDate))} (commit ${esc(arm.commit)})${arm.protocol.current ? `, today’s protocol (${esc(arm.protocol.hash)})` : `, an older protocol (${esc(arm.protocol.hash)}, not the freeze of 7 October 2026 with its observer fixes)`}.${matching.has(arm.id) ? '' : ' Another model, for context only.'}${v.matchNote ? ` ${esc(v.matchNote)}` : ''}</p>
+    ${world.kind !== 'marks' && world.more ? `<p class="ys-sub">${P(world.more)}</p>` : ''}
+    ${SAME_DEFINITION[t.id] ? `<p class="ys-sub">Exact record (all-seeing), not what a field team could see. Same definition as the field’s: ${P(SAME_DEFINITION[t.id])}</p>` : ''}
+    <p class="ys-sub">Shortest window: ${P(t.window.why)}.</p>
+    <h4>Reference runs</h4><p class="ys-sub">${esc(arm.name)}: ${P(arm.what)}. ${arm.seeds.length} worlds × ${sig2(arm.days / 365)} years after a ${arm.burnInDays}-day settling-in, ${esc(arm.profile)} map, rules only, <span title="commit ${esc(arm.commit)}">run ${esc(dateWords(arm.runDate))}</span>${arm.protocol.current ? `, today’s protocol (${esc(arm.protocol.hash)})` : `, an older protocol (${esc(arm.protocol.hash)}, not the freeze of 7 October 2026 with its observer fixes)`}.${matching.has(arm.id) ? '' : ' Another model, for context only.'}${v.matchNote ? ` ${P(v.matchNote)}` : ''}</p>
     ${refBlock}
     ${others ? `<ul class="ys-others">${others}</ul>` : ''}
   </div>`;
