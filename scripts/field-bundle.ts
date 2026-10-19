@@ -220,7 +220,7 @@ export function todayMatch(): string {
   const golden = readFileSync(resolve(FROZEN, 'bench-y3/tests/fixtures/golden-world.json'), 'utf8') === readFileSync(resolve(ROOT, 'tests/fixtures/golden-world.json'), 'utf8');
   const sameDefaults = !changed.length && !removed.length;
   const lead = sameDefaults && golden ? 'Probably the same model as this world' : 'Possibly not the same model as this world';
-  return `${lead}: since that run no existing default changed${changed.length ? ` (except ${changed.join(', ')})` : ''}${removed.length ? `, ${removed.length} settings were removed` : ''}; ${added.length} settings were added, ${offSwitches.length} of them switches that default to off and ${added.length - offSwitches.length} values read under switches (${added.filter(k => !offSwitches.includes(k)).join(', ')}); the golden test world is ${golden ? 'unchanged' : 'changed'}. Not re-verified by a run.`;
+  return `${lead}: since that run no existing default changed${changed.length ? ` (except ${changed.join(', ')})` : ''}${removed.length ? `, ${removed.length} settings were removed` : ''}; ${added.length} settings were added, ${offSwitches.length} of them switches that default to off and ${added.length - offSwitches.length} values read under switches (${added.filter(k => !offSwitches.includes(k)).join(', ')}); the golden test world (a short run of the 160 m map, not the field map) is ${golden ? 'unchanged' : 'changed'}. Not re-verified by a run.`;
 }
 
 export function buildReference(file: TargetsJson, lite: TargetsLite): ReferenceFile {

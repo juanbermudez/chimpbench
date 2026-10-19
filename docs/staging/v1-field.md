@@ -304,3 +304,84 @@ Proposed lines (not written into those files by this stage):
   simulation opens; whether held-out rows are visible by default; whether Records' true range outline should replace the
   circles everywhere; a fresh reference run (and before or after stage R16); other models' arms shown by default or on
   request.
+
+## 9. Honesty and science review (19 October 2026, written 02:50 EDT)
+
+A second reader went through every row the eight chapters show, from the code and the files, not from the pictures
+(the look agent had the headless browser, so none was opened). Nothing was run on a reserved or sealed seed: two short
+worlds of seed 48 in Node (the 160 m map for 200 days at natural aging, and for 8 days at life-course speed).
+
+### 9.1 What holds
+
+- **Bands, units and basis** are `data/targets.json`'s own, row by row (`field-bundle --check`, and read again for the
+  eight chapters). The units and the basis are in each row's detail and its spoken label; the 44 px row prints only the
+  band's edges (see 9.3).
+- **Reference values** are the frozen scorecards' own numbers. Read again with a separate script straight from the
+  frozen files (not through the bundle's own check): all 690 rows of the 5 arms agree in pooled value, per-world values,
+  interval, n, parts, verdict, note, flags and simulation-truth value. Each arm is named in words with its run date.
+- **Labels**: fitted and held out, tuned, compromised, revised after the freeze, encoded and partly encoded appear
+  wherever the target file sets them. Compromised, not-scorable and contested rows get a cross and "reported, never
+  counted", never a mark. Rows that need field experiments, scenario rows and rows read from the simulation say so.
+- **Sealed rows**: none is in either file, none is computed, and no chart or count is split by a mother's loss, rank,
+  neighbour pressure or aggression received; the orphaned-infant cause is folded into "other causes" everywhere on the page.
+- **The reference model's failed viability** is in Deaths (5 starvation deaths, a world ending at 76% of its start,
+  causes per world) and in Births beside the population.
+- **This world's life record** matches the world at natural aging. On the 200-day world: the living count rebuilt from
+  birth and death times equals what the world held at every day's 21:00; births, deaths and infant fates equal the world's
+  animals; ages at death agree with each animal's own age to 0.0001 years and mothers' ages exactly; infant-years and
+  animal-years equal a brute-force sum hour by hour. Rates use the scorer's formulas, floors and the 90%-of-cap rule.
+
+### 9.2 What was wrong, and is repaired (six commits after 66bcab05)
+
+1. **"Inside the field band" where the scorer said "inconclusive".** The page judged a reference value only by the
+   interval the scorecard stores, but the scorer also checks the 95% interval over the five worlds, which the scorecard
+   does not store. Today's model read "inside" on T-PAT-6 and T-PAT-9 (Patrols), T-HUN-3, T-HUN-7 and T-SOC-11, and gave
+   distances the scorer did not establish on T-BRD-1, T-FOOD-3 and T-DEM-8 ("1.4 band widths above"). Across the five
+   arms 87 reference rows changed their words, 34 of them from "inside". They now read "too close to call".
+2. **Marks on rows the scorer did not score.** T-RNG-2, -3 and -6 (Movement) are reported but not scored on the field
+   map (one 500 m cell moves the value); the page placed a ring and said T-RNG-6, held out, was inside. They now carry no
+   mark and say why. T-HUN-5, which the scorer decides world by world (an r² with a positive slope), was placed inside
+   its band in two working-base arms where no world showed the pattern; it now gives the count of worlds.
+3. **Ages at life-course speed.** With the clock's life-course speed on (a control the interface offers), ages were
+   counted on the ecological clock: on the 8-day world ages at death were off by up to 6.3 years and mothers' ages by up
+   to 7.6. The page now shows each animal's own age there, leaves out mothers' ages and the life table, and says why.
+   Killings per community-year are refused at that speed like the other life-record rows.
+4. **A rate before its window.** The Infants chapter printed first-year mortality from a few weeks while its row said
+   "needs a year"; the chapter now gives the deaths and infant-years and holds the rate for a year.
+5. **Labels.** Life expectancy at 15 and survival to 45 both read "pooled, not a life expectancy", with the deaths they
+   rest on and, for today's model, that 28 of its 59 deaths were two worlds' respiratory outbreaks; other pooled values
+   carry their n (T-DEM-13 is "inside" on 4 intervals). T-INF-6, held out, was written with simulated values in view and
+   now says so. T-PAT-3 and T-PTY-1 show this world's community sizes. Sources a target cites that no field row names
+   are listed (T-RNG-5's revised band among them). Each arm's protocol is named in the detail and the overview. The
+   reading guide says a ring is five worlds of one model and what "too close to call" means. Death places say where the
+   body lies when bodies move. The zero-killings limit uses the scorer's own Poisson interval.
+
+6. **The match line** of today's model now says that the golden test world is a short run of the 160 m map, not the
+   field map.
+
+Tests: `tests/yardstick.test.ts` 19 and `tests/yardstick-life.test.ts` 9 (four new tests, among them one that no
+single-band reference value reads "inside" unless the scorer said pass). `field-bundle --check` passes after the
+rebuild. `tsc --noEmit`, a strict check of the two test files and the bundle script by hand, and `pnpm build` pass; the
+whole suite once, four files at a time, on Node 22.22.3 with no model process (02:43 to 02:48 EDT): 1,628 tests, all
+pass. The startup file grew 70 bytes more (the records card reads `modelIdentityOf`).
+
+### 9.3 Left as it is (for the integrator or the user)
+
+- The 44 px row prints the band's edges without units; the units and basis are one click away. A unit under the strip
+  would need a look by eye first.
+- "Older protocol" is in the header, the overview line and each detail, not on each row's line.
+- `reference.json` (public) carries e-bench's causes of death per world as written, orphaned infants and simulated
+  animals' names included. The page folds them; the file is never shown unfolded. Folding in the bundle would change
+  what `--check` compares.
+- "Probably the same model as this world" rests on unchanged parameter defaults and the unchanged golden world, which is
+  a short run of the 160 m map (the detail now says so). Simulation code changed since that run (21 commits, behind
+  switches that default to off), so the field map's own behaviour is not proven the same. The page says "not
+  re-verified by a run"; a fresh reference run would settle it.
+- The Mortality chapter's chart of deaths per animal-year and the Encounters chapter's zero-killings limit are drawn from
+  whatever window there is, with their exposure; neither is placed on a band.
+- Not looked at in a browser after these repairs: a T-RNG-6 row (no mark), a T-PAT-6 row ("too close to call"), and the
+  Deaths, Mortality and Infants chapters at life-course speed want one look.
+
+Proposed change to the AGENTS.md line above, after "and a test.": "A reference row is placed on its band only where
+the scorer scored it: an inconclusive verdict reads "too close to call", a 'scale' row and a row pooled world by world
+get words, not a mark (`src/yardstick/view.ts` `refState`)."
