@@ -46,6 +46,14 @@ PROJECT_EVERY = 50            # steps between projections (the first after 50)
 FIT_SHARE = 0.02              # more refused than this, in either file, stops the test
 FIT_WORKERS = 4
 EPOCH_EXTRA_FLOOR = 0.15      # $ booked for an epoch's predict and save until one is measured
+IN_FLIGHT = 2                 # training steps sent before the oldest is read (endor.Steps' default)
+# Every wait on Endor is bounded and read in slices (review of 19 October): the SDK's own waits have no limit, so a call
+# Endor never finished held the run, its heartbeat and its GPU open while neither the kill switch nor the wall limit
+# was read. Between slices both are read; a wait past its limit is a timeout (operational; the run is closed).
+WAIT_SLICE_S = 20.0
+STEP_WAIT_S = 600.0           # one step (forward_backward and optim_step)
+EPOCH_CALL_WAIT_S = 1800.0    # a predict of the development packets, a checkpoint save
+PROVISION_WAIT_S = 1200.0     # a run's provisioning (Endor: under a minute, 2 to 4 after a quiet spell)
 GAPS = [
     "rows: at most 3,885 of R16's 4,402 training rows (packets over 512 tokens by our count dropped), at most 408 of 456 development rows",
     "adapter placement: ours the top 8 encoder layers and the two classifier layers (50 modules); Endor's attention and MLP switches, its gliner targets as its base-model list gives them",
@@ -140,6 +148,10 @@ def _alive(pid: int) -> bool:
 
 class Refused(Exception):
     """Refused before anything was sent (exit 2)."""
+
+
+class KillOn(Exception):
+    """The kill switch is on before an iteration begins: nothing is sent and no iteration is used up (exit 130)."""
 
 
 def roots(a) -> tuple[Path, object]:
@@ -411,8 +423,26 @@ class Iterations:
 
 # ------------------------------------------------------------------ the training run
 
-def predict_dev(run, dev: list[dict]) -> tuple[list[list[float]], float]:
-    answers = run.predict([W.predict_row(r["packet"]) for r in dev]).result()
+def settle(futures: list, what: str, limit_s: float, guard: SpendGuard, t0: float) -> list:
+    """endor.gather in slices of WAIT_SLICE_S: between slices the kill switch and the iteration's wall limit are read,
+    and a wait longer than `limit_s` is a timeout (an operational failure; the run is closed in the finally block)."""
+    start = time.monotonic()
+    while True:
+        try:
+            return endor.gather(*futures, timeout=WAIT_SLICE_S)
+        except TimeoutError as e:
+            if isinstance(e, endor.EndorError):  # an HTTP timeout of the poll itself, not the slice running out
+                raise
+        if guard.killed():
+            raise Stop("kill", f"the kill switch is on (while waiting for {what})")
+        if time.time() - t0 > WALL_LIMIT_S:
+            raise Stop("wall", f"the iteration passed {WALL_LIMIT_S // 3600} hours (while waiting for {what})")
+        if time.monotonic() - start > limit_s:
+            raise TimeoutError(f"{what}: not finished after {limit_s:.0f} s")
+
+
+def predict_dev(run, dev: list[dict], guard: SpendGuard, t0: float) -> tuple[list[list[float]], float]:
+    answers = settle([run.predict([W.predict_row(r["packet"]) for r in dev])], "the development predict", EPOCH_CALL_WAIT_S, guard, t0)[0]
     if len(answers) != len(dev):
         raise W.WireError("run.predict did not answer every development row")
     out, worst = [], 0.0
@@ -432,6 +462,8 @@ def cmd_train(a) -> int:
     lock = RunLock(root)
     try:
         guard = SpendGuard(root / "ledger.json", a.cap, root / "KILL")
+        if guard.killed():  # read before an iteration begins: a switch left on uses up no iteration
+            raise KillOn("the kill switch is on (artifacts/endor/KILL or MGOGO_ENDOR_KILL=1); remove it to train")
         # the gate lets out the final training rows (both option orders) and the development packets, nothing else
         conn = Connection(root, guard, fake, allowed=W.allowed_packets(train, permuted_too=True) | W.allowed_packets(dev, permuted_too=False))
         its = Iterations(root / "iterations.json")
@@ -454,31 +486,37 @@ def cmd_train(a) -> int:
         write_json(rundir / "account.json", acct)
         project = conn.client.projects.get(W.PROJECT)
         guard.check(0.0)  # the kill switch and the money before a run is opened
+        # wait=False: the run is ours (closed in the finally block) from the moment it exists, and its provisioning is
+        # waited for in slices like every other wait (the SDK's own wait has no limit)
         if resume:
             start_epoch = resume["epoch"]
-            run = project.runs.create(from_model=resume["name"], include_optimizer=True, name=W.run_name(it), total_steps=total, wandb=False)
+            run = project.runs.create(from_model=resume["name"], include_optimizer=True, name=W.run_name(it), total_steps=total, wandb=False, wait=False)
         else:
             start_epoch = 0
             run = project.runs.create(W.BASE_MODEL, rank=W.RECIPE["rank"], alpha=W.RECIPE["alpha"], seed=W.RECIPE["seed"],
-                                      name=W.run_name(it), total_steps=total, wandb=False)
-        its.current().update(run_id=run.id, server_step_at_start=run.info_.step, lora=run.info_.lora.model_dump(mode="json"))
+                                      name=W.run_name(it), total_steps=total, wandb=False, wait=False)
+        its.current().update(run_id=run.id)
         its.save()
         status.update(run_id=run.id)
+        if run.info_.status not in ("ready", "idle"):
+            settle([run.ready], "the run's provisioning", PROVISION_WAIT_S, guard, t0)
+        run.info()
+        its.current().update(server_step_at_start=run.info_.step, lora=run.info_.lora.model_dump(mode="json"))
+        its.save()
         k = k0 = sum(len(e) for e in plan[:start_epoch])
         spent_at_start = guard.spent()
         extra = EPOCH_EXTRA_FLOOR
         if start_epoch == 0:  # the untouched base on the training path: a step-0 predict of the development packets
-            probs, worst = predict_dev(run, dev)
+            probs, worst = predict_dev(run, dev, guard, t0)
             write_json(rundir / "base-predict.json", {"at": local_now(), "dev": W.dev_metrics(dev, probs), "max_sum_error": worst, "probs": probs})
         for e in range(start_epoch, W.RECIPE["epochs"]):
             status.update(epoch=e + 1)
-            sent: collections.deque = collections.deque()
-            steps = endor.Steps(in_flight=2)
+            inflight: collections.deque = collections.deque()  # (k, datums, forward_backward, optim_step), oldest first
             losses: list[float] = []
 
-            def record(res) -> None:
-                kk, n = sent.popleft()
-                out, opt = res
+            def record(item) -> None:  # the oldest step in flight: its results, in the order the steps were sent
+                kk, n, fb_f, opt_f = item
+                out, opt = settle([fb_f, opt_f], f"step {kk + 1}", STEP_WAIT_S, guard, t0)
                 losses.append(out.loss)
                 steps_log.add({"k": kk, "epoch": e + 1, "n": n, "loss": out.loss, "accuracy": out.accuracy, "grad_norm": opt.grad_norm,
                                "lr": lrs[kk], "lr_echo": opt.learning_rate, "step_echo": opt.step})
@@ -494,10 +532,10 @@ def cmd_train(a) -> int:
                 datums = [endor.Datum(state=d["state"], question=d["question"], target=endor.Target(**d["target"]), weight=d["weight"]) for d in W.step_datums(step)]
                 fb = run.forward_backward(datums)
                 opt = run.optim_step(endor.AdamParams(**W.adam_params(lrs[k])))
-                sent.append((k, len(datums)))
+                inflight.append((k, len(datums), fb, opt))
                 k += 1
-                for res in steps.add(fb, opt):
-                    record(res)
+                while len(inflight) >= IN_FLIGHT:  # as endor.Steps(in_flight=2): the next step is queued while the last is read
+                    record(inflight.popleft())
                 # the balance early (to measure the rate), every 25 steps, and every step once 25 steps would cost a tenth of the cap
                 if k - k0 in (1, 5, 10) or k % POLL_EVERY == 0 or per_step * POLL_EVERY > 0.1 * guard.cap:
                     conn.client.balance()
@@ -505,13 +543,13 @@ def cmd_train(a) -> int:
                 if k - k0 >= PROJECT_EVERY and (k - k0) % PROJECT_EVERY == 0:
                     proj = guard.project(spent_at_start, k - k0, total - k, extra * (W.RECIPE["epochs"] - e))
                 status.update(step=k, spent=round(guard.spent(), 4), last_loss=losses[-1] if losses else None, lr=lrs[k - 1], **({"projection": proj} if proj else {}))
-            for res in steps.wait():
-                record(res)
+            while inflight:
+                record(inflight.popleft())
             before = guard.spent()
-            probs, worst = predict_dev(run, dev)
+            probs, worst = predict_dev(run, dev, guard, t0)
             metrics = W.dev_metrics(dev, probs)
             name = W.checkpoint_name(it, e + 1)
-            model = run.save_checkpoint(name, include_optimizer=True, ttl_seconds=W.TTL_SECONDS).result()
+            model = settle([run.save_checkpoint(name, include_optimizer=True, ttl_seconds=W.TTL_SECONDS)], f"the checkpoint {name}", EPOCH_CALL_WAIT_S, guard, t0)[0]
             its.saved(e + 1, name, model)
             conn.client.balance()
             extra = max(EPOCH_EXTRA_FLOOR, guard.spent() - before)
@@ -673,6 +711,9 @@ def main(argv: list[str]) -> int:
     except Refused as e:
         print(f"refused: {e}", file=sys.stderr)
         return 2
+    except KillOn as e:
+        print(f"stopped: {e}", file=sys.stderr)
+        return 130
     except (W.WireError, ValueError, GateRefused, OSError) as e:
         print(f"refused: {e}", file=sys.stderr)  # none of these messages can hold the key (endor_client.read_key)
         return 2

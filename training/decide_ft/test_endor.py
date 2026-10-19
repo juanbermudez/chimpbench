@@ -23,6 +23,7 @@ import os
 import random
 import sys
 import tempfile
+import threading
 import time
 import unittest
 import zlib
@@ -576,9 +577,45 @@ class Runs(unittest.TestCase):
         fake = FakeEndor(refuse_share=0)
         run_fit(ns(self.root, exp, fake))
         (self.root / "KILL").write_text("")
-        self.assertEqual(run_train(ns(self.root, exp, fake)), 130)
+        with self.assertRaises(T.KillOn):  # main() exits 130
+            run_train(ns(self.root, exp, fake))
         self.assertEqual(fake.runs, {})  # no run opened, nothing billed
+        self.assertFalse((self.root / "iterations.json").exists())  # a switch left on uses up no iteration
+        (self.root / "KILL").unlink()
+        self.assertEqual(run_train(ns(self.root, exp, fake)), 0)
+
+    def _short_waits(self, step_wait: float = 0.3):
+        old = (T.WAIT_SLICE_S, T.STEP_WAIT_S)
+        T.WAIT_SLICE_S, T.STEP_WAIT_S = 0.05, step_wait
+        self.addCleanup(lambda: (setattr(T, "WAIT_SLICE_S", old[0]), setattr(T, "STEP_WAIT_S", old[1])))
+
+    def test_a_call_endor_never_finishes_ends_the_iteration_and_closes_the_run(self):
+        self._short_waits()
+        exp, _, _ = self.export(400, 12)  # 50 steps an epoch
+        fake = FakeEndor(refuse_share=0, hang=("optim_step", 70))
+        run_fit(ns(self.root, exp, fake))
+        t = time.monotonic()
+        self.assertEqual(run_train(ns(self.root, exp, fake)), 75)
+        self.assertLess(time.monotonic() - t, 30)
+        it = json.loads((self.root / "iterations.json").read_text())["iterations"][-1]
+        self.assertEqual(it["outcome"], "failed-operational")
+        self.assertIn("not finished", it["detail"])
+        self.assertEqual([r["status"] for r in fake.runs.values()], ["closed"])  # closed, so Endor stops billing it
+        self.assertEqual(run_train(ns(self.root, exp, fake, reason="step 71 never finished")), 0)  # resumed from i1-e1
+
+    def test_the_kill_switch_reaches_a_wait(self):
+        self._short_waits(step_wait=600)
+        exp, _, _ = self.export(61)
+        fake = FakeEndor(refuse_share=0, hang=("forward_backward", 3))
+        run_fit(ns(self.root, exp, fake))
+        timer = threading.Timer(1.0, lambda: (self.root / "KILL").write_text(""))
+        timer.start()
+        self.addCleanup(timer.cancel)
+        t = time.monotonic()
+        self.assertEqual(run_train(ns(self.root, exp, fake)), 130)
+        self.assertLess(time.monotonic() - t, 30)
         self.assertEqual(json.loads((self.root / "iterations.json").read_text())["iterations"][-1]["outcome"], "stopped-kill")
+        self.assertEqual([r["status"] for r in fake.runs.values()], ["closed"])
 
     def test_the_kill_switch_stops_the_fit_check_at_once(self):
         exp, _, _ = self.export(400)

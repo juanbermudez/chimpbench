@@ -12,6 +12,7 @@ import hashlib
 import json
 import math
 import re
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -34,11 +35,12 @@ class FakeEndor:
 
     def __init__(self, *, key: str = FAKE_KEY, balance: float = 100.0, gpu_seconds_per_call: float = 0.5,
                  refuse=None, refuse_share: float = 1 / 256, decisions_per_minute: int = 600_000, fail_optim_at: int | None = None,
-                 lr_echo=None):
+                 lr_echo=None, hang=None):
         self.key, self.balance_usd = key, balance
         self.gpu_s, self.dpm = gpu_seconds_per_call, decisions_per_minute
         self.refuse = refuse if refuse is not None else (lambda state, q: _h(json.dumps(state, sort_keys=True)) % round(1 / refuse_share) == 0 if refuse_share else False)
         self.fail_optim_at, self.lr_echo = fail_optim_at, lr_echo
+        self.hang = hang  # (op, run step): that call's future stays "running" for ever (a call Endor never finishes)
         self.requests: list[dict] = []
         self.violations: list[str] = []
         self.projects: dict[str, dict] = {}
@@ -234,6 +236,11 @@ class FakeEndor:
             if op == "save_checkpoint" and f"{run['project']}/{body['name']}" in self.models:
                 return self._err(409, "conflict", "the name is used")
             run["next_seq_id"] += 1
+            if self.hang is not None and self.hang == (op, run["step"]):
+                self.hang = None
+                fid = self._future({})
+                self.futures[fid].update(status="running", result=None, completed_at=None)
+                return self._json(202, {"future_id": fid})
             if op == "forward_backward":
                 for i, d in enumerate(body["data"]):
                     why = self._datum_ok(d)
@@ -281,8 +288,12 @@ class FakeEndor:
             return self._err(404, "not_found", f"no route {op}")
         if (mm := re.fullmatch(r"/v1/futures/([^/]+)", path)) and m == "GET":
             f = self.futures.get(mm.group(1))
+            if f and f["status"] == "running":
+                time.sleep(0.01)  # stands in for the server's long poll (wait_s)
             return self._json(200, f) if f else self._err(404, "not_found", "no such future")
         if path == "/v1/futures/retrieve" and m == "POST":
+            if any(self.futures[i]["status"] == "running" for i in body["ids"]):
+                time.sleep(0.01)
             return self._json(200, [self.futures[i] for i in body["ids"]])
         if path == "/v1/systemone" and m == "POST":
             if self.balance_usd <= 0:

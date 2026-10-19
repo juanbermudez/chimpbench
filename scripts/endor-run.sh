@@ -33,8 +33,10 @@ case "${1:-}" in
        "$PY" -I -B "$TRAIN" fit --cap "$CAP" --fake
        "$PY" -I -B "$TRAIN" train --cap "$CAP" --fake
        cat artifacts/endor-dry/report.md ;;
-  fit) logged fit "$PY" -I -B "$TRAIN" fit --cap "$CAP" ;;
-  train) shift; logged train "$PY" -I -B "$TRAIN" train --cap "$CAP" "$@" ;;
+  # caffeinate -i: an idle Mac does not sleep while a step sends (a sleeping client leaves the run to park and the
+  # guard's own clock to run on: AGENTS.md's rule for long runs)
+  fit) logged fit caffeinate -i "$PY" -I -B "$TRAIN" fit --cap "$CAP" ;;
+  train) shift; logged train caffeinate -i "$PY" -I -B "$TRAIN" train --cap "$CAP" "$@" ;;
   status) "$PY" -I -B "$TRAIN" status ;;
   report) "$PY" -I -B "$TRAIN" report ;;
   kill) mkdir -p artifacts/endor && touch artifacts/endor/KILL && echo "the run stops at its next step (remove artifacts/endor/KILL to allow another)" ;;
