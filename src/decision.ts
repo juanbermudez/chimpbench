@@ -40,6 +40,8 @@ export type Roster = 'selected' | 'focal-set' | 'all';
 export interface DecisionController {
   enabled: boolean; ready: boolean; busy: boolean; phase: string; status: string; lastError: string;
   provider: string; providerLabel: string; progress: number | null; identity?: AdapterIdentity;
+  /** The provider holds no model (a dry run's fake scorer): every readout says so. */
+  dry?: boolean;
   model: string; device: string; latencyMs: number | null; inputTokens: number | null; calls: number;
   /** Model answers applied: fresh (same version) + revalidated (newer version, still legal). */
   applied: number;
@@ -91,7 +93,7 @@ export function setDecisionProvider(controller: DecisionController, provider: De
   controller.timeoutMs = provider.id === 'r15' ? 22000 : controller.provider === 'r15' ? 6000 : controller.timeoutMs;
   controller.provider = provider.id; controller.providerLabel = provider.label; controller.progress = null;
   controller.ready = false; controller.phase = provider.id === 'browser' ? 'stopped' : 'loading';
-  controller.identity = undefined;
+  controller.identity = undefined; delete controller.dry;
   controller.model = provider.id === 'jev' ? 'jev-latest' : provider.id === 'r15' ? 'R15 adapter not loaded' : MODEL_NAME; controller.device = ''; controller.lastError = '';
   controller.status = idleStatus(controller);
 }
@@ -109,7 +111,7 @@ export async function refreshDecideStatus(controller: DecisionController): Promi
   try {
     const body = await provider.status();
     if (internal(controller).provider !== provider) return;
-    controller.identity = body.identity;
+    controller.identity = body.identity; if (body.dry === true) controller.dry = true; else delete controller.dry;
     controller.ready = body.ready && (controller.provider !== 'r15' || body.identity !== undefined); controller.phase = body.phase;
     controller.model = body.model || controller.model; controller.device = body.device ?? controller.device;
     controller.progress = body.progress ?? null;

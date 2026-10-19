@@ -5,6 +5,7 @@ import type { DecisionTraceView } from './contracts';
 import { icon } from './icons';
 import { actionLabel, actionVerb, cap, esc, hhmm, pct, RELATION_LABEL, relationClass, stamp } from './format';
 import { alphaBadge, bar, empty } from './parts';
+import { chipText, driveMind } from './who-decides';
 import { belowTopNote, cardFromChimp, cardFromTrace, modelEngine, targetName, traceIsCurrent, type DecisionCard, type OptionRow } from './mind-card';
 
 // Mind tab: the decision made visible, for any animal (stage W4). First the decision: the pick over its runners-up
@@ -199,8 +200,13 @@ export function mindHtml(ctx: Ctx, c: Chimp): string {
   // One word of live state beside the switch, only while the model has this chimp (readiness in full: time menu, M).
   const note = !controlled || !c.alive ? '' : !d.ready ? (d.phase === 'loading' ? 'loading' : 'offline') : inflight ? '<span class="pulse">deciding</span>' : waiting ? '<span class="pulse">waiting</span>' : '';
   const engine = modelEngine(d.model, d.provider).label;
-  const control = `<label class="mctl" title="${controlled ? `${esc(engine)}: the model picks among the options the rules list for this chimp` : `Let the model pick among the options the rules list for this chimp (${esc(engine.toLowerCase())})`}"><span>Model${note ? ` <i>· ${note}</i>` : ''}</span><span class="switch sm"><input type="checkbox" role="switch" data-act="control" ${controlled ? 'checked' : ''} ${c.alive ? '' : 'disabled'} aria-label="Model decides for ${esc(c.name)}"><span class="sw"></span></span></label>`;
+  // the mode "Model decides for every adult" (src/drive): membership is by age, so the switch shows it and does not set it
+  const drive = ctx.deps.drive?.() ?? null, da = drive ? ctx.deps.driveAnimal?.(c.id) ?? null : null;
+  const switchTitle = da ? (da.onModel ? `In this mode every animal aged ${da.minAge} or over decides through the trained adapter` : `In this mode animals under ${da.minAge} stay on the rules`)
+    : controlled ? `${esc(engine)}: the model picks among the options the rules list for this chimp` : `Let the model pick among the options the rules list for this chimp (${esc(engine.toLowerCase())})`;
+  const control = `<label class="mctl" title="${esc(switchTitle)}"><span>Model${note ? ` <i>· ${note}</i>` : ''}</span><span class="switch sm"><input type="checkbox" role="switch" data-act="control" ${controlled ? 'checked' : ''} ${c.alive && !da ? '' : 'disabled'} aria-label="Model decides for ${esc(c.name)}"><span class="sw"></span></span></label>`;
   return `<div class="mind">
+    ${drive && da ? driveMind(drive, da, c.name) : ''}
     ${shiftCard(ctx, c, traces)}
     ${shown ? traceCard(ctx, shown, !!pinned, control) : c.alive ? liveCard(ctx, c, control) : `<header class="trace-head"><h3 class="eyebrow">Latest decision</h3><span class="muted">none</span>${control}</header>${empty('No decision on record', `${esc(c.name)} has died; nothing is weighed any more.`, 'brain')}`}
     ${traces.length ? `<section class="history"><div class="sec-head"><h3 class="eyebrow">History <span class="muted">${traces.length} decision${traces.length === 1 ? '' : 's'} through the loop</span></h3>${pinned ? '<button class="link-btn" data-act="follow">Back to now</button>' : ''}</div>
@@ -218,9 +224,11 @@ export function mindHtml(ctx: Ctx, c: Chimp): string {
 
 export function mindKey(ctx: Ctx, c: Chimp): string {
   const d = ctx.deps.decider, traces = tracesFor(ctx, c.id), last = traces.at(-1), w = ctx.world();
+  const drive = ctx.deps.drive?.() ?? null, da = drive ? ctx.deps.driveAnimal?.(c.id) ?? null : null;
+  const driveKey = drive && da ? [chipText(drive), da.onModel, da.hour?.model, da.hour?.held, da.hour?.rules, drive.onModel, drive.adults, drive.bound?.sha256, drive.serving?.sha256, drive.dry].join(',') : '';
   // The live card reads the animal itself: its decision count, act, reason and option list. No clock term: nothing in
   // the tab counts time, so it redraws only when one of these changes.
   return [c.id, c.controller, c.alive, w.modelPolicy.mode, d.ready, d.phase, d.roster, traces.length, last?.id, last?.applied, ctx.state.pinnedTraceId,
     ctx.state.experiment?.time, c.awaitingDecisionSince === null ? '-' : Math.floor((w.time - c.awaitingDecisionSince) * 60), d.inflightChimpId === c.id,
-    c.decisionVersion, c.action, c.targetId, c.reason, c.candidates?.length ?? 0, c.candidates?.[0]?.score ?? '', c.decisionSource].join('|');
+    c.decisionVersion, c.action, c.targetId, c.reason, c.candidates?.length ?? 0, c.candidates?.[0]?.score ?? '', c.decisionSource, driveKey].join('|');
 }

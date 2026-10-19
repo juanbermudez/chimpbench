@@ -4,6 +4,8 @@ export type ProviderId = 'browser' | 'server' | 'jev' | 'r15';
 export interface AdapterIdentity { adapter: string; sha256: string; packetVersion: string }
 export interface ProviderStatus {
   ready: boolean; phase: string; error?: string; model?: string; device?: string; progress?: number; identity?: AdapterIdentity;
+  /** A stand-in that holds no model (a dry run's fake scorer); the interface says so on every readout. */
+  dry?: boolean;
 }
 /** Providers choose only; the decision loop owns validation, freshness, fallback and application. */
 export interface ProviderAnswer {

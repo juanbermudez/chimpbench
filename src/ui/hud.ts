@@ -6,6 +6,7 @@ import { setAttr, setText } from './morph';
 import { saveIndicator } from './simulations';
 import { presetLabel } from './timebar';
 import { TICK_SECONDS } from '../simulation';
+import { chipText, whoTitle } from './who-decides';
 
 // Menu bar: one opaque bar (brand · simulation · clock control · time · weather · population |
 // sound · panels · settings · guide). Every changing readout sits in a fixed-width slot (see style.css),
@@ -38,6 +39,9 @@ export function createHud(root: HTMLElement, ctx: Ctx) {
       <span class="tc-text"><span class="tc-speed" data-k="speed">1 min/s</span><span class="tc-achieved" data-k="achieved">—</span></span>${icon('chevron')}
     </button>
   </div>
+  <div class="bar-group bar-who" data-who hidden>
+    <button class="who-chip" data-act="who" aria-label="Who decides in the last simulated hour: open the time and model panel"><span class="who-k">Who decides · last hour</span><span class="who-v" data-k="who">—</span></button>
+  </div>
   <div class="bar-group bar-time" role="group" aria-label="Ecological time">
     <span class="clock-big" data-k="time" aria-live="off">08:00</span>
     <div class="date-block"><span class="dt-main"><span data-k="day">Day 1</span><span data-k="date">1 Jan</span></span><span class="season" data-k="season">Wet season</span></div>
@@ -69,6 +73,10 @@ export function createHud(root: HTMLElement, ctx: Ctx) {
   const weatherEl = root.querySelector<HTMLElement>('.weather')!;
   el.play.onclick = () => { ctx.deps.setPlaying(!ctx.deps.clock.playing); ctx.refresh(); };
   root.querySelector<HTMLButtonElement>('[data-act="time"]')!.onclick = () => ctx.toggleTimePanel();
+  // The mode "Model decides for every adult" (src/drive): the who-decides line beside the clock control, only in that mode.
+  const whoGroup = root.querySelector<HTMLElement>('[data-who]')!, whoBtn = root.querySelector<HTMLButtonElement>('[data-act="who"]')!, whoText = k('who');
+  whoBtn.onclick = () => ctx.toggleTimePanel();
+  let whoShown = false;
   root.querySelector<HTMLButtonElement>('[data-act="experiments"]')!.onclick = () => ctx.toggleSide('experiments');
   root.querySelector<HTMLButtonElement>('[data-act="society"]')!.onclick = () => ctx.toggleSide('society');
   root.querySelector<HTMLButtonElement>('[data-act="settings"]')!.onclick = () => ctx.openSettings();
@@ -143,8 +151,17 @@ export function createHud(root: HTMLElement, ctx: Ctx) {
       // Below one tick a second (Real time, the watching speed) the measured rate swings by half between ticks although
       // every tick lands on time: show the rate being kept.
       const kept = st === 'ok' && clk.ecoSecondsPerSecond < TICK_SECONDS ? clk.ecoSecondsPerSecond : clk.effectiveRate;
-      set(el.achieved, st === 'paused' ? 'Paused' : st === 'blocked' ? 'Waiting on model' : lapse ? 'time-lapse' : `${formatRate(kept)}${st === 'limited' ? ' · capped' : ''}`);
-      attr(clockCtl, 'data-state', st);
+      const drive = ctx.deps.drive?.() ?? null;
+      if (!!drive !== whoShown) { whoShown = !!drive; whoGroup.hidden = !drive; }
+      if (drive) {
+        // in the mode the clock waits for every answer: the line is the rate achieved with the waits, not "waiting"
+        set(whoText, chipText(drive)); attr(whoBtn, 'title', whoTitle(drive)); attr(whoGroup, 'data-tone', drive.problem ? 'warn' : drive.dry ? 'dry' : 'ok');
+        set(el.achieved, st === 'paused' ? 'Paused' : `${formatRate(clk.effectiveRate)} · lockstep`);
+        attr(clockCtl, 'data-state', st === 'paused' ? 'paused' : 'drive');
+      } else {
+        set(el.achieved, st === 'paused' ? 'Paused' : st === 'blocked' ? 'Waiting on model' : lapse ? 'time-lapse' : `${formatRate(kept)}${st === 'limited' ? ' · capped' : ''}`);
+        attr(clockCtl, 'data-state', st);
+      }
       if (persist) {
         const ps = persist.status(), ind = saveIndicator(ps);
         set(simName, ps.simId ? ps.simName : 'Unsaved world');

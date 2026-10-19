@@ -6,6 +6,7 @@ import { morph } from './morph';
 import { esc, nameOf } from './format';
 import { modelChipState } from './hud';
 import { PROVIDERS, type ProviderId } from '../providers/types';
+import { driveBlock } from './who-decides';
 
 // Decision model (right sidebar, M): policy, roster, readiness and honest statistics.
 
@@ -26,12 +27,14 @@ export function createModelPanel(root: HTMLElement, ctx: Ctx) {
   root.innerHTML = `<p class="pane-blurb">The selected provider picks one action from the legal options a chimp perceives.</p>
   ${ctx.deps.setProvider ? `<fieldset class="radios"><legend class="eyebrow">Provider</legend>${PROVIDERS.map(p => `<label class="radio"><input type="radio" name="provider" value="${p.id}"><span class="r-dot"></span><span><b>${p.label}</b><i>${p.id === 'browser' ? 'Runs on this device. Load downloads and caches the model (872 MB with FP16; 1.74 GB with FP32).' : p.id === 'server' ? 'Uses the configured GLiNER server endpoint.' : p.id === 'r15' ? 'Opens an unsaved five-animal demo. Requires compatible trained R15 weights on the local server.' : 'Uses the configured gateway; API credentials stay on its server.'}</i></span></label>`).join('')}</fieldset>` : ''}
   <div class="mp-status"></div>
+  <div class="mp-drive"></div>
   <div class="mp-stats"></div>
   <fieldset class="radios"><legend class="eyebrow">Policy</legend>${POLICIES.map(p => `<label class="radio"><input type="radio" name="policy" value="${p.id}"><span class="r-dot"></span><span><b>${p.label}</b><i>${p.line}</i></span></label>`).join('')}</fieldset>
   <fieldset class="radios"><legend class="eyebrow">Roster</legend>${ROSTERS.map(p => `<label class="radio"><input type="radio" name="roster" value="${p.id}"><span class="r-dot"></span><span><b>${p.label}</b><i>${p.line}</i></span></label>`).join('')}</fieldset>
   <div class="mp-roster"></div>
   <p class="honest">Model probabilities are softmax scores over the offered options, uncalibrated for chimpanzee behavior. Agreement with rules measures consistency with the simulation’s own heuristics, not biological validity.</p>`;
   const status = root.querySelector<HTMLElement>('.mp-status')!, stats = root.querySelector<HTMLElement>('.mp-stats')!, roster = root.querySelector<HTMLElement>('.mp-roster')!;
+  const driveEl = root.querySelector<HTMLElement>('.mp-drive')!;
   root.addEventListener('click', e => {
     const el = e.target as HTMLElement;
     if (el.closest('[data-act="retry"]')) { void ctx.deps.retryModel().then(() => ctx.refresh()); ctx.refresh(); return; }
@@ -52,19 +55,23 @@ export function createModelPanel(root: HTMLElement, ctx: Ctx) {
       const lat = median(model.slice(-50).map(t => t.latencyMs));
       const tok = model.length ? Math.round(model.slice(-50).reduce((a, t) => a + t.inputTokens, 0) / Math.min(50, model.length)) : NaN;
       const agree = d.agreement.total ? Math.round((d.agreement.same / d.agreement.total) * 100) : NaN;
-      const k = [d.provider, d.model, d.identity?.sha256, d.progress, mode, d.roster, d.ready, d.phase, d.status, d.lastError, d.calls, d.applied, d.revalidated, d.discarded, d.fallbacks, d.waiting, d.agreement.same, d.agreement.total, d.focalIds.join(','), d.device, model.length].join('|');
+      // the mode "Model decides for every adult" (src/drive): its own block; provider, policy and roster are the mode's
+      const drive = ctx.deps.drive?.() ?? null;
+      morph(driveEl, drive ? driveBlock(drive, w, ctx.deps.clock.effectiveRate, ctx.deps.clock.playing) : '');
+      root.querySelectorAll<HTMLElement>('fieldset.radios').forEach(f => { f.hidden = !!drive || (f.querySelector('input[name="roster"]') !== null && d.provider === 'r15'); });
+      const k = [d.provider, d.model, d.identity?.sha256, d.progress, mode, d.roster, d.ready, d.phase, d.status, d.lastError, d.calls, d.applied, d.revalidated, d.discarded, d.fallbacks, d.waiting, d.agreement.same, d.agreement.total, d.focalIds.join(','), d.device, model.length, !!drive, d.dry].join('|');
       if (k === key) return; key = k;
       root.querySelectorAll<HTMLInputElement>('input[name="policy"]').forEach(i => { i.checked = i.value === mode; i.disabled = d.provider === 'r15' && i.value === 'async'; });
       root.querySelectorAll<HTMLInputElement>('input[name="roster"]').forEach(i => { i.checked = i.value === d.roster; i.disabled = mode === 'off' || d.provider === 'r15'; });
       root.querySelectorAll<HTMLInputElement>('input[name="provider"]').forEach(i => { i.checked = i.value === d.provider; i.disabled = d.provider === 'r15' && i.value !== 'r15'; });
-      const rosterControls = root.querySelector<HTMLInputElement>('input[name="roster"]')?.closest('fieldset');
-      if (rosterControls) rosterControls.hidden = d.provider === 'r15';
+
       const chip = modelChipState(ctx);
       morph(status, `<div class="mp-led"><span class="led" data-tone="${chip.tone}"></span><b>${d.ready ? 'Ready' : esc(d.phase || 'unknown')}</b>${d.device ? `<span class="mono muted">${esc(d.device)}</span>` : ''}</div>
         <p>${esc(d.status || '')}</p>${d.lastError ? `<p class="err" title="${esc(d.lastError)}">${esc(/Unexpected token|not valid JSON|Failed to fetch|404/.test(d.lastError) ? 'The configured provider endpoint is unavailable. Rules decide.' : d.lastError)}</p>` : ''}
         <p class="mono muted">${esc(d.model)}</p>
         ${d.identity ? `<p class="mono muted" title="${esc(d.identity.sha256)}">${esc(d.identity.adapter)} · SHA-256 ${esc(d.identity.sha256.slice(0, 12))} · ${esc(d.identity.packetVersion)}</p>` : ''}
-        ${d.provider === 'r15' ? '<p>R15 scratch demo · five animals aged 8+ · draw salt 1 · unsaved. <a href="?">Open the normal app</a></p>' : ''}
+        ${drive ? `<p>Model decides for every adult · every animal aged ${drive.minAge}+ · lockstep · draw salt 1 · saved with the world${d.dry ? ' · <b class="warn">dry run: a fake scorer, no model</b>' : ''}</p>`
+          : d.provider === 'r15' ? '<p>R15 scratch demo · five animals aged 8+ · draw salt 1 · unsaved. <a href="?">Open the normal app</a></p>' : ''}
         ${!d.ready ? `<button class="btn" data-act="retry" ${d.phase === 'loading' ? 'disabled' : ''}>${icon('power')}${d.phase === 'loading' ? 'Loading…' : d.provider === 'browser' ? 'Load browser model' : 'Start / retry provider'}</button>` : ''}`);
       const cell = (label: string, v: string, title = '') => `<div${title ? ` title="${esc(title)}"` : ''}><span class="eyebrow">${label}</span><b>${v}</b></div>`;
       const rev = d.revalidated ?? 0;

@@ -1,4 +1,5 @@
 import type { ResourceCallTrace } from '../decision';
+import type { DriveReadout } from '../drive/app';
 import type { AdapterIdentity, ProviderId } from '../providers/types';
 import type { Vec3 } from 'math';
 import type { Action, Candidate, Chimp, DecisionContext, InterventionKind, Layer, ModelPolicy, Quality, Relation, Relationship, SceneAPI, Stimulus, ViewMode, World } from '../types';
@@ -32,6 +33,8 @@ export interface DeciderView {
   enabled: boolean; ready: boolean; busy: boolean; phase: string; status: string; lastError: string;
   /** Provider selection is host configuration, independent of the saved World. */
   provider?: string; providerLabel?: string; progress?: number | null; identity?: AdapterIdentity;
+  /** The provider holds no model (a dry run's fake scorer). */
+  dry?: boolean;
   model: string; device: string; latencyMs: number | null; inputTokens: number | null;
   calls: number; applied: number; discarded: number;
   roster: Roster; focalIds: number[]; traces: DecisionTraceView[]; agreement: { same: number; total: number };
@@ -93,7 +96,17 @@ export interface UiDeps {
   getSound?(): SoundControls | null;
   /** Optional saved simulations (src/persist via main.ts; absent in the synthetic preview). */
   persistence?: PersistenceView;
+  /**
+   * Optional: the mode "Model decides for every adult" (src/drive; docs/staging/app-model-drives.md). drive() is its
+   * readout while the world on screen is in it, else null; driveAnimal(id) one animal's place in it (on the model or on
+   * the rules, and its last hour); setWhoDecides starts a new simulation in the mode or under the rules (absent where the
+   * local server's R15 route cannot exist: a static build, the R15 demo).
+   */
+  drive?(): DriveReadout | null;
+  driveAnimal?(id: number): DriveAnimalView | null;
+  setWhoDecides?(who: 'rules' | 'adults', seed: number): void;
 }
+export interface DriveAnimalView { onModel: boolean; age: number; minAge: number; hour: { model: number; held: number; rules: number; ticks: number } | null }
 
 /** Structural view of the persistence controller for the menu bar indicator and the Simulations dialog. */
 export interface PersistenceStatusView {
