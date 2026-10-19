@@ -268,3 +268,105 @@ scripts/endor-run.sh report         # artifacts/endor/report.md, from the files
   (the checkpoints expire after 7 days; Endor keeps request bodies for an unstated time). The fit check records
   Endor's listing of `gliner2.5-decide` (weights repository and revision, contract, adapter targets, window) in
   `fit/account.json`; nothing here compares it with our local model (the user's word: no local comparison).
+
+## 11. The last check before anything is sent (review, written 08:17 EDT, 19 October)
+
+A second reader tried to break the build before real money and data go out: to make the key leak, to make anything
+but the allowlisted rows leave, to make the spend pass $10, and to make the run misreport its numbers. **Everything
+was done against the fake Endor. Nothing was sent to Endor, the key was not read, and no model process was started.**
+Each defect below was shown on the fake first, then repaired in its own commit with a test (40 tests now, all
+pass; the exporter's 6 pass). The full dry run on the real export passed again: 4,298 and 4,458 requests reached the
+fake with no violation, the key is in no file the run wrote, and every billed call was timed.
+
+### What was found and repaired
+
+**The key.** No way out was found: not in error messages, the SDK's logs (its logger has no output and hides the
+header), receipts, the status file, the ledger, the report, object descriptions, child processes (none is started;
+the environment never holds the key), URLs, redirects or proxies. Two holes were closed for safety: the connection
+no longer reads a certificate store named in the environment, and a storage link that holds the key is refused.
+
+**The data.** One defect. The gate kept one list of the packets that may leave, so a development row could go out as
+a training datum, with its label as the target, and pass. The list is now kept by kind of body: the fit check's
+decisions, the training datums (training rows only, both option orders), and the development rows for predict (no
+label). A real connection without these lists is refused before the key is read. A real run also reads only the
+registered export (its two files by sha256, §10).
+
+**The money.** Five defects.
+- A call Endor never finished held the run open for ever: the SDK's waits have no limit, the run's heartbeat kept it
+  from closing, and neither the kill switch nor the 3-hour limit was read. Every wait is now read in 20-second slices,
+  with the kill switch and the wall limit checked between them; a step may take 10 minutes, a predict or a save 30,
+  provisioning 20. Past that the iteration ends as an operational failure and the run is closed.
+- Rounding per call. If each call runs just over a second and Endor rounds each up, it bills nearly twice what the
+  guard counted. With a balance that lags, the fake billed $10.64 while the guard counted $1.06. The guard now reads
+  each call's time from Endor's own timestamps on the call (when it was queued, when it ended, one call at a time),
+  rounds it up to the second, and counts a call still in flight at the last step's time. A call without timestamps
+  is counted by the strict bound (the whole wall time added), which may stop a cheap run early. A billed call after
+  Endor parked the run adds a session's 60-second minimum.
+- Sleep. A laptop asleep 8 hours in the middle of a run was counted as $56, which stopped the test for good. The
+  guard now counts only time in which Endor answered: a gap of more than two minutes counts two minutes, which is
+  when Endor parks an idle run and stops billing it. `fit` and `train` now run under `caffeinate -i`.
+- A refused datum in training. Section 8 counted it as an operational failure, after which another iteration may
+  run. But the next iteration replays the same order and meets the same datum, so all three iterations would fail
+  there and pay for the steps before it. **Amendment to §8:** Endor refusing a training call (422, or a call that
+  fails as `invalid_datum`, `invalid_options`, `context_too_long` or `invalid_input`) is now a registered stop,
+  `stopped-refused` (exit 3). No iteration follows it, and the best saved epoch is still downloaded.
+- A second ledger. A second frozen checkout, or `--root`, started a fresh ledger: a second $10 and three more
+  iterations. A real run now keeps all its state in the main checkout's `artifacts/endor`, whatever checkout runs
+  it. That covers the ledger, the fit check, the iterations, receipts, logs and the adapter. The kill switch is that
+  folder's `KILL` and now takes effect within 20 seconds. A kill switch left on before an iteration ends the command
+  (exit 130) without using one of the three iterations.
+
+One more fix stopped the guard from ending a cheap run for nothing: a slow step-0 predict was counted as the cost of
+the first step, and stopped a run for money at its second step after $0.47.
+
+Checked against the fake across 24 cases (calls of 0.3 to 20 seconds, billed exactly or rounded up, a balance that
+moves or stays still): every run either finished under $10 or was stopped before it, and the guard never counted less
+than the fake billed.
+
+**The numbers.** Four defects.
+- An epoch's development numbers were written after a balance read. When that read failed, the saved epoch kept no
+  numbers, and after the resume the best epoch was chosen without it. They are now written as soon as the save
+  returns.
+- Endor's probabilities were scored as given. Answers that do not sum to 1 gave a number that was not a soft
+  cross-entropy. They are now divided by their sum, and the report prints the largest gap (flagged over 0.02).
+- Answers returned in another order went unseen when the rows had the same number of options. The report now
+  compares the untouched base read two ways, the step-0 predict against the fit check's decisions, row by row. It
+  flags a difference over 0.05, since Endor states "a few hundredths".
+- A failed download of the best epoch is now in the report, not only in the status file.
+
+### What stays open (known, not defects of the code)
+
+- Endor does not document exactly how it bills. The guard covers both readings, per call rounded up and by wall
+  time, and the balance is a second check. A call Endor has accepted still runs, and is billed, after the run is
+  closed. Nothing on this side can stop it. At most that is one predict's time.
+- Closing the laptop lid still sleeps the computer (`caffeinate -i` prevents only idle sleep). The guard counts this
+  correctly. If Endor closed the run after an hour without a heartbeat, the next call fails as an operational
+  failure, and `train --reason` resumes from the last saved epoch.
+- The fit check counts any 422 on a decision as a refusal, as §4 registers. A refusal for another cause would end
+  the test at the fit check, for about a cent.
+- Endor's data terms have not been reviewed by the user (§1).
+
+### The commands (these replace §10's)
+
+From a frozen checkout of this branch, in a shell where `ENDOR_API_KEY` is not exported. The client reads the key from
+the main checkout's `.env` itself.
+
+```sh
+cd /Volumes/Drive/chimpbench/MGOGO
+git worktree add --detach .claude/worktrees/bench-endor endor-test
+ln -s /Volumes/Drive/chimpbench/MGOGO/node_modules .claude/worktrees/bench-endor/node_modules
+cd .claude/worktrees/bench-endor
+scripts/endor-run.sh check                          # sends nothing: 40 + 6 tests and the exporter's dry run
+scripts/endor-run.sh export                         # writes artifacts/endor/export here (local only)
+scripts/endor-run.sh plan | head -40                # offline
+screen -dmS endor-fit scripts/endor-run.sh fit      # SENDS the fit check
+scripts/endor-run.sh status                         # wait for "phase": "fit", "state": "ended", "outcome": "passed"
+screen -dmS endor-train scripts/endor-run.sh train  # SENDS the training
+scripts/endor-run.sh status                         # progress; scripts/endor-run.sh kill stops it within 20 s
+scripts/endor-run.sh report                         # /Volumes/Drive/chimpbench/MGOGO/artifacts/endor/report.md
+```
+
+If `fit` ends with exit 3, the test ends there. If `train` ends with exit 75 (operational), run
+`screen -dmS endor-train2 scripts/endor-run.sh train --reason "<what failed>"`, at most three iterations in all.
+Exit 3 is a registered stop and nothing follows it. Exit 130 is the kill switch: remove `artifacts/endor/KILL` in the
+main checkout first.
