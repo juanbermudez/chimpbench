@@ -329,6 +329,10 @@ class Gate(httpx.BaseTransport):
         return 0.0, None
 
     def close(self) -> None:
+        """Every httpx client over the gate closes it when it is done, the SDK's short-lived download client too; the
+        connections underneath must outlive that, so only `shutdown` closes them."""
+
+    def shutdown(self) -> None:
         self._inner.close()
 
 
@@ -373,3 +377,5 @@ class Connection:
     def close(self) -> None:
         with contextlib.suppress(Exception):
             self.client.close()
+        with contextlib.suppress(Exception):
+            self.gate.shutdown()

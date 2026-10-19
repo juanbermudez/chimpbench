@@ -262,7 +262,7 @@ def cmd_fit(a) -> int:
         lock.release()
         raise
     code, outcome = 0, "done"
-    status.update(state="running", phase="fit", fit_total=len(train) + len(dev), fit_done=len(done), started_at=local_now(), outcome=None, detail=None)
+    status.update(name_of_results=W.NAME_OF_RESULTS, fake=fake is not None, state="running", phase="fit", fit_total=len(train) + len(dev), fit_done=len(done), started_at=local_now(), outcome=None, detail=None)
     try:
         acct = account(conn, MIN_BALANCE)
         write_json(fitdir / "account.json", acct)
@@ -445,7 +445,7 @@ def cmd_train(a) -> int:
     status = Status(root / "status.json")
     t0 = time.time()
     run, outcome, detail, code, usage = None, None, None, 0, None
-    status.update(state="running", phase="train", iteration=it, steps_total=total, step=0, epoch=None, started_at=local_now(), outcome=None, detail=None, run_id=None)
+    status.update(name_of_results=W.NAME_OF_RESULTS, fake=fake is not None, state="running", phase="train", iteration=it, steps_total=total, step=0, epoch=None, started_at=local_now(), outcome=None, detail=None, run_id=None)
     try:
         acct = account(conn, MIN_BALANCE)
         write_json(rundir / "account.json", acct)
@@ -646,7 +646,7 @@ def cmd_report(a) -> int:
 def cmd_status(a) -> int:
     root, _ = roots(a)
     s = read_json(root / "status.json", {})
-    keep = ("state", "phase", "iteration", "epoch", "step", "steps_total", "spent", "last_loss", "lr", "saved", "dev_nll", "fit_done", "fit_total", "outcome", "detail", "updated_at")
+    keep = ("name_of_results", "fake", "state", "phase", "iteration", "epoch", "step", "steps_total", "spent", "last_loss", "lr", "saved", "dev_nll", "fit_done", "fit_total", "outcome", "detail", "updated_at")
     print(json.dumps({k: s.get(k) for k in keep if k in s}, indent=1))
     return 0
 

@@ -22,6 +22,7 @@ GPU_PRICE_HOUR = 7.00          # $ per GPU-hour, every base (Endor's pricing dat
 TOKEN_PRICE = 0.005 / 1e6      # $ per input token on gliner2.5-decide
 CALL_FLOOR_S = 1.0             # every billed call books at least this much GPU time
 RUN_MIN_S = 60.0               # a GPU session costs at least 60 s
+PARK_S = 120.0                 # Endor parks a run two minutes after its last call (no GPU, no billing)
 RESERVE = 0.50                 # stop while this much of the cap is left
 HARD_MARGIN = 0.25             # the gate refuses any billed call past cap - this
 LOOKAHEAD_STEPS = 25           # the steps between two balance reads
@@ -63,7 +64,8 @@ class SpendGuard:
 
     def run_opened(self, run_id: str) -> None:
         with self.lock:
-            self.s["runs"].setdefault(run_id, {"opened": self.clock(), "closed": None, "calls": 0})
+            now = self.clock()
+            self.s["runs"].setdefault(run_id, {"opened": now, "closed": None, "calls": 0, "last": now})
             self._save()
 
     def run_closed(self, run_id: str) -> None:
@@ -76,8 +78,10 @@ class SpendGuard:
     def book_call(self, run_id: str) -> float:
         """A billed training call was accepted: one more second at least. Returns the floor booked for its receipt."""
         with self.lock:
-            r = self.s["runs"].setdefault(run_id, {"opened": self.clock(), "closed": None, "calls": 0})
+            now = self.clock()
+            r = self.s["runs"].setdefault(run_id, {"opened": now, "closed": None, "calls": 0, "last": now})
             r["calls"] += 1
+            r["last"] = now
             self._save()
             return CALL_FLOOR_S * self.s["gpu_price_hour"] / 3600
 
@@ -102,8 +106,10 @@ class SpendGuard:
 
     # ------------------------------------------------------------------ what was spent
     def run_seconds(self, r: dict) -> float:
-        wall = (r["closed"] if r["closed"] is not None else self.clock()) - r["opened"]
-        return max(RUN_MIN_S, wall, r["calls"] * CALL_FLOOR_S)
+        """A run's GPU time: its open wall time (a run not closed here, as after a crash, is parked by Endor two
+        minutes after its last call, which ends its billing), a second a call, and 60 seconds, whichever is most."""
+        end = r["closed"] if r["closed"] is not None else min(self.clock(), r.get("last", r["opened"]) + PARK_S)
+        return max(RUN_MIN_S, end - r["opened"], r["calls"] * CALL_FLOOR_S)
 
     def booked(self) -> float:
         with self.lock:

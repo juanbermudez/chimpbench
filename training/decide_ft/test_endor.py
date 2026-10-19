@@ -267,8 +267,15 @@ class Guard(unittest.TestCase):
             for _ in range(100):
                 g.book_call("r")
             self.assertAlmostEqual(g.booked(), 100 * 7 / 3600)  # a second a call
-            now[0] += 500
-            self.assertAlmostEqual(g.booked(), 500 * 7 / 3600)  # the run's wall time when larger
+            now[0] += 100
+            g.book_call("r")
+            now[0] += 400
+            self.assertAlmostEqual(g.booked(), 220 * 7 / 3600)  # left open (a crash): parked two minutes after its last call
+            g.run_closed("r")
+            self.assertAlmostEqual(g.booked(), 500 * 7 / 3600)  # closed: the run's wall time when larger
+            for _ in range(399):
+                g.book_call("r")
+            self.assertAlmostEqual(g.booked(), 500 * 7 / 3600)
             g.balance(100.0)
             g.balance(96.0)
             self.assertAlmostEqual(g.spent(), 4.0)  # the balance when larger
@@ -367,6 +374,28 @@ class Client(unittest.TestCase):
         with self.assertRaises(C.GateRefused):  # a well-formed packet that is not on the list
             client.system_one(*W.decision_parts(rows[2]["packet"]), model=f"{W.PROJECT}/{W.BASE_MODEL}", exclude_from_training=True)
         self.assertEqual(len(sent(self.fake, "/v1/systemone")), 1)
+
+    def test_a_download_client_closing_leaves_the_connections_open(self):
+        class Spy(httpx.BaseTransport):
+            def __init__(self, inner):
+                self.inner, self.closed = inner, False
+
+            def handle_request(self, request):
+                if self.closed:
+                    raise RuntimeError("closed")
+                return self.inner.handle_request(request)
+
+            def close(self):
+                self.closed = True
+        spy = Spy(httpx.MockTransport(self.fake.handler))
+        gate = C.Gate(spy, FAKE_KEY, C.Receipts(self.root / "r2.jsonl"), self.guard)
+        client = C.make_client(FAKE_KEY, gate)
+        with httpx.Client(transport=gate):  # what the SDK's download does with the same transport
+            pass
+        client.whoami()
+        self.assertFalse(spy.closed)
+        gate.shutdown()
+        self.assertTrue(spy.closed)
 
     def test_user_report_is_never_sent(self):
         client = C.make_client(FAKE_KEY, self.gate)
