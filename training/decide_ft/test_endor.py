@@ -765,6 +765,17 @@ class Runs(unittest.TestCase):
         with self.assertRaises(T.Refused):  # a replay would meet the same datum at the same step
             run_train(ns(self.root, exp, fake, reason="again"))
 
+    def test_a_failed_download_is_in_the_report(self):
+        exp, _, _ = self.export(61)
+        fake = FakeEndor(refuse_share=0)
+        run_fit(ns(self.root, exp, fake))
+        handler = fake.handler
+        fake.handler = lambda request: fake._err(500, "internal", "storage down") if request.url.path.endswith("/download") else handler(request)
+        self.assertEqual(run_train(ns(self.root, exp, fake)), 0)
+        md = (self.root / "report.md").read_text()
+        self.assertIn("Not downloaded", md)
+        self.assertFalse((self.root / "adapters").exists())
+
     def test_a_learning_rate_endor_changes_stops_the_run(self):
         exp, _, _ = self.export(61)
         fake = FakeEndor(lr_echo=lambda lr: lr * 2, refuse_share=0)

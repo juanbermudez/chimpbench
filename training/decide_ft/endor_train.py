@@ -721,6 +721,9 @@ def write_report(root: Path, fake: bool) -> None:
         lines += ["", f"Best epoch: {best['epoch']} ({best['model']}), by development soft cross-entropy."]
         if adapter:
             lines.append(f"Downloaded, not loaded: {rep['adapter']['folder']} (" + ", ".join(f"{n} {v['sha256'][:12]}" for n, v in adapter["files"].items()) + ").")
+        else:
+            why = (read_json(root / "status.json", {}) or {}).get("download_error")
+            lines.append("Not downloaded" + (f": {why}" if why else "") + f". It stays on Endor as {best['model']} for 7 days from its save; `scripts/endor-run.sh train` does not fetch it again, a download is one call to project.models.download.")
     lines += ["", "Endor's data terms were not reviewed by the user. The gaps from our recipe are in docs/staging/endor-train.md §5.", ""]
     (root / "report.md").write_text("\n".join(lines))
 
