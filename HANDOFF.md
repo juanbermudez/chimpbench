@@ -77,6 +77,17 @@ October) is planned, not run: the SDK is installed outside the repo (`/Volumes/D
 0.8.0), the user's key is in the main checkout's `.env` (git-ignored; agents never open it), the account answers with a
 $100 credit, and a visual guide is published for the user (claude.ai artifact "Training on Endor"); nothing has been
 sent, and the user's five answers are awaited. Stage R16's session 1 still waits for swap under 6 GB (a Mac restart).
+**19 October (written 09:30 EDT).** The Endor test ran (the user: "Do the real training run on endor, …" and "i dont care
+about the local, I trust endor works, run the trainging."): 08:21 to 08:44 EDT from the frozen checkout `bench-endor`,
+outcome done. Against the rules' label on 384 development packets, top-1 went from 0.438 (Endor's untouched base) to
+0.797, soft cross-entropy from 1.460 to 0.634; Endor's balance fell by about $0.43 (the guard booked $5.38 at its
+one-second floor). Results and their second reading: `docs/staging/endor-train.md` §13 (plan, Stage RE). The adapter
+(`artifacts/endor/adapters/i1-e3`) is downloaded, not loaded, and cannot drive the app as it is: another base revision
+(5a7adf72 against our 7ee5da4c), Endor's own text of the state (JSON-style; ours is YAML), almost none of the
+eight-option fruit-tree menus (over Endor's 512 tokens), and the app's checks refuse it by design. What could follow is
+listed in §13 and is the user's call. The app mode "Model decides for every adult" is merged (270b266), off by default;
+no adapter has passed R16's population test, so the trained model does not drive the app yet. R16's session 1 still
+waits for swap under 6 GB (21 GB used at 08:47: a Mac restart).
 **Stage R16 (written 18:40 EDT, 17 October):** registered, built and reviewed with no model (eight defects repaired by the
 second reader), merged into `track-e` (6c72d70) and frozen as `.claude/worktrees/bench-r16` at 2971e14. The no-model
 dry chain and session 0 run in the detached screen session `r16-s0` (outputs `bench-r16/artifacts/r16-dry.out`,
