@@ -370,3 +370,26 @@ If `fit` ends with exit 3, the test ends there. If `train` ends with exit 75 (op
 `screen -dmS endor-train2 scripts/endor-run.sh train --reason "<what failed>"`, at most three iterations in all.
 Exit 3 is a registered stop and nothing follows it. Exit 130 is the kill switch: remove `artifacts/endor/KILL` in the
 main checkout first.
+
+## 12. Amendment of 19 October 2026: the fit check's 2% stop, after it fired (the integrator; written 08:27 EDT)
+
+**What happened.** The fit check ran from 08:21 to 08:26 EDT and cost $0.0065. Endor answered 4,020 of 4,293 packets and
+refused 273, every one with the code `context_too_long` and every one a target-phase packet: 249 of 3,885 training
+rows (6.4%) and 24 of 408 development rows (5.9%). Our token count had put them at or under 512; Endor's own rendering
+of the packet is longer, as the review of 19 October expected (§11). The registered rule (more than 2% refused stops the
+test) fired and no training ran. The fit check also scored Endor's untouched gliner2.5-decide on the 384 development
+packets it answered: top-1 0.4375 against the rules' label (kind 0.494, target 0.311), chance 0.275, mean cross-entropy
+1.460.
+
+**Why the rule was there, and why it is set aside.** It protected two things: the fairness of a comparison with a local
+twin trained on the same rows (the user dropped the local twin and comparison: "i dont care about the local, I trust
+endor works, run the trainging."), and a guard against an exporter fault (a fault would refuse rows of any kind and
+code). Every refusal here is a length refusal of a long target packet, which is the limit the plan named. So the test
+goes on with the rows Endor accepts: 3,636 training rows (2,504 kind and 1,132 target) and 384 development rows,
+already written by the fit check as `fit/train-final.jsonl` and `fit/dev-final.jsonl` and pinned by sha256 in its
+summary. The target phase is therefore taught on 82% of its rows and is short of its longest packets; the report says so.
+
+**The rule from this amendment.** `train --accept-fit-refusals "<reason>"` lets the training start after a fit check
+that did not pass only when every refused packet has the code `context_too_long`; any other refusal still stops the
+test. The reason is written into the iteration record. Every other rule of §0 to §11 stands: the $10 cap, the gate, the
+key, the recipe, at most three iterations. This is not a new iteration of training (none has run).
