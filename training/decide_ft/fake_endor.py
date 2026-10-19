@@ -35,12 +35,17 @@ class FakeEndor:
 
     def __init__(self, *, key: str = FAKE_KEY, balance: float = 100.0, gpu_seconds_per_call: float = 0.5,
                  refuse=None, refuse_share: float = 1 / 256, decisions_per_minute: int = 600_000, fail_optim_at: int | None = None,
-                 lr_echo=None, hang=None):
-        self.key, self.balance_usd = key, balance
+                 lr_echo=None, hang=None, bill: str = "exact", frozen_balance: bool = False, timestamps: bool = True):
+        self.key, self.balance_usd, self.balance_start = key, balance, balance
         self.gpu_s, self.dpm = gpu_seconds_per_call, decisions_per_minute
         self.refuse = refuse if refuse is not None else (lambda state, q: _h(json.dumps(state, sort_keys=True)) % round(1 / refuse_share) == 0 if refuse_share else False)
         self.fail_optim_at, self.lr_echo = fail_optim_at, lr_echo
         self.hang = hang  # (op, run step): that call's future stays "running" for ever (a call Endor never finishes)
+        # billing: "exact" (each call its GPU seconds) or "ceil" (each call rounded up to the second); a frozen balance
+        # stands in for one that lags; futures carry Endor's created_at and completed_at on a server clock where each
+        # request takes `rtt` and each billed call runs `gpu_seconds_per_call`, one at a time (timestamps=False: none)
+        self.bill, self.frozen_balance, self.timestamps = bill, frozen_balance, timestamps
+        self.server_t, self.free_at, self._exec, self.rtt = 1_790_000_000.0, 0.0, None, 0.02
         self.requests: list[dict] = []
         self.violations: list[str] = []
         self.projects: dict[str, dict] = {}
@@ -54,7 +59,7 @@ class FakeEndor:
         self.n = 0
 
     # ------------------------------------------------------------------ across processes (the dry run's fit and train)
-    KEPT = ("balance_usd", "projects", "models", "table", "gpu_seconds", "tokens", "n", "audits")
+    KEPT = ("balance_usd", "projects", "models", "table", "gpu_seconds", "tokens", "n", "audits", "server_t", "free_at")
 
     @classmethod
     def load(cls, path: Path, **kw) -> "FakeEndor":
@@ -112,14 +117,22 @@ class FakeEndor:
 
     def _future(self, result=None, error=None) -> str:
         fid = self._id("fut")
-        self.futures[fid] = {"id": fid, "status": "failed" if error else "completed", "result": result, "error": error, "created_at": _now(), "completed_at": _now()}
+        created, (exec_s, self._exec) = self.server_t, (self._exec, None)
+        completed = created
+        if exec_s is not None:  # a billed call: it runs after the run's previous call
+            completed = self.free_at = max(created, self.free_at) + exec_s
+        stamp = (lambda t: datetime.fromtimestamp(t, timezone.utc).isoformat()) if self.timestamps else (lambda t: None)
+        self.futures[fid] = {"id": fid, "status": "failed" if error else "completed", "result": result, "error": error,
+                             "created_at": stamp(created), "completed_at": stamp(completed)}
         return fid
 
     def _bill_gpu(self) -> bool:
         if self.balance_usd <= 0:
             return False
-        self.gpu_seconds += self.gpu_s
-        self.balance_usd -= self.gpu_s * 7.0 / 3600
+        secs = math.ceil(self.gpu_s - 1e-9) if self.bill == "ceil" else self.gpu_s
+        self.gpu_seconds += secs
+        self.balance_usd -= secs * 7.0 / 3600
+        self._exec = self.gpu_s
         return True
 
     # ------------------------------------------------------------------ the toy model
@@ -168,6 +181,7 @@ class FakeEndor:
             import gzip
             raw = gzip.decompress(raw)
         body = json.loads(raw) if raw else None
+        self.server_t, self._exec = self.server_t + self.rtt, None
         self.requests.append({"method": request.method, "host": request.url.host, "path": request.url.path, "query": str(request.url.query, "ascii"),
                               "headers": dict(request.headers), "body": body, "raw": raw})
         if request.url.host == self.STORAGE:
@@ -184,7 +198,7 @@ class FakeEndor:
         if m == "GET" and path == "/v1/whoami":
             return self._json(200, {"org_id": "org_fake", "key_id": "key_fake", "user_id": None, "limits": {"decisions_per_minute": self.dpm, "max_active_runs": 25}, "managed_projects": False})
         if m == "GET" and path == "/v1/balance":
-            return self._json(200, {"balance_usd": round(self.balance_usd, 6)})
+            return self._json(200, {"balance_usd": round(self.balance_start if self.frozen_balance else self.balance_usd, 6)})
         if m == "GET" and path == "/v1/base_models":
             return self._json(200, {"base_models": [{"id": "gliner2.5-decide", "provider": "fake", "params": "fake", "max_options": 64, "max_question_tokens": 512,
                                                      "default_rank": 16, "max_rank": 256, "lora_targets": ["fake.attention", "fake.mlp"], "contract": "fake-contract",

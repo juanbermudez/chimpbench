@@ -298,6 +298,7 @@ class Gate(httpx.BaseTransport):
             response.read()
             status, rid = response.status_code, response.headers.get("x-request-id")
             usd, note = self._book(kind, url.path, raw, response)
+            self.guard.touch()  # an answer from Endor: the runs this process holds are still held
             return response
         except BaseException as e:
             note = type(e).__name__

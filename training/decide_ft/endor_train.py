@@ -441,8 +441,20 @@ def settle(futures: list, what: str, limit_s: float, guard: SpendGuard, t0: floa
             raise TimeoutError(f"{what}: not finished after {limit_s:.0f} s")
 
 
+def infos(*futures) -> list:
+    """Endor's record of each server call behind these futures (created_at, completed_at), in the order sent; a
+    future split into several requests by the SDK gives each of its parts."""
+    out = []
+    for f in futures:
+        parts = getattr(f, "_children", None)
+        out += infos(*parts) if parts else [f.info]
+    return out
+
+
 def predict_dev(run, dev: list[dict], guard: SpendGuard, t0: float) -> tuple[list[list[float]], float]:
-    answers = settle([run.predict([W.predict_row(r["packet"]) for r in dev])], "the development predict", EPOCH_CALL_WAIT_S, guard, t0)[0]
+    fut = run.predict([W.predict_row(r["packet"]) for r in dev])
+    answers = settle([fut], "the development predict", EPOCH_CALL_WAIT_S, guard, t0)[0]
+    guard.settled(run.id, infos(fut))
     if len(answers) != len(dev):
         raise W.WireError("run.predict did not answer every development row")
     out, worst = [], 0.0
@@ -517,6 +529,7 @@ def cmd_train(a) -> int:
             def record(item) -> None:  # the oldest step in flight: its results, in the order the steps were sent
                 kk, n, fb_f, opt_f = item
                 out, opt = settle([fb_f, opt_f], f"step {kk + 1}", STEP_WAIT_S, guard, t0)
+                guard.settled(run.id, infos(fb_f, opt_f))  # each call at its own execution time, rounded up to the second
                 losses.append(out.loss)
                 steps_log.add({"k": kk, "epoch": e + 1, "n": n, "loss": out.loss, "accuracy": out.accuracy, "grad_norm": opt.grad_norm,
                                "lr": lrs[kk], "lr_echo": opt.learning_rate, "step_echo": opt.step})
@@ -549,7 +562,9 @@ def cmd_train(a) -> int:
             probs, worst = predict_dev(run, dev, guard, t0)
             metrics = W.dev_metrics(dev, probs)
             name = W.checkpoint_name(it, e + 1)
-            model = settle([run.save_checkpoint(name, include_optimizer=True, ttl_seconds=W.TTL_SECONDS)], f"the checkpoint {name}", EPOCH_CALL_WAIT_S, guard, t0)[0]
+            save = run.save_checkpoint(name, include_optimizer=True, ttl_seconds=W.TTL_SECONDS)
+            model = settle([save], f"the checkpoint {name}", EPOCH_CALL_WAIT_S, guard, t0)[0]
+            guard.settled(run.id, infos(save))
             its.saved(e + 1, name, model)
             conn.client.balance()
             extra = max(EPOCH_EXTRA_FLOOR, guard.spent() - before)

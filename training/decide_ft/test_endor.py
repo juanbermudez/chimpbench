@@ -259,24 +259,42 @@ class Guard(unittest.TestCase):
                 G.SpendGuard(Path(t) / "l.json", 9.0)  # a test's cap never changes
             self.assertEqual(g.cap, 10.0)
 
+    @staticmethod
+    def clock():
+        c = {"wall": 1000.0}
+
+        def later(s):
+            c["wall"] += s
+        return c, later
+
+    def guard(self, t, c):
+        return G.SpendGuard(Path(t) / "l.json", 10.0, clock=lambda: c["wall"], mono=lambda: c["wall"])
+
     def test_floor_per_call_session_minimum_and_balance(self):
         with tempfile.TemporaryDirectory() as t:
-            now = [1000.0]
-            g = G.SpendGuard(Path(t) / "l.json", 10.0, clock=lambda: now[0])
+            c, later = self.clock()
+            g = self.guard(t, c)
             g.run_opened("r")
             self.assertAlmostEqual(g.booked(), 60 * 7 / 3600)  # the 60-second minimum
             for _ in range(100):
                 g.book_call("r")
             self.assertAlmostEqual(g.booked(), 100 * 7 / 3600)  # a second a call
-            now[0] += 100
+            for _ in range(10):
+                later(10)
+                g.touch()  # an answer from Endor every 10 s: the run is held
             g.book_call("r")
-            now[0] += 400
-            self.assertAlmostEqual(g.booked(), 220 * 7 / 3600)  # left open (a crash): parked two minutes after its last call
+            self.assertAlmostEqual(g.booked(), 101 * 7 / 3600)
+            for _ in range(30):
+                later(10)
+                g.touch()
+            self.assertAlmostEqual(g.booked(), 400 * 7 / 3600)  # its wall time when larger
+            later(400)  # 400 s without an answer (the process ended, the network was down): parked after 2 minutes
+            self.assertAlmostEqual(g.booked(), 520 * 7 / 3600)
+            self.assertAlmostEqual(self.guard(t, c).booked(), 520 * 7 / 3600)  # another process reads the same
+            g.book_call("r")  # a call after the park: a new session and its minimum
+            self.assertAlmostEqual(g.booked(), (520 + 60) * 7 / 3600)
             g.run_closed("r")
-            self.assertAlmostEqual(g.booked(), 500 * 7 / 3600)  # closed: the run's wall time when larger
-            for _ in range(399):
-                g.book_call("r")
-            self.assertAlmostEqual(g.booked(), 500 * 7 / 3600)
+            self.assertAlmostEqual(g.booked(), (520 + 60) * 7 / 3600)
             g.balance(100.0)
             g.balance(96.0)
             self.assertAlmostEqual(g.spent(), 4.0)  # the balance when larger
@@ -284,6 +302,54 @@ class Guard(unittest.TestCase):
                 g.check(per_step_usd=0.3)  # 4 + 25 × 0.3 + 0.5 ≥ 10
             self.assertEqual(e.exception.kind, "money")
             g.check(per_step_usd=0.1)
+
+    def test_a_sleep_counts_the_two_minutes_before_endor_parks_the_run(self):
+        with tempfile.TemporaryDirectory() as t:
+            c, later = self.clock()
+            g = self.guard(t, c)
+            g.run_opened("r")
+            for _ in range(200):
+                g.book_call("r")
+                later(0.5)
+            later(8 * 3600)  # the computer slept 8 hours: no answer from Endor, which parked the run after two minutes
+            g.book_call("r")
+            g.run_closed("r")
+            self.assertAlmostEqual(g.gpu_seconds(), 99.5 + 120 + 60)  # its awake time, the two minutes, a second session
+            self.assertLess(g.spent(), 1.0)  # before the review: $56.19
+
+    def test_each_call_is_booked_at_its_time_on_endor_rounded_up(self):
+        from types import SimpleNamespace as NS
+        with tempfile.TemporaryDirectory() as t:
+            c, later = self.clock()
+            g = self.guard(t, c)
+            g.run_opened("r")
+            # two calls sent together and run one after the other for 1.05 s each, then a third after 300 s idle
+            for _ in range(3):
+                g.book_call("r")
+            g.settled("r", [NS(created_at=0.0, completed_at=1.05), NS(created_at=0.01, completed_at=2.10)])
+            self.assertAlmostEqual(g.gpu_seconds(), 60)  # 2 + 2 + the third pending at 2: under the minimum
+            g.settled("r", [NS(created_at=302.1, completed_at=302.2)])
+            self.assertAlmostEqual(g.gpu_seconds(), 60 + 60)  # 5 s of calls, two sessions (Endor's own clock shows the park)
+            for _ in range(100):
+                g.book_call("r")
+            self.assertAlmostEqual(g.gpu_seconds(), 2 + 2 + 1 + 100 * 1 + 60)  # pending: as long as the last call read
+            g.settled("r", [NS(created_at=310.0 + 2 * i, completed_at=310.0 + 2 * i + 1.05) for i in range(100)])
+            self.assertAlmostEqual(g.gpu_seconds(), 2 + 2 + 1 + 100 * 2 + 60)  # each rounded up to 2 s, not 1
+            g.book_call("r")
+            g.book_call("r")
+            self.assertAlmostEqual(g.gpu_seconds(), 2 + 2 + 1 + 100 * 2 + 2 * 2 + 60)
+            self.assertEqual(g.summary()["calls_timed_by_endor"], 103)
+
+    def test_untimed_calls_add_the_wall_time(self):
+        with tempfile.TemporaryDirectory() as t:
+            c, later = self.clock()
+            g = self.guard(t, c)
+            g.run_opened("r")
+            for _ in range(100):
+                g.book_call("r")
+                later(1.05)
+            g.settled("r", [None] * 100)  # Endor gave no timestamps: each call may have taken up to the whole wall time
+            self.assertAlmostEqual(g.gpu_seconds(), 100 + 105)
 
     def test_projection_and_kill(self):
         with tempfile.TemporaryDirectory() as t:
@@ -507,6 +573,10 @@ class Runs(unittest.TestCase):
         self.assertEqual(len(receipts), len(fake.requests))
         self.assertTrue(all({"status", "seconds", "usd", "route"} <= set(r) for r in receipts))
         self.assertTrue(all(r.get("request_id") for r in receipts if r["route"] != "storage (model file)"))
+        # the money: the guard never counts less than the fake billed, every call timed by Endor's timestamps
+        g = G.SpendGuard(self.root / "ledger.json", 10.0)
+        self.assertGreaterEqual(g.spent() + 1e-9, 100.0 - fake.balance_usd)
+        self.assertEqual((g.summary()["calls_untimed"], g.summary()["calls_timed_by_endor"]), (0, g.summary()["billed_calls"]))
         # the test is done: no further iteration
         with self.assertRaises(T.Refused):
             run_train(ns(self.root, exp, fake, reason="again"))
@@ -533,6 +603,19 @@ class Runs(unittest.TestCase):
         self.assertEqual([r["status"] for r in fake.runs.values()], ["closed"])
         with self.assertRaises(T.Refused):  # no iteration after a money stop
             run_train(ns(self.root, exp, fake, reason="more money"))
+
+    def test_calls_rounded_up_on_endor_with_a_lagging_balance_stop_before_ten_dollars(self):
+        # each call runs 9.05 s on Endor and is billed 10 s; the balance never moves: before the review the guard counted
+        # $1.06 for a run the fake billed $10.64
+        exp, _, _ = self.export(720)
+        fake = FakeEndor(gpu_seconds_per_call=9.05, bill="ceil", frozen_balance=True, refuse_share=0)
+        run_fit(ns(self.root, exp, fake))
+        self.assertEqual(run_train(ns(self.root, exp, fake)), 3)
+        self.assertEqual(json.loads((self.root / "iterations.json").read_text())["iterations"][-1]["outcome"], "stopped-money")
+        self.assertLess(100.0 - fake.balance_usd, 10.0)
+        g = G.SpendGuard(self.root / "ledger.json", 10.0)
+        self.assertGreaterEqual(g.spent() + 1e-9, 100.0 - fake.balance_usd)  # never less than what was billed
+        self.assertEqual(g.summary()["calls_untimed"], 0)
 
     def test_the_projection_stops_a_run_that_would_pass_the_cap(self):
         exp, _, _ = self.export(400)  # 150 steps
