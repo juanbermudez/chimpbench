@@ -147,8 +147,10 @@ def forbidden_markers(extra: tuple[str, ...] = ()) -> tuple[str, ...]:
 
 class Gate(httpx.BaseTransport):
     def __init__(self, inner: httpx.BaseTransport, key: str, receipts: Receipts, guard: SpendGuard, *, storage_hosts: tuple[str, ...] = (),
-                 allowed: dict[str, frozenset[str]] | None = None):
+                 allowed: dict[str, frozenset[str]] | None = None, routes: frozenset[tuple[str, str]] | None = None):
         self._inner, self._key, self.receipts, self.guard = inner, key, receipts, guard
+        # a command that needs only some routes names them (the bill: two GETs); None: every route of the table
+        self.routes = routes
         # by body kind ("decision", "datum", "predict"), the sha256 of every packet that may leave in it
         # (endor_wire.allowed_packets): a development packet is never a datum (its label would leave with it), a
         # training packet never a predict row; a kind with no list lets nothing out. None: shape checks only (tests)
@@ -289,6 +291,8 @@ class Gate(httpx.BaseTransport):
                 self._scan(f"the header {name}", value)
         self._scan("the URL", str(url))
         check, kind = self._route(request.method, url.path)
+        if self.routes is not None and (request.method, url.path) not in self.routes:
+            self._refuse(f"{request.method} {_template(url.path)} is not a route of this command")
         raw, body = self._body(request)
         self._scan("the body", raw.decode("utf-8", "replace"))
         self._check_body(check, body)
@@ -368,7 +372,8 @@ class Connection:
     """The client, its gate and its guard. Real: the key from the main checkout's .env and the network. Fake: a fake key
     and the fake Endor's handler (nothing can leave: httpx.MockTransport never opens a socket)."""
 
-    def __init__(self, root: Path, guard: SpendGuard, fake=None, allowed: dict[str, frozenset[str]] | None = None):
+    def __init__(self, root: Path, guard: SpendGuard, fake=None, allowed: dict[str, frozenset[str]] | None = None,
+                 routes: frozenset[tuple[str, str]] | None = None):
         if fake is None and allowed is None:  # refused before the key is read
             raise GateRefused("a real connection needs the list of the packets that may leave")
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -378,7 +383,7 @@ class Connection:
             key, inner, storage = fake.key, httpx.MockTransport(fake.handler), (fake.STORAGE,)
         else:
             key, inner, storage = read_key(), https_transport(), ()
-        self.gate = Gate(inner, key, self.receipts, guard, storage_hosts=storage, allowed=allowed)
+        self.gate = Gate(inner, key, self.receipts, guard, storage_hosts=storage, allowed=allowed, routes=routes)
         self.client = make_client(key, self.gate)
         self._secrets = (key,)
         del key

@@ -6,7 +6,7 @@
 #   scripts/endor-run.sh dry      the fit check and the whole run against the fake Endor, under artifacts/endor-dry
 #   scripts/endor-run.sh fit      SENDS: the account check and every exported packet once (exit 3 when over 2% refused)
 #   scripts/endor-run.sh train [--reason "..."]   SENDS: the training run (exit 0 done, 3 a stop, 75 operational, 130 kill)
-#   scripts/endor-run.sh bill     SENDS two GETs after a run: the balance and the usage rows, so the report shows the settled cost
+#   scripts/endor-run.sh bill     SENDS two GETs, once, an hour or more after the run: the balance and the usage rows (the settled cost)
 #   scripts/endor-run.sh status | report | kill
 # A real run's state is in the main checkout's artifacts/endor whatever checkout runs it (one ledger, one cap):
 # progress in its status.json (`status`), logs in its logs/; the cap is $10 for the whole test.
@@ -35,6 +35,7 @@ case "${1:-}" in
   dry) if [[ -e artifacts/endor-dry ]]; then mv artifacts/endor-dry "artifacts/endor-dry.$(date +%Y%m%dT%H%M%S)"; fi
        "$PY" -I -B "$TRAIN" fit --cap "$CAP" --fake
        "$PY" -I -B "$TRAIN" train --cap "$CAP" --fake
+       "$PY" -I -B "$TRAIN" bill --fake > /dev/null
        cat artifacts/endor-dry/report.md ;;
   # caffeinate -i: an idle Mac does not sleep while a step sends (a sleeping client leaves the run to park and the
   # guard's own clock to run on: AGENTS.md's rule for long runs)

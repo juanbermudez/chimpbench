@@ -353,7 +353,7 @@ def cmd_fit(a) -> int:
         code, outcome = 75, "failed-unexpected"
         status.update(detail=f"{err.kind}: {err}")
     finally:
-        status.update(state="ended", phase="fit", outcome=outcome, fit_done=len(done), ledger=guard.summary())
+        status.update(state="ended", phase="fit", outcome=outcome, fit_done=len(done), spent=round(guard.spent(), 4), ledger=guard.summary())
         conn.close()
         keep_fake(fake, root)
         lock.release()
@@ -698,15 +698,22 @@ def write_report(root: Path, fake: bool) -> None:
     sums = {"base_step0_predict": base and base.get("max_sum_error"), "base_decisions": fit.get("max_sum_error"),
             **{r["name"]: r.get("max_sum_error") for r in recs}}
     worst_sum = max((v for v in sums.values() if v is not None), default=None)
-    usage = read_json(root / "usage.json")
+    # the bill's reading (registration §14) when it has been made, else the run's own read at its end
+    bill = read_json(root / "bill.json")
+    usage_file = root / ("usage-bill.json" if bill and (root / "usage-bill.json").exists() else "usage.json")
+    usage = read_json(usage_file)
     usage_usd = round(sum((u.get("cost_usd") or 0) for u in usage), 4) if usage else None
+    raw = read_json(root / "ledger.json", {}) or {}
+    b0, b1, b_at = raw.get("balance_first"), raw.get("balance_last"), raw.get("balance_last_at")
+    balance_read_at = datetime.fromtimestamp(b_at).astimezone().isoformat(timespec="seconds") if b_at else None
     adapter = read_json(root / f"adapters/{best['name']}/manifest.json") if best else None
     rep = {"name_of_results": W.NAME_OF_RESULTS, "fake": fake, "written_at": local_now(), "iterations": its, "fit": {k: fit.get(k) for k in ("passed", "exported", "refused", "refused_by_phase", "share", "codes", "final_rows")},
            "dev": {"base_step0_predict": base["dev"] if base else None, "base_decisions": fit.get("base_dev_decisions"), "epochs": [{k: r[k] for k in ("iteration", "epoch", "name", "dev", "train_loss", "spent", "seconds")} for r in recs],
                    "base_agreement": agree, "max_sum_error": sums},
            "best": {k: best[k] for k in ("iteration", "epoch", "name", "model")} if best else None, "adapter": adapter and {"files": adapter["files"], "folder": f"artifacts/{root.name}/adapters/{best['name']}"},
            "dollars": {"cap": ledger and ledger["cap"], "booked": ledger and ledger["booked"], "from_balance": ledger and ledger["measured_from_balance"], "from_usage_rows": usage_usd,
-                       "usage_read_at": datetime.fromtimestamp((root / "usage.json").stat().st_mtime).astimezone().isoformat(timespec="seconds") if usage else None,
+                       "usage_read_at": datetime.fromtimestamp(usage_file.stat().st_mtime).astimezone().isoformat(timespec="seconds") if usage else None,
+                       "balance_first": b0, "balance_last": b1, "balance_read_at": balance_read_at, "bill": bill,
                        "calls_timed_by_endor": ledger and ledger.get("calls_timed_by_endor"), "calls_untimed": ledger and ledger.get("calls_untimed"), "sessions": ledger and ledger.get("sessions")},
            "data_terms_reviewed_by_the_user": False, "gaps": GAPS}
     write_json(root / "report.json", rep)
@@ -717,10 +724,16 @@ def write_report(root: Path, fake: bool) -> None:
         first, last = its[0], its[-1]
         lines += [f"- Ran {first['started_at']} to {last['ended_at']}; {len(its)} iteration(s); last outcome: {last['outcome']}" + (f" ({last['detail']})" if last.get("detail") else "") + "."]
     if ledger:
-        lines += [f"- Dollars: ${ledger['spent']:.2f} counted against the ${ledger['cap']:.0f} cap (booked ${ledger['booked']:.2f}, from the balance ${ledger['measured_from_balance']:.2f}"
-                  + (f", Endor's hourly usage rows ${usage_usd:.2f} as read at {rep['dollars']['usage_read_at']}, which may lag" if usage_usd is not None else "") + ")."
+        lines += [f"- Dollars: ${ledger['spent']:.2f} counted against the ${ledger['cap']:.0f} cap (booked ${ledger['booked']:.2f}; the account's prepaid balance fell ${ledger['measured_from_balance']:.2f}"
+                  + (f" from the first read to the read at {balance_read_at}" if balance_read_at else "")
+                  + (f"; Endor's hourly usage rows ${usage_usd:.2f} as read at {rep['dollars']['usage_read_at']}" + ("" if bill else ", which may lag") if usage_usd is not None else "")
+                  + (", the bill's reading (registration §14)" if bill else "") + ")."
                   + f" Booked from {ledger.get('billed_calls')} billed calls, {ledger.get('calls_timed_by_endor')} timed by Endor's own timestamps"
                   + (f", {ledger.get('calls_untimed')} untimed (booked by the strict bound)" if ledger.get("calls_untimed") else "") + f", {ledger.get('sessions')} GPU session(s)."]
+    if b0 is not None and b1 is not None and b1 > b0:
+        lines += ["- The balance rose between its reads (a top-up): it cannot measure this test; read the usage rows."]
+    elif ledger and usage_usd is not None and abs(ledger["measured_from_balance"] - usage_usd) > 0.01:
+        lines += [f"- The balance is the whole account's: it moved ${abs(ledger['measured_from_balance'] - usage_usd):.2f} {'more' if ledger['measured_from_balance'] > usage_usd else 'less'} than this project's usage rows."]
     if fit:
         lines += [f"- Fit check: {fit['refused']['train']} of {fit['exported']['train']} training and {fit['refused']['dev']} of {fit['exported']['dev']} development packets refused"
                   f" ({'passed' if fit['passed'] else 'stopped: over 2%'}); trained on {fit['final_rows']['train']} rows, scored on {fit['final_rows']['dev']}."]
@@ -765,25 +778,50 @@ def base_agreement(root: Path, base: dict | None) -> dict | None:
     return {"n": len(worst), "max": round(worst[-1], 5), "median": round(worst[len(worst) // 2], 5)}
 
 
+BILL_ROUTES = frozenset({("GET", "/v1/balance"), ("GET", "/v1/usage")})
+BILL_AFTER_S = 3600  # Endor's balance lagged the first run's last four minutes; its usage rows are hourly
+
+
 def cmd_bill(a) -> int:
     """After the run (registration §14): Endor's balance and usage rows read once more, so the report shows what the
-    test cost once Endor's hourly billing has caught up. Two GETs; no packet, no billed call. Refused while a run holds
-    the lock."""
+    test cost once Endor's billing has caught up. Two GETs, the only routes the gate lets out here; no packet, no
+    billed call. Once per test, at least an hour after the last run closed, never while a run holds the lock. The run's
+    own usage.json is kept; this reading is usage-bill.json and bill.json."""
     root, fake = roots(a)
     ledger = read_json(root / "ledger.json")
     if not ledger:
         raise Refused("nothing has run: no ledger")
     lock = RunLock(root)
     try:
-        conn = Connection(root, SpendGuard(root / "ledger.json", ledger["cap"]), fake, allowed={"datum": frozenset(), "predict": frozenset()})
+        if (root / "bill.json").exists():
+            raise Refused(f"the bill was read at {read_json(root / 'bill.json')['at']}; registration §14 allows one reading")
+        runs = list(ledger.get("runs", {}).values())
+        if not runs or any(r.get("closed") is None for r in runs):
+            raise Refused("no run has closed (or one is still open): nothing to bill")
+        if fake is None and time.time() - max(r["closed"] for r in runs) < BILL_AFTER_S:
+            raise Refused("the bill is read at least an hour after the last run closed (registration §14)")
+        # the usage window from the hour of the test's first call (a receipts file is never rewritten)
+        stamps = [datetime.strptime(p.name.split("-")[0], "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc) for p in (root / "receipts").glob("*.jsonl")]
+        if not stamps:
+            raise Refused("no receipts: nothing was sent")
+        first, now = min(stamps).replace(minute=0, second=0, microsecond=0), datetime.now(timezone.utc)
+        if now - first > timedelta(days=13):
+            raise Refused("the test's first hour is more than 13 days old: one usage read no longer covers it")
+        guard = SpendGuard(root / "ledger.json", ledger["cap"])
+        conn = Connection(root, guard, fake, allowed={}, routes=BILL_ROUTES)
         try:
-            conn.client.balance()  # the gate gives it to the guard: the ledger's last balance
-            now = datetime.now(timezone.utc)
-            usage = [u.model_dump(mode="json") for u in conn.client.usage(now - timedelta(days=13), now + timedelta(hours=1), project=W.PROJECT)]
-            write_json(root / "usage.json", usage)
+            balance = conn.client.balance()  # the gate gives it to the guard: the ledger's last balance
+            usage = [u.model_dump(mode="json") for u in conn.client.usage(first, now + timedelta(hours=1), project=W.PROJECT)]
+        except (endor.EndorError, httpx.HTTPError, TimeoutError, GateRefused) as e:
+            print(f"failed ({conn.error(e).kind}): {conn.error(e)}; nothing written but the balance in the ledger, if it was read", file=sys.stderr)
+            return 75
         finally:
             conn.close()
             keep_fake(fake, root)
+        write_json(root / "usage-bill.json", usage)
+        write_json(root / "bill.json", {"at": local_now(), "balance_usd": balance, "usage_usd": round(sum((u.get("cost_usd") or 0) for u in usage), 6),
+                                        "usage_rows": len(usage), "window": [first.isoformat(), (now + timedelta(hours=1)).isoformat(timespec="seconds")]})
+        Status(root / "status.json").update(spent=round(guard.spent(), 4), ledger=guard.summary(), billed_at=read_json(root / "bill.json")["at"])
     finally:
         lock.release()
     write_report(root, fake is not None)

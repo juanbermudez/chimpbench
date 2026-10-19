@@ -631,10 +631,12 @@ class Runs(unittest.TestCase):
             run_train(ns(self.root, exp, fake, reason="again"))
 
     def test_each_epoch_keeps_its_rows_and_the_status_its_last_spent(self):
-        exp, _, dev = self.export(40)
+        exp, _, dev = self.export(120)
         fake = FakeEndor(refuse_share=0)
         self.assertEqual(run_fit(ns(self.root, exp, fake)), 0)
         self.assertEqual(run_train(ns(self.root, exp, fake)), 0)
+        # past the run's 60-second minimum, so the last predict and save move spent (with fewer calls the check is idle)
+        self.assertGreater(G.SpendGuard(self.root / "ledger.json", 10.0).summary()["billed_calls"], 60)
         final_dev = W.read_jsonl(self.root / "fit/dev-final.jsonl")
         epochs = [json.loads(line) for line in (self.root / "run-i1/epochs.jsonl").read_text().splitlines()]
         for rec in epochs:  # the epoch's numbers recomputed from its own rows
@@ -653,21 +655,81 @@ class Runs(unittest.TestCase):
             T.cmd_bill(ns(self.root, exp, FakeEndor()))
         fake = FakeEndor(refuse_share=0, frozen_balance=True)  # Endor's balance lags the whole run
         self.assertEqual(run_fit(ns(self.root, exp, fake)), 0)
+        with self.assertRaises(T.Refused):  # a fit check alone: no run has closed
+            T.cmd_bill(ns(self.root, exp, fake))
         self.assertEqual(run_train(ns(self.root, exp, fake)), 0)
         self.assertEqual(G.SpendGuard(self.root / "ledger.json", 10.0).summary()["measured_from_balance"], 0.0)
         billed = round(fake.balance_start - fake.balance_usd, 4)
         self.assertGreater(billed, 0)
+        run_usage = (self.root / "usage.json").read_bytes()
         fake.frozen_balance = False  # the hour has settled
+        # refused while a live process holds the run's lock, with nothing sent
+        (self.root / "run.lock").write_text(str(os.getpid()))
         before = len(fake.requests)
+        with self.assertRaises(T.Refused):
+            T.cmd_bill(ns(self.root, exp, fake))
+        self.assertEqual(len(fake.requests), before)
+        (self.root / "run.lock").unlink()
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(T.cmd_bill(ns(self.root, exp, fake)), 0)
         new = fake.requests[before:]
         self.assertEqual(sorted((r["method"], r["path"]) for r in new), [("GET", "/v1/balance"), ("GET", "/v1/usage")])
         self.assertEqual(round(fake.balance_start - fake.balance_usd, 4), billed)  # nothing billed
         self.assertEqual(G.SpendGuard(self.root / "ledger.json", 10.0).summary()["measured_from_balance"], billed)
-        self.assertIn(f"from the balance ${billed:.2f}", (self.root / "report.md").read_text())
+        # its own files beside the run's: the run's usage rows are kept, the bill's are what the fake bills
+        self.assertEqual((self.root / "usage.json").read_bytes(), run_usage)
+        rows = json.loads((self.root / "usage-bill.json").read_text())
+        self.assertAlmostEqual(sum(u["cost_usd"] for u in rows), fake.gpu_seconds * 7 / 3600 + fake.tokens * 0.005e-6, places=9)
+        bill = json.loads((self.root / "bill.json").read_text())
+        self.assertEqual(bill["usage_rows"], len(rows))
+        report = (self.root / "report.md").read_text()
+        self.assertIn(f"the account's prepaid balance fell ${billed:.2f} from the first read to the read at", report)
+        self.assertIn("the bill's reading (registration §14)", report)
+        self.assertNotIn("which may lag", report)
+        self.assertEqual(json.loads((self.root / "status.json").read_text())["billed_at"], bill["at"])
         self.assertFalse((self.root / "run.lock").exists())
         self.assertNotIn(FAKE_KEY.encode(), every_file_bytes(self.root))
+        # once per test
+        before = len(fake.requests)
+        with self.assertRaises(T.Refused):
+            T.cmd_bill(ns(self.root, exp, fake))
+        self.assertEqual(len(fake.requests), before)
+
+    def test_the_bill_gate_lets_out_its_two_routes_only(self):
+        fake = FakeEndor()
+        self.root.mkdir(parents=True)
+        conn = C.Connection(self.root, G.SpendGuard(self.root / "ledger.json", 10.0), fake, allowed={}, routes=T.BILL_ROUTES)
+        try:
+            self.assertEqual(conn.client.balance(), 100.0)
+            with self.assertRaises(C.GateRefused):
+                conn.client.whoami()
+        finally:
+            conn.close()
+        self.assertEqual([(r["method"], r["path"]) for r in fake.requests], [("GET", "/v1/balance")])
+
+    def test_a_failed_bill_writes_nothing_and_says_why(self):
+        exp, _, _ = self.export(40)
+
+        class UsageDown(FakeEndor):
+            def handler(self, request):
+                if request.url.path == "/v1/usage" and getattr(self, "down", False):
+                    self.requests.append({"method": request.method, "host": request.url.host, "path": request.url.path, "query": "", "headers": {}, "body": None, "raw": b""})
+                    return self._err(500, "internal", "down")
+                return super().handler(request)
+
+        fake = UsageDown(refuse_share=0)
+        self.assertEqual(run_fit(ns(self.root, exp, fake)), 0)
+        self.assertEqual(run_train(ns(self.root, exp, fake)), 0)
+        report = (self.root / "report.md").read_bytes()
+        fake.down = True
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(T.cmd_bill(ns(self.root, exp, fake)), 75)
+        self.assertIn("failed", err.getvalue())
+        self.assertNotIn(FAKE_KEY, err.getvalue())
+        self.assertFalse((self.root / "bill.json").exists() or (self.root / "usage-bill.json").exists())
+        self.assertEqual((self.root / "report.md").read_bytes(), report)
+        self.assertFalse((self.root / "run.lock").exists())
 
     def test_more_than_two_percent_refused_stops(self):
         exp, train, _ = self.export(61)
