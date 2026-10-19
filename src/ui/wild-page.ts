@@ -89,7 +89,8 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
   }
   function view(t: LiteTarget, n: Now): RowView {
     const r = refState(t, n.arm), wsx = worldState(t, n.w, n.life, n.id.popCap, n.refused);
-    const v: RowView = { t, arm: n.arm, ref: r, world: wsx, communities: scaledWords(t, n), open: openRows.has(t.id), detail: '' };
+    const v: RowView = { t, arm: n.arm, ref: r, world: wsx, communities: scaledWords(t, n), open: openRows.has(t.id), detail: '',
+      matchNote: n.arm.id === 'Y3-T0' && n.matching.has(n.arm.id) ? ref!.todayMatch : '' };
     if (v.open) v.detail = detailHtml(v, lite!.sources, ref!.arms, n.matching);
     return v;
   }
@@ -106,7 +107,7 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
     const exp = w.stimuli.length ? ` An experiment is under way (${esc(w.stimuli.map(s => s.label).join(', '))}).` : '';
     return `${map}, seed ${w.seed}, ${model} (patrols from ${id.patrols === 'hazard' ? 'a tuned hazard' : 'the males’ own decision'}). ${who} Earlier hours are not recorded in this build.${exp}
       Exact record (all-seeing): days 1 to ${days}${days <= 30 ? ', inside the settling-in month the reference runs skipped' : ', including the settling-in month the reference runs skipped'}. Field teams: not running in this build.
-      Reference: ${esc(arm.name.toLowerCase())}, ${arm.seeds.length} worlds × ${sig2(arm.days / 365)} years after a ${arm.burnInDays}-day settling-in, field map, rules only, run ${esc(dateWords(arm.runDate))}${arm.protocol.current ? '' : ' under an older protocol'}${n.matching.has(arm.id) ? '' : ' (another model, for context only)'}.${life.days < 1 ? '' : ''}`;
+      Reference: ${esc(arm.name.toLowerCase())}, ${arm.seeds.length} worlds × ${sig2(arm.days / 365)} years after a ${arm.burnInDays}-day settling-in, field map, rules only, run ${esc(dateWords(arm.runDate))}${arm.protocol.current ? '' : ' under an older protocol'}${n.matching.has(arm.id) ? '' : ' (another model, for context only)'}.${arm.id === 'Y3-T0' && n.matching.has(arm.id) ? ` <span class="w-match">${esc(ref!.todayMatch.split(':')[0])}, not re-verified by a run.</span>` : ''}`;
   }
 
   function guideHtml(): string {
@@ -175,7 +176,7 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
     const armSel = `<label class="w-arm"><span>Reference</span><select data-warm>${ref!.arms.map(a => `<option value="${esc(a.id)}"${a.id === n.arm.id ? ' selected' : ''}>${esc(a.name)}${n.matching.has(a.id) ? '' : ' (another model)'}</option>`).join('')}</select></label>`;
     const empty = ln === 'world' && !nWorld ? `<p class="w-note">Nothing of this world can be placed yet. Only five rows can be read from its exact record in this build (first-year mortality, causes of death, respiratory deaths, births at 20 to 30, killings), and each needs a year of watching; this world has ${esc(String(Math.max(0, Math.floor(n.life.days))))} days (${esc(wallWords(365 - n.life.days))}).</p>` : '';
     return `<div class="w-glance-head">${seg}${armSel}</div>
-      <p class="w-sub">${ln === 'ref' ? `Rings: the reference runs of ${esc(n.arm.name.toLowerCase())}${n.matching.has(n.arm.id) ? '' : ' (another model, for context only)'}.` : 'Squares: this world’s exact record, only on rows where it counts what the field counts.'} In each section the upper line is held out (never used to set anything), the lower line fitted (settings were chosen with these values in view). At the right: how many of the rows with a number have a value placed; rows reported but never counted (✕) and rows with a pattern instead of a number are counted there, not drawn.</p>
+      <p class="w-sub">${ln === 'ref' ? `Rings: the reference runs of ${esc(n.arm.name.toLowerCase())}${n.matching.has(n.arm.id) ? '' : ' (another model, for context only)'}.` : 'Squares: this world’s exact record, only on rows where it counts what the field counts.'} In each section the upper line is held out (never used to set anything), the lower line fitted (settings were chosen with these values in view).${compact ? '' : ' At the right: how many of the rows with a number have a value placed; rows reported but never counted (✕) and rows with a pattern instead of a number are counted there, not drawn.'}</p>
       ${empty}
       <svg class="gl" viewBox="0 0 ${Wd} ${H}" role="img" aria-label="${esc(alt)}">${s}</svg>`;
   }
@@ -224,7 +225,7 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
         const viab = n.arm.viability;
         return `<div class="w-world">${head()}${demoNote}<h4>Population</h4>${pop}<p class="w-sub">Living animals each evening (21:00), rebuilt from birth and death times; births tick above the axis, deaths below it. Population size and age structure are not field targets. The founders’ ages are as the world generator set them (a design choice).</p>
           <h4>Births</h4>${life.births.length ? `<ul class="w-list">${list}</ul>${life.births.length > 8 ? `<p class="w-sub">and ${life.births.length - 8} earlier.</p>` : ''}` : '<p class="w-empty">No birth yet.</p>'}
-          <p class="w-sub">Reference runs of ${esc(n.arm.name.toLowerCase())}: ${viab.births} births in ${n.arm.seeds.length} worlds × ${sig2(n.arm.days / 365)} years (${viab.worlds.map(x => x.births).join(', ')} by world).</p></div>`;
+          <p class="w-sub">Reference runs of ${esc(n.arm.name.toLowerCase())}: ${viab.births} births in ${n.arm.seeds.length} worlds × ${sig2(n.arm.days / 365)} years (${viab.worlds.map(x => x.births).join(', ')} by world). Their populations went ${viab.worlds.map(x => `${x.livingStart} → ${x.livingEnd}`).join(', ')}; ${viab.pass ? 'they passed their viability check' : `they failed their viability check (${esc(viab.reasons.join('; ').replace(/\ba seed\b/g, 'a world'))}): see Deaths`}.</p></div>`;
       }
       case 'deaths': {
         const counts = deathsByClass(life);
@@ -349,7 +350,7 @@ export function createWildPage(root: HTMLElement, ctx: Ctx, ui: WildUi) {
     const id = d.dataset.row, isOpen = d.open;
     if (isOpen === openRows.has(id)) return;
     if (isOpen) openRows.add(id); else openRows.delete(id);
-    if (isOpen && lite && ref) { const t = lite.targets.find(x => x.id === id); const body = d.querySelector<HTMLElement>('.ys-detail'); if (t && body) { const n = now(); body.innerHTML = detailHtml(view(t, n), lite.sources, ref.arms, n.matching); } }
+    if (isOpen && lite && ref) { const t = lite.targets.find(x => x.id === id); const body = d.querySelector<HTMLElement>('.ys-detail'); if (t && body) { const n = now(); const v = view(t, n); body.innerHTML = v.detail || detailHtml(v, lite.sources, ref.arms, n.matching); } }
     for (const k of [...parts.keys()]) if (k.startsWith('rows-')) parts.delete(k);   // the open set is part of the rows' markup
   }, true);
   main.addEventListener('scroll', () => syncNav(), { passive: true });

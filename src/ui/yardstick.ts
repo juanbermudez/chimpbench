@@ -133,7 +133,9 @@ function worldLine(ws: WorldState): string {
   return `<span class="g-none" aria-hidden="true"></span>this world: ${esc(ws.words)}`;
 }
 
-export interface RowView { t: LiteTarget; arm: RefArm; ref: RefState; world: WorldState; communities: string; open: boolean; detail: string }
+export interface RowView { t: LiteTarget; arm: RefArm; ref: RefState; world: WorldState; communities: string; open: boolean; detail: string;
+  /** How the reference arm's match with this world is worded (today's model: from the defaults and golden-world check). */
+  matchNote?: string }
 
 /** A row: a <details> whose summary is the 44 px yardstick and whose body is the detail (rendered only while open). */
 export function rowHtml(v: RowView): string {
@@ -208,7 +210,7 @@ export function detailHtml(v: RowView, sources: Record<string, LiteSource>, arms
     ${world.kind !== 'marks' && world.more ? `<p class="ys-sub">${esc(world.more)}</p>` : ''}
     ${SAME_DEFINITION[t.id] ? `<p class="ys-sub">Exact record (all-seeing), not what a field team could see. Same definition as the field’s: ${esc(SAME_DEFINITION[t.id])}</p>` : ''}
     <p class="ys-sub">Shortest window: ${esc(t.window.why)}.</p>
-    <h4>Reference runs</h4><p class="ys-sub">${esc(arm.name)}: ${esc(arm.what)}. ${arm.seeds.length} worlds × ${sig2(arm.days / 365)} years after a ${arm.burnInDays}-day settling-in, ${esc(arm.profile)} map, rules only, run ${esc(dateWords(arm.runDate))} (commit ${esc(arm.commit)})${arm.protocol.current ? ', today’s protocol' : ', an older protocol'}.${matching.has(arm.id) ? '' : ' Another model, for context only.'}</p>
+    <h4>Reference runs</h4><p class="ys-sub">${esc(arm.name)}: ${esc(arm.what)}. ${arm.seeds.length} worlds × ${sig2(arm.days / 365)} years after a ${arm.burnInDays}-day settling-in, ${esc(arm.profile)} map, rules only, run ${esc(dateWords(arm.runDate))} (commit ${esc(arm.commit)})${arm.protocol.current ? ', today’s protocol' : ', an older protocol'}.${matching.has(arm.id) ? '' : ' Another model, for context only.'}${v.matchNote ? ` ${esc(v.matchNote)}` : ''}</p>
     ${refBlock}
     ${others ? `<ul class="ys-others">${others}</ul>` : ''}
   </div>`;
