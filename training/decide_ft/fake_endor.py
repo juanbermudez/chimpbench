@@ -35,12 +35,13 @@ class FakeEndor:
 
     def __init__(self, *, key: str = FAKE_KEY, balance: float = 100.0, gpu_seconds_per_call: float = 0.5,
                  refuse=None, refuse_share: float = 1 / 256, decisions_per_minute: int = 600_000, fail_optim_at: int | None = None,
-                 lr_echo=None, hang=None, bill: str = "exact", frozen_balance: bool = False, timestamps: bool = True):
+                 lr_echo=None, hang=None, bill: str = "exact", frozen_balance: bool = False, timestamps: bool = True, refuse_datum=None):
         self.key, self.balance_usd, self.balance_start = key, balance, balance
         self.gpu_s, self.dpm = gpu_seconds_per_call, decisions_per_minute
         self.refuse = refuse if refuse is not None else (lambda state, q: _h(json.dumps(state, sort_keys=True)) % round(1 / refuse_share) == 0 if refuse_share else False)
         self.fail_optim_at, self.lr_echo = fail_optim_at, lr_echo
         self.hang = hang  # (op, run step): that call's future stays "running" for ever (a call Endor never finishes)
+        self.refuse_datum = refuse_datum  # a datum Endor's renderer refuses in training (422 invalid_datum)
         # billing: "exact" (each call its GPU seconds) or "ceil" (each call rounded up to the second); a frozen balance
         # stands in for one that lags; futures carry Endor's created_at and completed_at on a server clock where each
         # request takes `rtt` and each billed call runs `gpu_seconds_per_call`, one at a time (timestamps=False: none)
@@ -257,6 +258,8 @@ class FakeEndor:
                 return self._json(202, {"future_id": fid})
             if op == "forward_backward":
                 for i, d in enumerate(body["data"]):
+                    if self.refuse_datum is not None and self.refuse_datum(d):
+                        return self._err(422, "invalid_datum", "the datum does not fit the model's 512-token window")
                     why = self._datum_ok(d)
                     if why:
                         self.violations.append(f"datum {i}: {why}")

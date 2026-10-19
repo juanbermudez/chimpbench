@@ -752,6 +752,19 @@ class Runs(unittest.TestCase):
         probs, err = W.answer_probs({"c0": 0.9, "c1": 0.9}, {"state": {"me": "x"}, "questions": {"action": {"type": "choice", "instructions": "i", "criteria": {"c0": "a", "c1": "b"}}}})
         self.assertEqual((probs, round(err, 6)), ([0.5, 0.5], 0.8))  # scored as one distribution, the gap reported
 
+    def test_a_datum_endor_refuses_in_training_stops_and_no_iteration_replays_it(self):
+        exp, train, _ = self.export(400, 12)  # 50 steps an epoch; the refused datum is met in epoch 2
+        ref, _, _ = r11_reference(train, seed=7)
+        bad = W.step_datums(ref[1][7])[3]
+        fake = FakeEndor(refuse_share=0, refuse_datum=lambda d: d == bad)
+        run_fit(ns(self.root, exp, fake))
+        self.assertEqual(run_train(ns(self.root, exp, fake)), 3)
+        it = json.loads((self.root / "iterations.json").read_text())["iterations"][-1]
+        self.assertEqual((it["outcome"], [s["name"] for s in it["saved"]]), ("stopped-refused", ["i1-e1"]))
+        self.assertTrue((self.root / "adapters/i1-e1/manifest.json").exists())  # what was trained is kept
+        with self.assertRaises(T.Refused):  # a replay would meet the same datum at the same step
+            run_train(ns(self.root, exp, fake, reason="again"))
+
     def test_a_learning_rate_endor_changes_stops_the_run(self):
         exp, _, _ = self.export(61)
         fake = FakeEndor(lr_echo=lambda lr: lr * 2, refuse_share=0)

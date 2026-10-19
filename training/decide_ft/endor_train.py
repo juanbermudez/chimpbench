@@ -48,6 +48,9 @@ WALL_LIMIT_S = 3 * 3600       # per iteration
 POLL_EVERY = 25               # steps between balance reads
 PROJECT_EVERY = 50            # steps between projections (the first after 50)
 FIT_SHARE = 0.02              # more refused than this, in either file, stops the test
+# Endor refusing what it is sent is not transient: a later iteration replays the same order and meets the same datum
+# (review of 19 October), so it is a registered stop, not an operational failure
+REFUSED_CODES = frozenset({"invalid_datum", "invalid_options", "context_too_long", "invalid_input"})
 FIT_WORKERS = 4
 EPOCH_EXTRA_FLOOR = 0.15      # $ booked for an epoch's predict and save until one is measured
 IN_FLIGHT = 2                 # training steps sent before the oldest is read (endor.Steps' default)
@@ -598,7 +601,8 @@ def cmd_train(a) -> int:
         outcome, detail, code = "stopped-money", str(conn.error(e)), 3
     except (endor.EndorError, httpx.HTTPError, TimeoutError, W.WireError) as e:
         err = conn.error(e)
-        outcome, detail, code = "failed-operational", f"{err.kind}: {err}", 75
+        refused = isinstance(e, endor.UnprocessableEntityError) or (isinstance(e, endor.OperationFailedError) and e.code in REFUSED_CODES)
+        outcome, detail, code = ("stopped-refused", f"{err.kind}: {err}", 3) if refused else ("failed-operational", f"{err.kind}: {err}", 75)
     except Exception as e:  # noqa: BLE001 - recorded, scrubbed, never a traceback that could carry a request
         err = conn.error(e)
         outcome, detail, code = "failed-unexpected", f"{err.kind}: {err}", 75
@@ -612,7 +616,7 @@ def cmd_train(a) -> int:
         status.update(state="ended", outcome=outcome, detail=detail, ledger=guard.summary())
     try:
         best = best_epoch(root)
-        if best and outcome in ("done", "stopped-money", "stopped-kill", "stopped-signal", "failed-operational", "failed-unexpected"):
+        if best and outcome in ("done", "stopped-money", "stopped-refused", "stopped-kill", "stopped-signal", "failed-operational", "failed-unexpected"):
             download(conn, best, root, fake)
         with contextlib.suppress(Exception):
             usage = [u.model_dump(mode="json") for u in conn.client.usage(datetime.now(timezone.utc) - timedelta(days=13), datetime.now(timezone.utc) + timedelta(hours=1), project=W.PROJECT)]
